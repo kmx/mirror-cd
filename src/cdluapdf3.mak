@@ -4,7 +4,7 @@ LIBNAME = cdluapdf3
 OPT = YES
 
 DEF_FILE = cdluapdf.def
-SRCDIR = lua
+SRCDIR = lua3
 SRC = cdluapdf.c
 DEF_FILE = cdluapdf.def
 
