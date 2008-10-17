@@ -1,0 +1,18 @@
+CC = gcc
+
+CFLAGS = -I../cd/include -I../iup/include -I/usr/X11R6/include
+
+LIBS = -L../cd/lib/Linux26 -L../iup/lib/Linux26 -L/usr/X11R6/lib \
+       -lcdiup -lcd -liup \
+       -lXm -lXpm -lXmu -lXt -lXext -lX11
+       
+OBJS = simple.o iupmain.o
+
+simple.o: simple.c simple.h
+	$(CC) -o $@ -c simple.c $(CFLAGS)
+
+iupmain.o: iupmain.c simple.h
+	$(CC) -o $@ -c iupmain.c $(CFLAGS)
+
+simple: $(OBJS)
+	$(CC) -o $@ $(OBJS) $(LIBS)

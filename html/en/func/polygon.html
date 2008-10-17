@@ -1,0 +1,87 @@
+<!doctype HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>Polygons</title>
+<link rel="stylesheet" type="text/css" href="../../style.css">
+</head>
+
+<body>
+
+<h2 align="center">Open, Closed and Filled Polygons,<br>
+Bezier Lines and<br>
+Regions Creation</h2>
+
+  <p>The functions <font><strong>cdBegin</strong></font>,
+  <font><strong>cdVertex</strong></font> and <font>
+  <strong>cdEnd</strong></font> are use for many situations.
+  <font><strong>cdBegin</strong></font> is called once,
+  <font><strong>cdVertex</strong></font> can be called many 
+  times, and <font><strong>cdEnd</strong></font> is called once 
+  to actually do something. If you call <font><strong>cdBegin</strong></font> 
+  again before <font><strong>cdEnd</strong></font> the process is 
+  restarted, except for <strong><font>cdBegin(</font></strong><b>CD_REGION</b><strong><font>)</font></strong> 
+  that can contains one or more polygons inside. </p>
+
+<hr>
+<pre class="function"><span class="mainFunction">void <a name="cdBegin">cdCanvasBegin</a>(cdCanvas* canvas, int mode); [in C]</span>
+
+canvas:Begin(mode: number) [in Lua]</pre>
+
+  <p>Starts defining a polygon to be drawn (or filled) according to the mode:&nbsp;
+  <b>CD_CLOSED_LINES</b>, <b>CD_OPEN_LINES</b>, <b>CD_FILL</b><strong><b>,
+  </b></strong><b>CD_CLIP, CD_REGION</b> or <strong><b>CD_BEZIER</b></strong>. 
+  Do not create embedded polygons, that is, do not call function
+  <font><strong>cdBegin</strong></font> twice without a call to
+  <font><strong>cdEnd</strong></font> in between.</p>
+
+<ul>
+  <li><strong>CD_OPEN_LINES</strong><b>:</b> connects all the points at cdEnd. Depends 
+  on line width and line style attributes. </li>
+  <li><b><b>CD_CLOSED_LINES:</b> </b>connects all the points at cdEnd and 
+  connects the last point to the first.&nbsp; Depends on line width and line 
+  style attributes. </li>
+  <li><b>CD_FILL:</b> connects the last point to the first and fills 
+  the resulting polygon according to the current interior style. When the 
+  interior style <strong><b>CD_HOLLOW</b></strong> is defined the it behaves 
+  as if the mode were <b>CD_CLOSED_LINES</b><strong>.</strong></li>
+  <li><b>CD_CLIP: i</b>nstead of creating a polygon to be drawn, 
+  creates a polygon to define a polygonal clipping region. </li>
+  <li><strong><b>CD_BEZIER:</b></strong><b> </b>defines the points of a bezier 
+  curve. There must be at least 4 points: <i>start</i>, <i>control</i>, <i>
+  control</i> and <i>end</i>. To specify a sequence of curves use 3 more points 
+  for each curve: <i>control</i>, <i>control</i>, <i>end</i>, <i>control</i>, <i>
+  control</i>, <i>end</i>, ... The end point is used as start point for the next 
+  curve.</li>
+  <li><strong><b>CD_REGION</b></strong>: starts the creation of a complex 
+  region for clipping. All calls to <font><strong>cdBox</strong></font>,
+  <font><strong>cdSector</strong></font>, <font>
+  <strong>cdChord, Filled</strong></font> <font><strong>Polygons</strong></font> 
+  and <font><strong>cdText</strong></font> will be composed in a 
+  region for clipping. See <a href="region.html">Regions</a> documentation.</li>
+</ul>
+<p align="center"><font size="4">Open, Closed and Filled Polygons<br>
+</font><img src="../../img/polygon.gif" border="2" width="249" height="116"></p>
+<p align="center"><font size="4">Bezier Lines<br>
+</font><img src="../../img/bezier.gif" border="2" width="241" height="220"></p>
+<pre class="function"><span class="mainFunction">void <a name="cdVertex">cdCanvasVertex</a>(cdCanvas* canvas, int x, int y); [in C]</span>
+void cdfCanvasVertex(cdCanvas* canvas, double x, double y); [in C]
+void wdCanvasVertex(cdCanvas* canvas, double x, double y); (WC) [in C]
+
+canvas:Vertex(x, y: number) [in Lua]
+canvas:wVertex(x, y: number) (WC) [in Lua]</pre>
+
+  <p>Adds a vertex to the polygon definition.</p>
+
+<pre class="function"><span class="mainFunction">void <a name="cdEnd">cdCanvasEnd</a>(cdCanvas* canvas); [in C]</span>
+
+canvas:End() [in Lua]</pre>
+
+  <p>Ends the polygon's definition and draws it.</p>
+
+
+</body>
+
+</html>

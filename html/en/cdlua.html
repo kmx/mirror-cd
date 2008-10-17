@@ -1,0 +1,117 @@
+﻿<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<title>Lua Binding</title>
+<link rel="stylesheet" type="text/css" href="../style.css">
+</head>
+
+<body>
+
+<h1>Lua Binding</h1>
+<h3><a name="Overview">Overview</a></h3>
+
+  <p>CDLua was developed to make all functionalities of the CD library available to Lua programmers. To use the CDLua 
+  bindings, your executable must be linked with the CDLua library, and you must call the initialization function <strong>
+  <font face="Courier New">cdlua_open</font></strong> declared in the header file <strong><font face="Courier New">cdlua</font><font size="2" face="Courier New">.</font><font face="Courier New">h</font></strong>, 
+  as seen in the example below:</p>
+  
+    <div align="center">
+      <center>
+      <table border="1" cellpadding="10" cellspacing="0" style="border-collapse: collapse" bordercolor="#111111" id="AutoNumber1">
+        <tr>
+          <th>
+          <p align="center">in Lua5</th>
+        </tr>
+        <tr>
+          <td>
+          <pre>#include &lt;lua.h&gt;
+#include &lt;lualib.h&gt;
+#include &lt;lauxlib.h&gt;
+<b><font color="#FF0000">#include &lt;cdlua.h&gt;</font></b></pre>
+          <pre>void main(void)
+{
+  lua_State *L = lua_open();
+
+  luaopen_string(L);
+  luaopen_math(L);
+  luaopen_io(L);  
+
+<b>  <font color="#FF0000">cdlua_open(L);</font>
+</b>
+  lua_dofile(&quot;myprog.lua&quot;);
+  
+  <b><font color="#FF0000">cdlua_close(L);</font></b>
+  lua_close(L);
+}</pre>
+          </td>
+        </tr>
+      </table>
+      </center>
+    </div>
+  
+  <p>The <font face="Courier New"><strong>cdlua_open</strong>()</font> function registers all CD functions and constants 
+  your Lua program will need. The use of the CDLua functions in Lua is generally identical to their equivalents in C. 
+  Nevertheless, there are several exceptions due to differences between the two languages. Notice that, as opposed to C, 
+  in which the flags are<i> </i>combined with the bitwise operator OR, in Lua the flags are added arithmetically. </p>
+  <p>The CDLua dynamic libraries are also compatible with the Lua 5 &quot;loadlib&quot; function.<span lang="en-us">
+  </span>Here is an example on how to dynamically load CD 
+  in Lua 5<span lang="en-us">.1</span>:</p>
+<pre>local cdlua_open = package.loadlib(&quot;cdlua51.dll&quot;, &quot;cdlua_open&quot;)
+cdlua_open()</pre>
+<p><strong>Lua</strong> 5.1 &quot;require&quot; can be used for all the <strong>
+CDLua</strong> 
+libraries. You can use <b>require</b>&quot;<b>cdlua</b>&quot; and so on, but the LUA_CPATH 
+must also contains the following: </p>
+
+<pre>"./lib?51.so;"    [in UNIX]
+
+".\\?51.dll;"     [in Windows]
+</pre>
+<p>The LuaBinaries distribution already includes these modifications on the 
+default search path.</p>
+<p>The simplest form <b>require</b>&quot;<b>cd</b>&quot; 
+and so on, can not be used because there are CD dynamic libraries with names 
+that will conflict with the names used by <b>require</b> during search.</p>
+
+<h3><a name="New Functions">Function Names and Definitions</a></h3>
+
+  <p>In Lua, because of the name space &quot;cd&quot; all the functions and definitions have their names prefix changed. The 
+  general rule is quite simple:</p>
+  
+    <pre>cdXxx  -&gt; cd.Xxx
+wdXxx  -&gt; cd.wXxx
+CD_XXX -&gt; cd.XXX</pre>
+  
+
+<h3>Modifications to the API</h3>
+
+  <p>New functions (without equivalents in C) were implemented to create and 
+  destroy objects that do not exist in C. For instance functions were developed 
+  to create and destroy images, pattern, stipple and palette.&nbsp;All the 
+  metatables have the &quot;tostring&quot; method implemented to help debuging.</p>
+
+  <p>Some functions were modified to receive those objects as parameters.</p>
+  <p>Also the functions which receive values by reference in C were  modified. Generally, the values of 
+  parameters that would have their values modified are now returned by the function in the same order.</p>
+  
+
+<h3>Garbage Collection</h3>
+
+  <p>All the objects are garbage collected by the Lua garbage collector, except 
+	the canvas because there can be different Lua canvases pointing to the same 
+	C canvas. The tostring method of the Lua canvas will print both values, Lua 
+	and C. The equal method will compare the C canvas value.</p>
+
+<h3>Exchanging Values between C and Lua</h3>
+
+  <p>Because of some applications that interchange the use of CD canvases in Lua and C, we build a 
+  few C functions that are available in &quot;cdlua.h&quot;:</p>
+
+<pre>cdCanvas* cdlua_checkcanvas(lua_State* L, int pos);
+void cdlua_pushcanvas(lua_State* L, cdCanvas* canvas);</pre>
+
+
+</body>
+
+</html>

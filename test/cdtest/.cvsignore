@@ -1,0 +1,16 @@
+obj
+bin
+william
+so_locations
+*.dep
+*.wdep
+*.loh
+.plan
+.project
+*.err
+Makefile
+*.make
+*.suo
+*.ncb
+*.opt
+*.user
