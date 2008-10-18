@@ -1,6 +1,6 @@
 require"cdlua"
-require"cdluaiup"
 require"iuplua"
+require"iupluacd"
 
 iupcdaux = {}
 iupcdaux.count = 0

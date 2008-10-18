@@ -1,6 +1,6 @@
-require"iuplua"
 require"cdlua"
-require"cdluaiup"
+require"iuplua"
+require"iupluacd"
 
 cnv = iup.canvas {size = "200x100"}
 
