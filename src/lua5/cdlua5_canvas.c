@@ -565,7 +565,7 @@ static int wdlua5_canvas2world(lua_State *L)
 \***************************************************************************/
 static int cdlua5_foreground(lua_State *L)
 {
-  long int color_i = cdlua_checkcolor(L, 1);
+  long int color_i = cdlua_checkcolor(L, 2);
   color_i = cdCanvasForeground(cdlua_checkcanvas(L, 1), color_i);
   lua_pushlightuserdata(L, (void*) color_i);
   return 1;
@@ -573,7 +573,7 @@ static int cdlua5_foreground(lua_State *L)
 
 static int cdlua5_setforeground(lua_State *L)
 {
-  long int color_i = cdlua_checkcolor(L, 1);
+  long int color_i = cdlua_checkcolor(L, 2);
   cdCanvasSetForeground(cdlua_checkcanvas(L, 1), color_i);
   return 0;
 }
@@ -583,7 +583,7 @@ static int cdlua5_setforeground(lua_State *L)
 \***************************************************************************/
 static int cdlua5_background(lua_State *L)
 {
-  long int color_i = cdlua_checkcolor(L, 1);
+  long int color_i = cdlua_checkcolor(L, 2);
   color_i = cdCanvasBackground(cdlua_checkcanvas(L, 1), color_i);
   lua_pushlightuserdata(L, (void*) color_i);
   return 1;
@@ -591,7 +591,7 @@ static int cdlua5_background(lua_State *L)
 
 static int cdlua5_setbackground(lua_State *L)
 {
-  long int color_i = cdlua_checkcolor(L, 1);
+  long int color_i = cdlua_checkcolor(L, 2);
   cdCanvasSetBackground(cdlua_checkcanvas(L, 1), color_i);
   return 0;
 }
