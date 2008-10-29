@@ -1,6 +1,7 @@
 
 .PHONY: do_all cd_freetype cd cd_pdflib cdpdf cdcontextplus cdlua3 cdluapdf3 cdlua5 cdluapdf5 cdluacontextplus5 cdluaim5
-do_all: cd_freetype cd cd_pdflib cdpdf cdcontextplus cdlua3 cdluapdf3 cdlua5 cdluapdf5 cdluacontextplus5 cdluaim5
+#do_all: cd_freetype cd cd_pdflib cdpdf cdcontextplus cdlua3 cdluapdf3 cdlua5 cdluapdf5 cdluacontextplus5 cdluaim5
+do_all: cd_freetype cd cd_pdflib cdpdf cdcontextplus cdlua5 cdluapdf5 cdluacontextplus5 cdluaim5
 
 cd_freetype:
 	@$(MAKE) --no-print-directory -f tecmake_compact.mak MF=cd_freetype

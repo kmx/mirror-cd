@@ -8,8 +8,8 @@ call tecmake %1 "MF=cd_freetype" %2 %3 %4 %5 %6 %7 %8
 call tecmake %1 %2 %3 %4 %5 %6 %7 %8
 call tecmake %1 "MF=cd_pdflib" %2 %3 %4 %5 %6 %7 %8
 call tecmake %1 "MF=cdpdf" %2 %3 %4 %5 %6 %7 %8
-call tecmake %1 "MF=cdlua3" %2 %3 %4 %5 %6 %7 %8
-call tecmake %1 "MF=cdluapdf3" %2 %3 %4 %5 %6 %7 %8
+REM call tecmake %1 "MF=cdlua3" %2 %3 %4 %5 %6 %7 %8
+REM call tecmake %1 "MF=cdluapdf3" %2 %3 %4 %5 %6 %7 %8
 call tecmake %1 "MF=cdlua5" %2 %3 %4 %5 %6 %7 %8
 call tecmake %1 "MF=cdluapdf5" %2 %3 %4 %5 %6 %7 %8
 call tecmake %1 "MF=cdluaim5" %2 %3 %4 %5 %6 %7 %8
