@@ -285,7 +285,12 @@ void cdlua_pushchannel(lua_State* L, unsigned char* channel, int size)
 long cdlua_checkcolor(lua_State* L, int param)
 {
   if (!lua_islightuserdata(L, param))
+  {
+    if (lua_isnumber(L, param) && (lua_tointeger(L, param) == CD_QUERY))
+      return CD_QUERY;
+
     luaL_argerror(L, param, "invalid color, must be a light user data");
+  }
 
   return (long int)lua_touserdata(L, param);
 }
