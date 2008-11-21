@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="7.10"
+	Version="7,10"
 	Name="cdlua3"
 	ProjectGUID="{53FC9752-81C1-4AA6-B366-AF6D0A2B81F6}"
 	TargetFrameworkVersion="0"
@@ -88,11 +88,11 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\src\lua\cdlua.c"
+			RelativePath="..\src\lua3\cdlua.c"
 			>
 		</File>
 		<File
-			RelativePath="..\src\lua\cdlua.def"
+			RelativePath="..\src\lua3\cdlua.def"
 			>
 		</File>
 		<File
@@ -104,23 +104,23 @@
 			>
 		</File>
 		<File
-			RelativePath="..\src\lua\cdluactx.c"
+			RelativePath="..\src\lua3\cdluactx.c"
 			>
 		</File>
 		<File
-			RelativePath="..\src\lua\cdvoid.c"
+			RelativePath="..\src\lua3\cdvoid.c"
 			>
 		</File>
 		<File
-			RelativePath="..\src\lua\cdvoid.h"
+			RelativePath="..\src\lua3\cdvoid.h"
 			>
 		</File>
 		<File
-			RelativePath="..\src\lua\toluacd.c"
+			RelativePath="..\src\lua3\toluacd.c"
 			>
 		</File>
 		<File
-			RelativePath="..\src\lua\toluawd.c"
+			RelativePath="..\src\lua3\toluawd.c"
 			>
 		</File>
 	</Files>

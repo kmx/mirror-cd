@@ -88,11 +88,11 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\src\lua\cdluapdf.c"
+			RelativePath="..\src\lua3\cdluapdf.c"
 			>
 		</File>
 		<File
-			RelativePath="..\src\lua\cdluapdf.def"
+			RelativePath="..\src\lua3\cdluapdf.def"
 			>
 		</File>
 		<File

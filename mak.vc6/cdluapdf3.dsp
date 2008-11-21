@@ -60,11 +60,11 @@ LIB32=link.exe -lib
 # Name "cdluapdf3 - Win32 Debug"
 # Begin Source File
 
-SOURCE=..\src\lua\cdluapdf.c
+SOURCE=..\src\lua3\cdluapdf.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\lua\cdluapdf.def
+SOURCE=..\src\lua3\cdluapdf.def
 # End Source File
 # Begin Source File
 

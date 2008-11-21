@@ -60,11 +60,11 @@ LIB32=link.exe -lib
 # Name "cdlua3 - Win32 Debug"
 # Begin Source File
 
-SOURCE=..\src\lua\cdlua.c
+SOURCE=..\src\lua3\cdlua.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\lua\cdlua.def
+SOURCE=..\src\lua3\cdlua.def
 # End Source File
 # Begin Source File
 
@@ -76,23 +76,23 @@ SOURCE=..\include\cdlua3_private.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\lua\cdluactx.c
+SOURCE=..\src\lua3\cdluactx.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\lua\cdvoid.c
+SOURCE=..\src\lua3\cdvoid.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\lua\cdvoid.h
+SOURCE=..\src\lua3\cdvoid.h
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\lua\toluacd.c
+SOURCE=..\src\lua3\toluacd.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\src\lua\toluawd.c
+SOURCE=..\src\lua3\toluawd.c
 # End Source File
 # End Target
 # End Project
