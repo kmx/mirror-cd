@@ -19,7 +19,7 @@ extern "C" {
 #define CD_NAME "CD - Canvas Draw"
 #define CD_DESCRIPTION "A 2D Graphics Library"
 #define CD_COPYRIGHT    "Copyright (C) 1994-2008 Tecgraf, PUC-Rio."
-#define CD_VERSION "5.1.0"
+#define CD_VERSION "5.1"
 #define CD_VERSION_DATE "2008/10/14"
 #define CD_VERSION_NUMBER 501000
 

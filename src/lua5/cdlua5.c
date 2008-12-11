@@ -1763,7 +1763,7 @@ static void setinfo (lua_State *L)
 	lua_settable (L, -3);
 
 	lua_pushliteral (L, "_VERSION");
-	lua_pushliteral (L, CD_VERSION);
+	lua_pushstring (L, cdVersion());
 	lua_settable (L, -3);
 
 	lua_pushliteral (L, "_VERSION_DATE");
@@ -1771,7 +1771,7 @@ static void setinfo (lua_State *L)
 	lua_settable (L, -3);
 
 	lua_pushliteral (L, "_VERSION_NUMBER");
-	lua_pushinteger(L, CD_VERSION_NUMBER);
+	lua_pushinteger(L, cdVersionNumber());
 	lua_settable (L, -3);
 }
 

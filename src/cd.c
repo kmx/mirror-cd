@@ -17,18 +17,21 @@
 #include "cd_private.h"
 #include "cdirgb.h"
 
+/* This appears only here to avoid changing the cd.h header fo bug fixes */
+#define CD_VERSION_FIX ".1"
+#define CD_VERSION_FIX_NUMBER 1
 
 const char cd_ident[] =
-  "$CD: " CD_VERSION " " CD_COPYRIGHT " $\n"
+  "$CD: " CD_VERSION CD_VERSION_FIX " " CD_COPYRIGHT " $\n"
   "$URL: www.tecgraf.puc-rio.br/cd $\n";
 
-static char *tecver = "TECVERID.str:CD:LIB:"CD_VERSION;
+static char *tecver = "TECVERID.str:CD:LIB:" CD_VERSION CD_VERSION_FIX;
 
 char* cdVersion(void)
 {              
   (void)cd_ident;
 	(void)tecver;
-  return CD_VERSION;
+  return CD_VERSION CD_VERSION_FIX;
 }
 
 char* cdVersionDate(void)
@@ -38,7 +41,7 @@ char* cdVersionDate(void)
  
 int cdVersionNumber(void)
 {
-  return CD_VERSION_NUMBER;
+  return CD_VERSION_NUMBER+CD_VERSION_FIX_NUMBER;
 }
 
 static void cd_setdefaultfunc(cdCanvas* canvas)
@@ -128,7 +131,7 @@ cdCanvas *cdCreateCanvas(cdContext* context, void *data_str)
     char* env = getenv("CD_QUIET");
     if (first && env && strcmp(env, "NO")==0)
     {
-      printf("CD  "CD_VERSION" "CD_COPYRIGHT"\n");
+      printf("CD  " CD_VERSION CD_VERSION_FIX " " CD_COPYRIGHT "\n");
       first = 0;
     }
   }
