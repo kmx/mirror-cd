@@ -30,6 +30,7 @@ EXPORTS
 
   cdVersion
   cdVersionDate
+  cdVersionNumber
   cdCreateCanvas
   cdCreateCanvasf
   cdKillCanvas

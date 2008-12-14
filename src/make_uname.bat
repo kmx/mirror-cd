@@ -36,7 +36,7 @@ goto end
 
 :gdiplus_VC
 call tecmake %2 "MF=cdcontextplus" %3 %4 %5 %6
-call tecmake %2 "MF=cdluacontextplus5" %2 %3 %4 %5 %6 %7 %8
+call tecmake %2 "MF=cdluacontextplus5" %3 %4 %5 %6 %7 %8
 goto end
 
 :all-vc
