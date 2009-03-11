@@ -3,6 +3,7 @@
 void draw();
 int marktype;
 
+
 void main(void)
 {
 	cdCanvas *canvas;
@@ -11,6 +12,7 @@ void main(void)
 	draw();
 	cdKillCanvas(canvas);
 }
+
 
 void draw(void)
 {
