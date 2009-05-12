@@ -43,13 +43,16 @@
 	<strong>
   <span style="color: #FF0000">IMPORTANT</span></strong> - removed the FreeType 
 	library files from the main library. They now are available as an additional 
-	library that can be replaced by other FreeType distributions. This will 
+	library that can be replaced by other FreeType distributions. You should now 
+	link with the &quot;freetype6&quot; library in Windows and with the &quot;freetype&quot; library 
+	in UNIX (if not using GTK, freetype is already included in GTK). This change will 
 	avoid conflicts when using CD and GTK.</li>
 	<li><span style="color: #0000FF"><span style="color: #008000">Changed</span>:</span> 
 	<strong>
   <span style="color: #FF0000">IMPORTANT</span></strong> - removed the PDFLib 
 	library files from the cdpdf library. They now are available as an 
-	additional library that can be replaced by other PDFLib distributions.</li>
+	additional library that can be replaced by other PDFLib distributions. You 
+	should now link with the &quot;pdflib&quot; library.</li>
 	<li><span style="color: #0000FF"><span style="color: #008000">Changed</span>:</span> 
 	<strong>
   <span style="color: #FF0000">IMPORTANT</span></strong> - the support services 
