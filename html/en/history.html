@@ -10,6 +10,14 @@
 <body>
 
 <h1>History of Changes</h1>
+<h3>CVS (13/Jun/2008)</h3>
+<ul>
+	<li><span style="color: #008000">Changed:</span> 
+  	CD_DBUFFER now activates the buffered canvas before creating the image 
+	canvas. If size is 0 then uses 1 and avoid to fail during creation.</li>
+	<li><span style="color: #FF0000">Fixed:</span> <strong>cdCanvasText</strong> 
+	for CD_IMAGERGB driver when the foreground color has alpha.</li>
+</ul>
 <h3>Version 5.1.1 (15/Dec/2008)</h3>
 <ul>
 	<li><span style="color: #FF0000">Fixed:</span> CDLua binding functions 

@@ -44,12 +44,19 @@ static void cdflush(cdCtxCanvas *ctxcanvas)
 
 static void cdcreatecanvas(cdCanvas* canvas, cdCanvas* canvas_dbuffer)
 {
+  int w, h;
   cdCtxCanvas* ctxcanvas;
   cdImage* image_dbuffer;
   cdCtxImage* ctximage;
 
+  cdCanvasActivate(canvas_dbuffer);
+  w = canvas_dbuffer->w;
+  h = canvas_dbuffer->h;
+  if (w==0) w=1;
+  if (h==0) h=1;
+
   /* this is done in the canvas_dbuffer context */
-  image_dbuffer = cdCanvasCreateImage(canvas_dbuffer, canvas_dbuffer->w, canvas_dbuffer->h);
+  image_dbuffer = cdCanvasCreateImage(canvas_dbuffer, w, h);
   if (!image_dbuffer) 
     return;
 
@@ -74,15 +81,20 @@ static void cdcreatecanvas(cdCanvas* canvas, cdCanvas* canvas_dbuffer)
 
 static int cdactivate(cdCtxCanvas *ctxcanvas)
 {
+  int w, h;
   cdCanvas* canvas_dbuffer = ctxcanvas->canvas_dbuffer;
 
   /* this is done in the canvas_dbuffer context */
   /* this will update canvas size */
   cdCanvasActivate(canvas_dbuffer);
+  w = canvas_dbuffer->w;
+  h = canvas_dbuffer->h;
+  if (w==0) w=1;
+  if (h==0) h=1;
 
   /* check if the size changed */
-  if (canvas_dbuffer->w != ctxcanvas->image_dbuffer->w ||
-      canvas_dbuffer->h != ctxcanvas->image_dbuffer->h)
+  if (w != ctxcanvas->image_dbuffer->w ||
+      h != ctxcanvas->image_dbuffer->h)
   {
     cdCanvas* canvas = ctxcanvas->canvas;
     /* save the current, if the rebuild fail */

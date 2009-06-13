@@ -56,7 +56,7 @@ struct _cdCtxCanvas
 #define _sNormX(_ctxcanvas, _x) (_x < 0? 0: _x < _ctxcanvas->canvas->w? _x: _ctxcanvas->canvas->w-1)
 #define _sNormY(_ctxcanvas, _y) (_y < 0? 0: _y < _ctxcanvas->canvas->h? _y: _ctxcanvas->canvas->h-1)
 
-#define RGBA_COMPOSE(_SRC, _SRC_ALPHA, _DST, _TMP_MULTI, _TMP_ALPHA) (unsigned char)(((_SRC_ALPHA)*(_SRC) + (_TMP_MULTI)*(_DST)) / (_TMP_ALPHA))
+#define RGB_COMPOSE(_SRC, _SRC_ALPHA, _DST, _TMP_MULTI, _TMP_ALPHA) (unsigned char)(((_SRC_ALPHA)*(_SRC) + (_TMP_MULTI)*(_DST)) / (_TMP_ALPHA))
 
 #define RGBA_COLOR_COMBINE(_ctxcanvas, _pdst_red, _pdst_green, _pdst_blue, _pdst_alpha, _src_red, _src_green, _src_blue, _src_alpha) \
 {                                                                                                                        \
@@ -87,9 +87,9 @@ struct _cdCtxCanvas
           /* Closed Compositing Formulas for SRC over DST, Colors Not Premultiplied by Alpha:  */                        \
           int _tmp_multi = *_pdst_alpha * (255 - _src_alpha);                                                            \
           int _tmp_alpha = _src_alpha + _tmp_multi;                                                                      \
-          _tmp_red = RGBA_COMPOSE(_src_red, _src_alpha, *_pdst_red, _tmp_multi, _tmp_alpha);                             \
-          _tmp_green = RGBA_COMPOSE(_src_green, _src_alpha, *_pdst_green, _tmp_multi, _tmp_alpha);                       \
-          _tmp_blue = RGBA_COMPOSE(_src_blue, _src_alpha, *_pdst_blue, _tmp_multi, _tmp_alpha);                          \
+          _tmp_red = RGB_COMPOSE(_src_red, _src_alpha, *_pdst_red, _tmp_multi, _tmp_alpha);                             \
+          _tmp_green = RGB_COMPOSE(_src_green, _src_alpha, *_pdst_green, _tmp_multi, _tmp_alpha);                       \
+          _tmp_blue = RGB_COMPOSE(_src_blue, _src_alpha, *_pdst_blue, _tmp_multi, _tmp_alpha);                          \
           *_pdst_alpha = (unsigned char)(_tmp_alpha / 255);                                                              \
         }                                                                                                                \
       }                                                                                                                  \

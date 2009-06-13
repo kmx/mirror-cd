@@ -30,6 +30,10 @@ ifneq ($(findstring Win, $(TEC_SYSNAME)), )
   LIBNAME = freetype6
 endif
 
+ifneq ($(findstring gcc, $(TEC_UNAME)), )
+  LIBNAME = freetype
+endif
+
 ifneq ($(findstring bc5, $(TEC_UNAME)), )
   FLAGS = -w-8004
 endif

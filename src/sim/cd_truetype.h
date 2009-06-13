@@ -24,7 +24,7 @@ typedef struct _cdTT_Text
   FT_Library library;
   FT_Face face;          
 
-  unsigned char* rgba_data;
+  unsigned char* rgba_data;   /* the image where one character is drawn with the foreground color during text output */
   int rgba_data_size;
 
   int max_height;

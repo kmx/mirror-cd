@@ -198,7 +198,11 @@ static void simDrawTextBitmap(cdSimulation* simulation, FT_Bitmap* bitmap, int x
   /* disable image transformation */
   simulation->canvas->use_matrix = 0;
 
+  /* this is the char bitmap, contains an alpha map of the char 
+     to be combined with the foreground color */
   bitmap_data = bitmap->buffer + (height-1)*width;  /* bitmap is top down. */
+
+  /* this is the image used to draw the char with the foreground color */ 
   red   = simulation->tt_text->rgba_data;
   green = red   + size;
   blue  = green + size;
@@ -207,8 +211,12 @@ static void simDrawTextBitmap(cdSimulation* simulation, FT_Bitmap* bitmap, int x
   if (!simulation->canvas->cxPutImageRectRGBA && !simulation->canvas->cxGetImageRGB)
   {
     int i, j;
-    unsigned char bg_red, bg_green, bg_blue, fg_red, fg_green, fg_blue;
+    unsigned char bg_red, bg_green, bg_blue, 
+                  fg_red, fg_green, fg_blue, fg_alpha, calpha;
     long int c;
+
+    /* must manually combine using only the background color, ignore canvas contents */
+
     c = simulation->canvas->background;
     bg_red   = cdRed(c);
     bg_green = cdGreen(c);
@@ -217,39 +225,74 @@ static void simDrawTextBitmap(cdSimulation* simulation, FT_Bitmap* bitmap, int x
     fg_red   = cdRed(c);
     fg_green = cdGreen(c);
     fg_blue  = cdBlue(c);
+    fg_alpha = cdAlpha(c);
 
     for (i = 0; i < height; i++)
     {
       for (j = 0; j < width; j++)
       {
-        *red++ = (fg_red*bitmap_data[j] + bg_red*(255-bitmap_data[j]))/255;
-        *green++ = (fg_green*bitmap_data[j] + bg_green*(255-bitmap_data[j]))/255;
-        *blue++ = (fg_blue*bitmap_data[j] + bg_blue*(255-bitmap_data[j]))/255;
+        if (fg_alpha == 255)
+          calpha = bitmap_data[j];
+        else
+          calpha = (fg_alpha*bitmap_data[j])/255;
+
+        *red++ = CD_ALPHA_BLEND(fg_red, bg_red, calpha);
+        *green++ = CD_ALPHA_BLEND(fg_green, bg_green, calpha);
+        *blue++ = CD_ALPHA_BLEND(fg_blue, bg_blue, calpha);
       }
 
       bitmap_data -= width;
     }
 
+    /* reset pointers */
     red   = simulation->tt_text->rgba_data;
     green = red   + size;
     blue  = green + size;
+
+    /* draw the char */
     simulation->canvas->cxPutImageRectRGB(simulation->canvas->ctxcanvas, width,height,red,green,blue,x,y,width,height,0,width-1,0,height-1);
   }
   else
   {
-    int i;
+    int i, j;
     long int fg = simulation->canvas->foreground;
+    unsigned char fg_alpha = cdAlpha(fg);
     memset(red,   cdRed(fg), size);
     memset(green, cdGreen(fg), size);
     memset(blue,  cdBlue(fg), size);
-    for (i = 0; i < height; i++)
+
+    if (fg_alpha == 255)
     {
-      memcpy(alpha,  bitmap_data, width);
-      alpha += width;
-      bitmap_data -= width;
+      /* alpha is the bitmap_data itself 
+         if the foreground color does not contains alpha.
+         Also must invert since it is top-down. */
+      for (i = 0; i < height; i++)
+      {
+        memcpy(alpha,  bitmap_data, width);
+        alpha += width;
+        bitmap_data -= width;
+      }
+    }
+    else
+    {
+      /* alpha is the bitmap_data itself 
+         if the foreground color does not contains alpha.
+         Also must invert since it is top-down. */
+      for (i = 0; i < height; i++)
+      {
+        for (j = 0; j < width; j++)
+        {
+          *alpha++ = (fg_alpha*bitmap_data[j])/255;
+        }
+
+        bitmap_data -= width;
+      }
     }
 
+    /* reset alpha pointer */
     alpha = blue + size;
+
+    /* draw the char */
     simulation->canvas->cxPutImageRectRGBA(simulation->canvas->ctxcanvas, width,height,red,green,blue,alpha,x,y,width,height,0,width-1,0,height-1);
   }
 

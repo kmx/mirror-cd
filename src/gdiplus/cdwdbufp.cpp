@@ -62,29 +62,34 @@ static void cdflush(cdCtxCanvas* ctxcanvas)
 
 static int cdactivate(cdCtxCanvas* ctxcanvas)
 {
+  int w, h;
   cdCanvas* canvas_dbuffer = ctxcanvas->canvas_dbuffer;
 
   /* this is done in the canvas_dbuffer context */
   /* this will update canvas size */
   cdCanvasActivate(canvas_dbuffer);
+  w = canvas_dbuffer->w;
+  h = canvas_dbuffer->h;
+  if (w==0) w=1;
+  if (h==0) h=1;
 
   /* check if the size changed */
-  if (canvas_dbuffer->w != ctxcanvas->canvas->w ||
-      canvas_dbuffer->h != ctxcanvas->canvas->h)
+  if (w != ctxcanvas->canvas->w ||
+      h != ctxcanvas->canvas->h)
   {
     delete ctxcanvas->graphics;
     delete ctxcanvas->bitmap;
     if (ctxcanvas->bitmap_dbuffer) delete ctxcanvas->bitmap_dbuffer;
     ctxcanvas->bitmap_dbuffer = NULL;
 
-    Bitmap* bitmap = new Bitmap(canvas_dbuffer->w, canvas_dbuffer->h, PixelFormat24bppRGB);
+    Bitmap* bitmap = new Bitmap(w, h, PixelFormat24bppRGB);
     bitmap->SetResolution((REAL)(canvas_dbuffer->xres*25.4), (REAL)(canvas_dbuffer->yres*25.4));
 
     ctxcanvas->bitmap = bitmap;
     ctxcanvas->graphics = new Graphics(bitmap);
 
-    ctxcanvas->canvas->w = canvas_dbuffer->w;
-    ctxcanvas->canvas->h = canvas_dbuffer->h;
+    ctxcanvas->canvas->w = w;
+    ctxcanvas->canvas->h = h;
 
     ctxcanvas->dirty = 1;
 
@@ -100,11 +105,18 @@ O DC é um BITMAP em memoria.
 */
 static void cdcreatecanvas(cdCanvas* canvas, void *data)
 {
+  int w, h;
   cdCanvas* canvas_dbuffer = (cdCanvas*)data;
   if (!canvas_dbuffer)
     return;
 
-  Bitmap* bitmap = new Bitmap(canvas_dbuffer->w, canvas_dbuffer->h, PixelFormat24bppRGB);
+  cdCanvasActivate(canvas_dbuffer); /* Update size */
+  w = canvas_dbuffer->w;
+  h = canvas_dbuffer->h;
+  if (w==0) w=1;
+  if (h==0) h=1;
+
+  Bitmap* bitmap = new Bitmap(w, h, PixelFormat24bppRGB);
   bitmap->SetResolution((REAL)(canvas_dbuffer->xres*25.4), (REAL)(canvas_dbuffer->yres*25.4));
 
   Graphics imggraphics(bitmap);
@@ -112,8 +124,8 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 
   Graphics* graphics = new Graphics(bitmap);
 
-  canvas->w = canvas_dbuffer->w;
-  canvas->h = canvas_dbuffer->h;
+  canvas->w = w;
+  canvas->h = h;
   canvas->bpp = 24;
 
   /* Initialize base driver */
