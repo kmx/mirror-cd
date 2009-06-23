@@ -303,7 +303,7 @@ int SimpleDrawPS(void)
 
 int SimpleDrawPDF(void)
 {
-//  DrawCanvasDriver(CD_PDF, "simple.pdf");
+  DrawCanvasDriver(CD_PDF, "simple.pdf");
   return 0;
 }
 

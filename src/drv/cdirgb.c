@@ -493,7 +493,7 @@ static void irgbClipText(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, in
   slot = face->glyph;
 
   /* move the reference point to the baseline-left */
-  simGetPenPos(simulation->canvas, x, y, s, strlen(s), &matrix, &pen);
+  simGetPenPos(simulation->canvas, x, y, s, len, &matrix, &pen);
 
   while(i<len)
   {

@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="9,00"
 	Name="cdgdiplus"
 	ProjectGUID="{51A96255-7EAB-4F36-A6E5-1BAF6245FA18}"
+	TargetFrameworkVersion="0"
 	>
 	<Platforms>
 		<Platform
@@ -64,7 +65,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\lib\cdgdiplus.lib"
+				OutputFile="..\lib\cdcontextplus.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool

@@ -7,7 +7,7 @@ ifeq "$(TEC_SYSNAME)" "Win32"
 endif
 
 USE_CD=Yes
-USE_IUP=Yes
+USE_IUP3=Yes
 
 cdtest_led.c: cdtest.led
 	ledc -f cdtest_loadled -o cdtest_led.c cdtest.led
@@ -15,10 +15,10 @@ cdtest_led.c: cdtest.led
 USE_STATIC = Yes
 
 #IUP = ../../../iup
-CD = ../..
+#CD = ../..
 
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )
-  LIBS = cdpdflib
+  LIBS = cdpdflib pdflib
 else
-  SLIB = $(CD)/lib/$(TEC_UNAME)/libcdpdflib.a
+  SLIB = $(CD)/lib/$(TEC_UNAME)/libcdpdf.a $(CD)/lib/$(TEC_UNAME)/libpdflib.a
 endif

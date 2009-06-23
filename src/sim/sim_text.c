@@ -386,7 +386,7 @@ void cdtextSIM(cdCtxCanvas* ctxcanvas, int x, int y, const char* s, int len)
     y = _cdInvertYAxis(canvas, y);   /* y is already inverted, invert back to cartesian space */
 
   /* move the reference point to the baseline-left */
-  simGetPenPos(simulation->canvas, x, y, s, strlen(s), &matrix, &pen);
+  simGetPenPos(simulation->canvas, x, y, s, len, &matrix, &pen);
 
   while(i<len)
   {

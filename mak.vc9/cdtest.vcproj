@@ -72,7 +72,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="freetype6.lib comctl32.lib cd.lib iupcd.lib cdgdiplus.lib iup.lib iupwin.lib gdiplus.lib cdpdflib.lib pdflib.lib"
+				AdditionalDependencies="freetype6.lib comctl32.lib cd.lib iupcd.lib cdcontextplus.lib iup.lib iupwin.lib gdiplus.lib cdpdf.lib pdflib.lib"
 				OutputFile="..\bin/cdtest.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
