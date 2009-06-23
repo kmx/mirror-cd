@@ -1,4 +1,4 @@
-
+#include <stdlib.h>
 #include <iup.h>
 #include <cd.h>
 
@@ -11,9 +11,9 @@ int cmdExit(void)
 
 void simple_loadled (void);
 
-int main(void)
+int main(int argc, char** argv)
 {
-  IupOpen();
+  IupOpen(&argc, &argv);                        
 
   cdInitContextPlus();
 
@@ -79,5 +79,5 @@ int main(void)
 
   IupClose();
 
-  return 1;
+  return EXIT_SUCCESS;
 }

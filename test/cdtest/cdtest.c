@@ -393,6 +393,8 @@ static void CDTestClose(void)
   cdKillCanvas(ctgc.wd_canvas);
   cdKillCanvas(ctgc.iup_canvas);
 
+  memset(&ctgc, 0, sizeof(tCTC));
+
   IupDestroy(IupGetHandle("dlgLB"));
   IupDestroy(IupGetHandle("dlgAS"));
   IupDestroy(IupGetHandle("dlgPixel"));
@@ -2378,6 +2380,9 @@ int fMotionCB(Ihandle *self, int x, int y, char *r)
   ignore(self);
   ignore(r);
 
+  if (!ctgc.iup_canvas)
+    return IUP_DEFAULT;
+
   cdActivate(ctgc.iup_canvas);
   cdUpdateYAxis(&y);
   mouse_pos(x, y);
@@ -2626,12 +2631,12 @@ void cdtest_loadled(void);
 /*-------------------------------------------------------------------------*/
 /* Rotina principal.                                                       */
 /*-------------------------------------------------------------------------*/
-void main(void)
+int main(int argc, char** argv)
 {
   char *err = NULL;
 
   /* inicializa o IUP */
-  IupOpen();                        
+  IupOpen(&argc, &argv);                        
 
   /* carrega o LED */
 #ifdef USE_LED
@@ -2658,5 +2663,7 @@ void main(void)
   CDTestClose();
 
   IupClose();
+
+  return 0;
 }
 

@@ -9,9 +9,8 @@
   <body>
     <h2 align="center">Vector Text</h2>
     <p>It is a text that uses a font created only with line segments. It is very 
-      useful to be scaled and very fast. You must set the text size before drawing 
-      any text. The functions ignore the new line character "\n"; only the <font>wdMultiLineVectorText</font>
-      function will consider this character. The default direction is horizontal from 
+	useful to be scaled and very fast. You must set the text size before drawing 
+	any text. The default direction is horizontal from 
       left to right.</p>
     <p align="center"><font size="4">Vector Text Parameters</font><br>
       <img src="../../img/vector_text.gif" align="middle" border="2" width="101" height="91"></p>
@@ -26,35 +25,28 @@ canvas:wVectorText(x, y: number, text: string) (WC) [in Lua]</pre>
     <p>Draws a vector text in position <tt><b>(x,y)</b></tt>, respecting the 
       alignment defined by <font><strong>cdTextAlignment</strong></font>. It ignores 
       the configuration <font><strong>cdBackOpacity</strong></font>, being always 
-      transparent. It also ignores strings with multiple lines. It is ESSENTIAL to 
+      transparent. It accepts strings with multiple lines using <font>'\n'</font>. It is ESSENTIAL to 
       call <font><strong>cdVectorTextSize</strong></font> or <font><strong>cdVectorCharSize</strong></font>
-      before using <font><strong>cdVectorText</strong></font> or <font><strong>cdMultiLineVetorText</strong></font>.</p>
-    <pre class="function"><span class="mainFunction">void <a name="cdMultiLineVectorText">cdCanvasMultiLineVectorText</a>(cdCanvas* canvas, int x, int y, const char* text); [in C]</span>
-void wdCanvasMultiLineVectorText(cdCanvas* canvas, double x, double y, const char* text); (WC) [in C]
-
-canvas:MultiLineVectorText(x, y: number, text: string) [in Lua]
-canvas:wMultiLineVectorText(x, y: number, text: string) (WC) [in Lua]</pre>
-    <p>Draws a vector text with several lines in position <b><tt>(x,y)</tt></b>, 
-      respecting the alignment defined by <font><strong>cdTextAlignment</strong></font>. 
-      It ignores the configuration <font><strong>cdBackOpacity</strong></font>, being 
-      always transparent. Lines are broken by characters <font>"\n"</font>. Each line 
-      respects the scale defined in <font><strong>cdVectorTextSize</strong></font> or <font>
-        <strong>cdVectorCharSize</strong></font>. This function's purpose is to make 
-      function <strong><font>cdVectorText</font></strong> more efficient, not being 
-      concerned with multiple lines.</p>
+      before using this function.</p>
+	<p>The <strong>wdCanvasVectorText</strong> is the only function that 
+	actually depends on World Coordinates. The other Vector Text functions 
+	although use the &quot;<strong>wd</strong>&quot; prefix they do not depend on World 
+	Coordinates. They are kept with these names for backward compatibility. The 
+	correct prefix would be &quot;<strong>cdf</strong>&quot;.</p>
     <h3>Attributes</h3>
     <pre class="function"><span class="mainFunction">void <a name="cdVectorTextDirection">cdCanvasVectorTextDirection</a>(cdCanvas* canvas, int x1, int y1, int x2, int y2); [in C]</span>
-void wdCanvasVectorTextDirection(cdCanvas* canvas, double x1, double y1, double x2, double y2); (WC) [in C]
+void wdCanvasVectorTextDirection(cdCanvas* canvas, double x1, double y1, double x2, double y2); [in C]
 
 canvas:VectorTextDirection(x1, y1, x2, y2: number) [in Lua]
-canvas:wVectorTextDirection(x1, y1, x2, y2: number) (WC) [in Lua]</pre>
+canvas:wVectorTextDirection(x1, y1, x2, y2: number) [in Lua]</pre>
     <p>Defines the text direction by means of two points, <b><tt>(x1,y1)</tt></b> and <b>
-        <tt>(x2,y2)</tt></b>. The default direction is horizontal from left to right.</p>
+        <tt>(x2,y2)</tt></b>. The default direction is horizontal from left to right. 
+	It is independent from the transformation matrix.</p>
     <pre class="function"><span class="mainFunction">double* <a name="cdVectorTextTransform">cdCanvasVectorTextTransform</a>(cdCanvas* canvas, const double* matrix); [in C]</span>
 
 canvas:VectorTextTransform(matrix: table) -&gt; (old_matrix: table) [in Lua]&nbsp;</pre>
     <p>Defines a transformation matrix with 6 elements. If the matrix is NULL, no 
-      transformation is set. The default direction is no transformation. The origin 
+      transformation is set. The default is no transformation. The origin 
       is the left bottom corner of matrix. It returns the previous matrix, and the 
       returned vector is only valid until the following call to the function.</p>
     <p>The matrix contains scale, rotation and translation elements. It is applied after 
@@ -63,22 +55,33 @@ canvas:VectorTextTransform(matrix: table) -&gt; (old_matrix: table) [in Lua]&nbs
     <pre>|x'|   | scl_x*cos(ang)       -sin(ang)  trans_x |   |x|                     | 3   4   5| 
 |y'| = |       sin(ang)  scl_y*cos(ang)  trans_y | * |y|      with indices   | 0   1   2|
                                                      |1|</pre>
-    <pre class="function"><span class="mainFunction">void <a name="cdVectorTextSize">cdCanvasVectorTextSize</a>(cdCanvas* canvas, int w, int h, const char * text); [in C]</span>
-void wdCanvasVectorTextSize(cdCanvas* canvas, double size_x, double size_y, const char* text); (WC) [in C]
+  <p>It has the same effect of the <strong>
+  cdCanvasTransform,</strong> but notice that the indices are different.</p>
+    <pre class="function"><span class="mainFunction">void <a name="cdVectorTextSize">cdCanvasVectorTextSize</a>(cdCanvas* canvas, int width, int height, const char * text); [in C]</span>
+void wdCanvasVectorTextSize(cdCanvas* canvas, double width, double height, const char* text); [in C]
 
-canvas:VectorTextSize(w, h: number, text: string) [in Lua]
-canvas:wVectorTextSize(w, h: number, text: string) (WC) [in Lua]</pre>
-    <p>Modifies the scale of the vector text so that it corresponds to the string of 
-      the bounding box defined by <b><tt>w</tt></b> and <b><tt>h</tt></b>. It ignores 
-      strings with multiple lines.</p>
+canvas:VectorTextSize(width, height: number, text: string) [in Lua]
+canvas:wVectorTextSize(width, height: number, text: string) [in Lua]</pre>
+    <p>Modifies the font size of the vector text so that it fits the string in 
+      the box defined by <b><tt>width</tt></b> and <b><tt>height</tt></b>.</p>
     <pre class="function"><span class="mainFunction">double <a name="cdVectorCharSize">cdCanvasVectorCharSize</a>(cdCanvas* canvas, int size); [in C]</span>
-double wdCanvasVectorCharSize(double size); (WC) [in C]
+double wdCanvasVectorCharSize(cdCanvas* canvas, double size); [in C]
 
 canvas:VectorCharSize(size: number) -&gt; (old_size: number) [in Lua]
-canvas:wVectorCharSize(size: number) -&gt; (old_size: number) (WC) [in Lua]</pre>
-    <p>Sets the height of the characters and adjusts the width according to it. 
+canvas:wVectorCharSize(size: number) -&gt; (old_size: number) [in Lua]</pre>
+    <p>Modifies the font size by specifying the height of the characters. 
       Returns the previous value. <strong><tt>CD_QUERY</tt></strong> returns the 
       current value.</p>
+    <pre class="function"><span class="mainFunction">void <a name="cdVectorFontSize">cdCanvasVectorFontSize</a>(cdCanvas* canvas, double size_x, double size_x); [in C]</span>
+
+canvas:VectorFontSize(size_x, size_y: number) [in Lua]</pre>
+    <p>Directly modifies the font size. Set size_x==size_y to maintain the 
+	original aspect ratio of the font.</p>
+    <pre class="function"><span class="mainFunction">void <a name="cdGetVectorFontSize">cdCanvasGetVectorFontSize</a>(cdCanvas* canvas, double *size_x, double *size_x); [in C]</span>
+
+canvas:GetVectorFontSize() -&gt; (size_x, size_y: number) [in Lua]</pre>
+    <p>Returns the font size. It is not necessary to provide all return 
+	pointers, you can provide only the desired values and <font>NULL</font> for the others.</p>
     <pre class="function"><span class="mainFunction">char* <a name="cdVectorFont">cdCanvasVectorFont</a>(cdCanvas* canvas, const char *filename); [in C]</span>
 
 canvas:VectorFont(filename: string) -&gt; (fontname: string) [in Lua]</pre>
@@ -94,23 +97,38 @@ canvas:VectorFont(filename: string) -&gt; (fontname: string) [in Lua]</pre>
     to the default font and returns NULL. The file format is 
       compatible with the GKS file format (text mode).</p>
     <h3>Properties</h3>
-    <pre class="function"><span class="mainFunction">void <a name="cdGetVectorTextSize">cdCanvasGetVectorTextSize</a>(cdCanvas* canvas, const char* text, int *w, int *h); [in C]</span>
-void wdCanvasGetVectorTextSize(cdCanvas* canvas, const char* text, double *x, double *y); (WC) [in C]
+    <pre class="function"><span class="mainFunction">void <a name="cdGetVectorTextSize">cdCanvasGetVectorTextSize</a>(cdCanvas* canvas, const char* text, int *width, int *height); [in C]</span>
+void wdCanvasGetVectorTextSize(cdCanvas* canvas, const char* text, double *width, double *height); [in C]
 
-canvas:GetVectorTextSize(text: string) -&gt; (w, h: number) [in Lua]
-canvas:wGetVectorTextSize(text: string) -&gt; (w, h: number) (WC) [in Lua]</pre>
-    <p>Queries the string's bounding box. Ignores strings with multiple lines. It is 
+canvas:GetVectorTextSize(text: string) -&gt; (width, height: number) [in Lua]
+canvas:wGetVectorTextSize(text: string) -&gt; (width, height: number) [in Lua]</pre>
+    <p>Returns the text size independent from orientation. It is 
       not necessary to provide all return pointers, you can provide only the desired 
       values and <font>NULL</font> for the others.</p>
-    <pre class="function"><span class="mainFunction">void <a name="cdGetVectorTextBounds">cdCanvasGetVectorTextBounds</a>(cdCanvas* canvas, char* text, int px, int py, int *rect); [in C]</span>
-void wdCanvasGetVectorTextBounds(cdCanvas* canvas, char* text, double x, double y, double *rect); (WC) [in C]
+    <pre class="function"><span class="mainFunction">void <a name="cdGetVectorTextBounds">cdCanvasGetVectorTextBounds</a>(cdCanvas* canvas, char* text, int x, int y, int *rect); [in C]</span>
+void wdCanvasGetVectorTextBounds(cdCanvas* canvas, char* text, double x, double y, double *rect); [in C]
 
-canvas:GetVectorTextBounds(text: string, px,py: number) -&gt; (rect: table) [in Lua]
-canvas:wGetVectorTextBounds(text: string, px,py: number) -&gt; (rect: table) (WC) [in Lua] </pre>
-    <p>Returns the bounding rectangle of the text specified in the current vector 
-      font, alignment and direction. Eight values are returned, corresponding to 
-      pairs (x,y) of the rectangle's vertices ordered conter-clockwise, starting by 
-      the bottom left corner.</p>
+canvas:GetVectorTextBounds(text: string, x, y: number) -&gt; (rect: table) [in Lua]
+canvas:wGetVectorTextBounds(text: string, x, y: number) -&gt; (rect: table) [in Lua] </pre>
+
+  <p>Returns the oriented bounding rectangle occupied by a text at a given 
+	position. The rectangle has the same dimentions returned by <strong>
+	GetVectorTextSize</strong>. The rectangle corners are returned in counter-clock wise 
+  order starting with the bottom left corner, arranged (x0,y0,x1,y1,x2,y2,x3,y3).</p>
+
+
+<pre class="function"><span class="mainFunction">void <a name="cdGetVectorTextBox">cdCanvasGetVectorTextBox</a>(cdCanvas* canvas, int x, int y, const char* text, int *xmin, int *xmax, int *ymin, int *ymax); [in C]</span>
+void wdCanvasGetVectorTextBox(cdCanvas* canvas, double x, double y, const char* text, double *xmin, double *xmax, double *ymin, double *ymax); [in C]
+
+canvas:GetVectorTextBox(x, y: number, text: string) -&gt; (xmin, xmax, ymin, ymax: number) [in Lua]
+canvas:wGetVectorTextBox(x, y: number, text: string) -&gt; (xmin, xmax, ymin, ymax: number) [in Lua]</pre>
+
+  <p>Returns the horizontal bounding rectangle occupied by a text at a given 
+	position. If 
+	orientation is not 0 then its area is always larger than the area of the 
+	rectangle returned by <strong>GetVectorTextBounds</strong>. It is not necessary 
+  to provide all return pointers, you can provide only the desired values and <i><tt>NULL</tt></i> for the others.</p>
+
     <h3>Character Codes</h3>
     <p>The old GKS format contains ASCII codes so a convertion from ANSI to ASCII is 
       done when possible, unmapped characters are left unchanged, but some rearrage 

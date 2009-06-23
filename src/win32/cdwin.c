@@ -25,6 +25,8 @@ typedef BOOL (CALLBACK* AlphaBlendFunc)( HDC hdcDest,
                              BLENDFUNCTION ftn);
 static AlphaBlendFunc cdwAlphaBlend = NULL;
 
+static void cdgettextsize (cdCtxCanvas* ctxcanvas, const char *s, int *width, int *height);
+
 /*
 %F Libera memoria e handles alocados pelo driver Windows.
 */
@@ -967,7 +969,7 @@ static void sTextOutBlt(cdCtxCanvas* ctxcanvas, int px, int py, const char* s, i
   double cos_teta = cos(teta);
   double sin_teta = sin(teta);
   
-  cdCanvasGetTextSize(ctxcanvas->canvas, s, &w, &h);
+  cdgettextsize(ctxcanvas, s, &w, &h);
   wt = w;
   ht = h;
 
@@ -1163,7 +1165,7 @@ static void cdwCanvasGetTextHeight(cdCanvas* canvas, int x, int y, const char *s
   int w, h, ascent, height, baseline;
   int xmin, xmax, ymin, ymax;
   
-  cdCanvasGetTextSize(canvas, s, &w, &h);
+  cdgettextsize(canvas->ctxcanvas, s, &w, &h);
   cdCanvasGetFontDim(canvas, NULL, &height, &ascent, NULL);
   baseline = height - ascent;
 
@@ -1247,7 +1249,7 @@ static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s)
     {
       /* compensa deficiencia do alinhamento no windows */
       int off;
-      cdCanvasGetTextSize(ctxcanvas->canvas, s, NULL, &h);
+      cdgettextsize(ctxcanvas, s, NULL, &h);
       off = h/2 - ctxcanvas->font.descent;
 
       if (ctxcanvas->canvas->text_orientation != 0)

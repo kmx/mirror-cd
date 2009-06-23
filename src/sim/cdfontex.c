@@ -630,28 +630,16 @@ static void cdGetFontDimEx(int *max_width, int *line_height, int *ascent, int *d
 
 static void cdGetTextSizeEx(const char *s, int *width, int *height)
 {
-  int i = 0, numlin = 1, max_line_width = 0, line_width = 0;
+  int i = 0, w = 0;
 
   while (s[i] != '\0')
   {
-    if (s[i] == '\n')
-    {
-      numlin++;
-      line_width = 0;
-    }
-    else
-    {
-      line_width += font.CharWidth(s[i]);
-    }
-
-    if (line_width > max_line_width)
-      max_line_width = line_width;
-
+    w += font.CharWidth(s[i]);
     i++;
   }
 
-  if (height) *height = numlin * font.line_height;
-  if (width) *width = max_line_width;
+  if (height) *height = font.line_height;
+  if (width) *width = w;
 }
 
 void cdgetfontdimEX(cdCtxCanvas* ctxcanvas, int *max_width, int *height, int *ascent, int *descent)

@@ -223,6 +223,21 @@ int cdfCheckBoxSize(double *xmin, double *xmax, double *ymin, double *ymax)
   return 1;
 }
 
+void cdMovePoint(int *x, int *y, double dx, double dy, double sin_theta, double cos_theta)
+{
+  double t;
+  t = cos_theta*dx - sin_theta*dy;
+  *x += _cdRound(t);
+  t = sin_theta*dx + cos_theta*dy;
+  *y += _cdRound(t);
+}
+
+void cdfMovePoint(double *x, double *y, double dx, double dy, double sin_theta, double cos_theta)
+{
+  *x += cos_theta*dx - sin_theta*dy;
+  *y += sin_theta*dx + cos_theta*dy;
+}
+
 void cdRotatePoint(cdCanvas* canvas, int x, int y, int cx, int cy, int *rx, int *ry, double sin_theta, double cos_theta)
 {
   double t;
@@ -283,3 +298,38 @@ int cdStrEqualNoCase(const char* str1, const char* str2)
   return 0;
 }
 
+/* Copied from IUP3, simply ignore line breaks other than '\n' for CD */
+
+int cdStrLineCount(const char* str)
+{
+  int num_lin = 1;
+
+  if (!str)
+    return num_lin;
+
+  while(*str != 0)
+  {
+    while(*str!=0 && *str!='\n')
+      str++;
+
+    if (*str=='\n')   /* UNIX line end */
+    {
+      num_lin++;
+      str++;
+    }
+  }
+
+  return num_lin;
+}
+
+char* cdStrDup(const char *str)
+{
+  if (str)
+  {
+    int size = strlen(str)+1;
+    char *newstr = malloc(size);
+    if (newstr) memcpy(newstr, str, size);
+    return newstr;
+  }
+  return NULL;
+}

@@ -76,7 +76,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void* data)
   ctxcanvas->clip_pnt[3].y = ctxcanvas->clip_pnt[2].y = canvas->h - 1;
   
   /* Inicializacao de variaveis particulares para o WMF */
-  ctxcanvas->filename = strdup(filename);
+  ctxcanvas->filename = cdStrDup(filename);
 }
 
 static void cdinittable(cdCanvas* canvas)

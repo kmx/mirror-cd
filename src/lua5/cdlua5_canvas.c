@@ -1340,9 +1340,9 @@ static int cdlua5_textorientation(lua_State *L)
 }
 
 /***************************************************************************\
-* cd.FontDim() -> (max_width, max_height, ascent, descent: number)          *
+* cd.GetFontDim() -> (max_width, max_height, ascent, descent: number)          *
 \***************************************************************************/
-static int cdlua5_fontdim(lua_State *L)
+static int cdlua5_getfontdim(lua_State *L)
 {
   int max_width;
   int height;
@@ -1358,9 +1358,9 @@ static int cdlua5_fontdim(lua_State *L)
 }
 
 /***************************************************************************\
-* cd.wFontDim() -> (max_width, max_height, ascent, descent: number)         *
+* cd.wGetFontDim() -> (max_width, max_height, ascent, descent: number)         *
 \***************************************************************************/
-static int wdlua5_fontdim(lua_State *L)
+static int wdlua5_getfontdim(lua_State *L)
 {
   double max_width;
   double height;
@@ -1376,9 +1376,9 @@ static int wdlua5_fontdim(lua_State *L)
 }
 
 /***************************************************************************\
-* cd.TextSize(text: string) -> (width, heigth: number)                      *
+* cd.GetTextSize(text: string) -> (width, heigth: number)                      *
 \***************************************************************************/
-static int cdlua5_textsize(lua_State *L)
+static int cdlua5_gettextsize(lua_State *L)
 {
   int width;
   int height;
@@ -1389,9 +1389,9 @@ static int cdlua5_textsize(lua_State *L)
 }
 
 /***************************************************************************\
-* cd.wTextSize(text: string) -> (width, heigth: number)                     *
+* cd.wGetTextSize(text: string) -> (width, heigth: number)                     *
 \***************************************************************************/
-static int wdlua5_textsize(lua_State *L)
+static int wdlua5_gettextsize(lua_State *L)
 {
   double width;
   double height;
@@ -1402,9 +1402,9 @@ static int wdlua5_textsize(lua_State *L)
 }
 
 /****************************************************************************\
-* cd.TextBox(x, y: number, text: string) -> (xmin, xmax, ymin, ymax: number) *
+* cd.GetTextBox(x, y: number, text: string) -> (xmin, xmax, ymin, ymax: number) *
 \****************************************************************************/
-static int cdlua5_textbox(lua_State *L)
+static int cdlua5_gettextbox(lua_State *L)
 {
   int xmin, xmax, ymin, ymax;
   int x = luaL_checkint(L, 2);
@@ -1420,9 +1420,9 @@ static int cdlua5_textbox(lua_State *L)
 }
 
 /*****************************************************************************\
-* cd.wTextBox(x, y: number, text: string) -> (xmin, xmax, ymin, ymax: number) *
+* cd.wGetTextBox(x, y: number, text: string) -> (xmin, xmax, ymin, ymax: number) *
 \*****************************************************************************/
-static int wdlua5_textbox(lua_State *L)
+static int wdlua5_gettextbox(lua_State *L)
 {
   double xmin, xmax, ymin, ymax;
   double x = luaL_checknumber(L, 2);
@@ -1438,9 +1438,9 @@ static int wdlua5_textbox(lua_State *L)
 }
 
 /***************************************************************************************************************\
-* cd.TextBounds(x, y: number, text: string) -> (rect0, rect1, rect2, rect3, rect4, rect5, rect6, rect7: number) *
+* cd.GetTextBounds(x, y: number, text: string) -> (rect0, rect1, rect2, rect3, rect4, rect5, rect6, rect7: number) *
 \***************************************************************************************************************/
-static int cdlua5_textbounds(lua_State *L)
+static int cdlua5_gettextbounds(lua_State *L)
 {
   int rect[8];
   int x = luaL_checkint(L, 2);
@@ -1460,9 +1460,9 @@ static int cdlua5_textbounds(lua_State *L)
 }
 
 /****************************************************************************************************************\
-* cd.wTextBounds(x, y: number, text: string) -> (rect0, rect1, rect2, rect3, rect4, rect5, rect6, rect7: number) *
+* cd.wGetTextBounds(x, y: number, text: string) -> (rect0, rect1, rect2, rect3, rect4, rect5, rect6, rect7: number) *
 \****************************************************************************************************************/
-static int wdlua5_textbounds(lua_State *L)
+static int wdlua5_gettextbounds(lua_State *L)
 {
   double rect[8];
   double x = luaL_checknumber(L, 2);
@@ -1587,6 +1587,28 @@ static int cdlua5_vectortexttransform(lua_State *L)
 }
 
 /***************************************************************************\
+* cd.VectorFontSize(w, h: number, text: string)                             *
+\***************************************************************************/
+static int cdlua5_vectorfontsize(lua_State *L)
+{
+  cdCanvasVectorFontSize(cdlua_checkcanvas(L, 1), luaL_checknumber(L, 2), luaL_checknumber(L, 3));
+  return 0;
+}
+
+/***************************************************************************\
+* cd.GetVectorFontSize(text: string) -> (w, h: number)                     *
+\***************************************************************************/
+static int cdlua5_getvectorfontsize(lua_State *L)
+{
+  double width;
+  double height;
+  cdCanvasGetVectorFontSize(cdlua_checkcanvas(L, 1), &width, &height);
+  lua_pushnumber(L, width);
+  lua_pushnumber(L, height);
+  return 2;
+}
+
+/***************************************************************************\
 * cd.VectorTextSize(w, h: number, text: string)                             *
 \***************************************************************************/
 static int cdlua5_vectortextsize(lua_State *L)
@@ -1662,7 +1684,7 @@ static int wdlua5_getvectortextsize(lua_State *L)
 /***************************************************************************\
 * cd.GetVectorTextBounds(s: string, px,py: number) -> (rect: table)         *
 \***************************************************************************/
-static int cdlua5_vectortextbounds(lua_State *L)
+static int cdlua5_getvectortextbounds(lua_State *L)
 {
   const char* s = luaL_checkstring(L, 2);
   int x = luaL_checkint(L, 3);
@@ -1682,7 +1704,7 @@ static int cdlua5_vectortextbounds(lua_State *L)
 /***************************************************************************\
 * cd.wGetVectorTextBounds(s: string, px,py: number) -> (rect: table)        *
 \***************************************************************************/
-static int wdlua5_vectortextbounds(lua_State *L)
+static int wdlua5_getvectortextbounds(lua_State *L)
 {
   const char* s = luaL_checkstring(L, 2);
   double x = luaL_checknumber(L, 3);
@@ -1698,6 +1720,42 @@ static int wdlua5_vectortextbounds(lua_State *L)
     lua_rawseti(L, -2, i+1);
   }
   return 1;
+}
+
+/****************************************************************************\
+* cd.GetVectorTextBox(x, y: number, text: string) -> (xmin, xmax, ymin, ymax: number) *
+\****************************************************************************/
+static int cdlua5_getvectortextbox(lua_State *L)
+{
+  int xmin, xmax, ymin, ymax;
+  int x = luaL_checkint(L, 2);
+  int y = luaL_checkint(L, 3);
+  const char* s = luaL_checkstring(L, 4);
+
+  cdCanvasGetVectorTextBox(cdlua_checkcanvas(L, 1), x, y, s, &xmin, &xmax, &ymin, &ymax);
+  lua_pushnumber(L, xmin);
+  lua_pushnumber(L, xmax);
+  lua_pushnumber(L, ymin);
+  lua_pushnumber(L, ymax);
+  return 4;
+}
+
+/*****************************************************************************\
+* cd.wGetVectorTextBox(x, y: number, text: string) -> (xmin, xmax, ymin, ymax: number) *
+\*****************************************************************************/
+static int wdlua5_getvectortextbox(lua_State *L)
+{
+  double xmin, xmax, ymin, ymax;
+  double x = luaL_checknumber(L, 2);
+  double y =  luaL_checknumber(L, 3);
+  const char* s = luaL_checkstring(L, 4);
+
+  wdCanvasGetVectorTextBox(cdlua_checkcanvas(L, 1), x, y, s, &xmin, &xmax, &ymin, &ymax);
+  lua_pushnumber(L, xmin);
+  lua_pushnumber(L, xmax);
+  lua_pushnumber(L, ymin);
+  lua_pushnumber(L, ymax);
+  return 4;
 }
 
 
@@ -2249,14 +2307,14 @@ static const struct luaL_reg cdlib_canvas_meta[] = {
   {"NativeFont"      , cdlua5_nativefont},
   {"TextAlignment"   , cdlua5_textalignment},
   {"TextOrientation" , cdlua5_textorientation},
-  {"GetFontDim"         , cdlua5_fontdim},
-  {"wGetFontDim"        , wdlua5_fontdim},
-  {"GetTextSize"        , cdlua5_textsize},
-  {"wGetTextSize"       , wdlua5_textsize},
-  {"GetTextBox"         , cdlua5_textbox},
-  {"wGetTextBox"        , wdlua5_textbox},
-  {"GetTextBounds"      , cdlua5_textbounds},
-  {"wGetTextBounds"     , wdlua5_textbounds},
+  {"GetFontDim"         , cdlua5_getfontdim},
+  {"wGetFontDim"        , wdlua5_getfontdim},
+  {"GetTextSize"        , cdlua5_gettextsize},
+  {"wGetTextSize"       , wdlua5_gettextsize},
+  {"GetTextBox"         , cdlua5_gettextbox},
+  {"wGetTextBox"        , wdlua5_gettextbox},
+  {"GetTextBounds"      , cdlua5_gettextbounds},
+  {"wGetTextBounds"     , wdlua5_gettextbounds},
 
   /* Vector Text */
   {"VectorText"           , cdlua5_vectortext},
@@ -2266,6 +2324,8 @@ static const struct luaL_reg cdlib_canvas_meta[] = {
   {"VectorTextDirection"  , cdlua5_vectortextdirection},
   {"wVectorTextDirection" , wdlua5_vectortextdirection},
   {"VectorTextTransform"  , cdlua5_vectortexttransform},
+  {"VectorFontSize"       , cdlua5_vectorfontsize},
+  {"GetVectorFontSize"    , cdlua5_getvectorfontsize},
   {"VectorTextSize"       , cdlua5_vectortextsize},
   {"wVectorTextSize"      , wdlua5_vectortextsize},
   {"VectorCharSize"       , cdlua5_vectorcharsize},
@@ -2273,8 +2333,10 @@ static const struct luaL_reg cdlib_canvas_meta[] = {
   {"VectorFont"           , cdlua5_vectorfont},
   {"GetVectorTextSize"    , cdlua5_getvectortextsize},
   {"wGetVectorTextSize"   , wdlua5_getvectortextsize},
-  {"VectorTextBounds"     , cdlua5_vectortextbounds},
-  {"wVectorTextBounds"    , wdlua5_vectortextbounds},  
+  {"GetVectorTextBounds"  , cdlua5_getvectortextbounds},
+  {"wGetVectorTextBounds" , wdlua5_getvectortextbounds},  
+  {"GetVectorTextBox"     , cdlua5_getvectortextbox},
+  {"wGetVectorTextBox"    , wdlua5_getvectortextbox},  
   
   /* Client Images */
   {"GetImageRGB"      , cdlua5_getimagergb},

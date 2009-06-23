@@ -519,7 +519,7 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s)
   
   cgm_text( ctxcanvas->cgm, 1 /* final */ , (double)x, (double)y, s );
   
-  cdCanvasGetTextSize(ctxcanvas->canvas, s, &width, &height);
+  cdgettextsizeEX(ctxcanvas, s, &width, &height);
   
   settextbbox (ctxcanvas, (double) x, (double) y, width, height );
 }
@@ -530,7 +530,7 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s)
   
   cgm_text( ctxcanvas->cgm, 1 /* final */ , x, y, s );
   
-  cdCanvasGetTextSize(ctxcanvas->canvas, s, &width, &height);
+  cdgettextsizeEX(ctxcanvas, s, &width, &height);
   
   settextbbox (ctxcanvas, x, y, width, height );
 }

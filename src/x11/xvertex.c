@@ -48,16 +48,19 @@
 /* Debugging macros */
 
 #ifdef DEBUG
-static int debug=1;
+#define DEBUG_PRINT1(a) printf (a)
+#define DEBUG_PRINT2(a, b) printf (a, b)
+#define DEBUG_PRINT3(a, b, c) printf (a, b, c)
+#define DEBUG_PRINT4(a, b, c, d) printf (a, b, c, d)
+#define DEBUG_PRINT5(a, b, c, d, e) printf (a, b, c, d, e)
 #else
-static int debug=0;
+#define DEBUG_PRINT1(a) (a)
+#define DEBUG_PRINT2(a, b) (a, b)
+#define DEBUG_PRINT3(a, b, c) (a, b, c)
+#define DEBUG_PRINT4(a, b, c, d) (a, b, c, d)
+#define DEBUG_PRINT5(a, b, c, d, e) (a, b, c, d, e)
 #endif /*DEBUG*/
 
-#define DEBUG_PRINT1(a) if (debug) printf (a)
-#define DEBUG_PRINT2(a, b) if (debug) printf (a, b)
-#define DEBUG_PRINT3(a, b, c) if (debug) printf (a, b, c)
-#define DEBUG_PRINT4(a, b, c, d) if (debug) printf (a, b, c, d)
-#define DEBUG_PRINT5(a, b, c, d, e) if (debug) printf (a, b, c, d, e)
 
 
 /* ---------------------------------------------------------------------- */
@@ -126,28 +129,25 @@ static void XRotFreeTextItem(Display *dpy, RotatedTextItem *item);
 
 /* ---------------------------------------------------------------------- */
 
-
 /**************************************************************************/
-/* Routine to mimic `strdup()' (some machines don't have it)              */
+/* Routine to mimic `my_strdup()' (some machines don't have it)              */
 /**************************************************************************/
 
 static char *my_strdup(const char *str)
 {
   char *s;
+  int len;
   
   if(str==NULL)
     return NULL;
   
-  s=(char *)malloc((unsigned)(strlen(str)+1));
+  len = (int)strlen(str);
+  s=(char *)malloc((unsigned)(len+1));
   if(s!=NULL) 
-    strcpy(s, str);
+    memcpy(s, str, len+1);
   
   return s;
 }
-
-
-/* ---------------------------------------------------------------------- */
-
 
 /**************************************************************************/
 /* Routine to replace `strtok' : this one returns a zero length string if */
@@ -285,9 +285,9 @@ static int XRotDrawHorizontalString(Display *dpy, XFontStruct *font, Drawable dr
   str3=my_strtok(str1, str2);
   
   /* loop through each section in the string */
-  do {
-    XTextExtents(font, str3, strlen(str3), &dir, &asc, &desc,
-      &overall);
+  do 
+  {
+    XTextExtents(font, str3, strlen(str3), &dir, &asc, &desc, &overall);
     
     /* where to draw section in x ? */
     if(align==XR_TLEFT || align==XR_MLEFT || align==XR_BLEFT || align==XR_LEFT)
@@ -307,8 +307,7 @@ static int XRotDrawHorizontalString(Display *dpy, XFontStruct *font, Drawable dr
     yp+=height;
     
     str3=my_strtok((char *)NULL, str2);
-  }
-  while(str3!=NULL);
+  } while(str3!=NULL);
   
   free(str1);
   XFreeGC(dpy, my_gc);
@@ -525,8 +524,7 @@ static RotatedTextItem *XRotCreateTextItem(Display *dpy, XFontStruct *font, doub
   
   str3=my_strtok(str1, str2);
   
-  XTextExtents(font, str3, strlen(str3), &dir, &asc, &desc,
-    &overall);
+  XTextExtents(font, str3, strlen(str3), &dir, &asc, &desc, &overall);
   
   item->max_width=overall.rbearing;
   
@@ -1118,8 +1116,7 @@ XPoint *XRotTextExtents(Display* dpy, XFontStruct* font, double angle, int x, in
   
   str3=my_strtok(str1, str2);
   
-  XTextExtents(font, str3, strlen(str3), &dir, &asc, &desc,
-    &overall);
+  XTextExtents(font, str3, strlen(str3), &dir, &asc, &desc, &overall);
   
   max_width=overall.rbearing;
   
@@ -1221,13 +1218,6 @@ int XRotDrawString(Display* dpy, XFontStruct* font, double angle, Drawable drawa
   double sin_angle, cos_angle;
   RotatedTextItem *item;
   Pixmap bitmap_to_paint;
-  
-  /* return early for NULL/empty strings */
-  if(text==NULL)
-    return 0;
-  
-  if(strlen(text)==0)
-    return 0;
   
   /* manipulate angle to 0<=angle<360 degrees */
   while(angle<0)

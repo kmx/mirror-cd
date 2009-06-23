@@ -11,13 +11,14 @@
 #include <memory.h>
 #include <math.h>
 
-
 #include "cd.h"
 #include "cd_private.h"
 
 
 void cdCanvasText(cdCanvas* canvas, int x, int y, const char *s)
 {
+  int num_line;
+
   assert(canvas);
   assert(s);
   if (!_cdCheckCanvas(canvas)) return;
@@ -34,11 +35,83 @@ void cdCanvasText(cdCanvas* canvas, int x, int y, const char *s)
   if (canvas->invert_yaxis)
     y = _cdInvertYAxis(canvas, y);
 
-  canvas->cxText(canvas->ctxcanvas, x, y, s);
+  num_line = cdStrLineCount(s);
+  if (num_line == 1)
+    canvas->cxText(canvas->ctxcanvas, x, y, s);
+  else
+  {
+    int i, line_height;
+    char *p, *q, *new_s;
+    double cos_theta = 0, sin_theta = 0;
+
+    new_s = cdStrDup(s);
+    p = new_s;
+
+    canvas->cxGetFontDim(canvas->ctxcanvas, NULL, &line_height, NULL, NULL);
+
+    if (canvas->text_orientation)
+    {
+      int align = canvas->text_alignment;
+      cos_theta = cos(canvas->text_orientation*CD_DEG2RAD);
+      sin_theta = sin(canvas->text_orientation*CD_DEG2RAD);
+
+      /* position vertically at the first line */
+      if (align == CD_NORTH || align == CD_NORTH_EAST || align == CD_NORTH_WEST ||     /* it is relative to the full text */
+          align == CD_BASE_LEFT || align == CD_BASE_CENTER || align == CD_BASE_RIGHT)  /* it is relative to the first line already */
+      {
+        /* Already at position */
+      }
+      else if (align == CD_SOUTH || align == CD_SOUTH_EAST || align == CD_SOUTH_WEST)  /* it is relative to the full text */
+      {
+        cdMovePoint(&x, &y, 0, (num_line-1)*line_height, sin_theta, cos_theta);
+      }
+      else  /* CD_CENTER || CD_EAST || CD_WEST */                                      /* it is relative to the full text */
+        cdMovePoint(&x, &y, 0, (num_line-1)*line_height/2.0, sin_theta, cos_theta);
+    }
+    else
+    {
+      int align = canvas->text_alignment;
+
+      /* position vertically at the first line */
+      if (align == CD_NORTH || align == CD_NORTH_EAST || align == CD_NORTH_WEST ||     /* it is relative to the full text */
+          align == CD_BASE_LEFT || align == CD_BASE_CENTER || align == CD_BASE_RIGHT)  /* it is relative to the first line already */
+      {
+        /* Already at position */
+      }
+      else if (align == CD_SOUTH || align == CD_SOUTH_EAST || align == CD_SOUTH_WEST)  /* it is relative to the full text */
+      {
+        y += (num_line-1)*line_height;
+      }
+      else  /* CD_CENTER || CD_EAST || CD_WEST */                                      /* it is relative to the full text */
+        y += ((num_line-1)*line_height)/2;
+    }
+
+    for(i = 0; i < num_line; i++)
+    {
+      q = strchr(p, '\n');
+      if (q) *q = 0;  /* Cut the string to contain only one line */
+
+      /* Draw the line */
+      canvas->cxText(canvas->ctxcanvas, x, y, p);
+
+      /* Advance the string */
+      if (q) p = q + 1;
+
+      /* Advance a line */
+      if (canvas->text_orientation)
+        cdMovePoint(&x, &y, 0, -line_height, sin_theta, cos_theta);
+      else
+        y -= line_height;
+    }
+
+    free(new_s);
+  }
 }
 
 void cdfCanvasText(cdCanvas* canvas, double x, double y, const char *s)
 {
+  int num_line;
+
   assert(canvas);
   assert(s);
   if (!_cdCheckCanvas(canvas)) return;
@@ -55,10 +128,68 @@ void cdfCanvasText(cdCanvas* canvas, double x, double y, const char *s)
   if (canvas->invert_yaxis)
     y = _cdInvertYAxis(canvas, y);
 
-  if (canvas->cxFText)
-    canvas->cxFText(canvas->ctxcanvas, x, y, s);
+  num_line = cdStrLineCount(s);
+  if (num_line == 1)
+  {
+    if (canvas->cxFText)
+      canvas->cxFText(canvas->ctxcanvas, x, y, s);
+    else
+      canvas->cxText(canvas->ctxcanvas, _cdRound(x), _cdRound(y), s);
+  }
   else
-    canvas->cxText(canvas->ctxcanvas, _cdRound(x), _cdRound(y), s);
+  {
+    int i, line_height;
+    char *p, *q, *new_s;
+    double cos_theta = 0, sin_theta = 0;
+
+    new_s = cdStrDup(s);
+    p = new_s;
+
+    canvas->cxGetFontDim(canvas->ctxcanvas, NULL, &line_height, NULL, NULL);
+
+    if (canvas->text_orientation)
+    {
+      int align = canvas->text_alignment;
+      cos_theta = cos(canvas->text_orientation*CD_DEG2RAD);
+      sin_theta = sin(canvas->text_orientation*CD_DEG2RAD);
+
+      /* position vertically at the first line */
+      if (align == CD_NORTH || align == CD_NORTH_EAST || align == CD_NORTH_WEST ||     /* it is relative to the full text */
+          align == CD_BASE_LEFT || align == CD_BASE_CENTER || align == CD_BASE_RIGHT)  /* it is relative to the first line already */
+      {
+        /* Already at position */
+      }
+      else if (align == CD_SOUTH || align == CD_SOUTH_EAST || align == CD_SOUTH_WEST)  /* it is relative to the full text */
+      {
+        cdfMovePoint(&x, &y, 0, (num_line-1)*line_height, sin_theta, cos_theta);
+      }
+      else  /* CD_CENTER || CD_EAST || CD_WEST */                                      /* it is relative to the full text */
+        cdfMovePoint(&x, &y, 0, (num_line-1)*line_height/2.0, sin_theta, cos_theta);
+    }
+
+    for(i = 0; i < num_line; i++)
+    {
+      q = strchr(p, '\n');
+      if (q) *q = 0;  /* Cut the string to contain only one line */
+
+      /* Draw the line */
+      if (canvas->cxFText)
+        canvas->cxFText(canvas->ctxcanvas, x, y, p);
+      else
+        canvas->cxText(canvas->ctxcanvas, _cdRound(x), _cdRound(y), p);
+
+      /* Advance the string */
+      if (q) p = q + 1;
+
+      /* Advance a line */
+      if (canvas->text_orientation)
+        cdfMovePoint(&x, &y, 0, -line_height, sin_theta, cos_theta);
+      else
+        y -= line_height;
+    }
+
+    free(new_s);
+  }
 }
 
 int cdGetFontSizePixels(cdCanvas* canvas, int size)
@@ -96,6 +227,7 @@ int cdCanvasFont(cdCanvas* canvas, const char* type_face, int style, int size)
   assert(canvas);
   assert(style>=-1 && style<=CD_STRIKEOUT);
   if (!_cdCheckCanvas(canvas)) return CD_ERROR;
+
   if (!type_face || type_face[0]==0)
     type_face = canvas->font_type_face;
   if (style==-1)
@@ -235,10 +367,43 @@ void cdCanvasGetFontDim(cdCanvas* canvas, int *max_width, int *height, int *asce
 
 void cdCanvasGetTextSize(cdCanvas* canvas, const char *s, int *width, int *height)
 {
+  int num_line;
+
   assert(canvas);
   assert(s);
   if (!_cdCheckCanvas(canvas)) return;
-  canvas->cxGetTextSize(canvas->ctxcanvas, s, width, height);
+
+  num_line = cdStrLineCount(s);
+  if (num_line == 1)
+    canvas->cxGetTextSize(canvas->ctxcanvas, s, width, height);
+  else
+  {
+    int i, line_height, max_w = 0, w;
+    char *p, *q, *new_s;
+
+    new_s = cdStrDup(s);
+    p = new_s;
+
+    canvas->cxGetFontDim(canvas->ctxcanvas, NULL, &line_height, NULL, NULL);
+
+    for(i = 0; i < num_line; i++)
+    {
+      q = strchr(p, '\n');
+      if (q) *q = 0;  /* Cut the string to contain only one line */
+
+      /* Calculate line width */
+      canvas->cxGetTextSize(canvas->ctxcanvas, p, &w, NULL);
+      if (w > max_w) max_w = w;
+
+      /* Advance the string */
+      if (q) p = q + 1;
+    }
+
+    if (width) *width = max_w;
+    if (height) *height = num_line*line_height;
+
+    free(new_s);
+  }
 }
 
 void cdTextTranslatePoint(cdCanvas* canvas, int x, int y, int w, int h, int baseline, int *rx, int *ry)
@@ -306,6 +471,13 @@ void cdCanvasGetTextBounds(cdCanvas* canvas, int x, int y, const char *s, int *r
   int w, h, ascent, height, baseline;
   int xmin, xmax, ymin, ymax;
   int old_invert_yaxis = canvas->invert_yaxis;
+
+  assert(canvas);
+  assert(s);
+  if (!_cdCheckCanvas(canvas)) return;
+
+  if (s[0] == 0)
+    return;
   
   cdCanvasGetTextSize(canvas, s, &w, &h);
   cdCanvasGetFontDim(canvas, NULL, &height, &ascent, NULL);

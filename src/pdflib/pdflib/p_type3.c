@@ -633,7 +633,7 @@ pdf__begin_glyph(
         /* see comment in p_font.c for explanation */
         glyph->width = 1000 * wx * font->ft.matrix.a;
 
-        /* if the strdup above fails, cleanup won't touch this slot. */
+        /* if the pdc_strdup above fails, cleanup won't touch this slot. */
         t3font->next_glyph++;
     }
     glyph->pass = t3font->pass;

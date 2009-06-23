@@ -1021,7 +1021,7 @@ int cgmt_txftin ( void )   /* text font index */
 
  font = (char *) cgm_GetList ( intcgm_text_att.font_list, intcgm_text_att.font_index );
 
- if ( font==NULL ) font = (char*)strdup ( "SYSTEM" );
+ if ( font==NULL ) font = "SYSTEM";
 
  intcgm_text_att.font = 0;
  for ( i=0; font_array[i]!=NULL; i++ )

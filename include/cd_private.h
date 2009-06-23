@@ -268,6 +268,8 @@ int cdfCheckBoxSize(double *xmin, double *xmax, double *ymin, double *ymax);
 void cdNormalizeLimits(int w, int h, int *xmin, int *xmax, int *ymin, int *ymax);
 int cdGetFileName(const char* strdata, char* filename);
 int cdStrEqualNoCase(const char* str1, const char* str2);
+int cdStrLineCount(const char* str);
+char* cdStrDup(const char* str);
 
 #define _cdCheckCanvas(_canvas) (_canvas!=NULL && ((unsigned char*)_canvas)[0] == 'C' && ((unsigned char*)_canvas)[1] == 'D')
 #define _cdInvertYAxis(_canvas, _y) (_canvas->h - (_y) - 1)
@@ -286,6 +288,8 @@ void cdMatrixInverse(const double* matrix, double* inv_matrix);
 void cdRotatePoint(cdCanvas* canvas, int x, int y, int cx, int cy, int *rx, int *ry, double sin_teta, double cos_teta);
 void cdRotatePointY(cdCanvas* canvas, int x, int y, int cx, int cy, int *ry, double sin_theta, double cos_theta);
 void cdTextTranslatePoint(cdCanvas* canvas, int x, int y, int w, int h, int baseline, int *rx, int *ry);
+void cdMovePoint(int *x, int *y, double dx, double dy, double sin_theta, double cos_theta);
+void cdfMovePoint(double *x, double *y, double dx, double dy, double sin_theta, double cos_theta);
 
 /*************/
 /*   Fonts   */

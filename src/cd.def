@@ -232,6 +232,7 @@ EXPORTS
   wdCanvasGetTextBox
   wdCanvasGetTextSize
   wdCanvasGetVectorTextBounds
+  wdCanvasGetVectorTextBox
   wdCanvasGetVectorTextSize
   wdCanvasGetViewport
   wdCanvasGetWindow
@@ -289,6 +290,8 @@ EXPORTS
   cdCanvasPlay
   cdCanvasRegionCombineMode
   cdCanvasVectorCharSize
+  cdCanvasVectorFontSize
+  cdCanvasGetVectorFontSize
   cdCanvasWriteMode
   cdCanvasUpdateYAxis
   cdCanvasInvertYAxis
@@ -324,6 +327,7 @@ EXPORTS
   cdCanvasGetTextBox
   cdCanvasGetTextSize
   cdCanvasGetVectorTextBounds
+  cdCanvasGetVectorTextBox
   cdCanvasGetVectorTextSize
   cdCanvasLine
   cdCanvasLineStyleDashes

@@ -66,6 +66,7 @@ double wdCanvasVectorCharSize(cdCanvas* canvas, double size);
 void wdCanvasVectorText(cdCanvas* canvas, double x, double y, const char* s);
 void wdCanvasMultiLineVectorText(cdCanvas* canvas, double x, double y, const char* s);
 void wdCanvasGetVectorTextBounds(cdCanvas* canvas, const char* s, double x, double y, double *rect);
+void wdCanvasGetVectorTextBox(cdCanvas* canvas, double x, double y, const char *s, double *xmin, double *xmax, double *ymin, double *ymax);
 
 #ifdef __cplusplus
 }

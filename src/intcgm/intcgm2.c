@@ -1171,7 +1171,7 @@ int cgmb_r ( double *d )
 
 int cgmb_s ( char **str )
 {
- register unsigned i;
+ register unsigned i = 0;
  unsigned char l;
  unsigned short l1;
  unsigned short cont;
@@ -1206,9 +1206,7 @@ int cgmb_s ( char **str )
   }
  s[i] = '\0';
 
- *str = (char*)strdup ( s );
-
- free ( s );
+ *str = s;
 
  return 0;
 }

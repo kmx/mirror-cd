@@ -18,8 +18,8 @@
 #include "cdirgb.h"
 
 /* This appears only here to avoid changing the cd.h header fo bug fixes */
-#define CD_VERSION_FIX ""
-#define CD_VERSION_FIX_NUMBER 0
+#define CD_VERSION_FIX ".1"
+#define CD_VERSION_FIX_NUMBER 1
 
 const char cd_ident[] =
   "$CD: " CD_VERSION CD_VERSION_FIX " " CD_COPYRIGHT " $\n"
@@ -46,7 +46,6 @@ int cdVersionNumber(void)
 
 static void cd_setdefaultfunc(cdCanvas* canvas)
 {
-  /* default simulation functions */
   canvas->cxGetTextSize = cdgettextsizeEX;
   canvas->cxGetFontDim = cdgetfontdimEX;
   canvas->cxRect = cdrectSIM;
@@ -161,7 +160,7 @@ cdCanvas *cdCreateCanvas(cdContext* context, void *data_str)
     return NULL;
   }
 
-  /* functions that can do nothing, must be before InitTable */
+  /* default simulation functions */
   cd_setdefaultfunc(canvas);
 
   /* initialize canvas table */
@@ -257,7 +256,10 @@ int cdCanvasSimulate(cdCanvas* canvas, int mode)
   if (mode == CD_QUERY || cdCanvasGetContext(canvas) == CD_IMAGERGB)
     return sim_mode;
 
+  /* default simulation functions */
   cd_setdefaultfunc(canvas);
+
+  /* initialize canvas table */
   context->cxInitTable(canvas);
 
   canvas->sim_mode = mode;

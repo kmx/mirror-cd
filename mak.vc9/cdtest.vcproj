@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="8.00"
+	Version="9,00"
 	Name="cdtest"
 	ProjectGUID="{A7E49FB8-700A-45EC-9174-FB1C2C7E83C9}"
+	TargetFrameworkVersion="0"
 	>
 	<Platforms>
 		<Platform
@@ -46,7 +47,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\include,..\..\..\iup\include"
+				AdditionalIncludeDirectories="..\include,..\..\iup\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;CDTEST_WIN32;_CRT_SECURE_NO_DEPRECATE"
 				RuntimeLibrary="1"
 				PrecompiledHeaderFile="..\obj/cdtest.pch"
@@ -71,14 +72,14 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="comctl32.lib cd.lib cdiup.lib cdgdiplus.lib iup.lib gdiplus.lib cdpdflib.lib"
+				AdditionalDependencies="freetype6.lib comctl32.lib cd.lib iupcd.lib cdgdiplus.lib iup.lib iupwin.lib gdiplus.lib cdpdflib.lib pdflib.lib"
 				OutputFile="..\bin/cdtest.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\..\lib,..\..\..\iup\lib"
+				AdditionalLibraryDirectories="..\lib,..\..\iup\lib"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="..\bin/cdtest.pdb"
-				SubSystem="2"
+				SubSystem="1"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -99,9 +100,6 @@
 				Name="VCAppVerifierTool"
 			/>
 			<Tool
-				Name="VCWebDeploymentTool"
-			/>
-			<Tool
 				Name="VCPostBuildEventTool"
 			/>
 		</Configuration>
@@ -114,35 +112,35 @@
 			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
 			<File
-				RelativePath="Cdtest.c"
+				RelativePath="..\test\cdtest\cdtest.c"
 				>
 			</File>
 			<File
-				RelativePath=".\cdtest.led"
+				RelativePath="..\test\cdtest\cdtest.led"
 				>
 			</File>
 			<File
-				RelativePath="cdtest.rc"
+				RelativePath="..\test\cdtest\cdtest.rc"
 				>
 			</File>
 			<File
-				RelativePath="cdtest_led.c"
+				RelativePath="..\test\cdtest\cdtest_led.c"
 				>
 			</File>
 			<File
-				RelativePath="Colorbar.c"
+				RelativePath="..\test\cdtest\colorbar.c"
 				>
 			</File>
 			<File
-				RelativePath="Drivers.c"
+				RelativePath="..\test\cdtest\drivers.c"
 				>
 			</File>
 			<File
-				RelativePath="List.c"
+				RelativePath="..\test\cdtest\list.c"
 				>
 			</File>
 			<File
-				RelativePath="Rubber.c"
+				RelativePath="..\test\cdtest\rubber.c"
 				>
 			</File>
 		</Filter>
@@ -151,7 +149,7 @@
 			Filter="h;hpp;hxx;hm;inl"
 			>
 			<File
-				RelativePath="Cdtest.h"
+				RelativePath="..\test\cdtest\cdtest.h"
 				>
 			</File>
 		</Filter>

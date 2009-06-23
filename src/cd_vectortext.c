@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 
 #include "cd.h"
 #include "wd.h"
@@ -30,17 +31,18 @@ typedef struct cdCaracter
 
 struct _cdVectorFont
 {
+  /* font data */
   char name[256];         /* font name */
-  char file_name[10240];   /* font file name */
+  char file_name[10240];  /* font file name */
   cdCaracter *chars;      /* array of characters */
-
   int top,                /* from baseline to top */
-      cap,                /* from baseline to cap (top of chars) */
-      half,               /* half between top and bottom UNUSED */
+      cap,                /* from baseline to cap (UNUSED) */
+      half,               /* half between top and bottom (UNUSED) */
       bottom;             /* from baseline to bottom (negative) */
-  double point_size_x, point_size_y; /* internal char size proportional to "top" */
+
+  /* attributes (independ from font) */
+  double size_x, size_y;             /* internal font size */
   double current_cos, current_sin;   /* text direction */
-  int space, line_space;             /* space between chars and vf_lines */
 
   /* general transformation matrix */
   int text_transf;
@@ -4206,12 +4208,6 @@ static void vf_setdefaultfont(cdVectorFont *vector_font)
   vector_font->cap          = vf_default_cap;
   vector_font->half         = vf_default_half;
   vector_font->bottom       = vf_default_bottom;
-  vector_font->point_size_x = 1.0;
-  vector_font->point_size_y = 1.0;
-  vector_font->current_cos  = 1.0;
-  vector_font->current_sin  = 0.0;
-  vector_font->space        = 1;
-  vector_font->line_space   = 1;
 }
 
 static int vf_readfontfile(FILE *file, cdVectorFont *vector_font)
@@ -4293,7 +4289,7 @@ static int vf_readfontstring(const char* file, cdVectorFont *vector_font)
     sprintf(vector_font->name, "Unknown");
   }
 
-  /* skip 2 blank vf_lines */
+  /* skip 2 blank lines */
   file = strstr(file, "\n")+1; /* goto next line */
   file = strstr(file, "\n")+1; /* goto next line */
 
@@ -4335,27 +4331,28 @@ static int vf_readfontstring(const char* file, cdVectorFont *vector_font)
   return 1;
 }
 
-static int vf_primlen(cdVectorFont *vector_font, const char* s)
+static int vf_textwidth(cdVectorFont *vector_font, const char* s)
 {
-  int len = 0;
+  int width = 0;
   while (*s)
-    len += vector_font->chars[(unsigned char)(*(s++))].right + vector_font->space;
-  return len;
+    width += vector_font->chars[(unsigned char)(*(s++))].right;
+  if (width==0) width = 1;
+  return width;
 }
 
-static void vf_move_dir(cdVectorFont *vector_font, int *px, int *py, double dx, double dy)
+static void vf_move_dir(cdVectorFont *vector_font, int *x, int *y, double dx, double dy)
 {
-  *px += cdRound(vector_font->current_cos*dx - vector_font->current_sin*dy);
-  *py += cdRound(vector_font->current_sin*dx + vector_font->current_cos*dy);
+  *x += cdRound(vector_font->current_cos*dx - vector_font->current_sin*dy);
+  *y += cdRound(vector_font->current_sin*dx + vector_font->current_cos*dy);
 }
 
-static void vf_wmove_dir(cdVectorFont *vector_font, double *px, double *py, double dx, double dy)
+static void vf_wmove_dir(cdVectorFont *vector_font, double *x, double *y, double dx, double dy)
 {
-  *px += vector_font->current_cos*dx - vector_font->current_sin*dy;
-  *py += vector_font->current_sin*dx + vector_font->current_cos*dy;
+  *x += vector_font->current_cos*dx - vector_font->current_sin*dy;
+  *y += vector_font->current_sin*dx + vector_font->current_cos*dy;
 }
 
-static void vf_writechar(cdVectorFont *vector_font, char c, int *px, int *py)
+static void vf_draw_char(cdVectorFont *vector_font, char c, int *x, int *y)
 {
   unsigned char ac = vf_ansi2ascii[(unsigned char)c];
   cdOperation *current = vector_font->chars[ac].op;
@@ -4363,8 +4360,8 @@ static void vf_writechar(cdVectorFont *vector_font, char c, int *px, int *py)
 
   for(m = 0; m < op; m++)
   {
-    int ponto_x = *px;
-    int ponto_y = *py;
+    int px = *x;
+    int py = *y;
 
     if (current->operation == 'm')
     {
@@ -4372,23 +4369,23 @@ static void vf_writechar(cdVectorFont *vector_font, char c, int *px, int *py)
       cdCanvasBegin(vector_font->canvas, CD_OPEN_LINES);
     }
 
-    vf_move_dir(vector_font, &ponto_x, &ponto_y, current->x*vector_font->point_size_x, current->y*vector_font->point_size_y);
+    vf_move_dir(vector_font, &px, &py, current->x*vector_font->size_x, current->y*vector_font->size_y);
 
     if (vector_font->text_transf)
     {
-      double aux = ponto_x*vector_font->text_matrix[3] + ponto_y*vector_font->text_matrix[4] + vector_font->text_matrix[5];
-      ponto_y = cdRound(ponto_x*vector_font->text_matrix[0] + ponto_y*vector_font->text_matrix[1] + vector_font->text_matrix[2]);
-      ponto_x = _cdRound(aux);
+      double aux = px*vector_font->text_matrix[3] + py*vector_font->text_matrix[4] + vector_font->text_matrix[5];
+      py = cdRound(px*vector_font->text_matrix[0] + py*vector_font->text_matrix[1] + vector_font->text_matrix[2]);
+      px = _cdRound(aux);
     }
 
-    cdCanvasVertex(vector_font->canvas, ponto_x, ponto_y);
+    cdCanvasVertex(vector_font->canvas, px, py);
     current++; 
   }
 
   if (m) cdCanvasEnd(vector_font->canvas);
 }
 
-static void vf_wwritechar(cdVectorFont *vector_font, char c, double *px, double *py)
+static void vf_wdraw_char(cdVectorFont *vector_font, char c, double *x, double *y)
 {
   unsigned char ac = vf_ansi2ascii[(unsigned char)c];
   cdOperation *current = vector_font->chars[ac].op;
@@ -4396,8 +4393,8 @@ static void vf_wwritechar(cdVectorFont *vector_font, char c, double *px, double 
 
   for(m = 0; m < op; m++)
   {
-    double ponto_x = *px;
-    double ponto_y = *py;
+    double px = *x;
+    double py = *y;
 
     if (current->operation == 'm')
     {
@@ -4405,146 +4402,214 @@ static void vf_wwritechar(cdVectorFont *vector_font, char c, double *px, double 
       cdCanvasBegin(vector_font->canvas, CD_OPEN_LINES);
     }
 
-    vf_wmove_dir(vector_font, &ponto_x, &ponto_y, current->x*vector_font->point_size_x, current->y*vector_font->point_size_y);
+    vf_wmove_dir(vector_font, &px, &py, current->x*vector_font->size_x, current->y*vector_font->size_y);
 
     if (vector_font->text_transf)
     {
-      double aux = ponto_x*vector_font->text_matrix[3] + ponto_y*vector_font->text_matrix[4] + vector_font->text_matrix[5];
-      ponto_y = ponto_x*vector_font->text_matrix[0] + ponto_y*vector_font->text_matrix[1] + vector_font->text_matrix[2];
-      ponto_x = aux;
+      double aux = px*vector_font->text_matrix[3] + py*vector_font->text_matrix[4] + vector_font->text_matrix[5];
+      py = px*vector_font->text_matrix[0] + py*vector_font->text_matrix[1] + vector_font->text_matrix[2];
+      px = aux;
     }
 
-    wdCanvasVertex(vector_font->canvas, ponto_x, ponto_y);
+    wdCanvasVertex(vector_font->canvas, px, py);
     current++;
   }
 
   if (m) cdCanvasEnd(vector_font->canvas);
 }
 
-static int vf_lines(char * s)
+static void vf_move_to_base(cdVectorFont *vector_font, int *x, int *y, int width)
 {
-  int n = 1;
-  while (*s != 0)
-  {
-    if (*s == '\n')
-    {
-      n++;
-      *s = 0;
-    }
-    s++;
-  }
-  return n;
-}
-
-static void vf_basic_write(cdVectorFont *vector_font, const char* s, int px, int py)
-{
-  while (*s)
-  {
-    vf_writechar(vector_font, *s, &px, &py);
-    vf_move_dir(vector_font, &px, &py, (vector_font->chars[(unsigned char)*s].right + vector_font->space)*vector_font->point_size_x, 0);
-    s++;
-  }
-}
-
-static void vf_wbasic_write(cdVectorFont *vector_font, const char* s, double px, double py)
-{
-  while (*s)
-  {
-    vf_wwritechar(vector_font, *s, &px, &py);
-    vf_wmove_dir(vector_font, &px, &py, (vector_font->chars[(unsigned char)*s].right + vector_font->space)*vector_font->point_size_x, 0);
-    s++;
-  }
-}
-
-static void vf_calc_pos(cdVectorFont *vector_font, int *px, int *py, int prim_len)
-{
-  int align = cdCanvasTextAlignment(vector_font->canvas, CD_QUERY);
+  /* move point to baseline/left according to alignment */
+  int align = vector_font->canvas->text_alignment;
 
   if (align == CD_NORTH || align == CD_NORTH_EAST || align == CD_NORTH_WEST)
   {
-    vf_move_dir(vector_font, px, py, 0, -vector_font->top*vector_font->point_size_y);
+    vf_move_dir(vector_font, x, y, 0, -vector_font->top*vector_font->size_y);
   }
   else if (align == CD_SOUTH || align == CD_SOUTH_EAST || align == CD_SOUTH_WEST)
   {
-    vf_move_dir(vector_font, px, py, 0, -vector_font->bottom*vector_font->point_size_y);  /* bottom is < 0 */
+    vf_move_dir(vector_font, x, y, 0, -vector_font->bottom*vector_font->size_y);  /* bottom is < 0 */
   }
   else if (align == CD_BASE_CENTER || align == CD_BASE_LEFT || align == CD_BASE_RIGHT)
   {
-    /* py = py; */
+    /* y = y; */
   }
-  else /* center em y */
-    vf_move_dir(vector_font, px, py, 0, -(double)(vector_font->cap+vector_font->bottom)/2*vector_font->point_size_y);
+  else /* CD_CENTER || CD_EAST || CD_WEST */
+    vf_move_dir(vector_font, x, y, 0, -((double)(vector_font->top+vector_font->bottom)/2.0)*vector_font->size_y);
 
   if (align == CD_EAST || align == CD_NORTH_EAST || align == CD_SOUTH_EAST || align == CD_BASE_RIGHT)
   {
-    vf_move_dir(vector_font, px, py, -prim_len*vector_font->point_size_x, 0);
+    vf_move_dir(vector_font, x, y, -width*vector_font->size_x, 0);
   }
   else if (align == CD_WEST || align == CD_NORTH_WEST || align == CD_SOUTH_WEST || align == CD_BASE_LEFT)
   {
-    ; /* px = px; */
+    /* x = x; */
   }
-  else /* center em x */
-    vf_move_dir(vector_font, px, py, -(prim_len*vector_font->point_size_x)/2, 0);
+  else /* CD_CENTER || CD_NORTH || CD_SOUTH */
+  {
+    vf_move_dir(vector_font, x, y, -(width*vector_font->size_x)/2.0, 0);
+  }
 }
 
-static void vf_wcalc_pos(cdVectorFont *vector_font, double *px, double *py, int prim_len)
+static void vf_wmove_to_base(cdVectorFont *vector_font, double *x, double *y, int width)
 {
-  int align = cdCanvasTextAlignment(vector_font->canvas, CD_QUERY);
+  /* move point to baseline/left according to alignment */
+  int align = vector_font->canvas->text_alignment;
 
   if (align == CD_NORTH || align == CD_NORTH_EAST || align == CD_NORTH_WEST)
   {
-    vf_wmove_dir(vector_font, px, py, 0, -vector_font->top*vector_font->point_size_y);
+    vf_wmove_dir(vector_font, x, y, 0, -vector_font->top*vector_font->size_y);
   }
   else if (align == CD_SOUTH || align == CD_SOUTH_EAST || align == CD_SOUTH_WEST)
   {
-    vf_wmove_dir(vector_font, px, py, 0, -vector_font->bottom*vector_font->point_size_y);  /* bottom is < 0 */
+    vf_wmove_dir(vector_font, x, y, 0, -vector_font->bottom*vector_font->size_y);  /* bottom is < 0 */
   }
   else if (align == CD_BASE_CENTER || align == CD_BASE_LEFT || align == CD_BASE_RIGHT)
   {
-    /* py = py; */
+    /* y = y; */
   }
-  else /* center em y */
-    vf_wmove_dir(vector_font, px, py, 0, -(double)(vector_font->cap+vector_font->bottom)/2*vector_font->point_size_y);
+  else /* CD_CENTER || CD_EAST || CD_WEST */
+    vf_wmove_dir(vector_font, x, y, 0, -((double)(vector_font->top+vector_font->bottom)/2.0)*vector_font->size_y);
 
   if (align == CD_EAST || align == CD_NORTH_EAST || align == CD_SOUTH_EAST || align == CD_BASE_RIGHT)
   {
-    vf_wmove_dir(vector_font, px, py, -prim_len*vector_font->point_size_x, 0);
+    vf_wmove_dir(vector_font, x, y, -width*vector_font->size_x, 0);
   }
   else if (align == CD_WEST || align == CD_NORTH_WEST || align == CD_SOUTH_WEST || align == CD_BASE_LEFT)
   {
-    ; /* px = px; */
+    /* x = x; */
   }
-  else /* center em x */
-    vf_wmove_dir(vector_font, px, py, -(prim_len*vector_font->point_size_x)/2, 0);
-}
-
-static void vf_calc_point(cdVectorFont *vector_font, int startx, int starty, int *px, int *py, int dx, int dy)
-{
-  *px = startx;
-  *py = starty;
-  vf_move_dir(vector_font, px, py, dx, dy);
-
-  if (vector_font->text_transf)
+  else /* CD_CENTER || CD_NORTH || CD_SOUTH */
   {
-    double aux = *px * vector_font->text_matrix[3] + *py * vector_font->text_matrix[4] + vector_font->text_matrix[5];
-    *py = cdRound(*px * vector_font->text_matrix[0] + *py * vector_font->text_matrix[1] + vector_font->text_matrix[2]);
-    *px = _cdRound(aux);
+    vf_wmove_dir(vector_font, x, y, -(width*vector_font->size_x)/2.0, 0);
   }
 }
 
-static void vf_wcalc_point(cdVectorFont *vector_font, double startx, double starty, double *px, double *py, double dx, double dy)
+static void vf_draw_text(cdVectorFont* vector_font, int x, int y, const char* s, int width)
 {
-  *px = startx;
-  *py = starty;
+  vf_move_to_base(vector_font, &x, &y, width);
 
-  vf_wmove_dir(vector_font, px, py, dx, dy);
+  while (*s)
+  {
+    vf_draw_char(vector_font, *s, &x, &y);
+    vf_move_dir(vector_font, &x, &y, (vector_font->chars[(unsigned char)*s].right)*vector_font->size_x, 0);
+    s++;
+  }
+}
+
+static void vf_wdraw_text(cdVectorFont* vector_font, double x, double y, const char* s, int width)
+{
+  vf_wmove_to_base(vector_font, &x, &y, width);
+
+  while (*s)
+  {
+    vf_wdraw_char(vector_font, *s, &x, &y);
+    vf_wmove_dir(vector_font, &x, &y, (vector_font->chars[(unsigned char)*s].right)*vector_font->size_x, 0);
+    s++;
+  }
+}
+
+static void vf_calc_point(cdVectorFont *vector_font, int start_x, int start_y, int *x, int *y, int dx, int dy)
+{
+  *x = start_x;
+  *y = start_y;
+
+  vf_move_dir(vector_font, x, y, dx, dy);
 
   if (vector_font->text_transf)
   {
-    double aux = *px * vector_font->text_matrix[3] + *py * vector_font->text_matrix[4] + vector_font->text_matrix[5];
-    *py = *px * vector_font->text_matrix[0] + *py * vector_font->text_matrix[1] + vector_font->text_matrix[2];
-    *px = aux;
+    double aux = *x * vector_font->text_matrix[3] + *y * vector_font->text_matrix[4] + vector_font->text_matrix[5];
+    *y = cdRound(*x * vector_font->text_matrix[0] + *y * vector_font->text_matrix[1] + vector_font->text_matrix[2]);
+    *x = _cdRound(aux);
   }
+}
+
+static void vf_wcalc_point(cdVectorFont *vector_font, double start_x, double start_y, double *x, double *y, double dx, double dy)
+{
+  *x = start_x;
+  *y = start_y;
+
+  vf_wmove_dir(vector_font, x, y, dx, dy);
+
+  if (vector_font->text_transf)
+  {
+    double aux = *x * vector_font->text_matrix[3] + *y * vector_font->text_matrix[4] + vector_font->text_matrix[5];
+    *y = *x * vector_font->text_matrix[0] + *y * vector_font->text_matrix[1] + vector_font->text_matrix[2];
+    *x = aux;
+  }
+}
+
+static int vf_gettextmaxwidth(cdVectorFont* vector_font, const char* s, int num_lin)
+{
+  int i, max_w = 0, w;
+  char *p, *q, *new_s;
+
+  new_s = cdStrDup(s);
+  p = new_s;
+
+  for(i = 0; i < num_lin; i++)
+  {
+    q = strchr(p, '\n');
+    if (q) *q = 0;  /* Cut the string to contain only one line */
+
+    /* Calculate line width */
+    w = vf_textwidth(vector_font, p);
+    if (w > max_w) max_w = w;
+
+    /* Advance the string */
+    if (q) p = q + 1;
+  }
+
+  free(new_s);
+  return max_w;
+}
+
+static void vf_gettextsize(cdVectorFont* vector_font, const char* s, int *width, int *height)
+{
+  int num_lin = cdStrLineCount(s);
+  if (num_lin == 1)
+  {
+    *width = vf_textwidth(vector_font, s);
+    *height = vector_font->top - vector_font->bottom;
+  }
+  else
+  {
+    *width = vf_gettextmaxwidth(vector_font, s, num_lin);
+    *height = num_lin*(vector_font->top - vector_font->bottom);
+  }
+}
+
+static void vf_move_to_first(cdVectorFont* vector_font, int align, int *x, int *y, int num_lin, double line_height)
+{
+  /* position vertically at the first line */
+  if (align == CD_NORTH || align == CD_NORTH_EAST || align == CD_NORTH_WEST ||     /* it is relative to the full text */
+      align == CD_BASE_LEFT || align == CD_BASE_CENTER || align == CD_BASE_RIGHT)  /* it is relative to the first line already */
+  {
+    /* Already at position */
+  }
+  else if (align == CD_SOUTH || align == CD_SOUTH_EAST || align == CD_SOUTH_WEST)  /* it is relative to the full text */
+  {
+    vf_move_dir(vector_font, x, y, 0, (num_lin-1)*line_height);
+  }
+  else  /* CD_CENTER || CD_EAST || CD_WEST */                                      /* it is relative to the full text */
+    vf_move_dir(vector_font, x, y, 0, (num_lin-1)*line_height/2.0);
+}
+
+static void vf_wmove_to_first(cdVectorFont* vector_font, int align, double *x, double *y, int num_lin, double line_height)
+{
+  /* position vertically at the first line */
+  if (align == CD_NORTH || align == CD_NORTH_EAST || align == CD_NORTH_WEST ||     /* it is relative to the full text */
+      align == CD_BASE_LEFT || align == CD_BASE_CENTER || align == CD_BASE_RIGHT)  /* it is relative to the first line already */
+  {
+    /* Already at position */
+  }
+  else if (align == CD_SOUTH || align == CD_SOUTH_EAST || align == CD_SOUTH_WEST)  /* it is relative to the full text */
+  {
+    vf_wmove_dir(vector_font, x, y, 0, (num_lin-1)*line_height);
+  }
+  else  /* CD_CENTER || CD_EAST || CD_WEST */                                      /* it is relative to the full text */
+    vf_wmove_dir(vector_font, x, y, 0, (num_lin-1)*line_height/2.0);
 }
 
 static char *cd_getCDDIR(void)
@@ -4562,149 +4627,51 @@ static char *cd_getCDDIR(void)
 
 cdVectorFont* cdCreateVectorFont(cdCanvas* canvas)
 {
-  cdVectorFont* vector_font = calloc(1, sizeof(cdVectorFont));
+  cdVectorFont* vector_font;
+
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return NULL;
+
+  vector_font = calloc(1, sizeof(cdVectorFont));
+
   vector_font->canvas = canvas;
+
   vf_setdefaultfont(vector_font);
+
+  vector_font->size_x = 1.0;
+  vector_font->size_y = 1.0;
+
+  vector_font->current_cos  = 1.0;
+  vector_font->current_sin  = 0.0;
+
+  vector_font->text_transf  = 0;
+
   return vector_font;
 }
 
 void cdKillVectorFont(cdVectorFont* vector_font)
 {
+  assert(vector_font);
+  if (!vector_font) return;
+
   if (vector_font->chars && vector_font->chars != vf_default_chars) 
     vf_releasefontchars(vector_font);     /* not the default font */
 
   free(vector_font);
 }
 
-void cdCanvasVectorTextDirection(cdCanvas* canvas, int x1, int y1, int x2, int y2)
-{
-  int dx=x2-x1;
-  int dy=y2-y1;
-  double len = sqrt(dx*dx +dy*dy);
-  cdVectorFont* vector_font = canvas->vector_font;
-  vector_font->current_sin = dy/len;
-  vector_font->current_cos = dx/len;
-}
-
-int cdCanvasVectorCharSize(cdCanvas* canvas, int size)
-{
-  cdVectorFont* vector_font = canvas->vector_font;
-  int old_size = cdRound(vector_font->point_size_y*vector_font->top);
-  if (size == CD_QUERY) 
-    return old_size;
-
-  vector_font->point_size_y = size/(double)vector_font->top;
-  vector_font->point_size_x = size/(double)vector_font->top;
-
-  return old_size;
-}
-
-double* cdCanvasVectorTextTransform(cdCanvas* canvas, const double* matrix)
-{
-  cdVectorFont* vector_font = canvas->vector_font;
-  int i;
-  static double old_matrix[6];
-
-  if (vector_font->text_transf)
-  {
-    for (i=0; i<6; i++)
-      old_matrix[i] = vector_font->text_matrix[i];
-  }
-  else
-  {
-    old_matrix[0] = 1; old_matrix[1] = 0; old_matrix[2] = 0;
-    old_matrix[3] = 0; old_matrix[4] = 1; old_matrix[5] = 0;
-  }
-
-  if (matrix)
-  {
-    for (i=0; i<6; i++)
-      vector_font->text_matrix[i] = matrix[i];
-
-    vector_font->text_transf = 1;
-  }
-  else
-    vector_font->text_transf = 0;
-
-  return old_matrix;
-}
-
-void cdCanvasGetVectorTextSize(cdCanvas* canvas, const char *s, int *px, int *py)
-{
-  cdVectorFont* vector_font = canvas->vector_font;
-  if (px) *px = cdRound(vf_primlen(vector_font, s)*vector_font->point_size_x);
-  if (py) *py = cdRound(vector_font->top*vector_font->point_size_y);
-}
-
-void cdCanvasGetVectorTextBounds(cdCanvas* canvas, const char *s, int px, int py, int *rect)
-{
-  cdVectorFont* vector_font = canvas->vector_font;
-  int prim_len = vf_primlen(vector_font, s);
-  int sx = cdRound(prim_len*vector_font->point_size_x);
-  int sy = cdRound(vector_font->top*vector_font->point_size_y);
-
-  vf_calc_pos(vector_font, &px, &py, prim_len);
-
-  vf_move_dir(vector_font, &px, &py, 0, vector_font->bottom*vector_font->point_size_y);
-
-  vf_calc_point(vector_font, px, py, &rect[0], &rect[1], 0, 0);
-  vf_calc_point(vector_font, px, py, &rect[2], &rect[3], sx, 0);
-  vf_calc_point(vector_font, px, py, &rect[4], &rect[5], sx, sy);
-  vf_calc_point(vector_font, px, py, &rect[6], &rect[7], 0, sy);
-}
-
-void cdCanvasVectorTextSize(cdCanvas* canvas, int size_x, int size_y, const char* s)
-{
-  cdVectorFont* vector_font = canvas->vector_font;
-  vector_font->point_size_x = size_x/(double)vf_primlen(vector_font, s);
-  vector_font->point_size_y = size_y/(double)vector_font->top;
-}
-
-void cdCanvasVectorText(cdCanvas* canvas, int px, int py, const char* s)
-{
-  cdVectorFont* vector_font = canvas->vector_font;
-  int prim_len = vf_primlen(vector_font, s);
-  vf_calc_pos(vector_font, &px, &py, prim_len);
-  vf_basic_write(vector_font, s, px, py);
-}
-
-void cdCanvasMultiLineVectorText(cdCanvas* canvas, int px, int py, const char* s)
-{
-  cdVectorFont* vector_font = canvas->vector_font;
-  double line_height = (vector_font->top - vector_font->bottom + vector_font->line_space) * vector_font->point_size_y;
-  char buff[MULTILINE_MAXLEN];
-  char *str = buff;
-  int n;
-
-  int align = cdCanvasTextAlignment(vector_font->canvas, CD_QUERY); /* procura o alinhamento do CD */
-
-  if (strlen(s) >= MULTILINE_MAXLEN)
-    return;
-
-  strcpy(str, s);
-  n = vf_lines(str);
-  if (align == CD_NORTH || align == CD_NORTH_EAST || align == CD_NORTH_WEST)
-  {
-    ; /* Already at position */
-  }
-  else if (align == CD_SOUTH || align == CD_SOUTH_EAST || align == CD_SOUTH_WEST)
-  {
-    vf_move_dir(vector_font, &px, &py, 0, (n-1)*line_height);
-  }
-  else
-    vf_move_dir(vector_font, &px, &py, 0, ((double)(n-1)/2)*line_height);
-
-  while (n--)
-  {
-    cdCanvasVectorText(canvas, px, py, str);
-    str += strlen(str)+1;
-    vf_move_dir(vector_font, &px, &py, 0, -line_height);
-  }
-}
-
 char *cdCanvasVectorFont(cdCanvas* canvas, const char *file)
 {
-  cdVectorFont* vector_font = canvas->vector_font;
+  cdVectorFont* vector_font;
+
+  assert(canvas);
+  assert(file);
+  if (!_cdCheckCanvas(canvas)) return NULL;
+
+  if (file[0] == 0)
+    return NULL;
+
+  vector_font = canvas->vector_font;
   if (!file) 
   {
     vf_setdefaultfont(vector_font);
@@ -4756,98 +4723,502 @@ char *cdCanvasVectorFont(cdCanvas* canvas, const char *file)
   return vector_font->name;
 }
 
+double* cdCanvasVectorTextTransform(cdCanvas* canvas, const double* matrix)
+{
+  cdVectorFont* vector_font;
+  int i;
+  static double old_matrix[6];
+
+  assert(canvas);
+  assert(matrix);
+  if (!_cdCheckCanvas(canvas)) return NULL;
+
+  vector_font = canvas->vector_font;
+  if (vector_font->text_transf)
+  {
+    for (i=0; i<6; i++)
+      old_matrix[i] = vector_font->text_matrix[i];
+  }
+  else
+  {
+    old_matrix[0] = 1; old_matrix[1] = 0; old_matrix[2] = 0;
+    old_matrix[3] = 0; old_matrix[4] = 1; old_matrix[5] = 0;
+  }
+
+  if (matrix)
+  {
+    for (i=0; i<6; i++)
+      vector_font->text_matrix[i] = matrix[i];
+
+    vector_font->text_transf = 1;
+  }
+  else
+    vector_font->text_transf = 0;
+
+  return old_matrix;
+}
+
+/******************************************************/
+/* vector text em Raster                              */
+/******************************************************/
+
+void cdCanvasVectorTextDirection(cdCanvas* canvas, int x1, int y1, int x2, int y2)
+{
+  cdVectorFont* vector_font;
+  int dx, dy;
+  double len;
+
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
+  vector_font = canvas->vector_font;
+
+  dx=x2-x1;
+  dy=y2-y1;
+  len = sqrt(dx*dx +dy*dy);
+  if (len == 0) len = 1;
+  vector_font->current_sin = dy/len;
+  vector_font->current_cos = dx/len;
+}
+
+void cdCanvasVectorFontSize(cdCanvas* canvas, double size_x, double size_y)
+{
+  cdVectorFont* vector_font;
+
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
+  vector_font = canvas->vector_font;
+
+  vector_font->size_x = size_x;
+  vector_font->size_y = size_y;
+}
+
+void cdCanvasGetVectorFontSize(cdCanvas* canvas, double *size_x, double *size_y)
+{
+  cdVectorFont* vector_font;
+
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
+  vector_font = canvas->vector_font;
+
+  if (size_x) *size_x = vector_font->size_x;
+  if (size_y) *size_y = vector_font->size_y;
+}
+
+int cdCanvasVectorCharSize(cdCanvas* canvas, int size)
+{
+  cdVectorFont* vector_font;
+  int old_size;
+
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return 0;
+
+  vector_font = canvas->vector_font;
+  old_size = cdRound(vector_font->size_y*vector_font->top);
+  if (size == CD_QUERY) 
+    return old_size;
+
+  vector_font->size_y = size/(double)vector_font->top;
+  vector_font->size_x = vector_font->size_y;
+
+  return old_size;
+}
+
+void cdCanvasVectorTextSize(cdCanvas* canvas, int s_width, int s_height, const char* s)
+{
+  int width, height;
+  cdVectorFont* vector_font;
+
+  assert(canvas);
+  assert(s);
+  if (!_cdCheckCanvas(canvas)) return;
+
+  if (s[0] == 0)
+    return;
+
+  vector_font = canvas->vector_font;
+  vf_gettextsize(vector_font, s, &width, &height);
+
+  vector_font->size_x = (double)s_width/(double)width;
+  vector_font->size_y = (double)s_height/(double)height;
+}
+
+void cdCanvasGetVectorTextSize(cdCanvas* canvas, const char *s, int *x, int *y)
+{
+  int width, height;
+  cdVectorFont* vector_font;
+
+  assert(canvas);
+  assert(s);
+  if (!_cdCheckCanvas(canvas)) return;
+
+  if (s[0] == 0)
+    return;
+
+  vector_font = canvas->vector_font;
+
+  vf_gettextsize(vector_font, s, &width, &height);
+
+  if (x) *x = cdRound(width*vector_font->size_x);
+  if (y) *y = cdRound(height*vector_font->size_y);
+}
+
+void cdCanvasGetVectorTextBounds(cdCanvas* canvas, const char *s, int x, int y, int *rect)
+{
+  cdVectorFont* vector_font;
+  int sx, sy;
+  int width, height, num_lin;
+  double line_height;
+
+  assert(canvas);
+  assert(s);
+  if (!_cdCheckCanvas(canvas)) return;
+
+  if (s[0] == 0)
+    return;
+
+  vector_font = canvas->vector_font;
+
+  vf_gettextsize(vector_font, s, &width, &height);
+  num_lin = height/(vector_font->top - vector_font->bottom);
+
+  sx = cdRound(width*vector_font->size_x);
+  sy = cdRound(height*vector_font->size_y);
+
+  line_height = (vector_font->top - vector_font->bottom) * vector_font->size_y;
+
+  if (num_lin > 1)
+  {
+    /* position vertically at the first line */
+    int align = canvas->text_alignment;
+    vf_move_to_first(vector_font, align, &x, &y, num_lin, line_height);
+  }
+
+  /* move to bottom/left corner */
+  vf_move_to_base(vector_font, &x, &y, width);
+  vf_move_dir(vector_font, &x, &y, 0, vector_font->bottom*vector_font->size_y);      /* from base/left to bottom/left of the first line */
+  if (num_lin > 1)
+    vf_move_dir(vector_font, &x, &y, 0, -(height*vector_font->size_y - line_height));  /* from bottom/left to the bottom of the last line */
+
+  vf_calc_point(vector_font, x, y, &rect[0], &rect[1], 0, 0);
+  vf_calc_point(vector_font, x, y, &rect[2], &rect[3], sx, 0);
+  vf_calc_point(vector_font, x, y, &rect[4], &rect[5], sx, sy);
+  vf_calc_point(vector_font, x, y, &rect[6], &rect[7], 0, sy);
+}
+
+void cdCanvasGetVectorTextBox(cdCanvas* canvas, int x, int y, const char *s, int *xmin, int *xmax, int *ymin, int *ymax)
+{
+  int rect[8];
+  int _xmin, _xmax, _ymin, _ymax;
+
+  cdCanvasGetVectorTextBounds(canvas, s, x, y, rect);
+
+  _xmin = rect[0];
+  _ymin = rect[1];
+  _xmax = rect[0];
+  _ymax = rect[1];
+
+  if(rect[2] < _xmin) _xmin = rect[2];
+  if(rect[4] < _xmin) _xmin = rect[4];
+  if(rect[6] < _xmin) _xmin = rect[6];
+
+  if(rect[3] < _ymin) _ymin = rect[3];
+  if(rect[5] < _ymin) _ymin = rect[5];
+  if(rect[7] < _ymin) _ymin = rect[7];
+
+  if(rect[2] > _xmax) _xmax = rect[2];
+  if(rect[4] > _xmax) _xmax = rect[4];
+  if(rect[6] > _xmax) _xmax = rect[6];
+
+  if(rect[3] > _ymax) _ymax = rect[3];
+  if(rect[5] > _ymax) _ymax = rect[5];
+  if(rect[7] > _ymax) _ymax = rect[7];
+
+  if (xmin) *xmin = _xmin;
+  if (xmax) *xmax = _xmax;
+  if (ymin) *ymin = _ymin;
+  if (ymax) *ymax = _ymax;
+}
+
+void cdCanvasVectorText(cdCanvas* canvas, int x, int y, const char* s)
+{
+  cdVectorFont* vector_font;
+  int num_lin, align, width = 0;
+
+  assert(canvas);
+  assert(s);
+  if (!_cdCheckCanvas(canvas)) return;
+
+  if (s[0] == 0)
+    return;
+
+  vector_font = canvas->vector_font;
+  align = canvas->text_alignment;
+
+  num_lin = cdStrLineCount(s);
+  if (num_lin == 1)
+  {
+    if (align != CD_WEST && align != CD_NORTH_WEST && align != CD_SOUTH_WEST && align != CD_BASE_LEFT)
+      width = vf_textwidth(vector_font, s);  /* only necessary for some alignments */
+
+    vf_draw_text(vector_font, x, y, s, width);
+  }
+  else
+  {
+    char *p, *q, *new_s;
+    double line_height = (vector_font->top - vector_font->bottom) * vector_font->size_y;
+    int i;
+
+    if (align != CD_WEST && align != CD_NORTH_WEST && align != CD_SOUTH_WEST && align != CD_BASE_LEFT)
+      width = vf_gettextmaxwidth(vector_font, s, num_lin);  /* only necessary for some alignments */
+
+    /* position vertically at the first line */
+    vf_move_to_first(vector_font, align, &x, &y, num_lin, line_height);
+
+    new_s = cdStrDup(s);
+    p = new_s;
+
+    for(i = 0; i < num_lin; i++)
+    {
+      q = strchr(p, '\n');
+      if (q) *q = 0;  /* Cut the string to contain only one line */
+
+      /* Draw the line */
+      vf_draw_text(vector_font, x, y, p, width);
+
+      /* Advance the string */
+      if (q) p = q + 1;
+
+      /* Advance a line */
+      vf_move_dir(vector_font, &x, &y, 0, -line_height);
+    }
+
+    free(new_s);
+  }
+}
+
+void cdCanvasMultiLineVectorText(cdCanvas* canvas, int x, int y, const char* s)
+{
+  cdCanvasVectorText(canvas, x, y, s);
+}
+
 /******************************************************/
 /* vector text em WC                                  */
 /******************************************************/
 
 void wdCanvasVectorTextDirection(cdCanvas* canvas, double x1, double y1, double x2, double y2)
 {
-  cdVectorFont* vector_font = canvas->vector_font;
-  double dx=x2-x1;
-  double dy=y2-y1;
-  double len = sqrt(dx*dx +dy*dy);
+  cdVectorFont* vector_font;
+  double dx, dy, len;
+
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
+  vector_font = canvas->vector_font;
+
+  dx=x2-x1;
+  dy=y2-y1;
+  len = sqrt(dx*dx +dy*dy);
+  if (len == 0) len = 1;
   vector_font->current_sin = dy/len;
   vector_font->current_cos = dx/len;
 }
 
 double wdCanvasVectorCharSize(cdCanvas* canvas, double size)
 {
-  cdVectorFont* vector_font = canvas->vector_font;
-  double old_size = vector_font->point_size_y*vector_font->top;
+  cdVectorFont* vector_font;
+  double old_size;
+
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return 0;
+
+  vector_font = canvas->vector_font;
+  old_size = vector_font->size_y*vector_font->top;
   if (size == CD_QUERY) 
     return old_size;
 
-  vector_font->point_size_y = size/(double)vector_font->top;
-  vector_font->point_size_x = size/(double)vector_font->top;
+  vector_font->size_y = size/(double)vector_font->top;
+  vector_font->size_x = vector_font->size_y;
 
   return old_size;
 }
 
-void wdCanvasVectorTextSize(cdCanvas* canvas, double size_x, double size_y, const char* s)
+void wdCanvasVectorTextSize(cdCanvas* canvas, double s_width, double s_height, const char* s)
 {
-  cdVectorFont* vector_font = canvas->vector_font;
-  vector_font->point_size_x = size_x/(double)vf_primlen(vector_font, s);
-  vector_font->point_size_y = size_y/(double)vector_font->top;
-}
+  int width, height;
+  cdVectorFont* vector_font;
 
-void wdCanvasGetVectorTextSize(cdCanvas* canvas, const char *s, double *px, double *py)
-{
-  cdVectorFont* vector_font = canvas->vector_font;
-  if (px) *px = vf_primlen(vector_font, s)*vector_font->point_size_x;
-  if (py) *py = vector_font->top*vector_font->point_size_y;
-}
+  assert(canvas);
+  assert(s);
+  if (!_cdCheckCanvas(canvas)) return;
 
-void wdCanvasGetVectorTextBounds(cdCanvas* canvas, const char *s, double px, double py, double *rect)
-{
-  cdVectorFont* vector_font = canvas->vector_font;
-  int prim_len = vf_primlen(vector_font, s);
-  double sx = prim_len*vector_font->point_size_x;
-  double sy = vector_font->top*vector_font->point_size_y;
-
-  vf_wcalc_pos(vector_font, &px, &py, prim_len);
-
-  vf_wmove_dir(vector_font, &px, &py, 0, vector_font->bottom*vector_font->point_size_y);
-
-  vf_wcalc_point(vector_font, px, py, &rect[0], &rect[1], 0, 0);
-  vf_wcalc_point(vector_font, px, py, &rect[2], &rect[3], sx, 0);
-  vf_wcalc_point(vector_font, px, py, &rect[4], &rect[5], sx, sy);
-  vf_wcalc_point(vector_font, px, py, &rect[6], &rect[7], 0, sy);
-}
-
-void wdCanvasVectorText(cdCanvas* canvas, double px, double py, const char* s)
-{
-  cdVectorFont* vector_font = canvas->vector_font;
-  int prim_len = vf_primlen(vector_font, s);
-  vf_wcalc_pos(vector_font, &px, &py, prim_len);
-  vf_wbasic_write(vector_font, s, px, py);
-}
-
-void wdCanvasMultiLineVectorText(cdCanvas* canvas, double px, double py, const char* s)
-{
-  cdVectorFont* vector_font = canvas->vector_font;
-  double line_height = (vector_font->top - vector_font->bottom + vector_font->line_space)*vector_font->point_size_y;
-  char buff[MULTILINE_MAXLEN];
-  char *str = buff;
-  int n;
-
-  int align = cdCanvasTextAlignment(vector_font->canvas, CD_QUERY); /* procura o alinhamento do CD */
-
-  if (strlen(s) >= MULTILINE_MAXLEN)
+  if (s[0] == 0)
     return;
 
-  strcpy(str, s);
-  n = vf_lines(str);
-  if (align == CD_NORTH || align == CD_NORTH_EAST || align == CD_NORTH_WEST)
-    ; /* Already at position */
-  else if (align == CD_SOUTH || align == CD_SOUTH_EAST || align == CD_SOUTH_WEST)
-    vf_wmove_dir(vector_font, &px, &py, 0, (n-1)*line_height);
-  else
-    vf_wmove_dir(vector_font, &px, &py, 0, ((double)(n-1)/2)*line_height);
+  vector_font = canvas->vector_font;
+  vf_gettextsize(vector_font, s, &width, &height);
 
-  while (n--)
+  vector_font->size_x = s_width/(double)width;
+  vector_font->size_y = s_height/(double)height;
+}
+
+void wdCanvasGetVectorTextSize(cdCanvas* canvas, const char *s, double *x, double *y)
+{
+  int width, height;
+  cdVectorFont* vector_font;
+
+  assert(canvas);
+  assert(s);
+  if (!_cdCheckCanvas(canvas)) return;
+
+  if (s[0] == 0)
+    return;
+
+  vector_font = canvas->vector_font;
+
+  vf_gettextsize(vector_font, s, &width, &height);
+
+  if (x) *x = width*vector_font->size_x;
+  if (y) *y = height*vector_font->size_y;
+}
+
+void wdCanvasGetVectorTextBounds(cdCanvas* canvas, const char *s, double x, double y, double *rect)
+{
+  cdVectorFont* vector_font;
+  double sx, sy, line_height;
+  int width, height, num_lin;
+
+  assert(canvas);
+  assert(s);
+  if (!_cdCheckCanvas(canvas)) return;
+
+  if (s[0] == 0)
+    return;
+
+  vector_font = canvas->vector_font;
+
+  vf_gettextsize(vector_font, s, &width, &height);
+  num_lin = height/(vector_font->top - vector_font->bottom);
+
+  sx = width*vector_font->size_x;
+  sy = height*vector_font->size_y;
+
+  line_height = (vector_font->top - vector_font->bottom) * vector_font->size_y;
+
+  if (num_lin > 1)
   {
-    wdCanvasVectorText(canvas, px, py, str);
-    str += strlen(str)+1;
-    vf_wmove_dir(vector_font, &px, &py, 0, -line_height);
+    /* position vertically at the first line */
+    int align = canvas->text_alignment;
+    vf_wmove_to_first(vector_font, align, &x, &y, num_lin, line_height);
+  }
+
+  /* move to bottom/left corner */
+  vf_wmove_to_base(vector_font, &x, &y, width);
+  vf_wmove_dir(vector_font, &x, &y, 0, vector_font->bottom*vector_font->size_y);      /* from base/left to bottom/left of the first line */
+  if (num_lin > 1)
+    vf_wmove_dir(vector_font, &x, &y, 0, -(height*vector_font->size_y - line_height));  /* from bottom/left to the bottom of the last line */
+
+  vf_wcalc_point(vector_font, x, y, &rect[0], &rect[1], 0, 0);
+  vf_wcalc_point(vector_font, x, y, &rect[2], &rect[3], sx, 0);
+  vf_wcalc_point(vector_font, x, y, &rect[4], &rect[5], sx, sy);
+  vf_wcalc_point(vector_font, x, y, &rect[6], &rect[7], 0, sy);
+}
+
+void wdCanvasGetVectorTextBox(cdCanvas* canvas, double x, double y, const char *s, double *xmin, double *xmax, double *ymin, double *ymax)
+{
+  double rect[8];
+  double _xmin, _xmax, _ymin, _ymax;
+
+  wdCanvasGetVectorTextBounds(canvas, s, x, y, rect);
+
+  _xmin = rect[0];
+  _ymin = rect[1];
+  _xmax = rect[0];
+  _ymax = rect[1];
+
+  if(rect[2] < _xmin) _xmin = rect[2];
+  if(rect[4] < _xmin) _xmin = rect[4];
+  if(rect[6] < _xmin) _xmin = rect[6];
+
+  if(rect[3] < _ymin) _ymin = rect[3];
+  if(rect[5] < _ymin) _ymin = rect[5];
+  if(rect[7] < _ymin) _ymin = rect[7];
+
+  if(rect[2] > _xmax) _xmax = rect[2];
+  if(rect[4] > _xmax) _xmax = rect[4];
+  if(rect[6] > _xmax) _xmax = rect[6];
+
+  if(rect[3] > _ymax) _ymax = rect[3];
+  if(rect[5] > _ymax) _ymax = rect[5];
+  if(rect[7] > _ymax) _ymax = rect[7];
+
+  if (xmin) *xmin = _xmin;
+  if (xmax) *xmax = _xmax;
+  if (ymin) *ymin = _ymin;
+  if (ymax) *ymax = _ymax;
+}
+
+void wdCanvasVectorText(cdCanvas* canvas, double x, double y, const char* s)
+{
+  cdVectorFont* vector_font;
+  int num_lin, align, width = 0;
+
+  assert(canvas);
+  assert(s);
+  if (!_cdCheckCanvas(canvas)) return;
+
+  if (s[0] == 0)
+    return;
+
+  vector_font = canvas->vector_font;
+  align = canvas->text_alignment;
+
+  num_lin = cdStrLineCount(s);
+  if (num_lin == 1)
+  {
+    if (align != CD_WEST && align != CD_NORTH_WEST && align != CD_SOUTH_WEST && align != CD_BASE_LEFT)
+      width = vf_textwidth(vector_font, s);  /* only necessary for some alignments */
+
+    vf_wdraw_text(vector_font, x, y, s, width);
+  }
+  else
+  {
+    char *p, *q, *new_s;
+    double line_height = (vector_font->top - vector_font->bottom) * vector_font->size_y;
+    int i;
+
+    if (align != CD_WEST && align != CD_NORTH_WEST && align != CD_SOUTH_WEST && align != CD_BASE_LEFT)
+      width = vf_gettextmaxwidth(vector_font, s, num_lin);  /* only necessary for some alignments */
+
+    /* position vertically at the first line */
+    vf_wmove_to_first(vector_font, align, &x, &y, num_lin, line_height);
+
+    new_s = cdStrDup(s);
+    p = new_s;
+
+    for(i = 0; i < num_lin; i++)
+    {
+      q = strchr(p, '\n');
+      if (q) *q = 0;  /* Cut the string to contain only one line */
+
+      /* Draw the line */
+      vf_wdraw_text(vector_font, x, y, p, width);
+
+      /* Advance the string */
+      if (q) p = q + 1;
+
+      /* Advance a line */
+      vf_wmove_dir(vector_font, &x, &y, 0, -line_height);
+    }
+
+    free(new_s);
   }
 }
+
+void wdCanvasMultiLineVectorText(cdCanvas* canvas, double x, double y, const char* s)
+{
+  wdCanvasVectorText(canvas, x, y, s);
+}
+

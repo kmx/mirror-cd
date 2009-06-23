@@ -307,12 +307,12 @@ static void primAddAttrib_Text(tPrimNode *prim, cdCanvas *canvas)
 
   if (canvas->native_font[0])
   {
-    prim->attrib_buffer = strdup(canvas->native_font);
+    prim->attrib_buffer = cdStrDup(canvas->native_font);
     prim->attrib.text.native_font = prim->attrib_buffer;
   }
   else
   {
-    prim->attrib_buffer = strdup(canvas->font_type_face);
+    prim->attrib_buffer = cdStrDup(canvas->font_type_face);
     prim->attrib.text.font_type_face = prim->attrib_buffer;
   }
 }
@@ -576,7 +576,7 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *text)
   primAddAttrib_Text(prim, ctxcanvas->canvas);
   prim->param.text.x = x;
   prim->param.text.y = y;
-  prim->param.text.s = strdup(text);
+  prim->param.text.s = cdStrDup(text);
   prim->param_buffer = prim->param.text.s;
   picAddPrim(ctxcanvas, prim);
   cdCanvasGetTextBox(ctxcanvas->canvas, x, y, text, &xmin, &xmax, &ymin, &ymax);
@@ -591,7 +591,7 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *text
   primAddAttrib_Text(prim, ctxcanvas->canvas);
   prim->param.textf.x = x;
   prim->param.textf.y = y;
-  prim->param.textf.s = strdup(text);
+  prim->param.textf.s = cdStrDup(text);
   prim->param_buffer = prim->param.textf.s;
   picAddPrim(ctxcanvas, prim);
   cdCanvasGetTextBox(ctxcanvas->canvas, _cdRound(x), _cdRound(y), text, &xmin, &xmax, &ymin, &ymax);

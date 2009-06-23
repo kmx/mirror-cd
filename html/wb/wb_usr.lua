@@ -240,7 +240,7 @@ wb_usr.tree =
           folder=
           {
             {
-              name= {nl= "GetCanvasSize"},
+              name= {nl= "GetSize"},
               link= "func/coordinates.html#cdGetCanvasSize"
             },
             {
@@ -625,21 +625,21 @@ wb_usr.tree =
               folder=
               {
                 {
-                  name= {nl= "FontDim"},
+                  name= {nl= "GetFontDim"},
                   link= "func/text.html#cdFontDim"
                 },
                 {
-                  name= {nl= "TextSize"},
+                  name= {nl= "GetTextSize"},
                   link= "func/text.html#cdTextSize"
                 },
                 {
-                  name= {nl= "TextBox"},
-                  link= "func/text.html#cdTextBox"
+                  name= {nl= "GetTextBounds"},
+                  link= "func/text.html#cdTextBounds"
                 },
                 {
-                  name= {nl= "TextBounds"},
-                  link= "func/text.html#cdTextBounds"
-                }
+                  name= {nl= "GetTextBox"},
+                  link= "func/text.html#cdTextBox"
+                },
               }
             }
           }
@@ -652,10 +652,6 @@ wb_usr.tree =
             {
               name= {nl= "VectorText"},
               link= "func/vectortext.html#cdVectorText"
-            },
-            {
-              name= {nl= "MultiLineVectorText"},
-              link= "func/vectortext.html#cdMultiLineVectorText"
             },
             {
               name= {en= "Attributes"},
@@ -694,6 +690,10 @@ wb_usr.tree =
                 {
                   name= {nl= "GetVectorTextBounds"},
                   link= "func/vectortext.html#cdGetVectorTextBounds"
+                },
+                {
+                  name= {nl= "GetVectorTextBox"},
+                  link= "func/vectortext.html#cdGetVectorTextBox"
                 }
               }
             }

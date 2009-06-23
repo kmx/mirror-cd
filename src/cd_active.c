@@ -1004,4 +1004,3 @@ void wdGetVectorTextBounds(const char* s, double x, double y, double *rect)
   if (!active_canvas) return;
   wdCanvasGetVectorTextBounds(active_canvas, s, x, y, rect);
 }
-

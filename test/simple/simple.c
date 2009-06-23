@@ -511,8 +511,8 @@ int SimpleDrawAll(void)
     wdWindow(0,1,0,(double)h/(double)w);
 
   /* Clear the background to be white */
-//  cdBackground(CD_WHITE);
-  cdBackground(CD_GREEN);
+  cdBackground(CD_WHITE);
+//  cdBackground(CD_GREEN);
   cdClear();
 
   cdLineWidth(3);
@@ -831,21 +831,82 @@ int SimpleDrawAll(void)
   return 0;
 }
 
-void DrawTextBox(int x, int y, char* text)
+void DrawVectorTextBox(int x, int y, char* text)
 {
-  int xmin, xmax, ymin, ymax;
+  int rect[8], draw_box;
 
   cdLineWidth(1);
   cdLineStyle(CD_CONTINUOUS);
 
-  /* bounding box */
-  cdTextBox(x, y, text, &xmin, &xmax, &ymin, &ymax);
-  cdForeground(CD_GREEN);
-  cdRect(xmin, xmax, ymin, ymax);
+  draw_box = 0;
+  if (draw_box)
+  {
+    int xmin, xmax, ymin, ymax;
+    cdCanvasGetVectorTextBox(cdActiveCanvas(), x, y, text, &xmin, &xmax, &ymin, &ymax);
+    cdForeground(CD_GREEN);
+    cdRect(xmin, xmax, ymin, ymax);
 
-  /* baseline */
-  cdForeground(CD_RED);
-  cdLine(xmin, y, xmax, y);
+    if (cdTextOrientation(CD_QUERY) == 0)
+    {
+      cdForeground(CD_RED);
+      cdLine(xmin, y, xmax, y);
+    }
+  }
+  else
+  {
+    /* bounding box */
+    cdGetVectorTextBounds(text, x, y, rect);
+    cdForeground(CD_GREEN);
+    cdBegin(CD_CLOSED_LINES);
+    cdVertex(rect[0], rect[1]);
+    cdVertex(rect[2], rect[3]);
+    cdVertex(rect[4], rect[5]);
+    cdVertex(rect[6], rect[7]);
+    cdEnd();
+  }
+
+  /* reference point */
+  cdForeground(CD_BLUE);
+  cdMarkType(CD_PLUS);
+  cdMarkSize(30);
+  cdMark(x, y);
+
+  cdForeground(CD_BLACK);
+  cdVectorText(x, y, text);
+}
+
+void DrawTextBox(int x, int y, char* text)
+{
+  int rect[8], draw_box;
+
+  cdLineWidth(1);
+  cdLineStyle(CD_CONTINUOUS);
+
+  draw_box = 0;
+  if (draw_box)
+  {
+    int xmin, xmax, ymin, ymax;
+    cdTextBox(x, y, text, &xmin, &xmax, &ymin, &ymax);
+    cdRect(xmin, xmax, ymin, ymax);
+
+    if (cdTextOrientation(CD_QUERY) == 0)
+    {
+      cdForeground(CD_RED);
+      cdLine(xmin, y, xmax, y);
+    }
+  }
+  else
+  {
+    /* bounding box */
+    cdTextBounds(x, y, text, rect);
+    cdForeground(CD_GREEN);
+    cdBegin(CD_CLOSED_LINES);
+    cdVertex(rect[0], rect[1]);
+    cdVertex(rect[2], rect[3]);
+    cdVertex(rect[4], rect[5]);
+    cdVertex(rect[6], rect[7]);
+    cdEnd();
+  }
 
   /* reference point */
   cdForeground(CD_BLUE);
@@ -859,7 +920,7 @@ void DrawTextBox(int x, int y, char* text)
 
 int SimpleDrawTextAlign(void)
 {
-  int w, h, i, xoff, yoff;
+  int w, h, i, xoff, yoff, use_vector;
 
   int text_aligment[] = {
   CD_NORTH,
@@ -876,20 +937,37 @@ int SimpleDrawTextAlign(void)
   CD_BASE_LEFT
   };
 
+#if 1
   char* text_aligment_str[] = {
-  "jNorth (Ãy)",
-  "jSouth (Ãy)",
-  "jEast (Ãy)",
-  "jWest (Ãy)",
-  "jNorth East (Ãy)",
-  "jNorth West (Ãy)",
-  "jSouth East (Ãy)",
-  "jSouth West (Ãy)",
-  "jCenter (Ãy)",
-  "jBase Center (Ãy)",
-  "jBase Right (Ãy)",
-  "jBase Left (Ãy)"
+  "North (Ãyj)\nSecond Line (Ãyj)",
+  "South (Ãyj)\nSecond Line (Ãyj)",
+  "East (Ãyj)\nSecond Line (Ãyj)",
+  "West (Ãyj)\nSecond Line (Ãyj)",
+  "North East (Ãyj)\nSecond Line (Ãyj)",
+  "North West (Ãyj)\nSecond Line (Ãyj)",
+  "South East (Ãyj)\nSecond Line (Ãyj)",
+  "South West (Ãyj)\nSecond Line (Ãyj)",
+  "Center (Ãyj)\nSecond Line (Ãyj)",
+  "Base Center (Ãyj)\nSecond Line (Ãyj)",
+  "Base Right (Ãyj)\nSecond Line (Ãyj)",
+  "Base Left (Ãyj)\nSecond Line (Ãyj)"
   };
+#else
+  char* text_aligment_str[] = {
+  "North (Ãyj)",
+  "South (Ãyj)",
+  "East (Ãyj)",
+  "West (Ãyj)",
+  "North East (Ãyj)",
+  "North West (Ãyj)",
+  "South East (Ãyj)",
+  "South West (Ãyj)",
+  "Center (Ãyj)",
+  "Base Center (Ãyj)",
+  "Base Right (Ãyj)",
+  "Base Left (Ãyj)"
+  };
+#endif
 
   cdGetCanvasSize(&w, &h, 0, 0);
 
@@ -898,26 +976,43 @@ int SimpleDrawTextAlign(void)
 
   simple_draw = DRAW_TEXTALIGN;
 
-//  cdTextOrientation(45);
+  use_vector = 0;
+
+  //if (use_vector)
+  //  cdVectorTextDirection(0, 0, 1, 1);
+  //else
+  //  cdTextOrientation(45);
 
   xoff = w/4;
   yoff = h/7;
 
-//cdFont(CD_TIMES_ROMAN, CD_PLAIN, 14);
-  cdFont(CD_HELVETICA, CD_PLAIN, 18);
+  if (use_vector)
+    cdVectorCharSize(30);
+  else
+  {
+    //cdFont(CD_TIMES_ROMAN, CD_PLAIN, 14);
+    cdFont(CD_HELVETICA, CD_PLAIN, 18);
+  }
 
   for (i = 0; i < 12; i++)
   {
     cdTextAlignment(text_aligment[i]);
     if (i < 6)
     {
-      DrawTextBox(xoff, yoff*(i+1), text_aligment_str[i]);
+      if (use_vector)
+        DrawVectorTextBox(xoff, yoff*(i+1), text_aligment_str[i]);
+      else
+        DrawTextBox(xoff, yoff*(i+1), text_aligment_str[i]);
     }
     else
     {
-      DrawTextBox(3*xoff, yoff*(i-5), text_aligment_str[i]);
+      if (use_vector)
+        DrawVectorTextBox(3*xoff, yoff*(i-5), text_aligment_str[i]);
+      else
+        DrawTextBox(3*xoff, yoff*(i-5), text_aligment_str[i]);
     }
   }
+
   cdFlush();
   return 0;
 }
@@ -952,13 +1047,10 @@ int SimpleDrawTextFonts(void)
 
   cdTextAlignment(CD_CENTER);
 
-//  DrawTextFont(CD_COURIER, size, xoff, yoff, "Courier");
-
-//  DrawTextFont(CD_TIMES_ROMAN, size, xoff, 2*yoff, "Times Roman");
-
-//  DrawTextFont(CD_HELVETICA, size, xoff, 3*yoff, "Helvetica");
-
-//  DrawTextFont(CD_SYSTEM, size, xoff, 4*yoff, "System");
+  DrawTextFont(CD_COURIER, size, xoff, yoff, "Courier");
+  DrawTextFont(CD_TIMES_ROMAN, size, xoff, 2*yoff, "Times Roman");
+  DrawTextFont(CD_HELVETICA, size, xoff, 3*yoff, "Helvetica");
+  DrawTextFont(CD_SYSTEM, size, xoff, 4*yoff, "System");
 
   {
 //    static char native[50] = "Tecmedia, -60";
@@ -977,10 +1069,10 @@ int SimpleDrawTextFonts(void)
 
   //cdNativeFont("Tecmedia, 36");
 
-  cdSetAttribute("ADDFONTMAP", "WingDings=WingDing");
-  cdNativeFont("WingDings, 36");
+  //cdSetAttribute("ADDFONTMAP", "WingDings=WingDing");
+  //cdNativeFont("WingDings, 36");
 
-  cdText(500, 50, "X");
+  //cdText(500, 50, "X");
   //cdText(500, 50, "abcdefghijklmnopqrstuvwxyz");
   //cdText(500, 150, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   //cdText(500, 250, "1234567890");
@@ -996,8 +1088,8 @@ int SimpleDrawTextFonts(void)
   return 0;
 }
 
-void SimpleDrawTest(void)
-//void SimpleDrawMainTest(void)
+//void SimpleDrawTest(void)
+void SimpleDrawMainTest(void)
 {
   long pattern[16];  /* 4x4 pattern */
   int w, h;
@@ -1074,31 +1166,49 @@ void SimpleDrawTest(void)
 
 void draw_wd(void)
 {
+  char* text;
+  double x, y;
+  double rect[8];
+
   cdBackground(CD_WHITE);
   cdClear();
   cdLineStyle(CD_CONTINUOUS);
   cdLineWidth(1);
 
-  wdVectorTextDirection(0, 0, 1, 1);
+//  wdVectorTextDirection(0, 0, 1, 1);
+  cdTextAlignment(CD_NORTH_WEST);
 
+//  text = "Vector Text";
+  text = "Vector Text\nSecond Line\nThird Line";
+  x = 0.25;
+  y = 0.40;
+
+  cdForeground(CD_BLACK);
+  wdLine(0, 0, 1, 1);
+  wdLine(0, 1, 1, 0);
+
+  cdForeground(CD_GREEN);
+  cdMarkType(CD_STAR);
+  wdMark(x, y);
+
+  cdForeground(CD_BLUE);
   wdVectorCharSize(0.1);
-  wdVectorText(0.25, 0.35, "Vector Text");
+  wdVectorText(x, y, text);
 
-  {
-    double rect[8];
-    cdForeground(CD_RED);
-    wdGetVectorTextBounds("Vector Text", 0.25, 0.35, rect);
-    cdBegin(CD_CLOSED_LINES);
-    wdVertex(rect[0], rect[1]);
-    wdVertex(rect[2], rect[3]);
-    wdVertex(rect[4], rect[5]);
-    wdVertex(rect[6], rect[7]);
-    cdEnd();
-  }
+  cdForeground(CD_RED);
+  wdGetVectorTextBounds(text, x, y, rect);
+  cdBegin(CD_CLOSED_LINES);
+  wdVertex(rect[0], rect[1]);
+  wdVertex(rect[2], rect[3]);
+  wdVertex(rect[4], rect[5]);
+  wdVertex(rect[6], rect[7]);
+  cdEnd();
+
   cdFlush();
 }
 
-void SimpleDrawTestHardCopy(void)
+void SimpleDrawTest(void)
+//void SimpleDrawTestHardCopy(void)
 {
   int w, h;
   cdGetCanvasSize(&w, &h, 0, 0);
@@ -1113,10 +1223,11 @@ void SimpleDrawTestHardCopy(void)
 
   draw_wd();
 
-  wdHardcopy(CD_CLIPBOARD, "800x600", cdActiveCanvas(), draw_wd );
-  cdFlush();
+  //wdHardcopy(CD_CLIPBOARD, "800x600", cdActiveCanvas(), draw_wd );
+  //cdFlush();
 }
 
+//void SimpleDrawTest(void)
 void SimpleDrawTestImageRGB(void)
 {
   int size = 2048*2048;
@@ -1139,7 +1250,7 @@ void SimpleDrawTestImageRGB(void)
 }
 
 //void SimpleDrawTest(void)
-void SimpleDrawVectorText(void)
+void SimpleDrawVectorFont(void)
 {
   simple_draw = DRAW_TEST;
   cdBackground(CD_WHITE);
@@ -1149,7 +1260,7 @@ void SimpleDrawVectorText(void)
 
 //  wdVectorText(0.1, 0.4, "ãõñç áéíóú àèìòù âêîôû äëïöü");
 //  wdVectorText(0.1, 0.2, "ÃÕÑÇ ÁÉÍÓÚ ÀÈÌÒÙ ÂÊÎÔÛ ÄËÏÖÜ ");
-  cdVectorFont("../../etc/vectorfont26.txt"); /* original Simplex II */
+  cdVectorFont("../etc/vectorfont26.txt"); /* original Simplex II */
   {
     int i;
     char t[2];
@@ -1197,116 +1308,4 @@ void SimpleDrawVectorText(void)
   //  }
   }
   cdFlush();
-}
-
-typedef struct _point
-{
-  double x, y;
-} point;
-
-point* load_point_file(const char* file_name, int *count)
-{
-  float x, y;
-  point* point_list;
-  int max_count = 100, dummy;
-  FILE* file = fopen(file_name, "rb");
-  if (!file)
-    return NULL;
-
-  point_list = malloc(max_count*sizeof(point));
-
-  /* read header */
-  fscanf(file, "##### %d\n", &dummy);
-
-  *count = 0;
-  while (!feof(file))
-  {
-     if (fscanf(file, "( %g | %g )\n", &x, &y) == 2)
-     {
-       if (*count == max_count)
-       {
-         max_count += 100;
-         point_list = realloc(point_list, max_count*sizeof(point));
-       }
-
-       point_list[*count].x = x;
-       point_list[*count].y = y;
-
-       (*count)++;
-     }
-  }
-
-  fclose(file);
-
-  return point_list;
-}
-
-point square[4] = {
-  {100,100},
-  {200,100},
-  {200,200},
-  {100,200},
-};
-
-point corner[6] = {
-  {100,100},
-  {200,100},
-  {200,200},
-  {150,200},
-  {150,300},
-  {100,300},
-};
-
-//void SimpleDrawTest(void)
-void SimpleDrawPolygon(void)
-{
-  int count, i;
-  point* point_list;
-  char* file_name;
-
-  simple_draw = DRAW_TEST;
-  cdBackground(CD_WHITE);
-  cdClear();
-  cdLineStyle(CD_CONTINUOUS);
-  cdLineWidth(1);
-  cdInteriorStyle(CD_SOLID);
-
-//  file_name = "D:\\Downloads\\TesteCdCanvas\\example_data\\continentes_geom_id_78_polygon_1_440x512.txt";
-//  file_name = "D:\\Downloads\\TesteCdCanvas\\example_data\\continentes_geom_id_78_polygon_1_558x650.txt";
-//  file_name = "D:\\Downloads\\TesteCdCanvas\\example_data\\guanabara_oceano_obj_id_5_geom_id_11_polygon_ring_2.txt";
-  file_name = "D:\\Downloads\\TesteCdCanvas\\example_data\\guanabara_oceano_obj_id_5_geom_id_11_polygon_ring_6.txt";
-//  file_name = "D:\\Downloads\\TesteCdCanvas\\example_data\\guanabara_oceano_obj_id_5_geom_id_11_polygon_ring_15.txt";
-//  file_name = "D:\\Downloads\\TesteCdCanvas\\example_data\\guanabara_oceano_obj_id_5_geom_id_11_polygon_ring_34.txt";
-//  file_name = "D:\\Downloads\\TesteCdCanvas\\example_data\\guanabara_oceano_obj_id_5_geom_id_11_polygon_ring_37.txt";
-//  file_name = "D:\\Downloads\\TesteCdCanvas\\example_data\\guanabara_oceano_obj_id_5_geom_id_11_polygon_ring_53.txt";
-//  file_name = "D:\\Downloads\\TesteCdCanvas\\example_data\\guanabara_oceano_obj_id_5_geom_id_11_polygon_ring_59.txt";
-
-//  point_list = square;
-//  count = 4;
-//  point_list = corner;
-//  count = 6;
-
-  point_list = load_point_file(file_name, &count);
-  if (!point_list)
-    return;
-
-  cdForeground(CD_BLACK);
-  cdBegin(CD_CLOSED_LINES);
-  for (i=0; i<count; i++)
-  {
-    cdVertex((int)point_list[i].x, (int)point_list[i].y);
-  }
-  cdEnd();
-
-  cdForeground(CD_RED);
-  cdBegin(CD_FILL);
-  for (i=0; i<count; i++)
-  {
-    cdVertex((int)point_list[i].x, (int)point_list[i].y);
-  }
-  cdEnd();
-
-  cdFlush();
-
-  free(point_list);
 }

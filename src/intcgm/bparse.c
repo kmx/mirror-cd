@@ -179,7 +179,7 @@ int cgmb_intpre ( void )
 
 int cgmb_realpr ( void )
 {
- short mode, i1;
+ short mode = 0, i1;
  long i2, i3;
 
  if ( cgmb_e ( &i1 ) ) return 1;
@@ -543,7 +543,7 @@ int cgmb_vdcipr ( void )
 int cgmb_vdcrpr ( void )
 {
  short i1;
- long mode, i2, i3;
+ long mode = 0, i2, i3;
 
  if ( cgmb_e ( &i1 ) ) return 1;
  if ( cgmb_i ( &i2 ) ) return 1;
@@ -1320,7 +1320,7 @@ int cgmb_txftin ( void )
 
  font = (char *) cgm_GetList ( intcgm_text_att.font_list, intcgm_text_att.font_index );
 
- if ( font==NULL ) font = (char*)strdup ( "SYSTEM" );
+ if ( font==NULL ) font = "SYSTEM";
 
  intcgm_text_att.font = 0;
  for ( i=0; font_array[i]!=NULL; i++ )

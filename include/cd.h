@@ -169,10 +169,13 @@ void cdCanvasVectorTextDirection(cdCanvas* canvas, int x1, int y1, int x2, int y
 double* cdCanvasVectorTextTransform(cdCanvas* canvas, const double* matrix);
 void cdCanvasVectorTextSize(cdCanvas* canvas, int size_x, int size_y, const char* s);
 int  cdCanvasVectorCharSize(cdCanvas* canvas, int size);
+void cdCanvasVectorFontSize(cdCanvas* canvas, double size_x, double size_y);
+void cdCanvasGetVectorFontSize(cdCanvas* canvas, double *size_x, double *size_y);
 
 /* vector text properties */
 void cdCanvasGetVectorTextSize(cdCanvas* canvas, const char* s, int *x, int *y);
 void cdCanvasGetVectorTextBounds(cdCanvas* canvas, const char* s, int x, int y, int *rect);
+void cdCanvasGetVectorTextBox(cdCanvas* canvas, int x, int y, const char *s, int *xmin, int *xmax, int *ymin, int *ymax);
 
 /* properties */
 void cdCanvasGetFontDim(cdCanvas* canvas, int *max_width, int *height, int *ascent, int *descent);

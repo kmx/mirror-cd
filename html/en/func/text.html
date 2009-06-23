@@ -37,8 +37,8 @@ canvas:Text(x, y: number, text: string) [in Lua]
 canvas:fText(x, y: number, text: string) [in Lua]
 canvas:wText(x, y: number, text: string) (WC) [in Lua]</pre>
 
-  <p>Inserts a text in <b><tt>(x,y)</tt></b> according to the current font and 
-  text alignment. It expects an ANSI string with no line breaks.</p>
+  <p>Draws a text in the position <b><tt>(x,y)</tt></b> according to the current font and 
+  text alignment. It expects an ANSI string. Can have line breaks.</p>
 
 <h3>Attributes</h3>
 <pre class="function"><span class="mainFunction">void <a name="cdFont">cdCanvasFont</a>(cdCanvas* canvas, const char* typeface, int style, int size); [in C]</span>
@@ -164,18 +164,9 @@ void wdCanvasGetTextSize(cdCanvas* canvas, const char* text, double *width, doub
 canvas:GetTextSize(text: string) -&gt; (width, heigth: number) [in Lua]
 canvas:wGetTextSize(text: string) -&gt; (width, heigth: number) (WC) [in Lua]</pre>
 
-  <p>Returns the width and height of a text's minimum box with the currently selected font. If the driver does not 
-  support this kind of query, the values will be given 0 (zero). It is not necessary to provide all return pointers, you 
-  can provide only the desired values and <i><tt>NULL</tt></i> for the others.</p>
-
-<pre class="function"><span class="mainFunction">void <a name="cdTextBox">cdCanvasGetTextBox</a>(cdCanvas* canvas, int x, int y, const char* text, int *xmin, int *xmax, int *ymin, int *ymax); [in C]</span>
-void wdCanvasGetTextBox(cdCanvas* canvas, double x, double y, const char* text, double *xmin, double *xmax, double *ymin, double *ymax); (WC) [in C]
-
-canvas:GetTextBox(x, y: number, text: string) -&gt; (xmin, xmax, ymin, ymax: number) [in Lua]
-canvas:wGetTextBox(x, y: number, text: string) -&gt; (xmin, xmax, ymin, ymax: number) (WC) [in Lua]</pre>
-
-  <p>Returns the horizontal bounding rectangle of a text box, even if the text has an orientation. It is not necessary 
-  to provide all return pointers, you can provide only the desired values and <i><tt>NULL</tt></i> for the others.</p>
+    <p>Returns the text size independent from orientation. It is 
+      not necessary to provide all return pointers, you can provide only the desired 
+      values and <font>NULL</font> for the others.</p>
 
 <pre class="function"><span class="mainFunction">void <a name="cdTextBounds">cdCanvasGetTextBounds</a>(cdCanvas* canvas, int x, int y, const char *text, int *rect); [in C]</span>
 void wdCanvasGetTextBounds(cdCanvas* canvas, double x, double y, const char* text, double *rect); (WC) [in C]
@@ -183,8 +174,22 @@ void wdCanvasGetTextBounds(cdCanvas* canvas, double x, double y, const char* tex
 canvas:GetTextBounds(x, y: number, text: string) -&gt; (rect0, rect1, rect2, rect3, rect4, rect5, rect6, rect7: number) [in Lua]
 canvas:wGetTextBounds(x, y: number, text: string) -&gt; (rect0, rect1, rect2, rect3, rect4, rect5, rect6, rect7: number) (WC) [in Lua]</pre>
 
-  <p>Returns the oriented bounding rectangle of a text box. The rectangle corners are returned in counter-clock wise 
-  order starting with the bottom left corner, (x,y) arranged (x0,y0,x1,y1,x2,y2,x3,y3).</p>
+  <p>Returns the oriented bounding rectangle occupied by a text at a given 
+	position. The rectangle has the same dimentions returned by <strong>
+	GetTextSize</strong>. The rectangle corners are returned in counter-clock wise 
+  order starting with the bottom left corner, arranged (x0,y0,x1,y1,x2,y2,x3,y3).</p>
+
+
+<pre class="function"><span class="mainFunction">void <a name="cdTextBox">cdCanvasGetTextBox</a>(cdCanvas* canvas, int x, int y, const char* text, int *xmin, int *xmax, int *ymin, int *ymax); [in C]</span>
+void wdCanvasGetTextBox(cdCanvas* canvas, double x, double y, const char* text, double *xmin, double *xmax, double *ymin, double *ymax); (WC) [in C]
+
+canvas:GetTextBox(x, y: number, text: string) -&gt; (xmin, xmax, ymin, ymax: number) [in Lua]
+canvas:wGetTextBox(x, y: number, text: string) -&gt; (xmin, xmax, ymin, ymax: number) (WC) [in Lua]</pre>
+
+  <p>Returns the horizontal bounding rectangle occupied by a text at a given 
+	position. If orientation is not 0 then its area is always larger than the 
+	area of the rectangle returned by <strong>GetTextBounds</strong>. It is not necessary 
+  to provide all return pointers, you can provide only the desired values and <i><tt>NULL</tt></i> for the others.</p>
 
 
 </body>

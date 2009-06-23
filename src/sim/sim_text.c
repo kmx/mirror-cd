@@ -305,8 +305,8 @@ void simGetPenPos(cdCanvas* canvas, int x, int y, const char* s, FT_Matrix *matr
   int old_invert_yaxis = canvas->invert_yaxis;
   int w, h, ascent, height, baseline;
 
-  cdCanvasGetTextSize(canvas, s, &w, &h);
-  cdCanvasGetFontDim(canvas, NULL, &height, &ascent, NULL);
+  cdgettextsizeSIM(canvas->ctxcanvas, s, &w, &h);
+  cdgetfontdimSIM(canvas->ctxcanvas, NULL, &height, &ascent, NULL);
   baseline = height - ascent;
 
   /* in this case we are always upwards */
