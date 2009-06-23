@@ -978,10 +978,12 @@ int SimpleDrawTextAlign(void)
 
   use_vector = 0;
 
-  //if (use_vector)
-  //  cdVectorTextDirection(0, 0, 1, 1);
-  //else
-  //  cdTextOrientation(45);
+#if 0
+  if (use_vector)
+    cdVectorTextDirection(0, 0, 1, 1);
+  else
+    cdTextOrientation(45);
+#endif
 
   xoff = w/4;
   yoff = h/7;
@@ -991,7 +993,7 @@ int SimpleDrawTextAlign(void)
   else
   {
     //cdFont(CD_TIMES_ROMAN, CD_PLAIN, 14);
-    cdFont(CD_HELVETICA, CD_PLAIN, 18);
+    cdFont(CD_HELVETICA, CD_PLAIN, 24);
   }
 
   for (i = 0; i < 12; i++)

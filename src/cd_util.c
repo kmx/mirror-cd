@@ -333,3 +333,19 @@ char* cdStrDup(const char *str)
   }
   return NULL;
 }
+
+char* cdStrDupN(const char *str, int len)
+{
+  if (str)
+  {
+    int size = len+1;
+    char *newstr = malloc(size);
+    if (newstr) 
+    {
+      memcpy(newstr, str, len);
+      newstr[len]=0;
+    }
+    return newstr;
+  }
+  return NULL;
+}

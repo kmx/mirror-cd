@@ -50,7 +50,7 @@
 				ProgramDataBaseFileName="..\obj\cdpdf/"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
-				Detect64BitPortabilityProblems="true"
+				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="1"
 				CompileAs="0"
 			/>

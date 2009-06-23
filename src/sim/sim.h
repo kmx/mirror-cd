@@ -30,7 +30,7 @@ struct _cdSimulation
 
 void simFillDrawAAPixel(cdCanvas *canvas, int x, int y, unsigned short alpha_weigth);
 void simFillHorizLine(cdSimulation* simulation, int xmin, int y, int xmax);
-void simGetPenPos(cdCanvas* canvas, int x, int y, const char* s, FT_Matrix *matrix, FT_Vector *pen);
+void simGetPenPos(cdCanvas* canvas, int x, int y, const char* s, int len, FT_Matrix *matrix, FT_Vector *pen);
 int simIsPointInPolyWind(cdPoint* poly, int n, int x, int y);
 
 /* list of non-horizontal line segments */

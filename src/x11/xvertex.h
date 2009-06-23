@@ -21,8 +21,8 @@ enum {XR_LEFT, XR_CENTRE, XR_RIGHT, XR_TLEFT, XR_TCENTRE, XR_TRIGHT, XR_MLEFT, X
 double   XRotVersion(char* str, int n);
 void    XRotSetMagnification(double m);
 void    XRotSetBoundingBoxPad(int p);
-XPoint *XRotTextExtents(Display* dpy, XFontStruct* font, double angle, int x, int y, const char* text, int align);
-int     XRotDrawString(Display* dpy, XFontStruct* font, double angle, Drawable drawable, GC gc, int x, int y, const char* text, int align, int bg);
+XPoint *XRotTextExtents(Display* dpy, XFontStruct* font, double angle, int x, int y, const char* text, int len, int align);
+int     XRotDrawString(Display* dpy, XFontStruct* font, double angle, Drawable drawable, GC gc, int x, int y, const char* text, int len, int align, int bg);
 
 #ifdef __cplusplus
 }

@@ -46,7 +46,7 @@ struct _cgmFunc
   void (*r)( CGM *, double );
 
   /* put string */
-  void (*s)( CGM *, const char * );
+  void (*s)( CGM *, const char *, int );
 
   /* put VDC at VDC mode and precision */
   void (*vdc)( CGM *, double );
@@ -365,7 +365,7 @@ static void cgmb_e   ( CGM *, int, const char *l[] );     /* put enum ( int*2 ) 
 static void cgmb_i   ( CGM *, long );                   /* put int  ( integer precision ) */
 static void cgmb_u   ( CGM *, unsigned long );          /* put unsigned int  ( integer precision ) */
 static void cgmb_r   ( CGM *, double );                 /* put real ( real precision ) */
-static void cgmb_s   ( CGM *, const char * );           /* put string */
+static void cgmb_s   ( CGM *, const char *, int );           /* put string */
 static void cgmb_vdc ( CGM *, double );                 /* put VDC at VDC mode and precision */
 static void cgmb_p   ( CGM *, double, double );         /* put point at VDC mode and precision */
 static void cgmb_co  ( CGM *, const void * );           /* put colour at colour mode and precision */
@@ -401,11 +401,11 @@ static void cgmt_ci  ( CGM *, unsigned long );          /* put colour index at c
 static void cgmt_cd  ( CGM *, double );                 /* put color direct at colour direct precision */
 static void cgmt_rgb ( CGM *, double, double, double ); /* put color direct (rgb) at colour direct precision */
 static void cgmt_ix  ( CGM *, long );                   /* put index at index precision */
-static void cgmt_e   ( CGM *, int, const char *l[] );     /* put enum ( int*2 ) */
+static void cgmt_e   ( CGM *, int, const char *l[] );   /* put enum ( int*2 ) */
 static void cgmt_i   ( CGM *, long );                   /* put int  ( integer precision ) */
 static void cgmt_u   ( CGM *, unsigned long );          /* put unsigned int  ( integer precision ) */
 static void cgmt_r   ( CGM *, double );                 /* put real ( real precision ) */
-static void cgmt_s   ( CGM *, const char * );           /* put string */
+static void cgmt_s   ( CGM *, const char *, int );      /* put string */
 static void cgmt_vdc ( CGM *, double );                 /* put VDC at VDC mode and precision */
 static void cgmt_p   ( CGM *, double, double );         /* put point at VDC mode and precision */
 static void cgmt_co  ( CGM *, const void * );           /* put colour at colour mode and precision */
@@ -441,11 +441,11 @@ static void cgmc_ci  ( CGM *, unsigned long );          /* put colour index at c
 static void cgmc_cd  ( CGM *, double );                 /* put color direct at colour direct precision */
 static void cgmc_rgb ( CGM *, double, double, double ); /* put color direct (rgb) at colour direct precision */
 static void cgmc_ix  ( CGM *, long );                   /* put index at index precision */
-static void cgmc_e   ( CGM *, int, const char *l[] );     /* put enum ( int*2 ) */
+static void cgmc_e   ( CGM *, int, const char *l[] );   /* put enum ( int*2 ) */
 static void cgmc_i   ( CGM *, long );                   /* put int  ( integer precision ) */
 static void cgmc_u   ( CGM *, unsigned long );          /* put unsigned int  ( integer precision ) */
 static void cgmc_r   ( CGM *, double );                 /* put real ( real precision ) */
-static void cgmc_s   ( CGM *, const char * );           /* put string */
+static void cgmc_s   ( CGM *, const char *, int );      /* put string */
 static void cgmc_vdc ( CGM *, double );                 /* put VDC at VDC mode and precision */
 static void cgmc_p   ( CGM *, double, double );         /* put point at VDC mode and precision */
 static void cgmc_co  ( CGM *, const void * );           /* put colour at colour mode and precision */
@@ -725,10 +725,10 @@ static void cgmb_r ( CGM *cgm, double func )
   }
 }
 
-static void cgmb_s ( CGM *cgm, const char *s )
+static void cgmb_s ( CGM *cgm, const char *s, int len )
 {
   register unsigned i;
-  unsigned l = strlen(s);
+  unsigned l = len;
   int bc = 0;
 
   if ( l > 254 )
@@ -743,7 +743,7 @@ static void cgmb_s ( CGM *cgm, const char *s )
   else
     cgmb_putu8(cgm,l);
 
-  for ( i=0; s[i]; s++ )
+  for ( i=0; i<len; s++ )
   {
     if ( (i + bc) == 32766 )
     {
@@ -909,12 +909,12 @@ static void cgmt_r ( CGM *cgm, double func )
   cgm->cl += fprintf ( unit, " %g", func );
 }
 
-static void cgmt_s ( CGM *cgm, const char *s )
+static void cgmt_s ( CGM *cgm, const char *s, int len )
 {
   register unsigned i;
   fputc ( 34, unit );
 
-  for ( i=0; s[i]; i++ )
+  for ( i=0; i<len; i++ )
   {
     if ( s[i] == 34 )
     {
@@ -925,7 +925,7 @@ static void cgmt_s ( CGM *cgm, const char *s )
   }
 
   fputc ( 34, unit );
-  cgm->cl += strlen (s) + 2;
+  cgm->cl += len + 2;
 }
 
 static void cgmt_vdc ( CGM *cgm, double vdc)
@@ -1049,12 +1049,12 @@ static void cgmc_r ( CGM *cgm, double func )
   cgm->cl += fprintf ( unit, " %g", func );
 }
 
-static void cgmc_s ( CGM *cgm, const char *s )
+static void cgmc_s ( CGM *cgm, const char *s, int len )
 {
   register unsigned i;
   fputc ( 34, unit );
 
-  for ( i=0; s[i]; i++ )
+  for ( i=0; i<len; i++ )
   {
     if ( s[i] == 34 )
     {
@@ -1065,7 +1065,7 @@ static void cgmc_s ( CGM *cgm, const char *s )
   }
 
   fputc ( 34, unit );
-  cgm->cl += strlen (s) + 2;
+  cgm->cl += len + 2;
 }
 
 static void cgmc_vdc ( CGM *cgm, double vdc)
@@ -1168,6 +1168,7 @@ static const char *offon[] =  { "OFF", "ON" };
 CGM *cgm_begin_metafile ( char *file, int mode, char *header )
 {
   CGM *cgm;
+  int len;
 
   if ( (cgm = (CGM *)malloc ( sizeof (CGM) ) ) == NULL )
     return NULL;
@@ -1227,9 +1228,10 @@ CGM *cgm_begin_metafile ( char *file, int mode, char *header )
 
   cgm->op = -1;
 
-  cgm->func->wch  ( cgm, 0, 1, strlen ( header ) + 1 );
+  len = strlen(header);
+  cgm->func->wch  ( cgm, 0, 1, len+1 );
 
-  cgm->func->s    ( cgm, header );
+  cgm->func->s    ( cgm, header, len );
 
   cgm->func->term ( cgm );
 
@@ -1258,8 +1260,9 @@ int cgm_end_metafile ( CGM *cgm )
 
 int cgm_begin_picture (CGM *cgm, const char *s )
 {
-  cgm->func->wch ( cgm, 0, 3, strlen(s)+1 );
-  cgm->func->s   ( cgm, s );
+  int len = strlen(s);
+  cgm->func->wch ( cgm, 0, 3, len+1 );
+  cgm->func->s   ( cgm, s, len );
   return cgm->func->term(cgm);
 }
 
@@ -1290,8 +1293,9 @@ int cgm_metafile_version ( CGM *cgm, long version )
 
 int cgm_metafile_description ( CGM *cgm, const char *s )
 {
-  cgm->func->wch ( cgm, 1, 2, 1+strlen(s) );
-  cgm->func->s   ( cgm, s );
+  int len = strlen(s);
+  cgm->func->wch ( cgm, 1, 2, 1+len);
+  cgm->func->s   ( cgm, s, len );
   return cgm->func->term(cgm);
 }
 
@@ -1520,7 +1524,7 @@ int cgm_font_list ( CGM *cgm, const char *fl[] )
   {
     cgm->func->nl ( cgm );
     cgm->func->align ( cgm, 10 );
-    cgm->func->s ( cgm, fl[i] );
+    cgm->func->s ( cgm, fl[i], strlen(fl[i]) );
   }
 
   return cgm->func->term(cgm);
@@ -1757,39 +1761,34 @@ int cgm_polymarker ( CGM *cgm, int n, const double *p )
   return _cgm_point_list ( cgm, 3, n, p );
 }
 
-static int _cgm_text_piece ( CGM *cgm, int t, const char *s)
+static int _cgm_text_piece ( CGM *cgm, int t, const char *s, int len)
 {
   static const char *tt[] = { "NOT_FINAL", "   FINAL" };
   cgm->func->e ( cgm, t, tt );
-  cgm->func->s ( cgm, s );
+  cgm->func->s ( cgm, s , len);
   return cgm->func->term(cgm);
 }
 
-int cgm_text ( CGM *cgm, int tt, double x, double y, const char *s )
+int cgm_text ( CGM *cgm, int tt, double x, double y, const char *s, int len )
 {
-  cgm->func->wch   ( cgm, 4, 4, 2 * cgm->vdc_size + strlen(s) + 3 );
+  cgm->func->wch   ( cgm, 4, 4, 2 * cgm->vdc_size + len + 3 );
   cgm->func->p     ( cgm, x, y );
   cgm->func->nl    ( cgm );
   cgm->func->align ( cgm, 10 );
 
   if ( cgm->mode == 2 ) /* clear text */
   {
-    while ( strlen (s) > 50 )
+    while ( len > 50 )
     {
-      char s1[51];
-
-      strncpy ( s1, s, 50 );
-      s1[50] = 0;
-
-      _cgm_text_piece ( cgm, 0, s1 );
-
+      _cgm_text_piece ( cgm, 0, s, 50);
       s += 50;
-      cgm->func->wch ( cgm, 4, 6, 2 * cgm->vdc_size + strlen(s) + 1 );
-    }
+      len -= 50;
 
+      cgm->func->wch ( cgm, 4, 6, 2 * cgm->vdc_size + len + 1 );
+    }
   }
 
-  return _cgm_text_piece ( cgm, tt, s );
+  return _cgm_text_piece ( cgm, tt, s, len );
 }
 
 int cgm_polygon ( CGM *cgm, int n, const double *p )
@@ -2276,6 +2275,6 @@ int cgm_message ( CGM *cgm, int action, const char *s)
   static const char *ac[] = { "NOACTION", "ACTION" };
   cgm->func->wch ( cgm, 7, 2, 2 + strlen(s)+1 );
   cgm->func->e   ( cgm, action, ac );
-  cgm->func->s   ( cgm, s );
+  cgm->func->s   ( cgm, s, strlen(s) );
   return cgm->func->term(cgm);
 }

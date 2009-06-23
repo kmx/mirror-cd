@@ -620,19 +620,22 @@ static void cdFontEx(cdCanvas* canvas, const char* type_face, int style, int siz
   }
 }
 
-static void cdGetFontDimEx(int *max_width, int *line_height, int *ascent, int *descent)
+void cdgetfontdimEX(cdCtxCanvas* ctxcanvas, int *max_width, int *line_height, int *ascent, int *descent)
 {
+  cdCanvas* canvas = ((cdCtxCanvasBase*)ctxcanvas)->canvas;
+  cdFontEx(canvas, canvas->font_type_face, canvas->font_style, canvas->font_size);
   if (line_height) *line_height = font.line_height;
   if (max_width) *max_width = font.max_width;
   if (ascent) *ascent = font.ascent;
   if (descent) *descent = font.descent;
 }
 
-static void cdGetTextSizeEx(const char *s, int *width, int *height)
+void cdgettextsizeEX(cdCtxCanvas* ctxcanvas, const char *s, int len, int *width, int *height)
 {
   int i = 0, w = 0;
-
-  while (s[i] != '\0')
+  cdCanvas* canvas = ((cdCtxCanvasBase*)ctxcanvas)->canvas;
+  cdFontEx(canvas, canvas->font_type_face, canvas->font_style, canvas->font_size);
+  while (i < len)
   {
     w += font.CharWidth(s[i]);
     i++;
@@ -640,18 +643,4 @@ static void cdGetTextSizeEx(const char *s, int *width, int *height)
 
   if (height) *height = font.line_height;
   if (width) *width = w;
-}
-
-void cdgetfontdimEX(cdCtxCanvas* ctxcanvas, int *max_width, int *height, int *ascent, int *descent)
-{
-  cdCanvas* canvas = ((cdCtxCanvasBase*)ctxcanvas)->canvas;
-  cdFontEx(canvas, canvas->font_type_face, canvas->font_style, canvas->font_size);
-  cdGetFontDimEx(max_width, height, ascent, descent);
-}
-
-void cdgettextsizeEX(cdCtxCanvas* ctxcanvas, const char *s, int *width, int *height)
-{
-  cdCanvas* canvas = ((cdCtxCanvasBase*)ctxcanvas)->canvas;
-  cdFontEx(canvas, canvas->font_type_face, canvas->font_style, canvas->font_size);
-  cdGetTextSizeEx(s, width, height);
 }

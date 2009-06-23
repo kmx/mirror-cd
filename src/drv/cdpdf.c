@@ -474,15 +474,15 @@ static void cdgetfontdim(cdCtxCanvas *ctxcanvas, int *max_width, int *height, in
   if (max_width) *max_width = (int)(PDF_info_textline(ctxcanvas->pdf, "W", 0, "width", "")/ctxcanvas->scale);
 }
 
-static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *s, int *width, int *height)
+static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *s, int len, int *width, int *height)
 {
   if (ctxcanvas->font<0)
     return;
   if (height) cdgetfontdim(ctxcanvas, NULL, height, NULL, NULL);
-  if (width) *width = (int)(PDF_info_textline(ctxcanvas->pdf, s, 0, "width", "")/ctxcanvas->scale);
+  if (width) *width = (int)(PDF_info_textline(ctxcanvas->pdf, s, len, "width", "")/ctxcanvas->scale);
 }
 
-static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s)
+static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, int len)
 {
   char temp[200], options[200];
 
@@ -557,12 +557,12 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s)
     break;
   }
 
-  PDF_fit_textline(ctxcanvas->pdf, s, 0, x, y, options);
+  PDF_fit_textline(ctxcanvas->pdf, s, len, x, y, options);
 }
 
-static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s)
+static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
 {
-  cdftext(ctxcanvas, (double)x, (double)y, s);
+  cdftext(ctxcanvas, (double)x, (double)y, s, len);
 }
 
 static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)

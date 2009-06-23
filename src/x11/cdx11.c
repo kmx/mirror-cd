@@ -1224,9 +1224,9 @@ static int cd2xvertex [12] = {XR_TCENTRE, XR_BCENTRE,
                               XR_MCENTRE, XR_LEFT, 
                               XR_CENTRE,  XR_RIGHT};
 
-static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s)
+static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
 {
-  int w, h, n, dir = -1;
+  int w, h, dir = -1;
 
   if (ctxcanvas->canvas->text_orientation != 0)
   {
@@ -1239,13 +1239,13 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s)
     {
       sPrepareRegion(ctxcanvas);
       XRotDrawString(ctxcanvas->dpy, ctxcanvas->font, ctxcanvas->canvas->text_orientation, 
-                     ctxcanvas->region_aux, ctxcanvas->region_aux_gc, x, y, s, 
+                     ctxcanvas->region_aux, ctxcanvas->region_aux_gc, x, y, s, len,
                      cd2xvertex[ctxcanvas->canvas->text_alignment], 0);
       sCombineRegion(ctxcanvas);
     }
     else
       XRotDrawString(ctxcanvas->dpy, ctxcanvas->font, ctxcanvas->canvas->text_orientation, 
-                     ctxcanvas->wnd, ctxcanvas->gc, x, y, s, 
+                     ctxcanvas->wnd, ctxcanvas->gc, x, y, s, len,
                      cd2xvertex[ctxcanvas->canvas->text_alignment], 0);
 
     cdxCheckSolidStyle(ctxcanvas, 0);
@@ -1253,8 +1253,7 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s)
     return;
   }
 
-  n = strlen(s);
-  w = XTextWidth(ctxcanvas->font, s, n);
+  w = XTextWidth(ctxcanvas->font, s, len);
   h = ctxcanvas->font->ascent + ctxcanvas->font->descent;
 
   switch (ctxcanvas->canvas->text_alignment)
@@ -1315,19 +1314,19 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s)
   {
     sPrepareRegion(ctxcanvas);
     XSetFont(ctxcanvas->dpy, ctxcanvas->region_aux_gc, ctxcanvas->font->fid);
-    XDrawString(ctxcanvas->dpy, ctxcanvas->region_aux, ctxcanvas->region_aux_gc, x, y+1, s, n);
+    XDrawString(ctxcanvas->dpy, ctxcanvas->region_aux, ctxcanvas->region_aux_gc, x, y+1, s, len);
     sCombineRegion(ctxcanvas);
   }
   else
-    XDrawString(ctxcanvas->dpy, ctxcanvas->wnd, ctxcanvas->gc, x, y+1, s, n);
+    XDrawString(ctxcanvas->dpy, ctxcanvas->wnd, ctxcanvas->gc, x, y+1, s, len);
 
   cdxCheckSolidStyle(ctxcanvas, 0);
 }
 
-static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *s, int *width, int *height)
+static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *s, int len, int *width, int *height)
 {
   if (!ctxcanvas->font) return;
-  if (width)  *width  = XTextWidth(ctxcanvas->font, s, strlen(s));
+  if (width)  *width  = XTextWidth(ctxcanvas->font, s, len);
   if (height) *height = ctxcanvas->font->ascent + ctxcanvas->font->descent;
 }
 

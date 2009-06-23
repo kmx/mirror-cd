@@ -792,10 +792,9 @@ static int cdwpCompensateHeight(int height)
   return (int)floor(height/10. + 0.5);  /* 10% */
 }
 
-static void cdgettextsize(cdCtxCanvas* ctxcanvas, const char *s, int *width, int *height)
+static void cdgettextsize(cdCtxCanvas* ctxcanvas, const char *s, int len, int *width, int *height)
 {
   RectF boundingBox;
-  int len = strlen(s);
 
   ctxcanvas->graphics->MeasureString(cdwpString2Unicode(s, len), len, 
                                             ctxcanvas->font, PointF(0,0),
@@ -830,7 +829,7 @@ static void sTextBox(cdCtxCanvas* ctxcanvas, WCHAR *ws, int len, int x, int y, i
   *ymin += ydir * (*h);
 }
 
-static void cdwpCanvasGetTextHeight(cdCanvas* canvas, int x, int y, const char *s, int w, int h, int *hbox)
+static void cdwpCanvasGetTextHeight(cdCanvas* canvas, int x, int y, int w, int h, int *hbox)
 {
   int xmin, xmax, ymin, ymax;
 
@@ -866,13 +865,13 @@ static void cdwpCanvasGetTextHeight(cdCanvas* canvas, int x, int y, const char *
   *hbox = ymax-ymin+1;
 }
 
-static void cdwpTextTransform(cdCtxCanvas* ctxcanvas, const char* s, int *x, int *y, int w, int h, Matrix &transformMatrix)
+static void cdwpTextTransform(cdCtxCanvas* ctxcanvas, int *x, int *y, int w, int h, Matrix &transformMatrix)
 {
   int hbox;
   double* matrix = ctxcanvas->canvas->matrix;
   Matrix m1;
 
-  cdwpCanvasGetTextHeight(ctxcanvas->canvas, *x, *y, s, w, h, &hbox);
+  cdwpCanvasGetTextHeight(ctxcanvas->canvas, *x, *y, w, h, &hbox);
 
   // configure a bottom-up coordinate system
   m1.SetElements((REAL)1, (REAL)0, (REAL)0, (REAL)-1, (REAL)0, (REAL)(ctxcanvas->canvas->h-1));
@@ -894,10 +893,10 @@ static void cdwpTextTransform(cdCtxCanvas* ctxcanvas, const char* s, int *x, int
   *y = 0;
 }
 
-static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s)
+static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s, int len)
 {
   Matrix transformMatrix;
-  int len = strlen(s), use_transform = 0, w, h;
+  int use_transform = 0, w, h;
   WCHAR* ws = cdwpString2Unicode(s, len);
 
   if (ctxcanvas->canvas->text_orientation)
@@ -913,7 +912,7 @@ static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s)
 
   if (ctxcanvas->canvas->use_matrix)
   {
-    cdwpTextTransform(ctxcanvas, s, &x, &y, w, h, transformMatrix);
+    cdwpTextTransform(ctxcanvas, &x, &y, w, h, transformMatrix);
     use_transform = 1;
   }
   else if (cdwpSetTransform(ctxcanvas, transformMatrix, NULL))
@@ -2160,6 +2159,7 @@ static cdAttribute hdc_attrib =
 
 static char* get_gdiplus_attrib(cdCtxCanvas* ctxcanvas)
 {
+  (void)ctxcanvas;
   return "1";
 }
 
@@ -2255,6 +2255,7 @@ static ULONG_PTR cd_gdiplusToken = NULL;
 
 static void __stdcall DebugEvent(DebugEventLevel level, char* msg)
 {
+  (void)level;
   MessageBox(NULL, msg, "GDI+ Debug", 0);
 }
 

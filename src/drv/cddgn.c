@@ -164,13 +164,12 @@ static void endComplexElement(cdCtxCanvas*);
  * Obtem o descent do texto (para letras como q,p,g etc) * 
  *********************************************************/
 
-static long get_descent(const char *text, int size_pixel)
+static long get_descent(const char *text, int len, int size_pixel)
 {
  char *descent="jgyqp";
  long  a=0; 
- long length = strlen(text);
 
- while(a < length)
+ while(a < len)
  {
    if(strchr(descent, text[a]))
      return size_pixel/2;
@@ -184,11 +183,10 @@ static long get_descent(const char *text, int size_pixel)
  * Calcula a largura da string no MicroStation *
  ***********************************************/
 
-static long gettextwidth(cdCtxCanvas* ctxcanvas, const char *s, int size_pixel)
+static long gettextwidth(cdCtxCanvas* ctxcanvas, const char *s, int len, int size_pixel)
 {
   long a=0,
-       width=0,
-       length = strlen(s);
+       width=0;
 
   short default_size=0;
 
@@ -239,7 +237,7 @@ static long gettextwidth(cdCtxCanvas* ctxcanvas, const char *s, int size_pixel)
   else
     default_size=4;
 
-  for(a=0,width=0;a < length; a++)
+  for(a=0,width=0;a < len; a++)
   { 
     static short size_number;
     static char letter;
@@ -806,9 +804,8 @@ static void cdsector (cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, doub
   endComplexElement(ctxcanvas);
 }
 
-static void cdtext (cdCtxCanvas* ctxcanvas, int x, int y, const char *s)
+static void cdtext (cdCtxCanvas* ctxcanvas, int x, int y, const char *s, int len)
 {
-  long n=0;
   long descent=0;
   short w=0;
   long hc=0,wc=0;
@@ -818,16 +815,14 @@ static void cdtext (cdCtxCanvas* ctxcanvas, int x, int y, const char *s)
   Elm_hdr ehdr;
   Disp_hdr dhdr;
 
-  n = strlen(s);
+  if(len > 255)
+    len=255;
 
-  if(n > 255)
-    n=255;
-
-  w = (short)((n/2)+(n%2));
+  w = (short)((len/2)+(len%2));
   size_pixel = cdGetFontSizePixels(ctxcanvas->canvas, ctxcanvas->canvas->font_size);
-  descent=get_descent(s, size_pixel);
+  descent=get_descent(s, len, size_pixel);
   hc = size_pixel+descent;
-  wc = gettextwidth(ctxcanvas, s, size_pixel);
+  wc = gettextwidth(ctxcanvas, s, len, size_pixel);
  
   y+=descent;
 
@@ -877,8 +872,8 @@ static void cdtext (cdCtxCanvas* ctxcanvas, int x, int y, const char *s)
   put_long(ctxcanvas, 0);
   put_long(ctxcanvas, x);
   put_long(ctxcanvas, y);
-  put_word(ctxcanvas, (unsigned short) n);
-  writec(ctxcanvas, s, (short)(n+(n%2))); /* deve escrever sempre um numero par de caracteres */
+  put_word(ctxcanvas, (unsigned short)len);
+  writec(ctxcanvas, s, (short)(len+(len%2))); /* deve escrever sempre um numero par de caracteres */
 
   if(italic)
   {
@@ -1251,11 +1246,11 @@ static void cdgetfontdim (cdCtxCanvas* ctxcanvas, int *max_width, int *height, i
   if(descent) *descent = size_pixel/2;
 }
 
-static void cdgettextsize (cdCtxCanvas* ctxcanvas, const char *s, int *width, int *height)
+static void cdgettextsize (cdCtxCanvas* ctxcanvas, const char *s, int len, int *width, int *height)
 {
  int size_pixel = cdGetFontSizePixels(ctxcanvas->canvas, ctxcanvas->canvas->font_size);
- if(height) *height = size_pixel + get_descent(s, size_pixel);
- if(width)  *width  = gettextwidth(ctxcanvas, s, size_pixel);
+ if(height) *height = size_pixel + get_descent(s, len, size_pixel);
+ if(width)  *width  = gettextwidth(ctxcanvas, s, len, size_pixel);
 }
 
 static int cdtextalignment (cdCtxCanvas* ctxcanvas, int alignment)

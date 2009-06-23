@@ -16,16 +16,16 @@
 	CanvasGetVectorTextBox, CanvasGetVectorFontSize</strong> and <strong>
 	CanvasVectorFontSize</strong>.</li>
 	<li><span style="color: #008000">Changed:</span> 
-  	CD_DBUFFER now activates the buffered canvas before creating the image 
-	canvas. If size is 0 then uses 1 and avoid to fail during creation.</li>
-	<li><span style="color: #008000">Changed:</span> 
   	the functions <strong>CanvasVectorText</strong>, <strong>CanvasText</strong> 
 	and <strong>CanvasGetTextSize</strong> now supports line breaks using '\n'.
 	<strong>CanvasMultiLineVectorText</strong> is now deprecated but kept for 
 	compatibility. 
   <strong>
   <span style="color: #FF0000">IMPORTANT</span></strong> - VectorTextSize now 
-	includes the full line size.</li>
+	uses the full line size.</li>
+	<li><span style="color: #008000">Changed:</span> 
+  	CD_DBUFFER now activates the buffered canvas before creating the image 
+	canvas. If size is 0 then uses 1 and avoid to fail during creation.</li>
 	<li><span style="color: #FF0000">Fixed:</span> <strong>CanvasText</strong> 
 	for CD_IMAGERGB driver when the foreground color has alpha.</li>
 </ul>

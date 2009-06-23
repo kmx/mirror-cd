@@ -208,20 +208,24 @@ static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, dou
     fprintf(ctxcanvas->file, "%s(%g, %g, %g, %g, %g, %g)\n", CDDBG_FCHORD, xc, yc, w, h, a1, a2);
 }
 
-static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *text)
+static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *text, int len)
 {
+  text = cdStrDupN(text, len);
   if (ctxcanvas->canvas->new_region)
     fprintf(ctxcanvas->file, "%sRegion(%d, %d, \"%s\", %s)\n", CDDBG_TEXT, x, y, text, get_region_mode(ctxcanvas->canvas->combine_mode));
   else
     fprintf(ctxcanvas->file, "%s(%d, %d, \"%s\")\n", CDDBG_TEXT, x, y, text);
+  free((char*)text);
 }
 
-static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *text)
+static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *text, int len)
 {
+  text = cdStrDupN(text, len);
   if (ctxcanvas->canvas->new_region)
     fprintf(ctxcanvas->file, "%sRegion(%g, %g, \"%s\", %s)\n", CDDBG_FTEXT, x, y, text, get_region_mode(ctxcanvas->canvas->combine_mode));
   else
     fprintf(ctxcanvas->file, "%s(%g, %g, \"%s\")\n", CDDBG_FTEXT, x, y, text);
+  free((char*)text);
 }
 
 static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
@@ -585,12 +589,12 @@ static void cdgetfontdim(cdCtxCanvas* ctxcanvas, int *max_width, int *height, in
 	fprintf(ctxcanvas->file, "%d, %d, %d, %d = GetFontDim()\n", *max_width, *height, *ascent, *descent);
 }
 
-static void cdgettextsize(cdCtxCanvas* ctxcanvas, const char *s, int *width, int *height)
+static void cdgettextsize(cdCtxCanvas* ctxcanvas, const char *s, int len, int *width, int *height)
 {
   int tmp_width, tmp_height;
   if (!width) width = &tmp_width;
   if (!height) height = &tmp_height;
-  cdgettextsizeEX(ctxcanvas, s, width, height);
+  cdgettextsizeEX(ctxcanvas, s, len, width, height);
 	fprintf(ctxcanvas->file, "%d, %d = GetTextSize(\"%s\")\n", *width, *height, s);
 }
 

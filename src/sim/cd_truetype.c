@@ -14,14 +14,6 @@
 /*******************************************
         Inicializa o Rasterizador
 ********************************************/
-static char *getCdDir(void)
-{
-  static char *env = NULL;
-  if (env) return env;
-  env = getenv("CDDIR");
-  if (!env) env = ".";
-  return env;
-}
 
 #ifdef WIN32
 #include <windows.h>
@@ -77,8 +69,12 @@ int cdTT_load(cdTT_Text * tt_text, const char *font, int size, double xres, doub
   else
   {
     /* se nao conseguiu, abre arq. no dir. do cd, */
-    sprintf(filename, "%s/%s.ttf", getCdDir(), font);
-    file = fopen(filename, "r");
+    char* env = getenv("CDDIR");
+    if (env)
+    {
+      sprintf(filename, "%s/%s.ttf", env, font);
+      file = fopen(filename, "r");
+    }
 
     if (file)
       fclose(file);

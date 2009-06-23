@@ -125,8 +125,8 @@ void cdwKillCanvas(cdCtxCanvas* canvas);
 
 
 /* implemented in the wmfmeta.c module */
-void wmfMakePlaceableMetafile(HMETAFILE hmf, char* filename, int w, int h);
-void wmfWritePlacebleFile(HANDLE hFile, char* buffer, DWORD dwSize, LONG mm, LONG xExt, LONG yExt);
+void wmfMakePlaceableMetafile(HMETAFILE hmf, const char* filename, int w, int h);
+void wmfWritePlacebleFile(HANDLE hFile, unsigned char* buffer, DWORD dwSize, LONG mm, LONG xExt, LONG yExt);
 
 /* implemented in the wmf_emf.c module */
 int cdplayWMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *data);

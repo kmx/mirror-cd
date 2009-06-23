@@ -563,7 +563,7 @@ static void cdsector (cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, doub
   fprintf ( ctxcanvas->file, "SEQEND\n" );
 }
 
-static void cdtext (cdCtxCanvas *ctxcanvas, int x, int y, const char *s)
+static void cdtext (cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
 {
   fprintf ( ctxcanvas->file, "0\n" );
   fprintf ( ctxcanvas->file, "TEXT\n" );
@@ -592,7 +592,10 @@ static void cdtext (cdCtxCanvas *ctxcanvas, int x, int y, const char *s)
   fprintf ( ctxcanvas->file, "73\n" );
   fprintf ( ctxcanvas->file, "%3d\n", ctxcanvas->tva );   /* text vertical alignment   */
   fprintf ( ctxcanvas->file, "1\n" );
+
+  s = cdStrDupN(s, len);
   fprintf ( ctxcanvas->file, "%s\n", s );          /* text */
+  free((char*)s);
 }
 
 
@@ -774,13 +777,14 @@ static void cdgetfontdim (cdCtxCanvas *ctxcanvas, int *max_width, int *height, i
   }
 }
 
-static void cdgettextsize (cdCtxCanvas *ctxcanvas, const char *s, int *width, int *height)
+static void cdgettextsize (cdCtxCanvas *ctxcanvas, const char *s, int len, int *width, int *height)
 {
   int i;
   double tangent_ta;
   double pixel_th;
+  (void)s;
 
-  i = (int)strlen(s);
+  i = len;
   tangent_ta = tan(ctxcanvas->toa*CD_DEG2RAD);
   pixel_th = (ctxcanvas->th*ctxcanvas->canvas->xres)/CD_MM2PT;  /* points to pixels */
 

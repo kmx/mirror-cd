@@ -513,24 +513,24 @@ static void settextbbox (cdCtxCanvas *ctxcanvas,  double x, double y, int width,
   }
 }
 
-static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s)
+static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
 {
   int width, height;
   
-  cgm_text( ctxcanvas->cgm, 1 /* final */ , (double)x, (double)y, s );
+  cgm_text( ctxcanvas->cgm, 1 /* final */ , (double)x, (double)y, s, len );
   
-  cdgettextsizeEX(ctxcanvas, s, &width, &height);
+  cdgettextsizeEX(ctxcanvas, s, len, &width, &height);
   
   settextbbox (ctxcanvas, (double) x, (double) y, width, height );
 }
 
-static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s)
+static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, int len)
 {
   int width, height;
   
-  cgm_text( ctxcanvas->cgm, 1 /* final */ , x, y, s );
+  cgm_text( ctxcanvas->cgm, 1 /* final */ , x, y, s, len);
   
-  cdgettextsizeEX(ctxcanvas, s, &width, &height);
+  cdgettextsizeEX(ctxcanvas, s, len, &width, &height);
   
   settextbbox (ctxcanvas, x, y, width, height );
 }

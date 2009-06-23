@@ -122,7 +122,7 @@ static struct style_template {
 
 /* ---------------------------------------------------------------------- */
 
-static RotatedTextItem *XRotCreateTextItem(Display *dpy, XFontStruct *font, double angle, char *text, int align);
+static RotatedTextItem *XRotCreateTextItem(Display *dpy, XFontStruct *font, double angle, const char *text, int len, int align);
 static void XRotAddToLinkedList(Display *dpy, RotatedTextItem *item);
 static XImage *XRotMagnifyImage(Display *dpy, XImage *ximage);
 static void XRotFreeTextItem(Display *dpy, RotatedTextItem *item);
@@ -133,18 +133,19 @@ static void XRotFreeTextItem(Display *dpy, RotatedTextItem *item);
 /* Routine to mimic `my_strdup()' (some machines don't have it)              */
 /**************************************************************************/
 
-static char *my_strdup(const char *str)
+static char *my_strdup(const char *str, int len)
 {
   char *s;
-  int len;
   
   if(str==NULL)
     return NULL;
   
-  len = (int)strlen(str);
   s=(char *)malloc((unsigned)(len+1));
-  if(s!=NULL) 
-    memcpy(s, str, len+1);
+  if(s!=NULL)
+  {
+    memcpy(s, str, len);
+    s[len]=0;
+  }
   
   return s;
 }
@@ -157,7 +158,7 @@ static char *my_strdup(const char *str)
 static char *my_strtok(char *str1, const char *str2)
 {
   char *ret;
-  int i, j, stop;
+  int i, j, stop, len2;
   static int start, len;
   static char *stext;
   
@@ -176,12 +177,14 @@ static char *my_strtok(char *str1, const char *str2)
   if(start>=len)
     return NULL;
   
+  len2 = strlen(str2);
+
   /* loop through characters */
   for(i=start; i<len; i++) 
   {
     /* loop through delimiters */
     stop=0;
-    for(j=0; j<strlen(str2); j++)
+    for(j=0; j<len2; j++)
       if(stext[i]==str2[j])
         stop=1;
       
@@ -235,7 +238,7 @@ static XImage *MakeXImage(Display *dpy, int w, int h)
 /*  Draw a horizontal string in a quick fashion                           */
 /**************************************************************************/
 
-static int XRotDrawHorizontalString(Display *dpy, XFontStruct *font, Drawable drawable, GC gc, int x, int y, const char *text, int align, int bg)
+static int XRotDrawHorizontalString(Display *dpy, XFontStruct *font, Drawable drawable, GC gc, int x, int y, const char *text, int len, int align, int bg)
 {
   GC my_gc;
   int nl=1, i;
@@ -255,7 +258,7 @@ static int XRotDrawHorizontalString(Display *dpy, XFontStruct *font, Drawable dr
   
   /* count number of sections in string */
   if(align!=XR_LEFT)
-    for(i=0; i<strlen(text)-1; i++)
+    for(i=0; i<len-1; i++)
       if(text[i]=='\n')
         nl++;
       
@@ -278,16 +281,16 @@ static int XRotDrawHorizontalString(Display *dpy, XFontStruct *font, Drawable dr
   else
     yp=y;
   
-  str1=my_strdup(text);
+  str1=my_strdup(text, len);
   if(str1==NULL)
     return 1;
   
-  str3=my_strtok(str1, str2);
-  
   /* loop through each section in the string */
+  str3=my_strtok(str1, str2);
   do 
   {
-    XTextExtents(font, str3, strlen(str3), &dir, &asc, &desc, &overall);
+    int len3 = strlen(str3);
+    XTextExtents(font, str3, len3, &dir, &asc, &desc, &overall);
     
     /* where to draw section in x ? */
     if(align==XR_TLEFT || align==XR_MLEFT || align==XR_BLEFT || align==XR_LEFT)
@@ -299,9 +302,9 @@ static int XRotDrawHorizontalString(Display *dpy, XFontStruct *font, Drawable dr
     
     /* draw string onto bitmap */
     if(!bg)
-      XDrawString(dpy, drawable, my_gc, xp, yp, str3, strlen(str3));
+      XDrawString(dpy, drawable, my_gc, xp, yp, str3, len3);
     else
-      XDrawImageString(dpy, drawable, my_gc, xp, yp, str3, strlen(str3));
+      XDrawImageString(dpy, drawable, my_gc, xp, yp, str3, len3);
     
     /* move to next line */
     yp+=height;
@@ -324,7 +327,7 @@ static int XRotDrawHorizontalString(Display *dpy, XFontStruct *font, Drawable dr
 /*       request, otherwise arrange for its creation                      */
 /**************************************************************************/
 
-static RotatedTextItem *XRotRetrieveFromCache(Display *dpy, XFontStruct *font, double angle, const char *text, int align)
+static RotatedTextItem *XRotRetrieveFromCache(Display *dpy, XFontStruct *font, double angle, const char *text, int len, int align)
 {
   Font fid;
   char *font_name=NULL;
@@ -413,17 +416,17 @@ static RotatedTextItem *XRotRetrieveFromCache(Display *dpy, XFontStruct *font, d
   if(!item) 
   {
     /* create new item */
-    item=XRotCreateTextItem(dpy, font, angle, text, align);
+    item=XRotCreateTextItem(dpy, font, angle, text, len, align);
     if(!item)
       return NULL;
     
     /* record what it shows */
-    item->text=my_strdup(text);
+    item->text=my_strdup(text, len);
     
     /* fontname or ID */
     if(font_name!=NULL) 
     {
-      item->font_name=my_strdup(font_name);
+      item->font_name=my_strdup(font_name, strlen(font_name));
       item->fid=0;
     }
     else 
@@ -477,7 +480,7 @@ static RotatedTextItem *XRotRetrieveFromCache(Display *dpy, XFontStruct *font, d
 /*  Create a rotated text item                                            */
 /**************************************************************************/
 
-static RotatedTextItem *XRotCreateTextItem(Display *dpy, XFontStruct *font, double angle, char *text, int align)
+static RotatedTextItem *XRotCreateTextItem(Display *dpy, XFontStruct *font, double angle, const char *text, int len, int align)
 {
   RotatedTextItem *item=NULL;
   Pixmap canvas;
@@ -507,7 +510,7 @@ static RotatedTextItem *XRotCreateTextItem(Display *dpy, XFontStruct *font, doub
   /* count number of sections in string */
   item->nl=1;
   if(align!=XR_LEFT)
-    for(i=0; i<strlen(text)-1; i++)
+    for(i=0; i<len-1; i++)
       if(text[i]=='\n')
         item->nl++;
       
@@ -518,7 +521,7 @@ static RotatedTextItem *XRotCreateTextItem(Display *dpy, XFontStruct *font, doub
     str2=str2_b;
   
   /* find width of longest section */
-  str1=my_strdup(text);
+  str1=my_strdup(text, len);
   if(str1==NULL)
     return NULL;
   
@@ -535,8 +538,7 @@ static RotatedTextItem *XRotCreateTextItem(Display *dpy, XFontStruct *font, doub
     
     if(str3!=NULL) 
     {
-      XTextExtents(font, str3, strlen(str3), &dir, &asc, &desc,
-        &overall);
+      XTextExtents(font, str3, strlen(str3), &dir, &asc, &desc, &overall);
       
       if(overall.rbearing>item->max_width)
         item->max_width=overall.rbearing;
@@ -590,7 +592,7 @@ static RotatedTextItem *XRotCreateTextItem(Display *dpy, XFontStruct *font, doub
   /* start at top of bitmap */
   yp=font->ascent;
   
-  str1=my_strdup(text);
+  str1=my_strdup(text, len);
   if(str1==NULL)
     return NULL;
   
@@ -641,8 +643,7 @@ static RotatedTextItem *XRotCreateTextItem(Display *dpy, XFontStruct *font, doub
     return NULL;
   
   /* extract horizontal text */
-  XGetSubImage(dpy, canvas, 0, 0, item->cols_in, item->rows_in,
-    1, XYPixmap, I_in, 0, 0);
+  XGetSubImage(dpy, canvas, 0, 0, item->cols_in, item->rows_in, 1, XYPixmap, I_in, 0, 0);
   I_in->format=XYBitmap;
   
   /* magnify horizontal text */
@@ -1073,7 +1074,7 @@ void XRotSetBoundingBoxPad(int p)
 /* Calculate the bounding box some text will have when painted            */
 /**************************************************************************/
 
-XPoint *XRotTextExtents(Display* dpy, XFontStruct* font, double angle, int x, int y, const char* text, int align)
+XPoint *XRotTextExtents(Display* dpy, XFontStruct* font, double angle, int x, int y, const char* text, int len, int align)
 {
   register int i;
   char *str1, *str2, *str3;
@@ -1099,7 +1100,7 @@ XPoint *XRotTextExtents(Display* dpy, XFontStruct* font, double angle, int x, in
   /* count number of sections in string */
   nl=1;
   if(align!=XR_LEFT)
-    for(i=0; i<strlen(text)-1; i++)
+    for(i=0; i<len-1; i++)
       if(text[i]=='\n')
         nl++;
       
@@ -1110,7 +1111,7 @@ XPoint *XRotTextExtents(Display* dpy, XFontStruct* font, double angle, int x, in
     str2=str2_b;
   
   /* find width of longest section */
-  str1=my_strdup(text);
+  str1=my_strdup(text, len);
   if(str1==NULL)
     return NULL;
   
@@ -1208,7 +1209,7 @@ XPoint *XRotTextExtents(Display* dpy, XFontStruct* font, double angle, int x, in
 /*  Aligns and paints a rotated string                                    */
 /**************************************************************************/
 
-int XRotDrawString(Display* dpy, XFontStruct* font, double angle, Drawable drawable, GC gc, int x, int y, const char* text, int align, int bg)
+int XRotDrawString(Display* dpy, XFontStruct* font, double angle, Drawable drawable, GC gc, int x, int y, const char* text, int len, int align, int bg)
 {
   int i;
   GC my_gc;
@@ -1230,10 +1231,10 @@ int XRotDrawString(Display* dpy, XFontStruct* font, double angle, Drawable drawa
   
   /* horizontal text made easy */
   if(angle==0. && style.magnify==1.) 
-    return(XRotDrawHorizontalString(dpy, font, drawable, gc, x, y, text, align, bg));
+    return(XRotDrawHorizontalString(dpy, font, drawable, gc, x, y, text, len, align, bg));
   
   /* get a rotated bitmap */
-  item=XRotRetrieveFromCache(dpy, font, angle, text, align);
+  item=XRotRetrieveFromCache(dpy, font, angle, text, len, align);
   if(item==NULL)
     return 0;
   

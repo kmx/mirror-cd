@@ -41,7 +41,8 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
   HANDLE hFile;
   DWORD dwSize, nBytesWrite;
   int err;
-  char* buffer;
+  unsigned char* buffer;
+  (void)data;
   
   if (IsClipboardFormatAvailable(CF_TEXT))
   {
@@ -58,8 +59,8 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
       return CD_ERROR;
     }
     
-    buffer = (char*)GlobalLock(Handle);
-    dwSize = (DWORD)strlen(buffer); 
+    buffer = (unsigned char*)GlobalLock(Handle);
+    dwSize = (DWORD)GlobalSize(Handle); 
     
     hFile = CreateFile(filename, GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
     WriteFile(hFile, buffer, dwSize, &nBytesWrite, NULL);
@@ -94,7 +95,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
     
     dwSize = GetEnhMetaFileBits(Handle, 0, NULL);
     
-    buffer = (char*)malloc(dwSize);
+    buffer = (unsigned char*)malloc(dwSize);
     
     GetEnhMetaFileBits(Handle, dwSize, buffer);
     
@@ -132,7 +133,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
     lpMFP = (METAFILEPICT*) GlobalLock(Handle);
     
     dwSize = GetMetaFileBitsEx(lpMFP->hMF, 0, NULL);
-    buffer = (char*)malloc(dwSize);
+    buffer = (unsigned char*)malloc(dwSize);
     
     GetMetaFileBitsEx(lpMFP->hMF, dwSize, buffer);
     
@@ -194,11 +195,11 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
       
     if (dib.type == 0)
     {
-      char *r, *g, *b;
+      unsigned char *r, *g, *b;
       
-      r = (char*)malloc(size);
-      g = (char*)malloc(size);
-      b = (char*)malloc(size);
+      r = (unsigned char*)malloc(size);
+      g = (unsigned char*)malloc(size);
+      b = (unsigned char*)malloc(size);
       
       cdwDIBDecodeRGB(&dib, r, g, b);
 
@@ -210,10 +211,10 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
     }
     else
     {
-      char *index;
+      unsigned char *index;
       long *colors;
       
-      index = (char*)malloc(size);
+      index = (unsigned char*)malloc(size);
       colors = (long*)malloc(256*sizeof(long));
       
       cdwDIBDecodeMap(&dib, index, colors);
@@ -280,11 +281,11 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
     
     if (dib.type == 0)
     {
-      char *r, *g, *b;
+      unsigned char *r, *g, *b;
       
-      r = (char*)malloc(size);
-      g = (char*)malloc(size);
-      b = (char*)malloc(size);
+      r = (unsigned char*)malloc(size);
+      g = (unsigned char*)malloc(size);
+      b = (unsigned char*)malloc(size);
       
       cdwDIBDecodeRGB(&dib, r, g, b);
       
@@ -296,10 +297,10 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
     }
     else
     {
-      char *index;
+      unsigned char *index;
       long *colors;
       
-      index = (char*)malloc(size);
+      index = (unsigned char*)malloc(size);
       colors = (long*)malloc(256*sizeof(long));
       
       cdwDIBDecodeMap(&dib, index, colors);

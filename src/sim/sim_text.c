@@ -141,11 +141,11 @@ void cdgetfontdimSIM(cdCtxCanvas* ctxcanvas, int *max_width, int *height, int *a
   if(height) *height= simulation->tt_text->max_height;
 }
 
-void cdgettextsizeSIM(cdCtxCanvas* ctxcanvas, const char *s, int *width, int *height)
+void cdgettextsizeSIM(cdCtxCanvas* ctxcanvas, const char *s, int len, int *width, int *height)
 {
   cdCanvas* canvas = ((cdCtxCanvasBase*)ctxcanvas)->canvas;
   cdSimulation* simulation = canvas->simulation;
-  int w = 0;
+  int i = 0, w = 0;
   FT_Face       face;
   FT_GlyphSlot  slot;
   FT_Error      error;
@@ -159,15 +159,15 @@ void cdgettextsizeSIM(cdCtxCanvas* ctxcanvas, const char *s, int *width, int *he
   /* set transformation */
   FT_Set_Transform( face, NULL, NULL );
 
-  while(*s)
+  while(i < len)
   {
     /* load glyph image into the slot (erase previous one) */
-    error = FT_Load_Char( face, *(unsigned char*)s, FT_LOAD_DEFAULT );
-    if (error) {s++; continue;}  /* ignore errors */
+    error = FT_Load_Char( face, (unsigned char)s[i], FT_LOAD_DEFAULT );
+    if (error) {i++; continue;}  /* ignore errors */
 
     w += slot->advance.x; 
 
-    s++;
+    i++;
   }
 
   if (height) *height = simulation->tt_text->max_height;
@@ -299,13 +299,13 @@ static void simDrawTextBitmap(cdSimulation* simulation, FT_Bitmap* bitmap, int x
   simulation->canvas->use_matrix = olduse_matrix;
 }
 
-void simGetPenPos(cdCanvas* canvas, int x, int y, const char* s, FT_Matrix *matrix, FT_Vector *pen)
+void simGetPenPos(cdCanvas* canvas, int x, int y, const char* s, int len, FT_Matrix *matrix, FT_Vector *pen)
 {
   int ox = x, oy = y;
   int old_invert_yaxis = canvas->invert_yaxis;
   int w, h, ascent, height, baseline;
 
-  cdgettextsizeSIM(canvas->ctxcanvas, s, &w, &h);
+  cdgettextsizeSIM(canvas->ctxcanvas, s, len, &w, &h);
   cdgetfontdimSIM(canvas->ctxcanvas, NULL, &height, &ascent, NULL);
   baseline = height - ascent;
 
@@ -364,7 +364,7 @@ void simGetPenPos(cdCanvas* canvas, int x, int y, const char* s, FT_Matrix *matr
 
 }
 
-void cdtextSIM(cdCtxCanvas* ctxcanvas, int x, int y, const char * s)
+void cdtextSIM(cdCtxCanvas* ctxcanvas, int x, int y, const char* s, int len)
 {
   cdCanvas* canvas = ((cdCtxCanvasBase*)ctxcanvas)->canvas;
   cdSimulation* simulation = canvas->simulation;
@@ -373,6 +373,7 @@ void cdtextSIM(cdCtxCanvas* ctxcanvas, int x, int y, const char * s)
   FT_Matrix     matrix;                 /* transformation matrix */
   FT_Vector     pen;                    /* untransformed origin  */
   FT_Error      error;
+  int i = 0;
 
   if (!simulation->tt_text->face)
     return;
@@ -385,16 +386,16 @@ void cdtextSIM(cdCtxCanvas* ctxcanvas, int x, int y, const char * s)
     y = _cdInvertYAxis(canvas, y);   /* y is already inverted, invert back to cartesian space */
 
   /* move the reference point to the baseline-left */
-  simGetPenPos(simulation->canvas, x, y, s, &matrix, &pen);
+  simGetPenPos(simulation->canvas, x, y, s, strlen(s), &matrix, &pen);
 
-  while(*s)
+  while(i<len)
   {
     /* set transformation */
     FT_Set_Transform(face, &matrix, &pen);
 
     /* load glyph image into the slot (erase previous one) */
-    error = FT_Load_Char(face, *(unsigned char*)s, FT_LOAD_RENDER);
-    if (error) {s++; continue;}  /* ignore errors */
+    error = FT_Load_Char(face, (unsigned char)s[i], FT_LOAD_RENDER);
+    if (error) {i++; continue;}  /* ignore errors */
 
     x = slot->bitmap_left;
     y = slot->bitmap_top-slot->bitmap.rows; /* CD image reference point is at bottom-left */
@@ -409,6 +410,6 @@ void cdtextSIM(cdCtxCanvas* ctxcanvas, int x, int y, const char * s)
     pen.x += slot->advance.x;
     pen.y += slot->advance.y;
 
-    s++;
+    i++;
   }
 }

@@ -871,9 +871,9 @@ static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, dou
 
 static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix);
 
-static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s)
+static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
 {
-  int i, length;
+  int i;
   int ascent, height, baseline;
   
   update_fill(ctxcanvas, 0);
@@ -889,7 +889,7 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s)
   fprintf(ctxcanvas->file, "N 0 0 M\n");
   putc('(', ctxcanvas->file);
 
-  for (length = (int)strlen(s), i=0; i<length; i++)
+  for (i=0; i<len; i++)
   {
     if (s[i]=='(' || s[i]==')')
       putc('\\', ctxcanvas->file);
@@ -975,7 +975,9 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s)
   if (ctxcanvas->eps)
   {
     int xmin, xmax, ymin, ymax;
+    s = cdStrDupN(s, len);
     cdCanvasGetTextBox(ctxcanvas->canvas, x, y, s, &xmin, &xmax, &ymin, &ymax);
+    free((char*)s);
     bbox(ctxcanvas, xmin, ymin);
     bbox(ctxcanvas, xmax, ymax);
   }

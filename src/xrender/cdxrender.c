@@ -716,30 +716,28 @@ static void cdgetfontdim(cdCtxCanvas *ctxcanvas, int *max_width, int *height, in
   if (descent)   *descent   = ctxcanvas->ctxplus->font->descent;
 }
 
-static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *text, int *width, int *height)
+static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *text, int len, int *width, int *height)
 {
   XGlyphInfo extents;
   if (!ctxcanvas->ctxplus->font) 
     return;
 
   if (ctxcanvas->canvas->text_orientation)
-    XftTextExtents8(ctxcanvas->dpy, ctxcanvas->ctxplus->flat_font, (XftChar8*)text, strlen(text), &extents);
+    XftTextExtents8(ctxcanvas->dpy, ctxcanvas->ctxplus->flat_font, (XftChar8*)text, len, &extents);
   else
-    XftTextExtents8(ctxcanvas->dpy, ctxcanvas->ctxplus->font, (XftChar8*)text, strlen(text), &extents);
+    XftTextExtents8(ctxcanvas->dpy, ctxcanvas->ctxplus->font, (XftChar8*)text, len, &extents);
 
   if (width)  *width  = extents.width+extents.x;
   if (height) *height = extents.height+extents.y;
 }
 
-static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *text)
+static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *text, int len)
 {
   XGlyphInfo extents;
-  int ox, oy, w, h, len, descent, dir = -1;
+  int ox, oy, w, h, descent, dir = -1;
 
   if (!ctxcanvas->ctxplus->font)
     return;
-
-  len = strlen(text);
 
   if (ctxcanvas->canvas->text_orientation)
     XftTextExtents8(ctxcanvas->dpy, ctxcanvas->ctxplus->flat_font, (XftChar8*)text, len, &extents);

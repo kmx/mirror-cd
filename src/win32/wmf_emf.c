@@ -1083,11 +1083,11 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       
       if (dib.type == 0)
       {
-        char *r, *g, *b;
+        unsigned char *r, *g, *b;
         
-        r = (char*)malloc(size);
-        g = (char*)malloc(size);
-        b = (char*)malloc(size);
+        r = (unsigned char*)malloc(size);
+        g = (unsigned char*)malloc(size);
+        b = (unsigned char*)malloc(size);
         
         cdwDIBDecodeRGB(&dib, r, g, b);
         
@@ -1099,10 +1099,10 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       }
       else
       {
-        char *index;
+        unsigned char *index;
         long *colors;
         
-        index = (char*)malloc(size);
+        index = (unsigned char*)malloc(size);
         colors = (long*)malloc(256*sizeof(long));
         
         cdwDIBDecodeMap(&dib, index, colors);
@@ -1137,11 +1137,11 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       
       if (dib.type == 0)
       {
-        char *r, *g, *b;
+        unsigned char *r, *g, *b;
         
-        r = (char*)malloc(size);
-        g = (char*)malloc(size);
-        b = (char*)malloc(size);
+        r = (unsigned char*)malloc(size);
+        g = (unsigned char*)malloc(size);
+        b = (unsigned char*)malloc(size);
         
         cdwDIBDecodeRGB(&dib, r, g, b);
         
@@ -1153,10 +1153,10 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       }
       else
       {
-        char *index;
+        unsigned char *index;
         long *colors;
         
-        index = (char*)malloc(size);
+        index = (unsigned char*)malloc(size);
         colors = (long*)malloc(256*sizeof(long));
         
         cdwDIBDecodeMap(&dib, index, colors);
@@ -1191,11 +1191,11 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       
       if (dib.type == 0)
       {
-        char *r, *g, *b;
+        unsigned char *r, *g, *b;
         
-        r = (char*)malloc(size);
-        g = (char*)malloc(size);
-        b = (char*)malloc(size);
+        r = (unsigned char*)malloc(size);
+        g = (unsigned char*)malloc(size);
+        b = (unsigned char*)malloc(size);
         
         cdwDIBDecodeRGB(&dib, r, g, b);
         
@@ -1207,10 +1207,10 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       }
       else
       {
-        char *index;
+        unsigned char *index;
         long *colors;
         
-        index = (char*)malloc(size);
+        index = (unsigned char*)malloc(size);
         colors = (long*)malloc(256*sizeof(long));
         
         cdwDIBDecodeMap(&dib, index, colors);
@@ -1239,11 +1239,11 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       
       if (dib.type == 0)
       {
-        char *r, *g, *b;
+        unsigned char *r, *g, *b;
         
-        r = (char*)malloc(size);
-        g = (char*)malloc(size);
-        b = (char*)malloc(size);
+        r = (unsigned char*)malloc(size);
+        g = (unsigned char*)malloc(size);
+        b = (unsigned char*)malloc(size);
         
         cdwDIBDecodeRGB(&dib, r, g, b);
         
@@ -1255,10 +1255,10 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       }
       else
       {
-        char *index;
+        unsigned char *index;
         long *colors;
         
-        index = (char*)malloc(size);
+        index = (unsigned char*)malloc(size);
         colors = (long*)malloc(256*sizeof(long));
         
         cdwDIBDecodeMap(&dib, index, colors);
@@ -1285,11 +1285,11 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       
       if (dib.type == 0)
       {
-        char *r, *g, *b;
+        unsigned char *r, *g, *b;
         
-        r = (char*)malloc(size);
-        g = (char*)malloc(size);
-        b = (char*)malloc(size);
+        r = (unsigned char*)malloc(size);
+        g = (unsigned char*)malloc(size);
+        b = (unsigned char*)malloc(size);
         
         cdwDIBDecodeRGB(&dib, r, g, b);
         
@@ -1301,10 +1301,10 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       }
       else
       {
-        char *index;
+        unsigned char *index;
         long *colors;
         
-        index = (char*)malloc(size);
+        index = (unsigned char*)malloc(size);
         colors = (long*)malloc(256*sizeof(long));
         
         cdwDIBDecodeMap(&dib, index, colors);
@@ -1549,11 +1549,11 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       
       if (dib.type == 0)
       {
-        char *r, *g, *b;
+        unsigned char *r, *g, *b;
         
-        r = (char*)malloc(size);
-        g = (char*)malloc(size);
-        b = (char*)malloc(size);
+        r = (unsigned char*)malloc(size);
+        g = (unsigned char*)malloc(size);
+        b = (unsigned char*)malloc(size);
         
         cdwDIBDecodeRGB(&dib, r, g, b);
         
@@ -1623,11 +1623,11 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       
       if (dib.type == 0)
       {
-        char *r, *g, *b;
+        unsigned char *r, *g, *b;
         
-        r = (char*)malloc(size);
-        g = (char*)malloc(size);
-        b = (char*)malloc(size);
+        r = (unsigned char*)malloc(size);
+        g = (unsigned char*)malloc(size);
+        b = (unsigned char*)malloc(size);
         
         cdwDIBDecodeRGB(&dib, r, g, b);
         
@@ -1640,10 +1640,10 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       }
       else
       {
-        char *index;
+        unsigned char *index;
         long *colors;
         
-        index = (char*)malloc(size);
+        index = (unsigned char*)malloc(size);
         colors = (long*)malloc(256*sizeof(long));
         
         cdwDIBDecodeMap(&dib, index, colors);
@@ -2058,7 +2058,7 @@ Aldus placeable metafile format
 /* 
 %F Cria um APM em arquivo a partir de um WMF em memoria.
 */
-void wmfMakePlaceableMetafile(HMETAFILE hmf, char* filename, int w, int h)
+void wmfMakePlaceableMetafile(HMETAFILE hmf, const char* filename, int w, int h)
 {
   int fh, nSize;
   LPSTR lpData;
@@ -2090,7 +2090,7 @@ void wmfMakePlaceableMetafile(HMETAFILE hmf, char* filename, int w, int h)
   close(fh);
 }
 
-void wmfWritePlacebleFile(HANDLE hFile, char* buffer, DWORD dwSize, LONG mm, LONG xExt, LONG yExt)
+void wmfWritePlacebleFile(HANDLE hFile, unsigned char* buffer, DWORD dwSize, LONG mm, LONG xExt, LONG yExt)
 {
   DWORD nBytesWrite;
   APMFILEHEADER APMHeader;

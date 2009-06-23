@@ -92,7 +92,7 @@ struct _cdCanvas
   void   (*cxArc)(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double angle1, double angle2);
   void   (*cxSector)(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double angle1, double angle2);
   void   (*cxChord)(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double angle1, double angle2);
-  void   (*cxText)(cdCtxCanvas* ctxcanvas, int x, int y, const char *s);
+  void   (*cxText)(cdCtxCanvas* ctxcanvas, int x, int y, const char *s, int len);
   void   (*cxKillCanvas)(cdCtxCanvas* ctxcanvas);
   int    (*cxFont)(cdCtxCanvas* ctxcanvas, const char *type_face, int style, int size);
   void   (*cxPutImageRectMap)(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsigned char *index, const long *colors, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax);
@@ -100,7 +100,7 @@ struct _cdCanvas
 
   /* default implementation uses the simulation driver */
   void   (*cxGetFontDim)(cdCtxCanvas* ctxcanvas, int *max_width, int *height, int *ascent, int *descent);
-  void   (*cxGetTextSize)(cdCtxCanvas* ctxcanvas, const char *s, int *width, int *height);
+  void   (*cxGetTextSize)(cdCtxCanvas* ctxcanvas, const char *s, int len, int *width, int *height);
 
   /* all the following function pointers can be NULL */
 
@@ -114,7 +114,7 @@ struct _cdCanvas
   void   (*cxFArc)(cdCtxCanvas* ctxcanvas, double xc, double yc, double w, double h, double angle1, double angle2);
   void   (*cxFSector)(cdCtxCanvas* ctxcanvas, double xc, double yc, double w, double h, double angle1, double angle2);
   void   (*cxFChord)(cdCtxCanvas* ctxcanvas, double xc, double yc, double w, double h, double angle1, double angle2);
-  void   (*cxFText)(cdCtxCanvas* ctxcanvas, double x, double y, const char *s);
+  void   (*cxFText)(cdCtxCanvas* ctxcanvas, double x, double y, const char *s, int len);
 
   int    (*cxClip)(cdCtxCanvas* ctxcanvas, int mode);
   void   (*cxClipArea)(cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, int ymax);
@@ -270,6 +270,7 @@ int cdGetFileName(const char* strdata, char* filename);
 int cdStrEqualNoCase(const char* str1, const char* str2);
 int cdStrLineCount(const char* str);
 char* cdStrDup(const char* str);
+char* cdStrDupN(const char* str, int len);
 
 #define _cdCheckCanvas(_canvas) (_canvas!=NULL && ((unsigned char*)_canvas)[0] == 'C' && ((unsigned char*)_canvas)[1] == 'D')
 #define _cdInvertYAxis(_canvas, _y) (_canvas->h - (_y) - 1)
@@ -335,10 +336,10 @@ void cdchordSIM(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, int height, d
 void cdpolySIM(cdCtxCanvas* ctxcanvas, int mode, cdPoint* points, int n);
 
 /* Replacements for Text and Font using FreeType library */
-void cdtextSIM(cdCtxCanvas* ctxcanvas, int x, int y, const char *s);
+void cdtextSIM(cdCtxCanvas* ctxcanvas, int x, int y, const char *s, int len);
 int cdfontSIM(cdCtxCanvas* ctxcanvas, const char *type_face, int style, int size);
 void cdgetfontdimSIM(cdCtxCanvas* ctxcanvas, int *max_width, int *height, int *ascent, int *descent);
-void cdgettextsizeSIM(cdCtxCanvas* ctxcanvas, const char *s, int *width, int *height);
+void cdgettextsizeSIM(cdCtxCanvas* ctxcanvas, const char *s, int len, int *width, int *height);
 
 /* Simulation functions that are independent of the simulation base driver */
 void cdSimMark(cdCanvas* canvas, int x, int y);
@@ -356,7 +357,7 @@ void cdfSimArc(cdCtxCanvas *ctxcanvas, double xc, double yc, double width, doubl
 
 /* Replacements for Font using estimation */
 void cdgetfontdimEX(cdCtxCanvas* ctxcanvas, int *max_width, int *height, int *ascent, int *descent);
-void cdgettextsizeEX(cdCtxCanvas* ctxcanvas, const char *s, int *width, int *height);
+void cdgettextsizeEX(cdCtxCanvas* ctxcanvas, const char *s, int len, int *width, int *height);
 
 
 #ifdef __cplusplus

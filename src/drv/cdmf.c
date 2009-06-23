@@ -216,14 +216,18 @@ static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, dou
   fprintf(ctxcanvas->file, "%d %g %g %g %g %g %g\n", CDMF_FCHORD, xc, yc, w, h, a1, a2);
 }
 
-static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *text)
+static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *text, int len)
 {
+  text = cdStrDupN(text, len);
   fprintf(ctxcanvas->file, "%d %d %d %s\n", CDMF_TEXT, x, y, text);
+  free((char*)text);
 }
 
-static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *text)
+static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *text, int len)
 {
+  text = cdStrDupN(text, len);
   fprintf(ctxcanvas->file, "%d %g %g %s\n", CDMF_FTEXT, x, y, text);
+  free((char*)text);
 }
 
 static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)

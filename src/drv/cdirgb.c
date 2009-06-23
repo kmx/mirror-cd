@@ -475,7 +475,7 @@ static void irgbClipTextBitmap(FT_Bitmap* bitmap, int x, int y, int w, unsigned 
   }
 }
 
-static void irgbClipText(cdCtxCanvas *ctxcanvas, int x, int y, const char *s)
+static void irgbClipText(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
 {
   cdCanvas* canvas = ctxcanvas->canvas;
   cdSimulation* simulation = canvas->simulation;
@@ -484,6 +484,7 @@ static void irgbClipText(cdCtxCanvas *ctxcanvas, int x, int y, const char *s)
   FT_Matrix     matrix;                 /* transformation matrix */
   FT_Vector     pen;                    /* untransformed origin  */
   FT_Error      error;
+  int i = 0;
 
   if (!simulation->tt_text->face)
     return;
@@ -492,16 +493,16 @@ static void irgbClipText(cdCtxCanvas *ctxcanvas, int x, int y, const char *s)
   slot = face->glyph;
 
   /* move the reference point to the baseline-left */
-  simGetPenPos(simulation->canvas, x, y, s, &matrix, &pen);
+  simGetPenPos(simulation->canvas, x, y, s, strlen(s), &matrix, &pen);
 
-  while(*s)
+  while(i<len)
   {
     /* set transformation */
     FT_Set_Transform(face, &matrix, &pen);
 
     /* load glyph image into the slot (erase previous one) */
-    error = FT_Load_Char(face, *(unsigned char*)s, FT_LOAD_RENDER);
-    if (error) {s++; continue;}  /* ignore errors */
+    error = FT_Load_Char(face, (unsigned char)s[i], FT_LOAD_RENDER);
+    if (error) {i++; continue;}  /* ignore errors */
 
     x = slot->bitmap_left;
     y = slot->bitmap_top-slot->bitmap.rows; /* CD image reference point is at bottom-left */
@@ -513,7 +514,7 @@ static void irgbClipText(cdCtxCanvas *ctxcanvas, int x, int y, const char *s)
     pen.x += slot->advance.x;
     pen.y += slot->advance.y;
 
-    s++;
+    i++;
   }
 
   if (canvas->combine_mode == CD_INTERSECT)
@@ -992,15 +993,15 @@ static void cdchord(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double
   cdchordSIM(ctxcanvas, xc, yc, w, h, a1, a2);
 }
 
-static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s)
+static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
 {
   if (ctxcanvas->canvas->new_region)
   {
-    irgbClipText(ctxcanvas, x, y, s);
+    irgbClipText(ctxcanvas, x, y, s, len);
     return;
   }
 
-  cdtextSIM(ctxcanvas, x, y, s);
+  cdtextSIM(ctxcanvas, x, y, s, len);
 }
 
 static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)

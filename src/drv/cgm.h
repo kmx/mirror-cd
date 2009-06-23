@@ -84,7 +84,7 @@ int cgm_clip_rectangle		( CGM *, double, double, double, double );
 int cgm_clip_indicator		( CGM *, int );
 int cgm_polyline		( CGM *, int, const double * );
 int cgm_polymarker		( CGM *, int, const double * );
-int cgm_text			( CGM *, int, double, double, const char * );
+int cgm_text			( CGM *, int, double, double, const char *, int);
 int cgm_polygon			( CGM *, int, const double * );
 int cgm_cell_array		( CGM *, const double *, long, long, int, const void * );
 int cgm_rectangle		( CGM *, const double * );

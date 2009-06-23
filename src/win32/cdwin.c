@@ -25,7 +25,7 @@ typedef BOOL (CALLBACK* AlphaBlendFunc)( HDC hdcDest,
                              BLENDFUNCTION ftn);
 static AlphaBlendFunc cdwAlphaBlend = NULL;
 
-static void cdgettextsize (cdCtxCanvas* ctxcanvas, const char *s, int *width, int *height);
+static void cdgettextsize (cdCtxCanvas* ctxcanvas, const char *s, int len, int *width, int *height);
 
 /*
 %F Libera memoria e handles alocados pelo driver Windows.
@@ -959,7 +959,7 @@ static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
   }
 }
 
-static void sTextOutBlt(cdCtxCanvas* ctxcanvas, int px, int py, const char* s, int n)
+static void sTextOutBlt(cdCtxCanvas* ctxcanvas, int px, int py, const char* s, int len)
 {
   HDC hBitmapDC;
   HBITMAP hBitmap, hOldBitmap;
@@ -969,7 +969,7 @@ static void sTextOutBlt(cdCtxCanvas* ctxcanvas, int px, int py, const char* s, i
   double cos_teta = cos(teta);
   double sin_teta = sin(teta);
   
-  cdgettextsize(ctxcanvas, s, &w, &h);
+  cdgettextsize(ctxcanvas, s, len, &w, &h);
   wt = w;
   ht = h;
 
@@ -1133,7 +1133,7 @@ static void sTextOutBlt(cdCtxCanvas* ctxcanvas, int px, int py, const char* s, i
   SetTextAlign(hBitmapDC, TA_CENTER | TA_BASELINE);
   hOldFont = SelectObject(hBitmapDC, ctxcanvas->hFont);
   
-  TextOut(hBitmapDC, x, y, s, n);
+  TextOut(hBitmapDC, x, y, s, len);
   
   if (ctxcanvas->canvas->invert_yaxis)
     BitBlt(ctxcanvas->hDC, px, py, w, h, hBitmapDC, 0, 0, ctxcanvas->RopBlt);
@@ -1147,11 +1147,11 @@ static void sTextOutBlt(cdCtxCanvas* ctxcanvas, int px, int py, const char* s, i
   DeleteDC(hBitmapDC);
 }
 
-static void cdgettextsize (cdCtxCanvas* ctxcanvas, const char *s, int *width, int *height)
+static void cdgettextsize (cdCtxCanvas* ctxcanvas, const char *s, int len, int *width, int *height)
 {
   SIZE size;
   
-  GetTextExtentPoint32(ctxcanvas->hDC, s, (int)strlen(s), &size);
+  GetTextExtentPoint32(ctxcanvas->hDC, s, len, &size);
   
   if (width)  
     *width  = size.cx;
@@ -1160,12 +1160,12 @@ static void cdgettextsize (cdCtxCanvas* ctxcanvas, const char *s, int *width, in
     *height = size.cy;
 }
 
-static void cdwCanvasGetTextHeight(cdCanvas* canvas, int x, int y, const char *s, int *hbox, int *hoff)
+static void cdwCanvasGetTextHeight(cdCanvas* canvas, int x, int y, const char *s, int len, int *hbox, int *hoff)
 {
   int w, h, ascent, height, baseline;
   int xmin, xmax, ymin, ymax;
   
-  cdgettextsize(canvas->ctxcanvas, s, &w, &h);
+  cdgettextsize(canvas->ctxcanvas, s, len, &w, &h);
   cdCanvasGetFontDim(canvas, NULL, &height, &ascent, NULL);
   baseline = height - ascent;
 
@@ -1202,12 +1202,12 @@ static void cdwCanvasGetTextHeight(cdCanvas* canvas, int x, int y, const char *s
   *hbox = ymax-ymin+1;
 }
 
-static void cdwTextTransform(cdCtxCanvas* ctxcanvas, const char* s, int *x, int *y)
+static void cdwTextTransform(cdCtxCanvas* ctxcanvas, const char* s, int len, int *x, int *y)
 {
   XFORM xForm;
   int hoff, h;
 
-  cdwCanvasGetTextHeight(ctxcanvas->canvas, *x, *y, s, &h, &hoff);
+  cdwCanvasGetTextHeight(ctxcanvas->canvas, *x, *y, s, len, &h, &hoff);
 
   /* move to (x,y) and remove a vertical offset since text reference point is top-left */
   xForm.eM11 = (FLOAT)1; 
@@ -1231,10 +1231,8 @@ static void cdwTextTransform(cdCtxCanvas* ctxcanvas, const char* s, int *x, int 
   *y = 0;
 }
 
-static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s)
+static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s, int len)
 {
-  int n = (int)strlen(s);
-
   if (ctxcanvas->canvas->write_mode == CD_REPLACE || 
       ctxcanvas->wtype == CDW_EMF ||
       ctxcanvas->wtype == CDW_WMF ||
@@ -1249,7 +1247,7 @@ static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s)
     {
       /* compensa deficiencia do alinhamento no windows */
       int off;
-      cdgettextsize(ctxcanvas, s, NULL, &h);
+      cdgettextsize(ctxcanvas, s, len, NULL, &h);
       off = h/2 - ctxcanvas->font.descent;
 
       if (ctxcanvas->canvas->text_orientation != 0)
@@ -1268,9 +1266,9 @@ static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s)
       BeginPath(ctxcanvas->hDC);
         
     if (ctxcanvas->canvas->use_matrix)
-      cdwTextTransform(ctxcanvas, s, &x, &y);
+      cdwTextTransform(ctxcanvas, s, len, &x, &y);
 
-    TextOut(ctxcanvas->hDC, x, y+1, s, n); /* compensa erro de desenho com +1 */
+    TextOut(ctxcanvas->hDC, x, y+1, s, len); /* compensa erro de desenho com +1 */
 
     if (ctxcanvas->canvas->use_matrix)
       cdtransform(ctxcanvas, ctxcanvas->canvas->matrix);
@@ -1288,7 +1286,7 @@ static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s)
       SetBkMode(ctxcanvas->hDC, OPAQUE);
   }
   else
-    sTextOutBlt(ctxcanvas, x, y+1, s, n);
+    sTextOutBlt(ctxcanvas, x, y+1, s, len);
 }
 
 static int cdtextalignment(cdCtxCanvas* ctxcanvas, int text_align)
