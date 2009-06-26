@@ -11,6 +11,7 @@ DEF_FILE = cdluacontextplus5.def
 LIBS = cdcontextplus
 
 USE_LUA51 = Yes
+NO_LUALINK = Yes
 USE_CD = YES
 USE_CDLUA = YES
 CD = ..
