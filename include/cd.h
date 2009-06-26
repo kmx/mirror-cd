@@ -20,7 +20,7 @@ extern "C" {
 #define CD_DESCRIPTION "A 2D Graphics Library"
 #define CD_COPYRIGHT    "Copyright (C) 1994-2009 Tecgraf, PUC-Rio."
 #define CD_VERSION "5.2"
-#define CD_VERSION_DATE "2009/06/24"
+#define CD_VERSION_DATE "2009/06/26"
 #define CD_VERSION_NUMBER 502000
 
 typedef struct _cdContext cdContext;
