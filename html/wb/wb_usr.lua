@@ -12,7 +12,7 @@ wb_usr = {
 
 wb_usr.messages = {
   en = {
-    bar_title = "CD - Version 5.1",
+    bar_title = "CD - Version 5.2",
     title = "CD - Canvas Draw",
   }
 } 
