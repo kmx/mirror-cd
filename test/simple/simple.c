@@ -149,10 +149,12 @@ int SimpleTransform(void)
 
 int SimpleContextPlus(void)
 {
+#ifndef USE_GDK
   gdpiplus = !gdpiplus;
   SimpleKillCanvas();
   SimpleCreateCanvasWindow();
   SimpleDrawRepaint();
+#endif
   return 0;
 }
 
