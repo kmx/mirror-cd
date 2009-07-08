@@ -109,7 +109,7 @@ canvas:LineStyleDashes(dashes: table, count: number) -&gt; (old_style: number) [
   example: &quot;10 2 5 2&quot; means dash size 10, space size 2, dash size 5, space size 
   2, and repeats the pattern. </p>
 
-<pre class="function"><span class="mainFunction">int <a name="cdLineWidth">cdCanvasLineWidth</a>(cdCanvas* canvas, int width); [in C]<br></span>double wdCanvasLineWidth(double width_mm); (WC) [in C]
+<pre class="function"><span class="mainFunction">int <a name="cdLineWidth">cdCanvasLineWidth</a>(cdCanvas* canvas, int width); [in C]<br></span>double wdCanvasLineWidth(cdCanvas* canvas, double width_mm); (WC) [in C]
 
 canvas:LineWidth(width: number) -&gt; (old_width: number) [in Lua]
 canvas:wLineWidth(width_mm: number) -&gt; (old_width_mm: number) (WC) [in Lua]</pre>
