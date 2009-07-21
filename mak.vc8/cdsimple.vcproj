@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="8,00"
-	Name="cdtestsimple"
+	Name="cdsimple"
 	ProjectGUID="{82BC36B1-9F7A-41D4-A24F-DBE012378CE6}"
 	TargetFrameworkVersion="131072"
 	>
@@ -17,7 +17,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="..\bin"
-			IntermediateDirectory="..\obj\cdtestsimple"
+			IntermediateDirectory="..\obj\cdsimple"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -38,7 +38,7 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\..\bin/cdtestsimple.tlb"
+				TypeLibraryName=".\..\bin/cdsimple.tlb"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
@@ -46,10 +46,10 @@
 				AdditionalIncludeDirectories="..\include,..\..\iup\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;__CD__;simple;_CRT_SECURE_NO_DEPRECATE"
 				RuntimeLibrary="0"
-				PrecompiledHeaderFile=".\..\obj\cdtestsimple/cdtestsimple.pch"
-				AssemblerListingLocation=".\..\obj\cdtestsimple/"
-				ObjectFile=".\..\obj\cdtestsimple/"
-				ProgramDataBaseFileName=".\..\obj\cdtestsimple/"
+				PrecompiledHeaderFile=".\..\obj\cdsimple/cdsimple.pch"
+				AssemblerListingLocation=".\..\obj\cdsimple/"
+				ObjectFile=".\..\obj\cdsimple/"
+				ProgramDataBaseFileName=".\..\obj\cdsimple/"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="1"
@@ -69,12 +69,12 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="freetype6.lib cd.lib iupcd.lib iup.lib iupwin.lib comctl32.lib cdcontextplus.lib gdiplus.lib cdpdf.lib pdflib.lib iupcontrols.lib"
-				OutputFile="..\bin/cdtestsimple.exe"
+				OutputFile="..\bin/cdsimple.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\lib,..\..\iup\lib"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="..\bin/cdtestsimple.pdb"
+				ProgramDatabaseFile="..\bin/cdsimple.pdb"
 				SubSystem="1"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
