@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
+	Version="9,00"
 	Name="cdxrender"
 	ProjectGUID="{160DEDA5-C1AA-48C7-8B07-490C6A8DE2EE}"
 	>
