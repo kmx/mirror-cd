@@ -51,8 +51,10 @@ canvas:RegionCombineMode(mode: number) -&gt; (old_mode: number) [in Lua]</pre>
   </font><img src="../../img/regions.gif" border="2" width="297" height="361"></p>
 
 <pre class="function"><span class="mainFunction">int&nbsp;cdCanvasIsPointInRegion(cdCanvas* canvas, int x, int y); [in C]</span>
+int wdCanvasIsPointInRegion(cdCanvas* canvas, double x, double y); (WC) [in C]
 
-canvas:IsPointInRegion(x, y: number) -&gt; (status: number) [in Lua]</pre>
+canvas:IsPointInRegion(x, y: number) -&gt; (status: boolean) [in Lua]
+canvas:wIsPointInRegion(x, y: number) -&gt; (status: boolean) [in Lua]</pre>
 
   <p>Returns a non zero value if the point is contained inside the current 
   region.</p>

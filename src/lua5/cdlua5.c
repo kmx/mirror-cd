@@ -900,7 +900,7 @@ static int cdlua5_version(lua_State *L)
 \***************************************************************************/
 static int cdlua5_registercallback(lua_State *L)
 {
-  int cb_i, func_lock;
+  int cb_i, func_lock, ret = CD_ERROR;
   cdluaCallback* cdCB;
   cdluaContext* cdlua_ctx;
 
@@ -926,7 +926,7 @@ static int cdlua5_registercallback(lua_State *L)
     cdCB->lock = func_lock;
     if (func_lock == -1)
     {
-      cdContextRegisterCallback(cdlua_ctx->ctx(), cb_i, NULL);
+      ret = cdContextRegisterCallback(cdlua_ctx->ctx(), cb_i, NULL);
     }
   }
   else
@@ -934,10 +934,11 @@ static int cdlua5_registercallback(lua_State *L)
     if (func_lock != -1)
     {
       cdContextRegisterCallback(cdlua_ctx->ctx(), cb_i, (cdCallback)cdCB->func);
-      cdCB->lock = func_lock;
+      ret = cdCB->lock = func_lock;
     }
   }
-  return 0;
+  lua_pushnumber(L, ret);
+  return 1;
 }
 
 
@@ -1257,7 +1258,7 @@ static int cdlua5_getscreensize(lua_State *L)
 \***************************************************************************/
 static int cdlua5_usecontextplus(lua_State *L)
 {
-  lua_pushnumber(L, cdUseContextPlus(luaL_checkint(L, 1)));
+  lua_pushboolean(L, cdUseContextPlus(lua_toboolean(L, 1)));
   return 1;
 }
 

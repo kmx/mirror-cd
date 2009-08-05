@@ -96,8 +96,9 @@ cd.ContextRegisterCallback(ctx, cb: number, func: function) -&gt; (status: numbe
 
   <p>Used to customize the behavior of the&nbsp; <b><font>Play</font></b> 
   function. If you register a known callback function, it will be called during 
-  the processing loop of <font>cdPlay</font>.</p>
-  <p>The callback should return <font>CD_CONTINUE</font>, if it 
+  the processing loop of <font><strong>cdCanvasPlay</strong></font>. Returns 
+	CD_OK if the specified callback is supported or CD_ERROR otherwise.</p>
+  <p>The callback itself should return <font>CD_CONTINUE</font>, if it 
   returns <font>CD_ABORT</font>, the <font>cdPlay</font> 
   function is aborted. The callback identifiers of a given driver must be in the 
   header file relative to that driver, with prefix &quot;<font>CD_XXYYYCB</font>&quot;, 

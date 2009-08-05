@@ -712,7 +712,7 @@ static int cdlua5_regioncombinemode(lua_State *L)
 \***************************************************************************/
 static int  cdlua5_pointinregion(lua_State *L)
 {
-  lua_pushnumber(L, cdCanvasIsPointInRegion(cdlua_checkcanvas(L, 1), luaL_checkint(L, 2), luaL_checkint(L, 3)));
+  lua_pushboolean(L, cdCanvasIsPointInRegion(cdlua_checkcanvas(L, 1), luaL_checkint(L, 2), luaL_checkint(L, 3)));
   return 1;
 }
 
@@ -721,7 +721,7 @@ static int  cdlua5_pointinregion(lua_State *L)
 \***************************************************************************/
 static int wdlua5_pointinregion(lua_State *L)
 {
-  lua_pushnumber(L, wdCanvasIsPointInRegion(cdlua_checkcanvas(L, 1), luaL_checknumber(L, 2), luaL_checknumber(L, 3)));
+  lua_pushboolean(L, wdCanvasIsPointInRegion(cdlua_checkcanvas(L, 1), luaL_checknumber(L, 2), luaL_checknumber(L, 3)));
   return 1;
 }
 
