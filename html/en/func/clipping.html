@@ -36,13 +36,18 @@ canvas:Clip(mode: number) -&gt; (old_mode: number) [in Lua]</pre>
       polygon.</p>
     <p>The value <b>CD_CLIPREGION</b> activates a complex clipping region. See the 
       documentation of <a href="region.html">Regions</a>.</p>
+	<p>The defined clipping area, polygon and complex regions are stored 
+	internally, so you may define them independently and switch between area, 
+	polygon and complex region without having to define them again. Also if the 
+	active clipping region is re-defined it immediately becomes the current 
+	clipping region.</p>
     <pre class="function"><span class="mainFunction">void cdCanvasClipArea(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax); [in C]</span>
 void cdfCanvasClipArea(cdCanvas* canvas, double xmin, double xmax, double ymin, double ymax); [in C]
 void wdCanvasClipArea(cdCanvas* canvas, double xmin, double xmax, double ymin, double ymax); (WC) [in C]
 
 canvas:ClipArea(xmin, xmax, ymin, ymax: number) [in Lua]
 canvas:wClipArea(xmin, xmax, ymin, ymax: number) (WC) [in Lua]</pre>
-    <p>Defines a rectangle for clipping. Only the points in the interval <i><b>xmin&lt;= 
+    <p>Defines the current rectangle for clipping. Only the points in the interval <i><b>xmin&lt;= 
           x &lt;= xmax</b></i> and<b> </b><i><b>ymin &lt;= y &lt;= ymax</b></i> will 
       be printed. Default region: (0, w-1, 0, h-1).
     </p>
