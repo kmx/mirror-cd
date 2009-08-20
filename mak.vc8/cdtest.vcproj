@@ -17,7 +17,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="..\bin"
-			IntermediateDirectory="..\obj\cdtest"
+			IntermediateDirectory="..\obj\Debug\$(ProjectName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -49,14 +49,16 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="..\include,..\..\iup\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;CDTEST_WIN32;_CRT_SECURE_NO_DEPRECATE"
+				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				PrecompiledHeaderFile="..\obj/cdtest.pch"
 				AssemblerListingLocation=""
-				ObjectFile="$(IntDir)/"
-				ProgramDataBaseFileName="..\obj/cdtest"
-				WarningLevel="3"
+				ObjectFile="$(IntDir)\"
+				ProgramDataBaseFileName="$(IntDir)\vc90.pdb"
+				WarningLevel="4"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="1"
+				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -72,7 +74,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="freetype6.lib comctl32.lib cd.lib iupcd.lib cdcontextplus.lib iup.lib iupwin.lib gdiplus.lib cdpdf.lib pdflib.lib"
+				AdditionalDependencies="freetype6.lib comctl32.lib cd.lib iupcd.lib cdcontextplus.lib iup.lib gdiplus.lib cdpdf.lib pdflib.lib"
 				OutputFile="..\bin/cdtest.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"

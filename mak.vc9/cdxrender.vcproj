@@ -4,6 +4,7 @@
 	Version="9,00"
 	Name="cdxrender"
 	ProjectGUID="{160DEDA5-C1AA-48C7-8B07-490C6A8DE2EE}"
+	TargetFrameworkVersion="0"
 	>
 	<Platforms>
 		<Platform
@@ -16,7 +17,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="..\lib"
-			IntermediateDirectory="..\obj\xrender"
+			IntermediateDirectory="..\obj\Debug\$(ProjectName)"
 			ConfigurationType="4"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -42,14 +43,16 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="..\include;..\src;..\src\drv;..\src\iup;..\src\x11;..\src\xrender;..\src\sim;C:\cygwin\usr\X11R6\include\;C:\LNG\x11inc;..\..\iup\include;..\src\freetype2"
 				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,CD_NO_OLD_INTERFACE,_CRT_SECURE_NO_DEPRECATE"
-				RuntimeLibrary="0"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
 				PrecompiledHeaderFile=".\..\obj\xrender/cdxrender.pch"
 				AssemblerListingLocation=""
-				ObjectFile="$(IntDir)/"
-				ProgramDataBaseFileName="..\obj\xrender"
+				ObjectFile="$(IntDir)\"
+				ProgramDataBaseFileName="$(IntDir)\vc90.pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="1"
+				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"

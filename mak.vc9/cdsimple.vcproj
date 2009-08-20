@@ -17,7 +17,7 @@
 		<Configuration
 			Name="Debug|Win32"
 			OutputDirectory="..\bin"
-			IntermediateDirectory="..\obj\cdsimple"
+			IntermediateDirectory="..\obj\Debug\$(ProjectName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
@@ -45,14 +45,16 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="..\include,..\..\iup\include"
 				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;__CD__;simple;_CRT_SECURE_NO_DEPRECATE"
-				RuntimeLibrary="0"
+				BasicRuntimeChecks="3"
+				RuntimeLibrary="1"
 				PrecompiledHeaderFile=".\..\obj\cdsimple/cdsimple.pch"
-				AssemblerListingLocation=".\..\obj\cdsimple/"
-				ObjectFile=".\..\obj\cdsimple/"
-				ProgramDataBaseFileName=".\..\obj\cdsimple/"
+				AssemblerListingLocation=""
+				ObjectFile="$(IntDir)\"
+				ProgramDataBaseFileName="$(IntDir)\vc90.pdb"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
 				DebugInformationFormat="1"
+				CompileAs="0"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -68,7 +70,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="freetype6.lib cd.lib iupcd.lib iup.lib iupwin.lib comctl32.lib cdcontextplus.lib gdiplus.lib cdpdf.lib pdflib.lib iupcontrols.lib"
+				AdditionalDependencies="freetype6.lib cd.lib iupcd.lib iup.lib comctl32.lib cdcontextplus.lib gdiplus.lib cdpdf.lib pdflib.lib iupcontrols.lib"
 				OutputFile="..\bin/cdsimple.exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
