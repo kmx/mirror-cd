@@ -69,7 +69,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\lib\cdluaim51.lib"
+				OutputFile="$(OutDir)/$(ProjectName)1.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool

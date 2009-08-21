@@ -75,12 +75,12 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
 				AdditionalDependencies="freetype6.lib comctl32.lib cd.lib iupcd.lib cdcontextplus.lib iup.lib gdiplus.lib cdpdf.lib pdflib.lib"
-				OutputFile="..\bin/cdtest.exe"
-				LinkIncremental="2"
+				OutputFile="$(OutDir)\$(ProjectName).exe"
+				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="..\lib,..\..\iup\lib"
 				GenerateDebugInformation="true"
-				ProgramDatabaseFile="..\bin/cdtest.pdb"
+				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
 				SubSystem="1"
 			/>
 			<Tool

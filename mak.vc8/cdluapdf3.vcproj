@@ -65,7 +65,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\lib\cdluapdf3.lib"
+				OutputFile="$(OutDir)/$(ProjectName).lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool

@@ -65,7 +65,7 @@
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="..\lib\cdluacontextplus51.lib"
+				OutputFile="$(OutDir)/$(ProjectName)1.lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
