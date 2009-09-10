@@ -165,8 +165,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 
   if (hWnd)
   {
-    LONG style;
-    style = GetClassLong(hWnd, GCL_STYLE);
+    LONG style = GetClassLong(hWnd, GCL_STYLE);
     ctxcanvas->isOwnedDC = (int) ((style & CS_OWNDC) || (style & CS_CLASSDC));
   }
   else
