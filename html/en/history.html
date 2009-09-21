@@ -19,11 +19,18 @@
 <body>
 
 <h1>History of Changes</h1>
-<h3>CVS (05/Aug/2008)</h3>
+<h3>CVS (21/Sep/2008)</h3>
 <ul>
 	<li><span class="style1">Changed</span><span class="hist_changed">:</span>
     return value to boolean of <strong>CanvasIsPointInRegion</strong> and
 	<strong>cd.UseContextPlus</strong> in Lua.</li>
+	<li><span style="color: #008000">Changed:</span> 
+  	added missing support for alpha channel in image:<strong>cdCreateCanvas</strong>,
+	<strong>cd:imImageCreate</strong>, image<strong>:cdCreateBitmap</strong> and 
+	image<strong>:cdInitBitmap</strong> in cdluaim binding.</li>
+	<li><span style="color: #FF0000">Fixed:</span> indexing of <strong>
+	cdImageRGB</strong>, <strong>cdImageRGBA</strong> and <strong>cdBitmap</strong> 
+	objects in Lua.</li>
 </ul>
 <h3><a href="http://sourceforge.net/projects/canvasdraw/files/5.2/">Version 5.2</a> (26/Jun/2008)</h3>
 <ul>

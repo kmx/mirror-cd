@@ -37,7 +37,12 @@ static int imlua_cdInitBitmap(lua_State *L)
     luaL_argerror(L, 1, "image is not a bitmap");
 
   if (image->color_space == IM_RGB)
-    bitmap = cdInitBitmap(image->width, image->height, CD_RGB, image->data[0], image->data[1], image->data[2]);
+  {
+    if (image->has_alpha)
+      bitmap = cdInitBitmap(image->width, image->height, CD_RGBA, image->data[0], image->data[1], image->data[2], image->data[3]);
+    else
+      bitmap = cdInitBitmap(image->width, image->height, CD_RGB, image->data[0], image->data[1], image->data[2]);
+  }
   else
     bitmap = cdInitBitmap(image->width, image->height, CD_MAP, image->data[0], image->palette);
 
@@ -60,7 +65,12 @@ static int imlua_cdCreateBitmap(lua_State *L)
     luaL_argerror(L, 1, "image is not a bitmap");
 
   if (image->color_space == IM_RGB)
-    bitmap = cdCreateBitmap(image->width, image->height, CD_RGB);
+  {
+    if (image->has_alpha)
+      bitmap = cdCreateBitmap(image->width, image->height, CD_RGBA);
+    else
+      bitmap = cdCreateBitmap(image->width, image->height, CD_RGB);
+  }
   else
     bitmap = cdCreateBitmap(image->width, image->height, CD_MAP);
 
@@ -72,6 +82,9 @@ static int imlua_cdCreateBitmap(lua_State *L)
     memcpy(cdBitmapGetData(bitmap, CD_IRED), image->data[0], image->plane_size);
     memcpy(cdBitmapGetData(bitmap, CD_IGREEN), image->data[1], image->plane_size);
     memcpy(cdBitmapGetData(bitmap, CD_IBLUE), image->data[2], image->plane_size);
+
+    if (image->has_alpha)
+      memcpy(cdBitmapGetData(bitmap, CD_IALPHA), image->data[3], image->plane_size);
   }
   else
   {
@@ -91,7 +104,7 @@ static int cdlua_imImageCreate(lua_State *L)
   imImage *image;
   cdBitmap* bitmap = cdlua_checkbitmap(L, 1);
 
-  if (bitmap->type == CD_RGB)
+  if (bitmap->type == CD_RGB || bitmap->type == CD_RGBA)
     image = imImageCreate(bitmap->w, bitmap->h, IM_RGB, IM_BYTE);
   else
     image = imImageCreate(bitmap->w, bitmap->h, IM_MAP, IM_BYTE);
@@ -99,11 +112,14 @@ static int cdlua_imImageCreate(lua_State *L)
   if (!image)
     luaL_error(L, "insuficient memory to create image");
 
-  if (bitmap->type == CD_RGB)
+  if (bitmap->type == CD_RGB || bitmap->type == CD_RGBA)
   {
     memcpy(image->data[0], cdBitmapGetData(bitmap, CD_IRED),   image->plane_size);
     memcpy(image->data[1], cdBitmapGetData(bitmap, CD_IGREEN), image->plane_size);
     memcpy(image->data[2], cdBitmapGetData(bitmap, CD_IBLUE),  image->plane_size);
+
+    if (bitmap->type == CD_RGBA)
+      memcpy(image->data[3], cdBitmapGetData(bitmap, CD_IALPHA),  image->plane_size);
   }
   else
   {
@@ -192,16 +208,27 @@ static int imlua_cdCreateCanvas(lua_State * L)
 
   imImage *image = imlua_checkimage(L, 1);
 
+  if (image->color_space != IM_RGB || image->data_type != IM_BYTE)
+    luaL_argerror(L, 1, "image is not RGB/byte");
+
   if (lua_isnoneornil(L, 2))
   {
-    sprintf(data_s, "%dx%d %p %p %p", image->width, image->height,
-      image->data[0], image->data[1], image->data[2]);
+    if (image->has_alpha)
+      sprintf(data_s, "%dx%d %p %p %p %p -a", image->width, image->height,
+                                              image->data[0], image->data[1], image->data[2], image->data[3]);
+    else
+      sprintf(data_s, "%dx%d %p %p %p", image->width, image->height,
+                                        image->data[0], image->data[1], image->data[2]);
   }
   else
   {
     double res_f = luaL_checknumber(L, 2);
-    sprintf(data_s, "%dx%d %p %p %p -r%g", image->width, image->height,
-      image->data[0], image->data[1], image->data[2], res_f);
+    if (image->has_alpha)
+      sprintf(data_s, "%dx%d %p %p %p %p -r%g -a", image->width, image->height,
+                                                   image->data[0], image->data[1], image->data[2], image->data[3], res_f);
+    else
+      sprintf(data_s, "%dx%d %p %p %p -r%g", image->width, image->height,
+                                             image->data[0], image->data[1], image->data[2], res_f);
   }
 
   canvas = cdCreateCanvas(CD_IMAGERGB, data_s);

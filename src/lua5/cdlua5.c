@@ -782,6 +782,13 @@ static int cdlua5_newindexchannel(lua_State *L)
   return 0;
 }
 
+static int cdl_ischar(const char* str, char c)
+{
+  if ((str[0] == c || str[0] == c-32) && str[1] == 0)
+    return 1;
+  return 0;
+}
+
 /***************************************************************************\
 * imagergb "gettable" fallback. This fallback is called when a LUA line     *
 * like "c = imagergb.r[y*w + x]" or "imagergb.r[y*w + x] = c" is executed.  *
@@ -794,16 +801,22 @@ static int cdlua5_indeximagergb(lua_State *L)
   cdluaImageRGB* imagergb_p = cdlua_checkimagergb(L, 1);
   const char *index_s = luaL_checkstring(L, 2);
 
-  if (*index_s == 'r' || *index_s == 'R')
+  if (cdl_ischar(index_s, 'r'))
     channel = imagergb_p->red;
-  else if (*index_s == 'g' || *index_s == 'G')
+  else if (cdl_ischar(index_s, 'g'))
     channel = imagergb_p->green;
-  else if (*index_s == 'b' || *index_s == 'B')
+  else if (cdl_ischar(index_s, 'b'))
     channel = imagergb_p->blue;
-  else
-    luaL_argerror(L, 2, "index is an invalid channel name");
 
-  cdlua_pushchannel(L, channel, imagergb_p->size);
+  if (channel)
+    cdlua_pushchannel(L, channel, imagergb_p->size);
+  else
+  {
+    /* get raw method */
+    lua_getmetatable(L, 1);
+    lua_pushvalue(L, 2);
+    lua_rawget(L, -2);
+  }
 
   return 1;
 }
@@ -820,18 +833,24 @@ static int cdlua5_indeximagergba(lua_State *L)
   cdluaImageRGBA* imagergba_p = cdlua_checkimagergba(L, 1);
   const char *index_s = luaL_checkstring(L, 2);
 
-  if (*index_s == 'r' || *index_s == 'R')
+  if (cdl_ischar(index_s, 'r'))
     channel = imagergba_p->red;
-  else if (*index_s == 'g' || *index_s == 'G')
+  else if (cdl_ischar(index_s, 'g'))
     channel = imagergba_p->green;
-  else if (*index_s == 'b' || *index_s == 'B')
+  else if (cdl_ischar(index_s, 'b'))
     channel = imagergba_p->blue;
-  else if (*index_s == 'a' || *index_s == 'A')
+  else if (cdl_ischar(index_s, 'a'))
     channel = imagergba_p->alpha;
-  else
-    luaL_argerror(L, 2, "index is an invalid channel name");
 
-  cdlua_pushchannel(L, channel, imagergba_p->size);
+  if (channel)
+    cdlua_pushchannel(L, channel, imagergba_p->size);
+  else
+  {
+    /* get raw method */
+    lua_getmetatable(L, 1);
+    lua_pushvalue(L, 2);
+    lua_rawget(L, -2);
+  }
 
   return 1;
 }
@@ -845,31 +864,36 @@ static int cdlua5_indeximagergba(lua_State *L)
 static int cdlua5_indexbitmap(lua_State *L)
 {
   unsigned char* channel = NULL;
-
   cdBitmap* bitmap = cdlua_checkbitmap(L, 1);
   const char *index_s = luaL_checkstring(L, 2);
 
   int size = bitmap->w * bitmap->h;
 
-  if (*index_s == 'r' || *index_s == 'R')
+  if (cdl_ischar(index_s, 'r'))
     channel = cdBitmapGetData(bitmap, CD_IRED);
-  else if (*index_s == 'g' || *index_s == 'G')
+  else if (cdl_ischar(index_s, 'g'))
     channel = cdBitmapGetData(bitmap, CD_IGREEN);
-  else if (*index_s == 'b' || *index_s == 'B')
+  else if (cdl_ischar(index_s, 'b'))
     channel = cdBitmapGetData(bitmap, CD_IBLUE);
-  else if (*index_s == 'a' || *index_s == 'A')
+  else if (cdl_ischar(index_s, 'a'))
     channel = cdBitmapGetData(bitmap, CD_IALPHA);
-  else if (*index_s == 'i' || *index_s == 'I')
+  else if (cdl_ischar(index_s, 'i'))
     channel = cdBitmapGetData(bitmap, CD_INDEX);
-  else if (*index_s == 'c' || *index_s == 'C') 
+  else if (cdl_ischar(index_s, 'c')) 
   {
     channel = cdBitmapGetData(bitmap, CD_COLORS);
     size = -1;
   }
-  else
-    luaL_argerror(L, 2, "index is an invalid channel name");
 
-  cdlua_pushchannel(L, channel, size);
+  if (channel)
+    cdlua_pushchannel(L, channel, size);
+  else
+  {
+    /* get raw method */
+    lua_getmetatable(L, 1);
+    lua_pushvalue(L, 2);
+    lua_rawget(L, -2);
+  }
 
   return 1;
 }
