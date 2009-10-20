@@ -23,15 +23,31 @@
 void
 pdf_concat_raw(PDF *p, pdc_matrix *m)
 {
-    if (pdc_is_identity_matrix(m))
-	return;
+    if (!pdc_is_identity_matrix(m))
+    {
+        char sa[32], sb[32], sc[32], sd[32];
 
-    pdf_end_text(p);
+        pdc_sprintf(p->pdc, pdc_true, sa, "%f", m->a);
+        pdc_sprintf(p->pdc, pdc_true, sb, "%f", m->b);
+        pdc_sprintf(p->pdc, pdc_true, sc, "%f", m->c);
+        pdc_sprintf(p->pdc, pdc_true, sd, "%f", m->d);
 
-    pdc_printf(p->out, "%f %f %f %f %f %f cm\n",
-		    m->a, m->b, m->c, m->d, m->e, m->f);
+        if ((!strcmp(sa, "0") || !strcmp(sd, "0")) &&
+            (!strcmp(sb, "0") || !strcmp(sc, "0")))
+        {
+            pdc_error(p->pdc, PDC_E_ILLARG_MATRIX,
+                      pdc_errprintf(p->pdc, "%f %f %f %f %f %f",
+                                    m->a, m->b, m->c, m->d, m->e, m->f),
+                      0, 0, 0);
+        }
 
-    pdc_multiply_matrix(m, &p->curr_ppt->gstate[p->curr_ppt->sl].ctm);
+        pdf_end_text(p);
+
+        pdc_printf(p->out, "%s %s %s %s %f %f cm\n",
+                   sa, sb, sc, sd, m->e, m->f);
+
+        pdc_multiply_matrix(m, &p->curr_ppt->gstate[p->curr_ppt->sl].ctm);
+    }
 }
 
 void
@@ -189,7 +205,6 @@ pdf__concat(PDF *p, pdc_scalar a, pdc_scalar b, pdc_scalar c, pdc_scalar d,
             pdc_scalar e, pdc_scalar f)
 {
     pdc_matrix m;
-    pdc_scalar det = a * d - b * c;
 
     pdc_check_number(p->pdc, "a", a);
     pdc_check_number(p->pdc, "b", b);
@@ -197,11 +212,6 @@ pdf__concat(PDF *p, pdc_scalar a, pdc_scalar b, pdc_scalar c, pdc_scalar d,
     pdc_check_number(p->pdc, "d", d);
     pdc_check_number(p->pdc, "e", e);
     pdc_check_number(p->pdc, "f", f);
-
-    if (fabs(det) < PDF_SMALLREAL)
-	pdc_error(p->pdc, PDC_E_ILLARG_MATRIX,
-	    pdc_errprintf(p->pdc, "%f %f %f %f %f %f", a, b, c, d, e, f),
-	    0, 0, 0);
 
     m.a = a;
     m.b = b;
@@ -217,13 +227,6 @@ void
 pdf_setmatrix_e(PDF *p, pdc_matrix *n)
 {
     pdc_matrix m;
-    pdc_scalar det = n->a * n->d - n->b * n->c;
-
-    if (fabs(det) < PDF_SMALLREAL)
-	pdc_error(p->pdc, PDC_E_ILLARG_MATRIX,
-	    pdc_errprintf(p->pdc, "%f %f %f %f %f %f",
-		n->a, n->b, n->c, n->d, n->e, n->f),
-	    0, 0, 0);
 
     pdc_invert_matrix(p->pdc, &m, &p->curr_ppt->gstate[p->curr_ppt->sl].ctm);
     pdc_multiply_matrix(n, &m);

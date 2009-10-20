@@ -26,7 +26,7 @@ int
 pdf_embed_image(PDF *p, int im)
 {
     pdf_image *image = &p->images[im];
-    char optlist[2048], *ol;
+    char optlist[PDC_GEN_BUFSIZE], *ol;
     pdc_scalar width, height;
     int templ;
 
@@ -39,13 +39,14 @@ pdf_embed_image(PDF *p, int im)
 
 
     if (image->iconname)
-        sprintf(ol, "iconname {%s}", image->iconname);
+        pdc_sprintf(p->pdc, pdc_false, ol, "iconname {%s}", image->iconname);
 
     /* create template */
     templ = pdf__begin_template(p, width, height, optlist);
 
     /* fit image */
-    sprintf(optlist, "boxsize {%g %g} fitmethod meet", width, height);
+    pdc_sprintf(p->pdc, pdc_false, optlist, "boxsize {%g %g} fitmethod meet",
+                width, height);
     pdf__fit_image(p, im, 0, 0, optlist);
 
     /* end template */
@@ -64,6 +65,9 @@ pdf_embed_image(PDF *p, int im)
 static const pdc_defopt pdf_begin_template_options[] =
 {
     {"topdown", pdc_booleanlist, PDC_OPT_NONE, 1, 1, 0.0, 0.0, NULL},
+
+    {"transparencygroup", pdc_stringlist,  PDC_OPT_PDC_1_4, 1, 1,
+      1.0, PDF_MAX_NAMESTRING, NULL},
 
     {"OPI-1.3", pdc_stringlist, PDF_OPIOPT_FLAG, 1, 1, 0.0, 32000.0, NULL},
 
@@ -114,6 +118,9 @@ pdf__begin_template(PDF *p, pdc_scalar width, pdc_scalar height,
     image->topdown_save = (p->ydirection == -1) ? pdc_true : pdc_false;
     topdown = image->topdown_save;
     image->in_use = pdc_true;                 /* mark slot as used */
+    image->tgroup.colorspace = color_none;
+    image->tgroup.isolated = pdc_false;
+    image->tgroup.knockout = pdc_false;
 
     /* parsing optlist */
     pdf_set_clientdata(p, &cdata);
@@ -123,10 +130,15 @@ pdf__begin_template(PDF *p, pdc_scalar width, pdc_scalar height,
     /* save and check options */
     if (optlist && *optlist)
     {
+	char **slist;
+
         image->verbose = pdf_get_errorpolicy(p, resopts, image->verbose);
 
         keyword = "topdown";
         pdc_get_optvalues(keyword, resopts, &topdown, NULL);
+
+	if (pdc_get_optvalues("transparencygroup", resopts, NULL, &slist))
+	    pdf_set_transgroup(p, slist[0], &image->tgroup);
 
         keyword = "iconname";
         if (pdc_get_optvalues(keyword, resopts, NULL, NULL))
@@ -167,6 +179,9 @@ pdf__begin_template(PDF *p, pdc_scalar width, pdc_scalar height,
     pdc_objref(p->out, "/Resources", p->res_id);
 
     pdc_printf(p->out, "/BBox[0 0 %f %f]\n", width, height);
+
+    if (image->tgroup.colorspace != color_none)
+	pdf_write_transgroup(p, &image->tgroup);
 
 
 

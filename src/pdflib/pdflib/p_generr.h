@@ -51,6 +51,9 @@ gen(0, 2012, UNSUPP_UNICODE,
 
 gen(0, 2014, UNSUPP_SPOTCOLOR, "Spot colors not supported in PDFlib Lite")
 
+gen(0, 2015, UNSUPP_ICCBASEDCOLOR,
+    "ICC based or Lab colors not supported in PDFlib Lite")
+
 gen(0, 2016, UNSUPP_PDI, "PDF import (PDI) not supported in PDFlib Lite")
 
 gen(0, 2017, UNSUPP_PDI_CONFIG,
@@ -99,7 +102,7 @@ gen(0, 2098, BETA_EXPIRED,
 
 
 /* -------------------------------------------------------------------- */
-/* Document, page, scoping and resource                 (21xx)          */
+/* Document, page, scoping, resource and matchbox       (21xx)          */
 /* -------------------------------------------------------------------- */
 
 gen(1, 2100, DOC_SCOPE,	"Function must not be called in '$1' scope")
@@ -157,7 +160,7 @@ gen(1, 2150, DOC_NEED_LABELOPT,
     "Option 'labels' requires suboption '$1' if used with this function")
 
 gen(1, 2152, PAGE_TRANS_COMPAT,
-    "Page transition '$1' requires PDF version 1.5 or higher")
+    "Page transition '$1' requires PDF 1.5")
 
 gen(1, 2154, PAGE_ILLROTATE, "Option 'rotate' has illegal value $1")
 
@@ -192,6 +195,12 @@ gen(0, 2176, DOC_GETBUF_LIN,
 gen(1, 2178, PAGE_ILLREF,
     "A link annotation refers to non-existing page '$1'")
 
+gen(0, 2180, DOC_NOLINOPT_ENCATT,
+    "Optimization/linearization not supported for encrypted file attachments")
+
+gen(1, 2190, MBOX_NOTFOUND,
+    "Matchbox '$1' not found")
+
 
 /* -------------------------------------------------------------------- */
 /* Graphics and Text					(22xx)		*/
@@ -210,6 +219,11 @@ gen(0, 2212, SHADING13, "Smooth shadings are not supported in PDF 1.3")
 gen(1, 2220, TEMPLATE_SELF,
     "Can't place template handle $1 within its own definition")
 
+gen(1, 2222, TEXT_ALIGNCHARNOTFOUND,
+    "Character U+$1 for option 'alignchar' not found in font or encoding")
+
+gen(1, 2223, TEXT_BADTEXTFORMAT, "Bad textformat '$1' (must be 'bytes')")
+
 /* UNUSED
 gen(1, 2230, TEXT_UNICODENOTSHOW,
     "Can't show character with Unicode value U+$1")
@@ -220,7 +234,7 @@ gen(1, 2233, TEXT_BUILTINNOTSHOW,
     "Can't show 16-bit character $1 for builtin encoding")
 */
 
-gen(1, 2234, TEXT_TOOLONG, "Text too long (max. $1)")
+gen(2, 2234, TEXT_TOOLONG, "Text with $1 bytes is too long (max. $2)")
 
 gen(2, 2235, TEXT_SIZENOMATCH,
     "Size ($1) of glyphwidths list doesn't match size ($2 characters) of text")
@@ -261,12 +275,19 @@ gen(2, 2309, COLOR_REDEFINE_SPOTNAME,
     "Option '$1': spot color '$2' has already an alternative color")
 
 
+gen(1, 2350, COLOR_INVALPATT,
+    "Pattern with painttype 2 can not be colorized with another pattern")
+
+gen(0, 2352, COLOR_INVALSPEC,
+    "Color specification not allowed while defining a pattern with painttype 2")
 
 /* -------------------------------------------------------------------- */
 /* Image						(24xx)		*/
 /* -------------------------------------------------------------------- */
 
 gen(2, 2400, IMAGE_CORRUPT, "Corrupt $1 image file '$2'")
+
+gen(4, 2401, IMAGE_TOO_LARGE, "$1 image '$2' too large ($3 x $4)")
 
 gen(3, 2402, IMAGE_NOPAGE, "Requested page $1 in $2 image '$3' not found")
 
@@ -378,8 +399,12 @@ gen(1, 2482, TIFF_UNSUPP_JPEG_TILED,
 gen(2, 2483, TIFF_UNSUPP_COLORSPACE,
     "Color space (photometric) $1 in TIFF image '$2' not supported")
 
-gen(1, 2484, TIFF_UNSUPP_JPEG_SEPARATE,
-    "Couldn't open TIFF image '$1' (JPEG with separate image planes)")
+gen(1, 2484, TIFF_UNSUPP_SEPARATE,
+    "Couldn't open TIFF image '$1' (separate image planes not supported)")
+
+gen(1, 2485, TIFF_TILE_UNSUPP,
+    "Couldn't open TIFF image '$1' "
+    "(separate image planes with tiles not supported)")
 
 gen(2, 2486, TIFF_UNSUPP_SEP_NONCMYK,
     "Couldn't open TIFF image '$1' (unsupported inkset tag $2)")
@@ -409,12 +434,14 @@ gen(1, 2496, JPX_RAWDATAUNSUPP,
 gen(1, 2498, JPX_COMPOUNDUNSUPP,
     "Compound JPEG2000 (JPM) image file '$1' not supported")
 
+gen(1, 2499, TIFF_BPC_UNSUPP,
+"TIFF image '$1' contains bpc that not equal to 1,2, 4, 8, 16, not supported")
 
 /* -------------------------------------------------------------------- */
 /* Font							(25xx)		*/
 /* -------------------------------------------------------------------- */
 
-gen(2, 2500, FONT_CORRUPT, "Corrupt $1 font file '$2'")
+gen(2, 2500, FONT_CORRUPT, "Corrupt $1 font file $2")
 
 gen(2, 2501, FONT_PREFIX, "Font '$1' with encoding '$2': ")
 
@@ -446,9 +473,18 @@ gen(0, 2509, FONT_FORCECVTUNI,
 
 gen(0, 2514, FONT_EMBEDMM, "Multiple Master font cannot be embedded")
 
-gen(0, 2516, FONT_NOMETRICS, "Metrics data not found")
+gen(0, 2516, FONT_NOMETRICS,
+    "Font file (AFM, PFM, TTF, OTF etc.) or host font not found")
 
+gen(0, 2517, FONT_NOOUTLINE_PS,
+    "Font cannot be embedded (PFA or PFB font file not found)")
+
+/* Unused
 gen(0, 2518, FONT_NOOUTLINE, "File with outline data not found")
+*/
+
+gen(0, 2519, FONT_NOOUTLINE_TT,
+    "Font cannot be embedded (TTF or OTF font file not found)")
 
 /* Unused
 gen(0, 2520, FONT_NOGLYPHID, "Font doesn't contain any glyph IDs")
@@ -509,6 +545,9 @@ gen(1, 2551, T1_UNSUPP_FORMAT, "'$1' metrics file type not supported")
 gen(2, 2554, T1_AFMBADKEY, "Unknown key '$1' in AFM file '$2'")
 
 gen(1, 2558, T1_NOFONT, "'$1' is not a PostScript Type1 font file")
+
+gen(1, 2559, T1_RESOURCENOTLOADED,
+    "Couldn't load PostScript font resource file (system error code $1)")
 
 gen(2, 2560, FONT_CODENOTFOUND1,
     "Glyph with character code $1 not found in font '$2'")
@@ -611,6 +650,10 @@ gen(1, 2830, FF_NOEMBEDFONT,
 gen(1, 2832, FF_SUBSETTFONT,
     "Specified font '$1' not allowed for fields (must not be subset)")
 
+gen(2, 2833, FF_NOPDFDOCFONT,
+    "Specified encoding '$1' of font '$2' not recommended for fields "
+    "(please use encoding 'pdfdoc')")
+
 gen(1, 2834, FF_CAPTMISSING, "No caption or icon specified for field '$1'")
 
 gen(0, 2836, FF_DIFFSTRLISTS,
@@ -666,6 +709,12 @@ gen(1, 2886, ANN_OPTALRDEF,
 gen(1, 2888, ANN_ILLCUSTOMKEY,
     "Option 'custom' uses illegal key '$1' (already defined in PDF)")
 
+gen(0, 2890, ANN_ILLTEMPLATE,
+    "Option 'movieposter' has bad template handle "
+    "(only images with RGB or Gray color spaces supported)")
+
+gen(1, 2892, ANN_ACTIONNOTALLOWED,
+    "Option 'action' not allowed for annotation type '$1'")
 
 /* -------------------------------------------------------------------- */
 /* Internal 						(29xx)		*/
@@ -689,7 +738,7 @@ gen(1, 2912, INT_SSTACK_UNDER, "State stack underflow in function '$1'")
 gen(3, 2914, INT_WRAPPER, "Error in PDFlib $1 wrapper function $2 ($3)")
 
 gen(0, 2990, OT_UNSUPP_SID2CID,
-    "Accented characters not supported; contact support@pdflib.com")
+"Accented characters not supported; use autocidfont=false in PDF_load_font()")
 
 
 

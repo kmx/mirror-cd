@@ -30,6 +30,9 @@
 /* minimal number of glyphs for appropriate encoding */
 #define  PDF_MIN_GLYPHS  5
 
+/* sign for vertical writing mode on Windows */
+#define  PDF_VERTICAL_SIGN  '@'
+
 typedef enum
 {
     font_ascender  = (1<<0),
@@ -62,6 +65,7 @@ struct pdf_font_options_s
     int xheight;
     int linegap;
     pdc_bool auxiliary;
+    pdc_bool dropcorewidths;
 };
 
 /* Type3 font structures */
@@ -123,7 +127,7 @@ struct pdf_font_s
 
     /* pdflib encoding and CMap properties */
     char *encapiname;           /* encoding name specified in API call */
-    char *outcmapname;          /* output CMap namel */
+    char *outcmapname;          /* output CMap name */
     int codepage;               /* OEM multi byte code-page number */
     pdc_encoding towinansi;     /* convert to 'towinansi' enc. for output */
     pdc_bool hasnomac;          /* TT font has no macroman cmap */
@@ -151,6 +155,10 @@ struct pdf_font_s
     pdc_byte *usedgids;         /* used Glyph IDs for font subsetting */
     pdc_bool expectglyphs;      /* TT: glyph id text strings are expected */
     pdc_bool iscidfont;         /* is CID font */
+
+    int *widths;                /* temporary glyph widths: code/gid -> width */
+    int numwidths;              /* number of entries in widths */
+    pdc_bool konlydef;          /* only default widths */
 
 };
 
@@ -202,6 +210,7 @@ pdc_encodingvector *pdf_create_font_encoding(PDF *p, pdc_encoding enc,
         pdf_font *font, const char *fontname, pdc_bool kreg);
 void pdf_transform_fontwidths(PDF *p, pdf_font *font,
         pdc_encodingvector *evto, pdc_encodingvector *evfrom);
+void pdf_prepare_fontwidths(PDF *p, pdf_font *font, int nusedgids);
 
 /* p_type1.c */
 pdc_bool pdf_t1open_fontfile(PDF *p, pdf_font *font, const char *fontname,

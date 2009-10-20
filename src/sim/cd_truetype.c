@@ -128,8 +128,7 @@ static void cdTT_checkversion(cdTT_Text* tt_text)
   FT_Int major, minor, patch;
   FT_Library_Version(tt_text->library, &major, &minor, &patch);
   if (major != FREETYPE_MAJOR ||
-      minor != FREETYPE_MINOR ||
-      patch != FREETYPE_PATCH)
+      minor != FREETYPE_MINOR)
   {
     printf("CD - Canvas Draw: Warning - Different FreeType library used!\n"
            "    Compiled = %d.%d.%d\n"

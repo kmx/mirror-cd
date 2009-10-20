@@ -21,11 +21,13 @@
 #include "p_intern.h"
 #include "p_layer.h"
 #include "p_tagged.h"
+#include "pc_strconst.h"
 
 
 
 
 #undef PDF_FEATURE_TAGGED
+
 
 
 

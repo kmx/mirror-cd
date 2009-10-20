@@ -147,6 +147,7 @@ pdf_handle_t3font(PDF *p, const char *fontname, pdc_encoding enc,
     /* copy data from available font (see pdf__begin_font()) */
     font->ft.m.type = fnt_Type3;
     font->ft.matrix = deffont->ft.matrix;
+    font->ft.bbox = deffont->ft.bbox;
     font->t3font = deffont->t3font;
     font->ft.numglyphs = deffont->t3font->next_glyph;
     nalloc = (size_t) font->ft.numglyphs;
@@ -321,7 +322,6 @@ pdf__begin_font(
     const char *optlist)
 {
     static const char fn[] = "pdf__begin_font";
-    char *fname;
     pdc_resopt *results;
     pdf_font tmpfont, *font;
     pdf_font_options fo;
@@ -335,11 +335,10 @@ pdf__begin_font(
         pdc_error(p->pdc, PDC_E_ILLARG_EMPTY, "fontname", 0, 0, 0);
 
     /* Converting fontname */
-    fname = pdf_convert_name(p, fontname, len, PDC_CONV_WITHBOM);
-    if (fname == NULL || *fname == '\0')
+    fontname = pdf_convert_name(p, fontname, len,
+                                PDC_CONV_WITHBOM | PDC_CONV_TMPALLOC);
+    if (fontname == NULL || *fontname == '\0')
         pdc_error(p->pdc, PDC_E_ILLARG_EMPTY, "fontname", 0, 0, 0);
-    fontname = pdc_errprintf(p->pdc, "%.*s", PDC_ERR_MAXSTRLEN,  fname);
-    pdc_free(p->pdc, fname);
 
     pdc_logg_cond(p->pdc, 1, trc_font,
         "\tBegin of Type3 font \"%s\"\n", fontname);
@@ -633,7 +632,7 @@ pdf__begin_glyph(
         /* see comment in p_font.c for explanation */
         glyph->width = 1000 * wx * font->ft.matrix.a;
 
-        /* if the pdc_strdup above fails, cleanup won't touch this slot. */
+        /* if the strdup above fails, cleanup won't touch this slot. */
         t3font->next_glyph++;
     }
     glyph->pass = t3font->pass;
@@ -692,7 +691,7 @@ pdf__begin_glyph(
     }
     else
     {
-        PDF_SET_STATE(p, pdf_state_glyphmetric);
+        PDF_SET_STATE(p, pdf_state_glyphmetrics);
     }
 
     pdc_pop_errmsg(p->pdc);

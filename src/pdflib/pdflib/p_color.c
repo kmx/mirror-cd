@@ -162,10 +162,9 @@ pdf_color_components(PDF *p, int slot)
 static void
 pdf_write_color_values(PDF *p, pdf_color *color, pdf_drawmode drawmode)
 {
-    static const char *fn = "pdf_write_color_values";
+    static const char	fn[] = "pdf_write_color_values";
+
     pdf_colorspace *	cs = &p->colorspaces[color->cs];
-    int			cs_bias = p->curr_ppt->cs_bias;
-    int			pt_bias = p->curr_ppt->pt_bias;
 
     switch (cs->type)
     {
@@ -219,12 +218,13 @@ pdf_write_color_values(PDF *p, pdf_color *color, pdf_drawmode drawmode)
 		}
 		else if (p->pattern[color->val.pattern].painttype == 2)
 		{
-		    pdc_printf(p->out, "/C%d cs ", cs_bias + color->cs);
-		    pdf_write_color_values(p,
-			&p->curr_ppt->cstate[p->curr_ppt->sl].fill, pdf_none);
+                    pdf_color *fillcolor = pdf_get_cstate(p, pdf_fill);
+
+		    pdc_printf(p->out, "/C%d cs ", color->cs);
+                    pdf_write_color_values(p, fillcolor, pdf_none);
 		}
 
-		pdc_printf(p->out, "/P%d scn\n", pt_bias + color->val.pattern);
+		pdc_printf(p->out, "/P%d scn\n", color->val.pattern);
 	    }
 	    else if (drawmode == pdf_stroke)
 	    {
@@ -234,12 +234,13 @@ pdf_write_color_values(PDF *p, pdf_color *color, pdf_drawmode drawmode)
 		}
 		else if (p->pattern[color->val.pattern].painttype == 2)
 		{
-		    pdc_printf(p->out, "/C%d CS ", cs_bias + color->cs);
-		    pdf_write_color_values(p,
-			&p->curr_ppt->cstate[p->curr_ppt->sl].stroke, pdf_none);
+                    pdf_color *strokecolor = pdf_get_cstate(p, pdf_stroke);
+
+		    pdc_printf(p->out, "/C%d CS ", color->cs);
+                    pdf_write_color_values(p, strokecolor, pdf_none);
 		}
 
-		pdc_printf(p->out, "/P%d SCN\n", pt_bias + color->val.pattern);
+		pdc_printf(p->out, "/P%d SCN\n", color->val.pattern);
 	    }
 
 	    p->pattern[color->val.pattern].used_on_current_page = pdc_true;
@@ -429,41 +430,44 @@ pdf_add_colorspace(PDF *p, pdf_colorspace *cs, pdc_bool inuse)
 
 
 static void
-pdf_set_color_values(PDF *p, pdf_color *c, pdf_drawmode drawmode)
+pdf_set_color_values(PDF *p, pdf_color *cfill, pdf_color *cstroke,
+                     pdf_drawmode drawmode)
 {
-    pdf_color *current;
     pdf_colorspace *cs;
-
-    cs = &p->colorspaces[c->cs];
 
     if (drawmode == pdf_stroke || drawmode == pdf_fillstroke)
     {
-	current = &p->curr_ppt->cstate[p->curr_ppt->sl].stroke;
+        pdf_color *strokecolor = pdf_get_cstate(p, pdf_stroke);
 
-	if (!pdf_color_equal(p, current, c) || PDF_FORCE_OUTPUT())
-	{
-	    if (PDF_GET_STATE(p) != pdf_state_document)
-		pdf_write_color_values(p, c, pdf_stroke);
+        if (!pdf_color_equal(p, strokecolor, cstroke) || PDF_FORCE_OUTPUT())
+        {
+            if (PDF_GET_STATE(p) != pdf_state_document)
+                pdf_write_color_values(p, cstroke, pdf_stroke);
 
-	    *current = *c;
-	}
+            *strokecolor = *cstroke;
+        }
+
+        cs = &p->colorspaces[cstroke->cs];
+        if (!PDF_SIMPLE_COLORSPACE(cs))
+            cs->used_on_current_page = pdc_true;
     }
+
     if (drawmode == pdf_fill || drawmode == pdf_fillstroke)
     {
-	current = &p->curr_ppt->cstate[p->curr_ppt->sl].fill;
+        pdf_color *fillcolor = pdf_get_cstate(p, pdf_fill);
 
-	if (!pdf_color_equal(p, current, c) || PDF_FORCE_OUTPUT())
-	{
-	    if (PDF_GET_STATE(p) != pdf_state_document)
-		pdf_write_color_values(p, c, pdf_fill);
+        if (!pdf_color_equal(p, fillcolor, cfill) || PDF_FORCE_OUTPUT())
+        {
+            if (PDF_GET_STATE(p) != pdf_state_document)
+                pdf_write_color_values(p, cfill, pdf_fill);
 
-	    *current = *c;
-	}
+            *fillcolor = *cfill;
+        }
+
+        cs = &p->colorspaces[cfill->cs];
+        if (!PDF_SIMPLE_COLORSPACE(cs))
+            cs->used_on_current_page = pdc_true;
     }
-
-    /* simple colorspaces don't get written */
-    if (!PDF_SIMPLE_COLORSPACE(cs))
-	cs->used_on_current_page = pdc_true;
 
 } /* pdf_set_color_values */
 
@@ -504,13 +508,12 @@ void
 pdf_write_page_colorspaces(PDF *p)
 {
     int i, total = 0;
-    int bias = p->curr_ppt->cs_bias;
 
     for (i = 0; i < p->colorspaces_number; i++)
 	if (p->colorspaces[i].used_on_current_page)
 	    total++;
 
-    if (total > 0 || bias
+    if (total > 0
        )
     {
 	pdc_puts(p->out, "/ColorSpace");
@@ -529,7 +532,7 @@ pdf_write_page_colorspaces(PDF *p)
 		    /* don't write simple color spaces as resource */
 		    if (!PDF_SIMPLE_COLORSPACE(cs))
 		    {
-			pdc_printf(p->out, "/C%d", bias + i);
+			pdc_printf(p->out, "/C%d", i);
 			pdc_objref(p->out, "", cs->obj_id);
 		    }
 		}
@@ -537,7 +540,6 @@ pdf_write_page_colorspaces(PDF *p)
 	}
 
 
-	if (!bias)
 	    pdc_end_dict(p->out);		/* color space names */
     }
 } /* pdf_write_page_colorspaces */
@@ -843,8 +845,14 @@ pdf_setcolor_internal(PDF *p, int drawmode, int colortype,
     pdc_scalar c1, pdc_scalar c2, pdc_scalar c3, pdc_scalar c4,
     pdf_color *fcolor)
 {
-    pdf_color c;
+    pdf_color c, cstroke;
     pdf_colorspace cs;
+
+    if (PDF_GET_STATE(p) == pdf_state_pattern &&
+        pdf_get_shading_painttype(p) == 2)
+    {
+        pdc_error(p->pdc, PDF_E_COLOR_INVALSPEC, 0, 0, 0, 0);
+    }
 
     /* TODO: synchronize the PDF/X checks below with pdf_check_pdfx_colorspaces
     */
@@ -876,6 +884,10 @@ pdf_setcolor_internal(PDF *p, int drawmode, int colortype,
 	pdf_check_color_values(p, cs.type, c1, c2, c3, c4);
         break;
 
+        case color_spotname:
+        case color_spot:
+        pdc_error(p->pdc, PDF_E_UNSUPP_SPOTCOLOR, 0, 0, 0, 0);
+        break;
 
         case color_pattern:
         cs.type = PatternCS;
@@ -887,22 +899,55 @@ pdf_setcolor_internal(PDF *p, int drawmode, int colortype,
         {
 	    cs.val.pattern.base = pdc_undef;
 	    c.cs = pdf_add_colorspace(p, &cs, pdc_false);
+            cstroke = c;
 	}
-        else
+        else if (p->pattern[c.val.pattern].painttype == 2)
         {
-	    cs.val.pattern.base = p->curr_ppt->cstate[p->curr_ppt->sl].fill.cs;
-	    c.cs = pdf_add_colorspace(p, &cs, pdc_true);
+            if (drawmode == pdf_stroke || drawmode == pdf_fillstroke)
+            {
+                pdf_color *strokecolor = pdf_get_cstate(p, pdf_stroke);
+
+                if (p->colorspaces[strokecolor->cs].type == PatternCS)
+                    pdc_error(p->pdc, PDF_E_COLOR_INVALPATT, 0, 0, 0, 0);
+
+                cstroke.val.pattern = (int) c1;
+                cs.val.pattern.base = strokecolor->cs;
+                cstroke.cs = pdf_add_colorspace(p, &cs, pdc_true);
+            }
+
+            if (drawmode == pdf_fill || drawmode == pdf_fillstroke)
+            {
+                pdf_color *fillcolor = pdf_get_cstate(p, pdf_fill);
+
+                if (p->colorspaces[fillcolor->cs].type == PatternCS)
+                    pdc_error(p->pdc, PDF_E_COLOR_INVALPATT, 0, 0, 0, 0);
+
+                cs.val.pattern.base = fillcolor->cs;
+                c.cs = pdf_add_colorspace(p, &cs, pdc_true);
+            }
 	}
         break;
 
+        case color_iccbasedgray:
+        case color_iccbasedrgb:
+        case color_iccbasedcmyk:
+        case color_lab:
+        pdc_error(p->pdc, PDF_E_UNSUPP_ICCBASEDCOLOR, 0, 0, 0, 0);
+        break;
     }
 
 
 
     if (fcolor == NULL)
-        pdf_set_color_values(p, &c, (pdf_drawmode) drawmode);
+    {
+        if (colortype != color_pattern)
+            cstroke = c;
+        pdf_set_color_values(p, &c, &cstroke, (pdf_drawmode) drawmode);
+    }
     else
+    {
         *fcolor = c;
+    }
 }
 
 static const pdc_keyconn pdf_fstype_keylist[] =

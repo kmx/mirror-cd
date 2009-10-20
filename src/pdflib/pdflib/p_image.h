@@ -155,7 +155,7 @@ typedef struct pdf_jpeg_info_t {
     pdf_jpeg_segment   *seglist;        /* list of segments to be copy */
     int                 capacity;       /* currently allocated size */
     int                 number;         /* next available segment number */
-    pdc_uint32		jpegifoffset;	/* offset to JPEG data for TIFF OJPEG */  /* CDPDF - replaced toff_t by pdc_uint32 */
+    pdc_uint32		jpegifoffset;	/* offset to JPEG data for TIFF OJPEG */
     pdc_byte		id[JPEG_MAX_COMPS]; /* component ids */
     pdc_byte		hsamp[JPEG_MAX_COMPS]; /* horizontal sampling factor */
     pdc_byte		vsamp[JPEG_MAX_COMPS]; /* vertical sampling factor */
@@ -252,10 +252,11 @@ struct pdf_image_s {
     pdf_ref_type        reference;      /* kind of image data reference */
     pdc_bool            topdown_save;   /* saved topdown flag */
     char               *iconname;       /* icon name for template images */
+    pdf_transgroup      tgroup;         /* transparency group definition */
     /**************************************************************************/
 
     pdc_bool		transparent;	/* image is transparent */
-    pdc_byte		transval[4];	/* transparent color values */
+    pdc_ushort		transval[4];	/* transparent color values */
     pdf_predictor	predictor;	/* predictor for lzw and flate */
 
     pdc_scalar          dpi_x;          /* horiz. resolution in dots per inch */
@@ -340,6 +341,9 @@ pdc_bool pdf_is_PNG_file(PDF *p, pdc_file *fp);
 int      pdf_process_TIFF_data(PDF *p, int imageslot);
 pdc_bool pdf_is_TIFF_file(PDF *p, pdc_file *fp, pdf_tiff_info *tiff,
                           pdc_bool check);
+
+void     pdf_proc_TIFF_alpha(PDF *p, int imageslot, pdc_byte *smaskData,
+                             unsigned int smaskLen);
 
 /* p_image.c */
 pdc_id pdf_get_xobject(PDF *p, int im);

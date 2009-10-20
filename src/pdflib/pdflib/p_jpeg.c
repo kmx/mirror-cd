@@ -36,14 +36,13 @@ pdf_process_JPEG_data(
     PDF *p,
     int imageslot)
 {
-    pdf_image *image = &p->images[imageslot];
+    (void) imageslot;
 
     pdc_set_errmsg(p->pdc, PDF_E_UNSUPP_IMAGE, "JPEG", 0, 0, 0);
 
     return -1;
 }
 
-/* CDPDF - added missing function */    
 void
 pdf_cleanup_jpeg(PDF *p, pdf_image *image)
 {

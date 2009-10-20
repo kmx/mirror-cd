@@ -51,14 +51,13 @@ pdf_process_GIF_data(
     PDF *p,
     int imageslot)
 {
-    pdf_image *image = &p->images[imageslot];
+    (void) imageslot;
 
     pdc_set_errmsg(p->pdc, PDF_E_UNSUPP_IMAGE, "GIF", 0, 0, 0);
 
     return -1;
 }
 
-/* CDPDF - added missing function */
 void
 pdf_cleanup_gif(PDF *p, pdf_image *image)
 {
@@ -463,7 +462,7 @@ GetDataBlock(PDF *p, pdf_image *image, unsigned char *lbuf)
     if (!PDC_OK_FREAD(fp, &count, 1))
 	return -1;	/* Error in getting DataBlock size */
 
-    ZeroDataBlock = (count == 0);
+    ZeroDataBlock = (count == (unsigned char) 0);
 
     if ((count != (unsigned char) 0) && (!PDC_OK_FREAD(fp, lbuf, count)))
     {

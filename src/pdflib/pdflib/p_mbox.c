@@ -452,9 +452,9 @@ pdf_set_mbox_rectangle(PDF *p, pdf_mbox *mbox, pdc_rectangle *rect, int flags)
     if (!(flags & mbox_statbottom))
     {
         if (mbox->percentbottom)
-            mbox->rect.lly += mbox->offsetbottom * height;
+            mbox->rect.lly += p->ydirection * mbox->offsetbottom * height;
         else
-            mbox->rect.lly += mbox->offsetbottom;
+            mbox->rect.lly += p->ydirection * mbox->offsetbottom;
     }
 
     if (!(flags & mbox_statright))
@@ -468,9 +468,9 @@ pdf_set_mbox_rectangle(PDF *p, pdf_mbox *mbox, pdc_rectangle *rect, int flags)
     if (!(flags & mbox_stattop))
     {
         if (mbox->percenttop)
-            mbox->rect.ury += mbox->offsettop * height;
+            mbox->rect.ury += p->ydirection * mbox->offsettop * height;
         else
-            mbox->rect.ury += mbox->offsettop;
+            mbox->rect.ury += p->ydirection * mbox->offsettop;
     }
 }
 
@@ -620,7 +620,7 @@ pdf_get_usematchbox(PDF *p, const char *option, const char *optval,
                               &strlist);
     if (ns)
     {
-        boxname = pdc_errprintf(p->pdc, "%.*s", PDC_ERR_MAXSTRLEN, strlist[0]);
+        boxname = pdc_strdup_tmp(p->pdc, strlist[0]);
 
         /* number of rectangles */
         pdf_get_mbox(p, NULL, boxname, 0, &nrect);
@@ -674,16 +674,18 @@ static const pdc_keyconn pdf_info_keylist[] =
 {
     {"count",   0},
     {"exists",  1},
-    {"width",   2},
-    {"height",  3},
-    {"x1",      4},
-    {"y1",      5},
-    {"x2",      6},
-    {"y2",      7},
-    {"x3",      8},
-    {"y3",      9},
-    {"x4",     10},
-    {"y4",     11},
+    {"name",    2},
+
+    {"width",   3},
+    {"height",  4},
+    {"x1",      5},
+    {"y1",      6},
+    {"x2",      7},
+    {"y2",      8},
+    {"x3",      9},
+    {"y3",     10},
+    {"x4",     11},
+    {"y4",     12},
     {NULL, 0}
 };
 
@@ -692,7 +694,6 @@ pdf__info_matchbox(PDF *p, const char *boxname, int len, int num,
                    const char *keyword)
 {
     pdf_mbox *mbox;
-    char *cname;
     double mbinfo = 0;
     int infokey, count;
 
@@ -703,20 +704,21 @@ pdf__info_matchbox(PDF *p, const char *boxname, int len, int num,
         pdc_error(p->pdc, PDC_E_ILLARG_EMPTY, "keyword", 0, 0, 0);
 
     /* Converting boxname */
-    cname = pdf_convert_name(p, boxname, len, 0);
-    if (cname == NULL || *cname == '\0')
+    boxname = pdf_convert_name(p, boxname, len, PDC_CONV_TMPALLOC);
+    if (boxname == NULL || *boxname == '\0')
         pdc_error(p->pdc, PDC_E_ILLARG_EMPTY, "boxname", 0, 0, 0);
-    boxname = pdc_errprintf(p->pdc, "%.*s", PDC_ERR_MAXSTRLEN, cname);
-    pdc_free(p->pdc, cname);
 
     infokey = pdc_get_keycode_ci(keyword, pdf_info_keylist);
     if (infokey == PDC_KEY_NOTFOUND)
         pdc_error(p->pdc, PDC_E_ILLARG_STRING, "keyword", keyword, 0, 0);
 
+    if (!strcmp(boxname, "*"))
+        boxname = NULL;
+
     /* count */
     if (!infokey)
     {
-        pdf_get_mbox(p, NULL, boxname, num, &count);
+        pdf_get_mbox(p, NULL, boxname, -1, &count);
         mbinfo = (double) count;
     }
     else
@@ -735,50 +737,62 @@ pdf__info_matchbox(PDF *p, const char *boxname, int len, int num,
 
             switch (infokey)
             {
+                /* exists */
                 case 1:
                 mbinfo = 1;
                 break;
 
+                /* name */
                 case 2:
+                mbinfo = (double)
+                    pdf_insert_utilstring(p, mbox->name, pdc_true);
+                break;
+
+                /* geometrical keys */
+                case 3:
                 mbinfo = pdc_get_vector_length(&polyline[0], &polyline[1]);
                 break;
 
-                case 3:
+                case 4:
                 mbinfo = pdc_get_vector_length(&polyline[0], &polyline[3]);
                 break;
 
-                case 4:
+                case 5:
                 mbinfo = polyline[0].x;
                 break;
 
-                case 5:
+                case 6:
                 mbinfo = polyline[0].y;
                 break;
 
-                case 6:
+                case 7:
                 mbinfo = polyline[1].x;
                 break;
 
-                case 7:
+                case 8:
                 mbinfo = polyline[1].y;
                 break;
 
-                case 8:
+                case 9:
                 mbinfo = polyline[2].x;
                 break;
 
-                case 9:
+                case 10:
                 mbinfo = polyline[2].y;
                 break;
 
-                case 10:
+                case 11:
                 mbinfo = polyline[3].x;
                 break;
 
-                case 11:
+                case 12:
                 mbinfo = polyline[3].y;
                 break;
             }
+        }
+        else if (infokey == 2)
+        {
+            mbinfo = -1;
         }
     }
 

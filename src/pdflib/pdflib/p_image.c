@@ -112,6 +112,8 @@ pdf_grow_images(PDF *p)
 
     for (im = p->images_capacity; im < 2 * p->images_capacity; im++)
 	pdf_init_image_struct(p, &(p->images[im]));
+    for (im = 0; im < p->images_capacity; im++)
+	p->images[im].src.private_data = &(p->images[im]);
 
     p->images_capacity *= 2;
 }
@@ -400,7 +402,10 @@ pdf_put_inline_image(PDF *p, int im)
 	    if ((int) image->width != 1728)	/* CCITT default width */
 		pdc_printf(p->out, "/Columns %d", (int) image->width);
 
-	    /* /Rows is not required */
+	    /* /Rows is optional, but it helps in certain cases with damaged
+	     * CCITT compressed image data
+	     */
+	    pdc_printf(p->out, "/Rows %d", (int) fabs(image->height));
 	}
 	pdc_puts(p->out, ">>]");		/* DecodeParms dict and array */
     }
@@ -618,9 +623,10 @@ pdf_put_image(PDF *p, int im, pdc_bool firststrip, pdc_bool checkcontentstream)
 	    if ((int) image->width != 1728)	/* CCITT default width */
 		pdc_printf(p->out, "/Columns %d", (int) image->width);
 
-	    /*
+	    /* /Rows is optional, but it helps in certain cases with damaged
+	     * CCITT compressed image data
+	     */
 	    pdc_printf(p->out, "/Rows %d", (int) fabs(image->height));
-	    */
 
             if (image->K != 0)
                 pdc_printf(p->out, "/K %d", image->K);
@@ -650,6 +656,9 @@ pdf_put_image(PDF *p, int im, pdc_bool firststrip, pdc_bool checkcontentstream)
 
 	/* We must avoid pdc_begin/end_pdfstream() here in order to
 	 * generate a really empty stream.
+	 * Note: this doesn't work with AES encryption, but we don't
+	 * bother to fix it since file references are no longer
+	 * supported anyway.
 	 */
 	pdc_puts(p->out, "stream\n");	/* dummy image stream */
 	pdc_puts(p->out, "endstream\n");
@@ -711,7 +720,10 @@ pdf_put_image(PDF *p, int im, pdc_bool firststrip, pdc_bool checkcontentstream)
 	    if ((int) image->width != 1728)	/* CCITT default width */
 		pdc_printf(p->out, "/Columns %d", (int) image->width);
 
-	    /* /Rows is not required */
+	    /* /Rows is optional, but it helps in certain cases with damaged
+	     * CCITT compressed image data
+	     */
+	    pdc_printf(p->out, "/Rows %d", (int) fabs(image->height));
 	}
 
 	pdc_puts(p->out, ">>\n");		/* DecodeParms dict */
@@ -775,6 +787,9 @@ pdf__fit_image(PDF *p, int im, pdc_scalar x, pdc_scalar y, const char *optlist)
     if (PDF_GET_STATE(p) == pdf_state_glyph && !pdf_get_t3colorized(p) &&
         image->imagemask == pdc_false)
         legal_states = pdf_state_page | pdf_state_pattern | pdf_state_template;
+    else if (PDF_GET_STATE(p) == pdf_state_pattern &&
+        pdf_get_shading_painttype(p) == 2 && image->imagemask == pdc_false)
+        legal_states = pdf_state_page | pdf_state_glyph | pdf_state_template;
     else
         legal_states = pdf_state_content;
     PDF_CHECK_STATE(p, legal_states);
@@ -937,15 +952,15 @@ pdf_fit_xobject_internal(PDF *p, pdf_xobject_options *xo, pdf_fit_options *fit,
     pdf_xobject_options xo_save;
     pdc_rectangle matchrect;
     pdf_fit_options fit_save;
-    pdc_matrix m, mm, sm, ctm_save;
+    pdc_matrix m, mm, sm, ctm_clip, ctm_save;
     pdc_vector tmpscale, elemscale, fitscale, purescale;
     pdc_vector elemsize, mirror, shift, relpos;
     pdc_vector polyline[5];
-    pdc_box fitbox, clipbox, elembox;
+    pdc_box fitbox, clipbox, elembox, redbox;
     pdc_scalar x, y, ss;
     pdc_scalar rowsize = 1, lastratio = 1;
     pdc_scalar dpi_x, dpi_y, tx = 0, ty = 0, boxwidth, boxheight;
-    pdc_bool hasfitbox, kclip = pdc_false, kcliptiff = pdc_false;
+    pdc_bool kclip = pdc_false, kcliptiff = pdc_false;
     int indangle, indmirror;
     int is, ip, islast;
     int imageno;
@@ -967,7 +982,6 @@ pdf_fit_xobject_internal(PDF *p, pdf_xobject_options *xo, pdf_fit_options *fit,
     /* box size */
     boxwidth = fit->boxsize[0];
     boxheight = fit->boxsize[1];
-    hasfitbox = boxwidth > PDC_FLOAT_PREC && boxheight > PDC_FLOAT_PREC;
 
     /* element size */
     elemsize.x = fabs(image->width);
@@ -1237,15 +1251,18 @@ pdf_fit_xobject_internal(PDF *p, pdf_xobject_options *xo, pdf_fit_options *fit,
         /* clipping */
         if (fit->fitmethod == pdc_clip || fit->fitmethod == pdc_slice)
         {
-            pdc_scalar cw = boxwidth;
-            pdc_scalar ch = boxheight;
-
-            if (cw < PDC_FLOAT_PREC)
-                cw = PDF_ACRO_MAXPAGE;
-            if (ch < PDC_FLOAT_PREC)
-                ch = PDF_ACRO_MAXPAGE;
-            pdf__rect(p, 0, 0, cw, ch);
+            if (boxwidth < PDC_FLOAT_PREC)
+                boxwidth = PDF_ACRO_MAXPAGE;
+            if (boxheight < PDC_FLOAT_PREC)
+                boxheight = PDF_ACRO_MAXPAGE;
+            pdf__rect(p, 0, 0, boxwidth, boxheight);
             pdf__clip(p);
+
+            ctm_clip = p->curr_ppt->gstate[p->curr_ppt->sl].ctm;
+            redbox.ll.x = 0;
+            redbox.ll.y = 0;
+            redbox.ur.x = boxwidth;
+            redbox.ur.y = p->ydirection * boxheight;
         }
     }
 
@@ -1309,6 +1326,21 @@ pdf_fit_xobject_internal(PDF *p, pdf_xobject_options *xo, pdf_fit_options *fit,
             matchrect.lly = 0;
             matchrect.urx = boxwidth;
             matchrect.ury = p->ydirection * boxheight;
+
+            if (fit->fitmethod == pdc_clip || fit->fitmethod == pdc_slice)
+            {
+                pdc_rectangle cliprect;
+                pdc_matrix ctm_inv;
+
+                pdc_invert_matrix(p->pdc, &ctm_inv,
+                              &p->curr_ppt->gstate[p->curr_ppt->sl].ctm);
+                pdc_multiply_matrix(&ctm_clip, &ctm_inv);
+                pdc_box2polyline(&ctm_inv, &redbox, polyline);
+                pdc_polyline2rect(polyline, 4, &cliprect);
+
+                pdc_rect_intersect(&matchrect, &matchrect, &cliprect);
+            }
+
             pdf_set_mbox_rectangle(p, fit->matchbox, &matchrect, 0);
             pdf_draw_mbox_rectangle(p, fit->matchbox, mbox_area | mbox_border);
 
@@ -1429,7 +1461,12 @@ pdf_fit_xobject_internal(PDF *p, pdf_xobject_options *xo, pdf_fit_options *fit,
             }
         }
         if (image->mask != pdc_undef)
+        {
             p->xobjects[p->images[image->mask].no].flags |= xobj_flag_write;
+
+            if (p->images[image->mask].bpc > 1)
+                 pdf_set_autotgroup(p, pdc_true);
+        }
     }
 }
 
@@ -1482,6 +1519,20 @@ pdf_get_image_resolution(PDF *p, int im, pdc_scalar *dpi_x, pdc_scalar *dpi_y)
         if (dpi_y)
             *dpi_y = image->dpi_x;
     }
+}
+
+int
+pdf_get_image_colorspace(PDF *p, int im)
+{
+    pdf_image *image;
+
+    pdf_check_handle(p, im, pdc_imagehandle);
+    image = &p->images[im];
+
+    if (image->colorspace != pdc_undef)
+        return  (int) p->colorspaces[image->colorspace].type;
+
+    return (int) NoColor;
 }
 
 
@@ -1567,14 +1618,14 @@ static const pdc_defopt pdf_open_image_options[] =
      0.0, 0.0, NULL},
 
     {"clippingpathname", pdc_stringlist, PDF_CLIPPATH_FLAG, 1, 1,
-      1.0, PDC_INT_MAX, NULL},
+      1.0, 255.0, NULL},
 
     {"ignoremask", pdc_booleanlist, 0, 1, 1, 0.0, 0.0, NULL},
 
     {"ignoreorientation", pdc_booleanlist, 0, 1, 1, 0.0, 0.0, NULL},
 
     /* deprecated */
-    {"imagewarning", pdc_booleanlist, 0, 1, 1, 0.0, 0.0, NULL},
+    {"imagewarning", pdc_booleanlist, PDC_OPT_PDFLIB_7, 1, 1, 0.0, 0.0, NULL},
 
     {"inline", pdc_booleanlist, 0, 1, 1, 0.0, 0.0, NULL},
 
@@ -1652,7 +1703,14 @@ pdf__load_image(
     imgtype = (pdf_image_type) k;
     type = pdc_get_keyword(imgtype, pdf_image_keylist);
 
-    verbose = pdf_get_errorpolicy(p, NULL, verbose);
+    /* parsing option list */
+    pdf_set_clientdata(p, &data);
+    resopts = pdc_parse_optionlist(p->pdc, optlist, pdf_open_image_options,
+                                   &data, pdc_true);
+
+    keyword = "imagewarning";
+    pdc_get_optvalues(keyword, resopts, &verbose, NULL);
+    verbose = pdf_get_errorpolicy(p, resopts, verbose);
 
     /* filename must be already converted to UTF-8 */
     pdc_logg_cond(p->pdc, 1, trc_image, "\tImage file: \"%s\"\n", filename);
@@ -1785,15 +1843,6 @@ pdf__load_image(
     /* parsing optlist */
     if (optlist && strlen(optlist))
     {
-        pdf_set_clientdata(p, &data);
-        resopts = pdc_parse_optionlist(p->pdc, optlist, pdf_open_image_options,
-                                       &data, pdc_true);
-        /* save and check options */
-        keyword = "imagewarning";
-        pdc_get_optvalues(keyword, resopts, &image->verbose, NULL);
-        image->verbose = pdf_get_errorpolicy(p, resopts, image->verbose);
-        verbose = image->verbose;
-
         keyword = "reftype";
         if (pdc_get_optvalues(keyword, resopts, &inum, NULL))
         {
@@ -2171,7 +2220,7 @@ pdf__load_image(
         image->fp = NULL;
 
         /* logging protocol */
-        if (pdc_logg_is_enabled(p->pdc, 1, trc_image))
+        if (image->in_use && pdc_logg_is_enabled(p->pdc, 1, trc_image))
         {
             pdc_scalar width, height, dpi_x, dpi_y;
 

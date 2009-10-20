@@ -115,32 +115,32 @@ pdf_check_pfm_encoding(PDF *p, pdf_font *font, pdc_encoding enc)
     const char *encname =
         pdc_errprintf(p->pdc, "%.*s", PDC_ERR_MAXSTRLEN,
                       pdf_get_encoding_name(p, enc, font));
-    const char *newencname = NULL;
-    pdc_encoding newenc = pdc_invalidenc;
+    const char *intencname = NULL;
+    pdc_encoding intenc = pdc_invalidenc;
     pdc_bool issymbfont = pdc_undef;
 
     pdc_logg_cond(p->pdc, 2, trc_font,
         "\tFont internal charset (dfCharSet): %d\n", font->ft.enc);
 
     /* Font encoding */
-    newencname = pdc_get_keyword(font->ft.enc, pdf_charset_keylist);
-    if (newencname == NULL)
+    intencname = pdc_get_keyword(font->ft.enc, pdf_charset_keylist);
+    if (intencname == NULL)
     {
         pdc_set_errmsg(p->pdc, PDF_E_T1_BADCHARSET,
             pdc_errprintf(p->pdc, "%d", font->ft.enc), 0, 0, 0);
         return pdc_false;
     }
 
-    if (strlen(newencname))
+    if (strlen(intencname))
     {
         int codepage = 0;
 
         pdc_logg_cond(p->pdc, 2, trc_font,
-            "\tFont internal encoding \"%s\" found\n", newencname);
+            "\tFont internal encoding \"%s\" found\n", intencname);
 
-        newenc = pdc_find_encoding(p->pdc, newencname);
-        if (newenc == pdc_invalidenc)
-            newenc = pdc_insert_encoding(p->pdc, newencname, &codepage,
+        intenc = pdc_find_encoding(p->pdc, intencname);
+        if (intenc == pdc_invalidenc)
+            intenc = pdc_insert_encoding(p->pdc, intencname, &codepage,
                                          pdc_true);
 
         font->ft.issymbfont = pdc_false;
@@ -150,7 +150,7 @@ pdf_check_pfm_encoding(PDF *p, pdf_font *font, pdc_encoding enc)
         pdc_logg_cond(p->pdc, 2, trc_font, "\tSymbol font\n");
 
         font->ft.issymbfont = pdc_true;
-        newenc = pdc_builtin;
+        intenc = pdc_builtin;
 
         /* auto */
         if (!strcmp(font->encapiname, "auto"))
@@ -169,21 +169,25 @@ pdf_check_pfm_encoding(PDF *p, pdf_font *font, pdc_encoding enc)
     {
         font->unibyte = pdc_true;
         issymbfont = pdc_false;
-        enc = newenc;
+        enc = intenc;
     }
 
     /* encoding is subset of 8-bit encoding */
-    if (enc >= pdc_winansi && newenc >= pdc_winansi)
+    if (enc >= pdc_winansi && intenc >= pdc_winansi)
     {
         if (pdc_is_encoding_subset(p->pdc, pdc_get_encoding_vector(p->pdc, enc),
-                                   pdc_get_encoding_vector(p->pdc, newenc)))
+                                   pdc_get_encoding_vector(p->pdc, intenc)))
         {
-            if (enc != pdc_winansi && newenc == pdc_winansi &&
+            if (enc != pdc_winansi && intenc == pdc_winansi &&
                 strcmp(encname, "iso8859-1"))
-                font->towinansi = pdc_invalidenc;
-
+            {
+                font->towinansi = intenc;
+            }
+            else
+            {
+                enc = intenc;
+            }
             issymbfont = pdc_false;
-            enc = newenc;
         }
     }
 
@@ -198,9 +202,9 @@ pdf_check_pfm_encoding(PDF *p, pdf_font *font, pdc_encoding enc)
     if (issymbfont && !font->ft.issymbfont)
     {
         pdc_warning(p->pdc, PDF_E_FONT_FORCEENC,
-                    pdf_get_encoding_name(p, newenc, NULL),
+                    pdf_get_encoding_name(p, intenc, NULL),
                     0, 0, 0);
-        font->ft.enc = newenc;
+        font->ft.enc = intenc;
     }
     if (!issymbfont && font->ft.issymbfont)
     {

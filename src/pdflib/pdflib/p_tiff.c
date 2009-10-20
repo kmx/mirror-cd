@@ -22,7 +22,7 @@
 
 #ifndef HAVE_LIBTIFF
 
-pdc_bool                   /* CDPDF fixed last parameter declaration */
+pdc_bool
 pdf_is_TIFF_file(PDF *p, pdc_file *fp, pdf_tiff_info *tiff, pdc_bool check)
 {
     (void) p;
@@ -38,7 +38,7 @@ pdf_process_TIFF_data(
     PDF *p,
     int imageslot)
 {
-    pdf_image *image = &p->images[imageslot];
+    (void) imageslot;
 
     pdc_set_errmsg(p->pdc, PDF_E_UNSUPP_IMAGE, "TIFF", 0, 0, 0);
 
@@ -114,7 +114,7 @@ pdf_libtiff_error(TIFF *t, const char* module, const char* fmt, va_list ap)
         char buffer[PDF_TIFF_LENGTH_MAX];
 
         /* Create the message */
-        pdc_vsnprintf(buffer, PDF_TIFF_LENGTH_MAX, fmt, ap);
+        pdc_vsnprintf(p->pdc, buffer, PDF_TIFF_LENGTH_MAX, fmt, ap);
         pdc_logg(p->pdc, "\tlibtiff(%s): %s\n", module, buffer);
     }
 }
@@ -240,6 +240,7 @@ pdf_data_source_TIFF_fill(PDF *p, PDF_data_source *src)
         }
         else
         {
+            {
             if (image->info.tiff.cur_line++ == image->height)
             {
                 PDC_EXIT_TRY(p->pdc);
@@ -308,6 +309,7 @@ pdf_data_source_TIFF_fill(PDF *p, PDF_data_source *src)
                 pdc_error(p->pdc, PDF_E_IMAGE_BADCOMP,
                       pdc_errprintf(p->pdc, "%d", image->components),
                       pdf_get_image_filename(p, image), 0, 0);
+                }
             }
         }
     }
@@ -365,7 +367,7 @@ pdf_process_TIFF_data(
     int imageslot)
 {
     static const char *fn = "pdf_process_TIFF_data";
-    uint32 w, h;
+    uint32 width, height;
     uint16 unit, bpc, compression, photometric, extra, *sinfo;
     uint16 orientation, planarconfig;
     uint16 *rmap, *gmap, *bmap;
@@ -407,11 +409,11 @@ pdf_process_TIFF_data(
 
     TIFFGetField(MYTIFF, TIFFTAG_COMPRESSION, &compression);
 
-    TIFFGetField(MYTIFF, TIFFTAG_IMAGEWIDTH, &w);
-    image->width        = (pdc_scalar) w;
+    TIFFGetField(MYTIFF, TIFFTAG_IMAGEWIDTH, &width);
+    image->width        = (pdc_scalar) width;
 
-    TIFFGetField(MYTIFF, TIFFTAG_IMAGELENGTH, &h);
-    image->height       = (pdc_scalar) h;
+    TIFFGetField(MYTIFF, TIFFTAG_IMAGELENGTH, &height);
+    image->height       = (pdc_scalar) height;
 
     TIFFGetFieldDefaulted(MYTIFF, TIFFTAG_BITSPERSAMPLE, &bpc);
     image->bpc		= bpc;
@@ -465,14 +467,14 @@ pdf_process_TIFF_data(
 
     /* Catch some rare properties related to compression, photometric,
      * and bpc which are definitely not supported (neither in pass-through
-     * mode nor libtiff) in order to provide a better error message than 
+     * mode nor libtiff) in order to provide a better error message than
      * the generic "Error reading data".
      */
 
     /* Unsupported compression types */
     switch ((int) compression)
     {
-	case /* 34661 */ COMPRESSION_JBIG: 
+	case /* 34661 */ COMPRESSION_JBIG:
 	case /* 34712 */ COMPRESSION_JP2000:
 	case 9 		/* JBIG T85 */:
 	case 10 	/* TIFF-FX JBIG (T.82) MRC (T.43) */:
@@ -575,7 +577,7 @@ pdf_process_TIFF_data(
     if (strips > 25 &&
 	compression != COMPRESSION_OJPEG && compression != COMPRESSION_JPEG &&
 	photometric != PHOTOMETRIC_PALETTE &&
-	image->width * image->width < PDF_TIFF_THRESHOLD)
+	image->width * image->height < PDF_TIFF_THRESHOLD)
     {
 	image->use_raw = pdc_false;
     }
@@ -808,7 +810,7 @@ pdf_process_TIFF_data(
 	if (planarconfig == PLANARCONFIG_SEPARATE &&
 	    (compression == COMPRESSION_OJPEG || compression==COMPRESSION_JPEG))
 	{
-	    errcode = PDF_E_TIFF_UNSUPP_JPEG_SEPARATE;
+	    errcode = PDF_E_TIFF_UNSUPP_SEPARATE;
 	    goto PDF_TIFF_ERROR;
 	}
 
@@ -835,6 +837,7 @@ pdf_process_TIFF_data(
 	    TIFFGetField(MYTIFF, TIFFTAG_COLORMAP, &rmap, &gmap, &bmap))
 	{
 	    image->components = 3;
+	    image->bpc = 8;
 	}
 	pdc_logg_cond(p->pdc, 1, trc_image, "\tno passthrough mode...\n");
     }
@@ -928,6 +931,8 @@ pdf_process_TIFF_data(
     image->src.init		= pdf_data_source_TIFF_init;
     image->src.fill		= pdf_data_source_TIFF_fill;
     image->src.terminate	= pdf_data_source_TIFF_terminate;
+    image->in_use = pdc_true;	/* mark slot as used */
+    image->src.next_byte        = NULL;
 
     if (image->use_raw) {
 	uint32 row, rowsperstrip;
@@ -945,6 +950,25 @@ pdf_process_TIFF_data(
                 goto PDF_TIFF_ERROR;
 	    }
 
+	    /* CCITT compression implicitly carries 
+	     * photometric==PHOTOMETRIC_MINISWHITE. Although the combination
+	     * of CCITT compression and palette probably doesn't conform
+	     * to the TIFF spec, we accept it, but must invert the color
+	     * palette in order to match Acrobat's behavior.
+	     * Note that most TIFF viewers either ignore the palette in
+	     * this case or display the image with wrong colors.
+	     */
+	    if (compression == COMPRESSION_CCITTRLE ||
+		compression == COMPRESSION_CCITTRLEW ||
+		compression == COMPRESSION_CCITTFAX3 ||
+		compression == COMPRESSION_CCITTFAX4)
+	    {
+		image->invert = !image->invert;
+		pdc_logg_cond(p->pdc, 1, trc_image,
+		    "\tinverting colors for CCITT-compressed "
+		    "image with palette...\n");
+	    }
+
 	    cs.type = Indexed;
 	    cs.val.indexed.palette_size = 1 << bpc;
 	    cs.val.indexed.colormap = &colormap;
@@ -952,7 +976,7 @@ pdf_process_TIFF_data(
 
 	    cs.val.indexed.base = DeviceRGB;
 
-#define CVT(x) (uint16) (((x) * 255) / ((1L<<16)-1))
+#define CVT(x) (uint16) ((x)>>8)
 	    /* TODO: properly deal with 16-bit palette entries in PDF 1.5 */
 	    if (pdf_check_colormap(cs.val.indexed.palette_size,
 		rmap, gmap, bmap) == 16)
@@ -999,7 +1023,8 @@ pdf_process_TIFF_data(
 	 */
 	image->info.tiff.cur_line = 0;
         image->height = (pdc_scalar)
-	    (image->rowsperstrip > (int) h ? (int) h : image->rowsperstrip);
+	    (image->rowsperstrip > (int) height ?
+                                   (int) height : image->rowsperstrip);
 
 	/*
 	 * Images may also be written to the output before the first page
@@ -1012,10 +1037,10 @@ pdf_process_TIFF_data(
 	pdf_put_image(p, imageslot, pdc_true, pdc_false);
 
 	for (row = (uint32) image->rowsperstrip, strip = 1;
-		row < h; row += (uint32) image->rowsperstrip, strip++) {
-
-            image->height = (pdc_scalar) (row+image->rowsperstrip > h ?
-                                     (int) (h - row) : image->rowsperstrip);
+		row < height; row += (uint32) image->rowsperstrip, strip++)
+        {
+            image->height = (pdc_scalar) (row+image->rowsperstrip > height ?
+                                  (int) (height - row) : image->rowsperstrip);
 
 	    /*
 	     * tell pdf_data_source_TIFF_fill() to read only data of the
@@ -1023,16 +1048,20 @@ pdf_process_TIFF_data(
 	     */
 	    image->info.tiff.cur_line = strip;
 	    pdf_put_image(p, imageslot, pdc_false, pdc_false);
+            /* Refresh, in case p->images reallocate */
+            image = &p->images[imageslot];
 	}
 
-        image->height = (pdc_scalar) h;
+        image->height = (pdc_scalar) height;
 	image->no -= (image->strips - 1);	/* number of first strip */
 
 	/* Special handling for multi-strip images (see comment above) */
 	if (PDF_GET_STATE(p) == pdf_state_page)
 	    pdf_begin_contents_section(p);
 
-    } else {	/* !use_raw */
+    }
+    else /* !use_raw */
+    {
 	size_t npixels;
 
 
@@ -1056,15 +1085,20 @@ pdf_process_TIFF_data(
 	    image->pixelmode = pdc_true;
 	}
 
-	if (image->pixelmode)
+        if (planarconfig == PLANARCONFIG_SEPARATE)
 	{
-	    npixels = (size_t) (w * h);
+            errcode = PDF_E_TIFF_UNSUPP_SEPARATE;
+            goto PDF_TIFF_ERROR;
+        }
+	else if (image->pixelmode)
+	{
+	    npixels = (size_t) (width * height);
 
 	    image->info.tiff.raster = (uint32 *) pdc_malloc(p->pdc,
 		(size_t) (npixels * sizeof (uint32)), fn);
 
 	    if (!TIFFReadRGBAImageOriented(MYTIFF,
-		    w, h, image->info.tiff.raster, orientation, 1))
+		    width, height, image->info.tiff.raster, orientation, 1))
             {
                 errcode = PDC_E_IO_READ;
                 goto PDF_TIFF_ERROR;
@@ -1072,33 +1106,41 @@ pdf_process_TIFF_data(
 	}
         else
         {
-	    int linecounter = 0;
+	    int linecounter = 0, sclsize = TIFFScanlineSize(MYTIFF);
 
-	    npixels = (size_t) (TIFFScanlineSize(MYTIFF) * h);
-	    image->info.tiff.raster = (uint32 *)
-		pdc_malloc(p->pdc, (size_t) npixels, fn);
+            npixels = (size_t) (sclsize * height);
+	    image->info.tiff.raster = (uint32 *)pdc_malloc(p->pdc, npixels, fn);
 
-	    while (linecounter < image->height)
-            {
-		if (TIFFReadScanline(MYTIFF,
-		    (tdata_t) (image->info.tiff.raster +
-		    ((int)image->height - linecounter - 1) * (int)image->width),
-		    (uint32) linecounter, (tsample_t) 0) == -1)
+	    while (linecounter < (int) height)
                 {
-                    errcode = PDC_E_IO_READ;
-                    goto PDF_TIFF_ERROR;
-		}
-		linecounter++;
-	    }
-	}
+                    size_t ndots = (size_t)((height - linecounter - 1) * width);
+
+                    if (npixels <= sizeof(uint32) * ndots)
+                    {
+                        errcode = PDF_E_IMAGE_CORRUPT;
+                        goto PDF_TIFF_ERROR;
+                    }
+
+                    if (TIFFReadScanline(MYTIFF,
+                        (tdata_t) (image->info.tiff.raster + ndots),
+                        (uint32) linecounter, (tsample_t) 0) == -1)
+                    {
+                        errcode = PDC_E_IO_READ;
+                        goto PDF_TIFF_ERROR;
+                    }
+                    linecounter++;
+                }
+            }
 
 	pdf_put_image(p, imageslot, pdc_true, pdc_true);
 
-	if (image->info.tiff.raster != NULL)
+        if (image->info.tiff.raster != NULL){
 	    pdc_free(p->pdc, (void *) image->info.tiff.raster);
+            image->info.tiff.raster = NULL;
+        }
+
     }
 
-    image->in_use = pdc_true;			/* mark slot as used */
 
     if (!image->corrupt)
     {
@@ -1130,7 +1172,7 @@ pdf_process_TIFF_data(
             case PDF_E_IMAGE_COLORMAP:
             case PDF_E_IMAGE_BADMASK:
             case PDF_E_TIFF_CMYK_MASK:
-            case PDF_E_TIFF_UNSUPP_JPEG_SEPARATE:
+            case PDF_E_TIFF_UNSUPP_SEPARATE:
             case PDF_E_TIFF_16BITCMYK_UNSUPP:
             case PDF_E_TIFF_16BIT_UNSUPP:
 		pdc_set_errmsg(p->pdc, errcode, stemp, 0, 0, 0);

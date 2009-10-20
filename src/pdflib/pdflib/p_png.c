@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------*
  |              PDFlib - A library for generating PDF on the fly             |
  +---------------------------------------------------------------------------+
- | Copyright (c) 1997-2006 Thomas Merz and PDFlib GmbH. All rights reserved. |
+ | Copyright (c) 1997-2009 Thomas Merz and PDFlib GmbH. All rights reserved. |
  +---------------------------------------------------------------------------+
  |                                                                           |
  |    This software is subject to the PDFlib license. It is NOT in the       |
@@ -24,172 +24,21 @@
 #define PDF_ALIGN16
 #endif
 
-/* SPNG - Simple PNG
-**
-** The items below, prefixed with spng_, or SPNG_, establish a replacement
-** for LIBPNG that works very fast, but processes simple PNG images only:
-**	- bit_depth <= 8 (no 16-bit)
-**	- interlace_type 0 (no interlacing)
-**	- color_type 0, 2, or 3 (no alpha-channel); color type 3 requires
-**        libpng for palette processing
-*/
-#define SPNG_SIGNATURE	"\211\120\116\107\015\012\032\012"
-
-#define SPNG_CHUNK_IHDR	0x49484452
-#define SPNG_CHUNK_PLTE	0x504C5445
-#define SPNG_CHUNK_tRNS	0x74524E53
-#define SPNG_CHUNK_IDAT	0x49444154
-#define SPNG_CHUNK_IEND	0x49454E44
-
-/* spng_init() return codes
-*/
-#define SPNG_ERR_OK	0	/* no error */
-#define SPNG_ERR_NOPNG	1	/* bad PNG signature */
-#define SPNG_ERR_FMT	2	/* bad PNG file format */
-
-typedef struct
-{
-    /* from IHDR:
-    */
-    int		width;
-    int		height;
-    pdc_byte	bit_depth;
-    pdc_byte	color_type;
-    pdc_byte	compr_type;
-    pdc_byte	filter_type;
-    pdc_byte	interlace_type;
-} spng_info;
-
-static int
-spng_getint(pdc_file *fp)
-{
-    unsigned char buf[4];
-
-    if (!PDC_OK_FREAD(fp, buf, 4))
-	return -1;
-
-    return (int) pdc_get_be_long(buf);
-} /* spng_getint */
-
-static int
-spng_init(PDF *p, pdf_image *image, spng_info *spi)
-{
-    pdc_file *fp = image->fp;
-    char buf[8];
-
-    (void) p;
-
-    /* check signature
-    */
-    if (!PDC_OK_FREAD(fp, buf, 8) ||
-        strncmp(buf, SPNG_SIGNATURE, 8) != 0)
-	return SPNG_ERR_NOPNG;
-
-    /* read IHDR
-    */
-    if (spng_getint(fp) != 13 ||
-        spng_getint(fp) != SPNG_CHUNK_IHDR)
-	return SPNG_ERR_FMT;
-
-    spi->width = spng_getint(fp);
-    spi->height = spng_getint(fp);
-
-    if (!PDC_OK_FREAD(fp, buf, 5))
-	return SPNG_ERR_FMT;
-
-    spi->bit_depth	= (pdc_byte) buf[0];
-    spi->color_type	= (pdc_byte) buf[1];
-    spi->compr_type	= (pdc_byte) buf[2];
-    spi->filter_type	= (pdc_byte) buf[3];
-    spi->interlace_type	= (pdc_byte) buf[4];
-
-    (void) spng_getint(fp);     /* CRC */
-
-    /* decide whether this image is "simple".
-    */
 #ifdef HAVE_LIBPNG
-    if (spi->bit_depth > 8 || spi->color_type > 3 || spi->interlace_type != 0)
-#else
-    if (spi->bit_depth > 8 || spi->color_type > 2 || spi->interlace_type != 0)
-#endif	/* !HAVE_LIBPNG */
-    {
-	image->use_raw = pdc_false;
-	return SPNG_ERR_OK;
-    }
-    else
-	image->use_raw = pdc_true;
-
-    /* read (or skip) all chunks up to the first IDAT.
-    */
-    for (/* */ ; /* */ ; /* */)
-    {
-        int len = spng_getint(fp);
-        int type = spng_getint(fp);
-
-	switch (type)
-	{
-	    case SPNG_CHUNK_IDAT:		/* prepare data xfer	*/
-		image->info.png.nbytes = (size_t) len;
-		return SPNG_ERR_OK;
-
-	    case -1:
-		return SPNG_ERR_FMT;
-
-	    /* if we decide to live without LIBPNG,
-	    ** we should handle these cases, too.
-	    */
-	    case SPNG_CHUNK_tRNS:		/* transparency chunk	*/
-	    case SPNG_CHUNK_PLTE:		/* read in palette	*/
-
-	    default:
-                pdc_fseek(fp, len + 4, SEEK_CUR);
-                                                /* skip data & CRC      */
-		break;
-	} /* switch */
-    }
-
-    return SPNG_ERR_OK;
-} /* spng_init */
-
-#define PDF_PNG_BUFFERSIZE	8192
 
 static void
 pdf_data_source_PNG_init(PDF *p, PDF_data_source *src)
 {
-    static const char fn[] = "pdf_data_source_PNG_init";
-    pdf_image	*image = (pdf_image *) src->private_data;
+    pdf_image   *image = (pdf_image *) src->private_data;
 
-#ifdef HAVE_LIBPNG
-    if (image->use_raw)
-    {
-#endif
-	src->buffer_length = PDF_PNG_BUFFERSIZE;
-	src->buffer_start = (pdc_byte *)
-	    pdc_malloc(p->pdc, src->buffer_length, fn);
-	src->bytes_available = 0;
-	src->next_byte = src->buffer_start;
+    (void) p;
 
-#ifdef HAVE_LIBPNG
-    }
-    else
-    {
-	image->info.png.cur_line = 0;
-	src->buffer_length = image->info.png.rowbytes;
-    }
-#endif
+    image->info.png.cur_line = 0;
+    src->buffer_length = image->info.png.rowbytes;
 }
 
 #undef min
 #define min(a, b) (((a) < (b)) ? (a) : (b))
-
-static void
-spng_error(PDF *p, PDF_data_source *src)
-{
-    pdf_image	*image = (pdf_image *) src->private_data;
-
-    pdc_error(p->pdc, PDF_E_IMAGE_CORRUPT, "PNG",
-              pdf_get_image_filename(p, image), 0, 0);
-} /* spng_error */
 
 static pdc_bool
 pdf_data_source_PNG_fill(PDF *p, PDF_data_source *src)
@@ -198,69 +47,18 @@ pdf_data_source_PNG_fill(PDF *p, PDF_data_source *src)
 
     PDC_TRY(p->pdc)
     {
-#ifdef HAVE_LIBPNG
-        if (image->use_raw)
-        {
-#endif
-            pdc_file *	fp = image->fp;
-            size_t	buf_avail = src->buffer_length;
-            pdc_byte *scan = src->buffer_start;
+	if (image->info.png.cur_line == image->height)
+	{
+	    PDC_EXIT_TRY(p->pdc);
+	    return pdc_false;
+	}
 
-            src->bytes_available = 0;
+	src->next_byte = image->info.png.raster +
+	    image->info.png.cur_line * image->info.png.rowbytes;
 
-            if (image->info.png.nbytes == 0)
-            {
-                PDC_EXIT_TRY(p->pdc);
-                return pdc_false;
-            }
+	src->bytes_available = src->buffer_length;
 
-            do
-            {
-                size_t nbytes = min(image->info.png.nbytes, buf_avail);
-
-                if (!PDC_OK_FREAD(fp, scan, nbytes))
-                    spng_error(p, src);
-
-                src->bytes_available += nbytes;
-                scan += nbytes;
-                buf_avail -= nbytes;
-
-                if ((image->info.png.nbytes -= nbytes) == 0)
-                {
-                    /* proceed to next IDAT chunk
-                    */
-                    (void) spng_getint(fp);                    /* CRC */
-                    image->info.png.nbytes =
-                         (size_t) spng_getint(fp);             /* length */
-
-                    if (spng_getint(fp) != SPNG_CHUNK_IDAT)
-                    {
-                        image->info.png.nbytes = 0;
-                        PDC_EXIT_TRY(p->pdc);
-                        return pdc_true;
-                    }
-                }
-            }
-            while (buf_avail);
-
-#ifdef HAVE_LIBPNG
-        }
-        else
-        {
-            if (image->info.png.cur_line == image->height)
-            {
-                PDC_EXIT_TRY(p->pdc);
-                return pdc_false;
-            }
-
-            src->next_byte = image->info.png.raster +
-                image->info.png.cur_line * image->info.png.rowbytes;
-
-            src->bytes_available = src->buffer_length;
-
-            image->info.png.cur_line++;
-        }
-#endif	/* HAVE_LIBPNG */
+	image->info.png.cur_line++;
     }
     PDC_CATCH(p->pdc)
     {
@@ -273,20 +71,24 @@ pdf_data_source_PNG_fill(PDF *p, PDF_data_source *src)
 static void
 pdf_data_source_PNG_terminate(PDF *p, PDF_data_source *src)
 {
-    pdf_image	*image = (pdf_image *) src->private_data;
-
-#ifdef HAVE_LIBPNG
-    if (image->use_raw)
-    {
-#endif
-	pdc_free(p->pdc, (void *) src->buffer_start);
-
-#ifdef HAVE_LIBPNG
-    }
-#endif
+    (void) p;
+    (void) src;
 }
 
-#ifdef HAVE_LIBPNG
+static void
+pdf_png_read_data(png_structp png_ptr, png_bytep data, png_size_t length)
+{
+    pdc_file *fp = (pdc_file *) png_ptr->io_ptr;
+    char *filename = (char *) pdc_file_name(fp);
+
+    if (!PDC_OK_FREAD(fp, data, length))
+    {
+        pdc_core *pdc = pdc_file_getpdc(fp);
+
+        pdc_error(pdc, PDF_E_IMAGE_CORRUPT, "PNG", filename, 0, 0);
+    }
+}
+
 /*
  * We suppress libpng's warning message by supplying
  * our own error and warning handlers
@@ -294,11 +96,8 @@ pdf_data_source_PNG_terminate(PDF *p, PDF_data_source *src)
 static void
 pdf_libpng_warning_handler(png_structp png_ptr, png_const_charp message)
 {
-    (void) png_ptr;	/* avoid compiler warning "unreferenced parameter" */
-    (void) message;	/* avoid compiler warning "unreferenced parameter" */
-
-    /* do nothing */
-    return;
+    PDF *p = (PDF *)png_ptr->mem_ptr;
+    pdc_logg_cond(p->pdc, 5, trc_image, "\tlibpng warning: %s\n", message);
 }
 
 /*
@@ -311,11 +110,13 @@ pdf_libpng_warning_handler(png_structp png_ptr, png_const_charp message)
 static void
 pdf_libpng_error_handler(png_structp png_ptr, png_const_charp message)
 {
+    PDF *p = (PDF *)png_ptr->mem_ptr;
+
 #ifdef PDF_ALIGN16
     jmp_buf jbuf;
 #endif
 
-    (void) message;	/* avoid compiler warning "unreferenced parameter" */
+    pdc_logg_cond(p->pdc, 5, trc_image, "\tlibpng error: %s\n", message);
 
 #ifdef PDF_ALIGN16
     memcpy(jbuf, png_jmpbuf(png_ptr), sizeof (jmp_buf));
@@ -355,20 +156,6 @@ pdf_is_PNG_file(PDF *p, pdc_file *fp)
     return pdc_true;
 }
 
-static void     /* CDPDF -  moved to inside the HAVE_LIBPNG definition */
-pdf_png_read_data(png_structp png_ptr, png_bytep data, png_size_t length)
-{
-    pdc_file *fp = (pdc_file *) png_ptr->io_ptr;
-    char *filename = (char *) pdc_file_name(fp);
-
-    if (!PDC_OK_FREAD(fp, data, length))
-    {
-	pdc_core *pdc = pdc_file_getpdc(fp);
-
-        pdc_error(pdc, PDF_E_IMAGE_CORRUPT, "PNG", filename, 0, 0);
-    }
-}
-
 int
 pdf_process_PNG_data(
     PDF *p,
@@ -376,7 +163,7 @@ pdf_process_PNG_data(
 {
     static const char *fn = "pdf_process_PNG_data";
     pdc_file *save_fp;
-    spng_info s_info;
+    size_t bytecount;
 #ifdef PDF_ALIGN16
     jmp_buf jbuf;
 #endif
@@ -404,8 +191,10 @@ pdf_process_PNG_data(
 
     image->info.png.png_ptr =
 	png_create_read_struct_2(PNG_LIBPNG_VER_STRING, (png_voidp) NULL,
-	(png_error_ptr)pdf_libpng_error_handler, (png_error_ptr)pdf_libpng_warning_handler,  /* CDPDF - added type cast */
-	p, (png_malloc_ptr) pdf_libpng_malloc,
+        (png_error_ptr) pdf_libpng_error_handler,
+        (png_error_ptr) pdf_libpng_warning_handler,
+	p,
+        (png_malloc_ptr) pdf_libpng_malloc,
 	(png_free_ptr) pdf_libpng_free);
 
     if (!image->info.png.png_ptr)
@@ -446,7 +235,8 @@ pdf_process_PNG_data(
     }
 
     /* from file or from memory */
-    png_set_read_fn(image->info.png.png_ptr, image->fp, (png_rw_ptr)pdf_png_read_data);  /* CDPDF - added type cast */
+    png_set_read_fn(image->info.png.png_ptr, image->fp,
+                    (png_rw_ptr) pdf_png_read_data);
 
     png_set_sig_bytes(image->info.png.png_ptr, 8);
     png_read_info(image->info.png.png_ptr, image->info.png.info_ptr);
@@ -667,6 +457,14 @@ pdf_process_PNG_data(
     image->info.png.rowbytes =
 	png_get_rowbytes(image->info.png.png_ptr, image->info.png.info_ptr);
 
+    /* Check for overflow */
+    bytecount = image->info.png.rowbytes * height;
+    if (bytecount / height != image->info.png.rowbytes)
+    {
+	errcode = PDF_E_IMAGE_TOO_LARGE;
+	goto PDF_PNG_ERROR;
+    }
+
     image->info.png.raster = (pdc_byte *)
 	pdc_calloc(p->pdc,image->info.png.rowbytes * height, fn);
 
@@ -691,59 +489,49 @@ pdf_process_PNG_data(
 
     image->fp = pdc_fsearch_fopen(p->pdc, image->filename, NULL, NULL,
                                   PDC_FILE_BINARY);
-    if (image->fp != NULL &&
-        spng_init(p, image, &s_info) == SPNG_ERR_OK && image->use_raw)
-    {
-        pdc_fclose(save_fp);
-	image->predictor	= pred_png;
-        image->compression      = pdf_comp_flate;
-    }
-    else
-    {
-	if (image->fp != (pdc_file *) 0)
-            pdc_fclose(image->fp);
+    if (image->fp != (pdc_file *) 0)
+	pdc_fclose(image->fp);
 
-	image->fp = save_fp;
+    image->fp = save_fp;
 
-	/* Provide a suitable background for images with alpha channel */
-	if (color_type == PNG_COLOR_TYPE_GRAY_ALPHA ||
-	    color_type == PNG_COLOR_TYPE_RGB_ALPHA)
+    /* Provide a suitable background for images with alpha channel */
+    if (color_type == PNG_COLOR_TYPE_GRAY_ALPHA ||
+	color_type == PNG_COLOR_TYPE_RGB_ALPHA)
+    {
+	png_color_16p image_background;
+
+	if (png_get_bKGD(image->info.png.png_ptr, image->info.png.info_ptr,
+			&image_background))
 	{
-	    png_color_16p image_background;
+	    png_set_background(image->info.png.png_ptr, image_background,
+		PNG_BACKGROUND_GAMMA_FILE, 1, 1.0);
+	}
+	else
+	{
+	    png_color_16 my_white;
 
-	    if (png_get_bKGD(image->info.png.png_ptr, image->info.png.info_ptr,
-			    &image_background))
+	    if (bit_depth == 8)
 	    {
-		png_set_background(image->info.png.png_ptr, image_background,
-		    PNG_BACKGROUND_GAMMA_FILE, 1, 1.0);
+		my_white.red	= 0xFF;
+		my_white.green	= 0xFF;
+		my_white.blue	= 0xFF;
+		my_white.gray	= 0xFF;
 	    }
 	    else
 	    {
-		png_color_16 my_white;
-
-		if (bit_depth == 8)
-		{
-		    my_white.red	= 0xFF;
-		    my_white.green	= 0xFF;
-		    my_white.blue	= 0xFF;
-		    my_white.gray	= 0xFF;
-		}
-                else
-		{
-		    my_white.red	= 0xFFFF;
-		    my_white.green	= 0xFFFF;
-		    my_white.blue	= 0xFFFF;
-		    my_white.gray	= 0xFFFF;
-		}
-
-		png_set_background(image->info.png.png_ptr, &my_white,
-		    PNG_BACKGROUND_GAMMA_SCREEN, 0, 1.0);
+		my_white.red	= 0xFFFF;
+		my_white.green	= 0xFFFF;
+		my_white.blue	= 0xFFFF;
+		my_white.gray	= 0xFFFF;
 	    }
-	}
 
-	/* fetch the actual image data */
-	png_read_image(image->info.png.png_ptr, row_pointers);
+	    png_set_background(image->info.png.png_ptr, &my_white,
+		PNG_BACKGROUND_GAMMA_SCREEN, 0, 1.0);
+	}
     }
+
+    /* fetch the actual image data */
+    png_read_image(image->info.png.png_ptr, row_pointers);
 
     image->in_use		= pdc_true;		/* mark slot as used */
 
@@ -787,6 +575,12 @@ pdf_process_PNG_data(
 		pdc_set_errmsg(p->pdc, errcode, "PNG", stemp, 0, 0);
 		break;
 
+            case PDF_E_IMAGE_TOO_LARGE:
+		pdc_set_errmsg(p->pdc, errcode, "PNG", stemp,
+		    pdc_errprintf(p->pdc, "%ld", (long) image->width),
+		    pdc_errprintf(p->pdc, "%ld", (long) image->height));
+		break;
+
 	    case 0: 		/* error code and message already set */
 		break;
         }
@@ -800,56 +594,20 @@ pdf_process_PNG_data(
 pdc_bool
 pdf_is_PNG_file(PDF *p, pdc_file *fp)
 {
+    (void) p;
+    (void) fp;
+
     return pdc_false;
 }
 
-/* simple built-in PNG reader without libpng */
-
 int
-pdf_process_PNG_data(
-    PDF *p,
-    int imageslot)
+pdf_process_PNG_data(PDF *p, int imageslot)
 {
-    static const char fn[] = "pdf_process_PNG_data";
-    spng_info s_info;
-    pdf_image *image;
+    (void) imageslot;
 
-    image = &p->images[imageslot];
+    pdc_set_errmsg(p->pdc, PDF_E_UNSUPP_IMAGE, "PNG", 0, 0, 0);
 
-    image->src.init		= pdf_data_source_PNG_init;
-    image->src.fill		= pdf_data_source_PNG_fill;
-    image->src.terminate	= pdf_data_source_PNG_terminate;
-    image->src.private_data	= (void *) image;
-
-    if (spng_init(p, image, &s_info) == SPNG_ERR_OK && image->use_raw)
-    {
-	image->predictor	= pred_png;
-	image->compression	= pdf_comp_flate;    /* CDPDF - fixed function name */
-
-        image->width            = (pdc_scalar) s_info.width;
-        image->height           = (pdc_scalar) s_info.height;
-	image->bpc		= s_info.bit_depth;
-
-	image->components	= 3;
-
-	/* other types are rejected in spng_init() */
-	image->colorspace	=
-			(s_info.color_type == 0 ? DeviceGray : DeviceRGB);
-
-
-
-    }
-    else
-    {
-	pdc_set_errmsg(p->pdc, PDF_E_UNSUPP_IMAGE, "PNG", 0, 0, 0);
-	return -1;
-    }
-
-    image->in_use           = pdc_true;             /* mark slot as used */
-
-    pdf_put_image(p, imageslot, pdc_true, pdc_true);
-
-    return image->corrupt ? -1 : imageslot;
+    return -1;
 }
 
 #endif	/* !HAVE_LIBPNG */

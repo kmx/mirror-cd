@@ -68,13 +68,12 @@ void
 pdf_write_page_shadings(PDF *p)
 {
     int i, total = 0;
-    int bias = p->curr_ppt->sh_bias;
 
     for (i = 0; i < p->shadings_number; i++)
 	if (p->shadings[i].used_on_current_page)
 	    total++;
 
-    if (total > 0 || bias)
+    if (total > 0)
     {
 	pdc_puts(p->out, "/Shading");
 	pdc_begin_dict(p->out);
@@ -87,12 +86,11 @@ pdf_write_page_shadings(PDF *p)
 	    if (p->shadings[i].used_on_current_page)
 	    {
 		p->shadings[i].used_on_current_page = pdc_false; /* reset */
-		pdc_printf(p->out, "/Sh%d", bias + i);
+		pdc_printf(p->out, "/Sh%d", i);
 		pdc_objref(p->out, "", p->shadings[i].obj_id);
 	    }
 	}
 
-	if (!bias)
 	    pdc_end_dict(p->out);
     }
 }
@@ -201,15 +199,13 @@ pdf__shading_pattern(PDF *p, int shading, const char *optlist)
 void
 pdf__shfill(PDF *p, int shading)
 {
-    int bias = p->curr_ppt->sh_bias;
-
     if (p->compatibility == PDC_1_3)
 	pdc_error(p->pdc, PDF_E_SHADING13, 0, 0, 0, 0);
 
     pdf_check_handle(p, shading, pdc_shadinghandle);
 
     pdf_end_text(p);
-    pdc_printf(p->out, "/Sh%d sh\n", bias + shading);
+    pdc_printf(p->out, "/Sh%d sh\n", shading);
 
     p->shadings[shading].used_on_current_page = pdc_true;
 }

@@ -132,6 +132,10 @@ pdf_init_font(PDF *p, pdf_font *font, pdf_font_options *fo)
     font->expectglyphs = pdc_false;
     font->iscidfont = pdc_false;
 
+    font->widths = NULL;
+    font->numwidths = 0;
+    font->konlydef = pdc_false;
+
 }
 
 void
@@ -180,6 +184,12 @@ pdf_cleanup_font(PDF *p, pdf_font *font)
         pdf_cleanup_t3font(p, font->t3font);
         pdc_free(p->pdc, font->t3font);
         font->t3font = NULL;
+    }
+
+    if (font->widths != NULL)
+    {
+        pdc_free(p->pdc, font->widths);
+        font->widths = NULL;
     }
 
 }
@@ -425,8 +435,9 @@ pdf_get_fontname_core(pdf_font *font, const char *fontname, pdc_bool checktimes)
 
 static pdc_bool
 pdf_get_metrics_core(PDF *p, pdf_font *font, const char *fontname,
-                     pdc_encoding enc, pdc_bool checktimes)
+             const char *outfilename, pdc_encoding enc, pdc_bool checktimes)
 {
+    static const char fn[] = "pdf_get_metrics_core";
     const char *fname = NULL;
     const fnt_font_metric *ftm;
 
@@ -435,10 +446,16 @@ pdf_get_metrics_core(PDF *p, pdf_font *font, const char *fontname,
     {
         fontname = fname;
         font->opt.fontstyle = fnt_Normal;
+
+        if (font->apiname != NULL)
+        {
+            pdc_free(p->pdc, font->apiname);
+            font->apiname = pdc_strdup_ext(p->pdc, fontname, 0, fn);
+        }
     }
 
     ftm = fnt_get_core_metric(fontname);
-    if (ftm != NULL)
+    if (ftm != NULL && (!font->opt.embedding || outfilename != NULL))
     {
         pdc_logg_cond(p->pdc, 1, trc_font,
             "\tLoading metrics data for core font \"%s\":\n", fontname);
@@ -813,6 +830,7 @@ pdf_init_font_options(PDF *p, pdf_font_options *fo)
     fo->xheight = 0;
     fo->linegap = 0;
     fo->auxiliary = pdc_false;
+    fo->dropcorewidths = pdc_false;
 
 }
 
@@ -908,10 +926,12 @@ pdf_get_font_options(PDF *p, pdf_font_options *fo, pdc_resopt *resopts)
     if (pdc_get_optvalues("linegap", resopts, &fo->linegap, NULL))
         fo->mask |= (1L << fo_linegap);
 
+
+        pdc_get_optvalues("dropcorewidths", resopts, &fo->dropcorewidths, NULL);
 }
 
 int
-pdf__load_font(PDF *p, const char *fontname, int inlen,
+pdf__load_font(PDF *p, const char *fontname, int len,
                const char *encoding, const char *optlist)
 {
     int slot;
@@ -920,14 +940,11 @@ pdf__load_font(PDF *p, const char *fontname, int inlen,
     if (encoding == NULL || *encoding == '\0')
         pdc_error(p->pdc, PDC_E_ILLARG_EMPTY, "encoding", 0, 0, 0);
 
-    if (fontname == NULL)
-        pdc_error(p->pdc, PDC_E_ILLARG_EMPTY, "fontname", 0, 0, 0);
-
     /* initialize */
     pdf_init_font_options(p, &fo);
 
     /* Converting fontname */
-    fo.fontname = (char *) pdf_convert_name(p, fontname, inlen,
+    fo.fontname = (char *) pdf_convert_name(p, fontname, len,
                                             PDC_CONV_WITHBOM);
     if (fo.fontname == NULL || *fo.fontname == '\0')
         pdc_error(p->pdc, PDC_E_ILLARG_EMPTY, "fontname", 0, 0, 0);
@@ -997,6 +1014,7 @@ pdf_check_font_embedding(PDF *p, pdf_font *font, const char *fontname)
 int
 pdf_load_font_internal(PDF *p, pdf_font_options *fo)
 {
+    pdc_bool logg1 = pdc_logg_is_enabled(p->pdc, 1, trc_font);
     pdc_bool logg2 = pdc_logg_is_enabled(p->pdc, 2, trc_font);
     const char *fontname;
     const char *encoding;
@@ -1014,6 +1032,17 @@ pdf_load_font_internal(PDF *p, pdf_font_options *fo)
     pdc_bool retval = pdc_false;
     int slot = -1, i;
 
+    /* register and skip at sign '@' in font name */
+    if (fo->fontname[0] == PDF_VERTICAL_SIGN ||
+        (pdc_is_utf8_bytecode(fo->fontname) &&
+         fo->fontname[3] == PDF_VERTICAL_SIGN))
+    {
+
+        i = (fo->fontname[0] == PDF_VERTICAL_SIGN) ? 1 : 4;
+        len = strlen(fo->fontname) + 1 - i;
+        memmove(&fo->fontname[i - 1], &fo->fontname[i], len);
+    }
+
     /* host or UTF-8 encoded font name without BOM */
     fontname_p = pdc_utf8_to_hostbytes(p->pdc, pdc_false, fo->fontname);
     if (fontname_p == NULL)
@@ -1023,9 +1052,13 @@ pdf_load_font_internal(PDF *p, pdf_font_options *fo)
     else
     {
         fontname = pdc_utf8strprint(p->pdc, fontname_p);
-        pdc_free(p->pdc, fontname_p);
+        pdc_free_tmp(p->pdc, fontname_p);
     }
     fontname_p = NULL;
+
+    if (logg1)
+        pdc_logg(p->pdc, "\tCanonical font name: \"%s\"\n",
+                 fontname);
 
     /* font encoding */
     encoding = fo->encoding;
@@ -1047,14 +1080,22 @@ pdf_load_font_internal(PDF *p, pdf_font_options *fo)
     /* UTF-8 font name with BOM */
     font->ft.utf8name = pdc_strdup(p->pdc, fo->fontname);
 
-    pdc_logg_cond(p->pdc, 1, trc_font, "\tFont UTF-8 name: \"%s\"\n",
-                  font->ft.utf8name);
+    if (logg1)
+        pdc_logg(p->pdc, "\tFont UTF-8 name: \"%s\"\n",
+                 font->ft.utf8name);
 
     /* specified encoding name */
     font->encapiname = pdc_strdup(p->pdc, encoding);
 
     /* search for a registered encoding */
     enc = pdc_find_encoding(p->pdc, encoding);
+
+    if (enc == pdc_unicode || enc == pdc_glyphid)
+    {
+        pdc_set_errmsg(p->pdc, PDF_E_UNSUPP_UNICODE, 0, 0, 0, 0);
+        goto PDF_PREMATURE_EXIT;
+    }
+
     if (enc == pdc_invalidenc || enc == pdc_unicode)
     {
         /* search for a predefined CMap and registered fonts */
@@ -1112,8 +1153,8 @@ pdf_load_font_internal(PDF *p, pdf_font_options *fo)
      * is found, make a copy in a new slot and attach the requested encoding.
      */
 
-    pdc_logg_cond(p->pdc, 1, trc_font,
-        "\tFont will be searched in the PDFlib font cache\n");
+    if (logg1)
+        pdc_logg(p->pdc, "\tFont will be searched in the PDFlib font cache\n");
     for (slot = 0; slot < p->fonts_number; slot++)
     {
         if (p->fonts[slot].obj_id == PDC_BAD_ID &&
@@ -1233,8 +1274,8 @@ pdf_load_font_internal(PDF *p, pdf_font_options *fo)
     }
 
     slot = -1;
-    pdc_logg_cond(p->pdc, 1, trc_font,
-        "\tFont not found in the PDFlib font cache\n");
+    if (logg1)
+        pdc_logg(p->pdc, "\tFont not found in the PDFlib font cache\n");
 
     /* embedding check */
     if (!pdf_check_font_embedding(p, font, fontname))
@@ -1269,18 +1310,11 @@ pdf_load_font_internal(PDF *p, pdf_font_options *fo)
         }
         mmparam[2] = '\0';      /* strip the parameter from the master name */
     }
-
-    /* Font for vertical writing mode */
     fontname_p = mastername;
-    if (mastername[0] == '@')
-    {
-        font->ft.vertical = pdc_true;
-        fontname_p = &mastername[1];
-    }
 
     /* protocol */
-    pdc_logg_cond(p->pdc, 1, trc_font,
-        "\tPDFlib font name: \"%s\"\n", fontname_p);
+    if (logg1)
+        pdc_logg(p->pdc, "\tPDFlib font name: \"%s\"\n", fontname_p);
 
     /* Font file search hierarchy
      * - Check "FontOutline" resource entry and check TrueType font
@@ -1293,6 +1327,14 @@ pdf_load_font_internal(PDF *p, pdf_font_options *fo)
     retval = pdc_false;
     while (1)
     {
+        if (font->opt.auxiliary)
+        {
+            /* only in-core fonts are possible */
+            retval = pdf_get_metrics_core(p, font, fontname_p, "", enc,
+                                          pdc_false);
+            break;
+        }
+
 #ifdef PDF_TRUETYPE_SUPPORTED
         /* Check specified TrueType file */
         filename = pdc_find_resource(p->pdc, "FontOutline", fontname_p);
@@ -1350,22 +1392,26 @@ pdf_load_font_internal(PDF *p, pdf_font_options *fo)
 
 
 
-        /* Check available in-core metrics */
-        retval = pdf_get_metrics_core(p, font, fontname_p, enc, pdc_false);
+        /* Check available in-core metrics - will be skipped
+         * in the case of embedding and missing outline file
+         * to check the possibility of an host font in the next step.
+         */
+        retval = pdf_get_metrics_core(p, font, fontname_p, outfilename, enc,
+                                      pdc_false);
         if (retval != pdc_undef)
             break;
         retval = pdc_false;
 
 
         /* Check available in-core metrics */
-        retval = pdf_get_metrics_core(p, font, fontname_p, enc, pdc_true);
+        retval = pdf_get_metrics_core(p, font, fontname_p, "", enc, pdc_true);
         if (retval != pdc_undef)
             break;
         retval = pdc_false;
 
         /* Searching for a metric file */
-        pdc_logg_cond(p->pdc, 1, trc_font,
-            "\tSearching for font metrics data file:\n");
+        if (logg1)
+            pdc_logg(p->pdc, "\tSearching for font metrics data file:\n");
 
         filename = testfilename;
         for (i = 0; i < 100; i++)
@@ -1420,9 +1466,10 @@ pdf_load_font_internal(PDF *p, pdf_font_options *fo)
 	{
             retval = pdc_false;
 
-            pdc_logg_cond(p->pdc, 1, trc_font,
-                "\tMetric data file for font \"%s\" not available\n",
-                fontname_p);
+            if (logg1)
+                pdc_logg(p->pdc,
+                         "\tMetric data file for font \"%s\" not available\n",
+                         fontname_p);
             pdc_set_errmsg(p->pdc, PDF_E_FONT_NOMETRICS, 0, 0, 0, 0);
         }
 
@@ -1470,8 +1517,9 @@ pdf_load_font_internal(PDF *p, pdf_font_options *fo)
             else
             {
                 /* Searching font outline file */
-                pdc_logg_cond(p->pdc, 1, trc_font,
-                    "\tSearching for font outline data file:\n");
+                if (logg1)
+                    pdc_logg(p->pdc,
+                             "\tSearching for font outline data file:\n");
 
                 outfilename = testfilename;
                 for (i = 0; i < 100; i++)
@@ -1506,25 +1554,33 @@ pdf_load_font_internal(PDF *p, pdf_font_options *fo)
                 if (retval == pdc_undef)
 		{
                     retval = pdc_false;
-		    pdc_set_errmsg(p->pdc, PDF_E_FONT_NOOUTLINE, 0, 0, 0, 0);
+                    if (font->ft.m.type == fnt_Type1 ||
+                        font->ft.m.type == fnt_MMType1)
+                        pdc_set_errmsg(p->pdc, PDF_E_FONT_NOOUTLINE_PS,
+                                       0, 0, 0, 0);
+                    else
+                        pdc_set_errmsg(p->pdc, PDF_E_FONT_NOOUTLINE_TT,
+                                       0, 0, 0, 0);
                 }
             }
 
             if (retval == pdc_false)
             {
-                pdc_logg_cond(p->pdc, 1, trc_font,
-                    "\tOutline data file for font \"%s\" not found\n",
-                    fontname_p);
+                    if (logg1)
+                        pdc_logg(p->pdc,
+                            "\tOutline data file for font \"%s\" not found\n",
+                            fontname_p);
             }
             else
             {
                 if (!font->ft.img)
                     font->filename = font->ft.filename;
 
-                pdc_logg_cond(p->pdc, 1, trc_font,
-                    "\tFont outline data file \"%s\" available\n",
-                    font->filename ?
-                    font->filename : font->ft.imgname);
+                    if (logg1)
+                        pdc_logg(p->pdc,
+                                "\tFont outline data file \"%s\" available\n",
+                                font->filename ?
+                                font->filename : font->ft.imgname);
             }
         }
     }
@@ -1644,6 +1700,38 @@ pdf_transform_fontwidths(PDF *p, pdf_font *font, pdc_encodingvector *evto,
         memcpy(font->ft.code2gid, code2gid, 256 * sizeof(pdc_ushort));
 }
 
+void
+pdf_prepare_fontwidths(PDF *p, pdf_font *font, int nusedgids)
+{
+
+    (void) p;
+    (void) nusedgids;
+
+    if (font->towinansi != pdc_invalidenc || font->widths != NULL ||
+        (font->iscidfont && (font->ft.isstdfont || font->opt.monospace)))
+    {
+        return;
+    }
+
+    /* exchange widths pointer */
+    if (!font->iscidfont && font->ft.enc != pdc_unicode)
+    {
+        font->widths = font->ft.m.widths;
+        font->numwidths = font->ft.m.numwidths;
+        font->ft.m.widths = NULL;
+        font->ft.m.numwidths = 0;
+        return;
+    }
+
+    /* already defined or no basic data */
+    if (font->ft.m.widths == NULL && font->ft.m.ciw == NULL
+       )
+    {
+        return;
+    }
+
+}
+
 
 
 static void
@@ -1746,6 +1834,7 @@ pdf_put_font(PDF *p, pdf_font *font)
     /* save font struct members */
     pdc_encodingvector *ev = NULL;
     pdc_encoding       font_encoding = font->ft.enc;
+    pdc_encoding       font_towinansi = font->towinansi;
     int                font_numcodes = font->ft.numcodes;
     int                font_codesize = font->codesize;
 
@@ -1889,7 +1978,11 @@ pdf_put_font(PDF *p, pdf_font *font)
 
         enc = font->towinansi;
         font->ft.enc = enc;
+        font->towinansi = pdc_invalidenc;
     }
+
+    /* preparation for font widths array */
+    pdf_prepare_fontwidths(p, font, nusedgids);
 
     /* /FontDescriptor, /FirstChar, /LastChar, /Widths */
     switch (fonttype)
@@ -1912,8 +2005,11 @@ pdf_put_font(PDF *p, pdf_font *font)
             {
                 fontdescriptor_id = pdc_alloc_id(p->out);
                 pdc_objref(p->out, "/FontDescriptor", fontdescriptor_id);
-            }
 
+                /* bug #1036 */
+                if (font->ft.isstdfont == pdc_true && font->opt.dropcorewidths)
+                    break;
+            }
 
             /* determine missing width.
              * Only for embedded fonts because of a bug in Acrobat,
@@ -1922,19 +2018,19 @@ pdf_put_font(PDF *p, pdf_font *font)
             if (font->opt.embedding)
             {
                 if (fonttype != fnt_Type3)
-                    defwidth = font->ft.m.widths[0];
+                    defwidth = font->widths[0];
 
                 {
                     for (i = 1; i < 255; i++)
                     {
-                        if (font->ft.m.widths[i] != defwidth)
+                        if (font->widths[i] != defwidth)
                             break;
                     }
                     if (i > 1)
                         firstchar = i;
                     for (i = 255; i > 0; i--)
                     {
-                        if (i == firstchar || font->ft.m.widths[i] != defwidth)
+                        if (i == firstchar || font->widths[i] != defwidth)
                             break;
                     }
                     lastchar = i;
@@ -1952,7 +2048,7 @@ pdf_put_font(PDF *p, pdf_font *font)
             for (i = firstchar; i <= lastchar; i++)
             {
                 pdc_printf(p->out, "%d",
-                           (int) (font->ft.m.widths[i] / a + .5));
+                           (int) (font->widths[i] / a + .5));
                 if (i < 255)
                     pdc_printf(p->out, "%s", ((i + 1) % 16) ? " " : "\n");
             }
@@ -2376,6 +2472,7 @@ pdf_put_font(PDF *p, pdf_font *font)
 
     /* restore font struct members */
     font->ft.enc = font_encoding;
+    font->towinansi = font_towinansi;
     font->ft.numcodes = font_numcodes;
     font->codesize = font_codesize;
 
@@ -2451,7 +2548,6 @@ void
 pdf_write_page_fonts(PDF *p)
 {
     int i, total = 0;
-    int bias = p->curr_ppt->fn_bias;
 
     /* This doesn't really belong here, but all modules which write
      * font resources also need this, so we include it here.
@@ -2466,7 +2562,7 @@ pdf_write_page_fonts(PDF *p)
         if (p->fonts[i].used_on_current_page == pdc_true)
             total++;
 
-    if (total > 0 || bias)
+    if (total > 0)
     {
         pdc_puts(p->out, "/Font");
         pdc_begin_dict(p->out);         /* font resource dict */
@@ -2478,12 +2574,11 @@ pdf_write_page_fonts(PDF *p)
 	{
             if (p->fonts[i].used_on_current_page == pdc_true) {
                 p->fonts[i].used_on_current_page = pdc_false;   /* reset */
-                pdc_printf(p->out, "/F%d", bias + i);
+                pdc_printf(p->out, "/F%d", i);
                 pdc_objref(p->out, "", p->fonts[i].obj_id);
             }
 	}
 
-	if (!bias)
 	    pdc_end_dict(p->out);	/* font resource dict */
     }
 }
@@ -2508,6 +2603,3 @@ pdf_mark_page_font(PDF *p, int ft)
 {
     p->fonts[ft].used_on_current_page = pdc_true;
 }
-
-
-

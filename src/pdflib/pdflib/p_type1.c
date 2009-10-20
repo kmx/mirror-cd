@@ -130,12 +130,10 @@ PFA_data_fill(PDF *p, PDF_data_source *src)
                     (!pdc_isxdigit(s[i+1]) && !pdc_isspace(s[i+1])))
                 {
                     pdc_fclose(t1_private->fontfile);
-                    pdc_error(p->pdc, PDF_E_FONT_CORRUPT, "PFA", "?", 0, 0);
+                    pdc_error(p->pdc, PDF_E_FONT_CORRUPT, "PFA", "", 0, 0);
                 }
-#ifndef PDFLIB_EBCDIC
                 s[i/2] = (char) (16*HexToBin[s[i]-'0'] + HexToBin[s[i+1]-'0']);
-#else
-#endif
+
                 src->bytes_available++;
             }
             t1_private->length[2] += src->bytes_available;
@@ -186,13 +184,19 @@ pdf_read_pfb_segment(PDF *p, PDF_data_source *src, t1_private_data *t1, int i)
     length |= (size_t) (pdf_t1getc(t1) & 0xff) << 16;
     length |= (size_t) (pdf_t1getc(t1) & 0xff) << 24;
 
+    pdc_logg_cond(p->pdc, 5, trc_font,
+        " and length x%04X", length);
+
     if (src->buffer_start)
         pdc_free(p->pdc, (void *) src->buffer_start);
     src->buffer_start = (pdc_byte *) pdc_malloc(p->pdc, length, fn);
 
-    if (t1->fontfile) {
+    if (t1->fontfile)
+    {
         len = pdc_fread(src->buffer_start, 1, length, t1->fontfile);
-    } else {
+    }
+    else
+    {
         len = length;
         if (t1->pos + len > t1->end)
             len = (unsigned int)(t1->end - t1->pos);
@@ -204,54 +208,61 @@ pdf_read_pfb_segment(PDF *p, PDF_data_source *src, t1_private_data *t1, int i)
     src->next_byte = src->buffer_start;
     src->bytes_available = len;
 
-    return (len != length) ? pdc_true : pdc_false;;
+    return (len != length) ? pdc_false : pdc_true;
 }
 
-static int
+static pdc_bool
 PFB_data_fill(PDF *p, PDF_data_source *src)
 {
-    t1_private_data *t1;
-    unsigned char c, type;
-    pdc_bool err = pdc_false;
+    pdc_bool logg = pdc_logg_is_enabled(p->pdc, 5, trc_font);
+    t1_private_data *t1 = (t1_private_data *) src->private_data;
+    pdc_bool succ = pdc_false;
+    pdc_byte c, type;
+    int i;
 
-    t1 = (t1_private_data *) src->private_data;
+    c = (pdc_byte) pdf_t1getc(t1);
 
-    c    = (unsigned char) pdf_t1getc(t1);
-    type = (unsigned char) pdf_t1getc(t1);
+    if (c == PFB_MARKER)
+    {
+        type = (pdc_byte) pdf_t1getc(t1);
 
-    if (t1->length[1] == (size_t) 0) {
-        if (c != PFB_MARKER || type != PFB_ASCII) {
-            err = pdc_true;
-        } else {
-            err = pdf_read_pfb_segment(p, src, t1, 1);
+        if (logg)
+            pdc_logg(p->pdc, "\t\t\treading segment of type x%02X", type);
+
+        for (i = 1; i < 4; i++)
+        {
+            if (t1->length[i] == (size_t) 0)
+            {
+                succ = pdf_read_pfb_segment(p, src, t1, i);
+                break;
+            }
         }
 
-    } else if (t1->length[2] == (size_t) 0) {
-        if (c != PFB_MARKER || type != PFB_BINARY) {
-            err = pdc_true;
-        } else {
-            err = pdf_read_pfb_segment(p, src, t1, 2);
+        if (i < 4)
+        {
+            if (succ)
+            {
+                if (logg)
+                    pdc_logg(p->pdc, " successful\n");
+                return pdc_true;
+            }
         }
-
-    } else if (t1->length[3] == 0) {
-        if (c != PFB_MARKER || type != PFB_ASCII) {
-            err = pdc_true;
-        } else {
-            err = pdf_read_pfb_segment(p, src, t1, 3);
+        else
+        {
+            if (logg)
+                pdc_logg(p->pdc, " (EOF)\n");
+            return pdc_false;
         }
-    } else if (c != PFB_MARKER || type != PFB_EOF) {
-        err = pdc_true;
-    } else {
-        return pdc_false;
     }
 
-    if (err) {
-        if (t1->fontfile)
-            pdc_fclose(t1->fontfile);
-	pdc_error(p->pdc, PDF_E_FONT_CORRUPT, "PFB", "?", 0, 0);
-    }
+    if (logg)
+        pdc_logg(p->pdc, " unsuccessful\n");
 
-    return pdc_true;
+    if (t1->fontfile)
+        pdc_fclose(t1->fontfile);
+    pdc_error(p->pdc, PDF_E_FONT_CORRUPT, "PFB", "", 0, 0);
+
+    return pdc_false;
 }
 
 static void
@@ -286,25 +297,32 @@ pdf_t1open_fontfile(PDF *p, pdf_font *font, const char *filename,
     t1_private_data  *t1_private = NULL;
     pdc_file *fp = NULL;
     const char *stemp = NULL;
-    unsigned char magic[PFA_TESTBYTE];
+    pdc_byte magic[PFA_TESTBYTE];
     char fullname[PDC_FILENAMELEN];
     int fflags = PDC_FILE_BINARY;
-    int ispfb = pdc_true;
+    pdc_bool ispfb = pdc_true;
 
     if (filename)
     {
+        pdc_bool retval = pdc_true;
+        pdc_bool fnamegiven = (strcmp(filename, FNT_MISSING_FILENAME) == 0) ?
+                              pdc_false : pdc_true;
+        (void) retval;
 
-        fp = pdc_fsearch_fopen(p->pdc, filename, fullname, "PostScript Type1 ",
-                               fflags);
-        if (fp == NULL)
+        if (fnamegiven)
         {
-            if (t1src)
-                pdc_error(p->pdc, -1, 0, 0, 0, 0);
-            return pdc_check_fopen_errmsg(p->pdc, requested);
-        }
+            fp = pdc_fsearch_fopen(p->pdc, filename, fullname,
+                                   "PostScript Type1 ", fflags);
+            if (fp == NULL)
+            {
+                if (t1src)
+                    PDC_RETHROW(p->pdc);
+                return pdc_check_fopen_errmsg(p->pdc, requested);
+            }
 
-        pdc_logg_cond(p->pdc, 1, trc_font,
-            "\tLoading PostScript Type1 fontfile \"%s\":\n", fullname);
+            pdc_logg_cond(p->pdc, 1, trc_font,
+                "\tLoading PostScript Type1 fontfile \"%s\":\n", fullname);
+        }
 
     }
 
@@ -332,7 +350,7 @@ pdf_t1open_fontfile(PDF *p, pdf_font *font, const char *filename,
                 pdc_fclose(fp);
             pdc_set_errmsg(p->pdc, PDF_E_T1_NOFONT, stemp, 0, 0, 0);
             if (t1src)
-                pdc_error(p->pdc, -1, 0, 0, 0, 0);
+                PDC_RETHROW(p->pdc);
             return pdc_false;
         }
         ispfb = pdc_false;
@@ -364,7 +382,7 @@ pdf_t1open_fontfile(PDF *p, pdf_font *font, const char *filename,
             }
 
             if (t1_private->fontfile == NULL)
-                pdc_error(p->pdc, -1, 0, 0, 0, 0);
+                PDC_RETHROW(p->pdc);
         }
         else if (font->ft.img)
         {

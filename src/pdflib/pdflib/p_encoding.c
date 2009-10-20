@@ -70,8 +70,7 @@ pdf__encoding_set_char(PDF *p, const char *encoding, int slot,
         reg_glyphname = pdc_unicode2glyphname(p->pdc, (pdc_ushort) uv);
         if (reg_glyphname)
         {
-            if (strcmp(reg_glyphname, glyphname) &&
-                p->debug[(int) 'F'] == pdc_true)
+            if (strcmp(reg_glyphname, glyphname))
             {
                 pdc_warning(p->pdc, PDF_E_ENC_BADGLYPH,
                     glyphname,
@@ -87,8 +86,7 @@ pdf__encoding_set_char(PDF *p, const char *encoding, int slot,
             if (retval > -1)
             {
                 reg_uv = (pdc_ushort) retval;
-                if (reg_uv && reg_uv != (pdc_ushort) uv &&
-                    p->debug[(int) 'F'] == pdc_true)
+                if (reg_uv && reg_uv != (pdc_ushort) uv)
                 {
                     pdc_error(p->pdc, PDF_E_ENC_BADUNICODE,
                         pdc_errprintf(p->pdc, "%04X", uv), glyphname,
@@ -154,6 +152,14 @@ pdf_get_hypertextencoding_param(PDF *p, int *codepage)
 
     if (codepage)
         *codepage = p->hypertextcodepage;
+
+    pdc_logg_cond(p->pdc, 3, trc_encoding,
+                  "\t\thypertextformat=%d\n"
+                  "\t\thypertextencoding=%s\n"
+                  "\t\thypertextcodepage=%d\n",
+                  p->hypertextformat,
+                  pdc_get_user_encoding(p->pdc, p->hypertextencoding),
+                  p->hypertextcodepage);
 
     return p->hypertextencoding;
 }

@@ -25,17 +25,17 @@
 
 typedef enum
 {
-    pdf_state_object      = (1<<0),    /* outside any document */
-    pdf_state_document    = (1<<1),    /* document */
-    pdf_state_page        = (1<<2),    /* page description in a document */
-    pdf_state_pattern     = (1<<3),    /* pattern in a document */
-    pdf_state_template    = (1<<4),    /* template in a document */
-    pdf_state_path        = (1<<5),    /* path in a page description */
-    pdf_state_font        = (1<<6),    /* font definition */
-    pdf_state_glyph       = (1<<7),    /* glyph description in a Type3 font */
-    pdf_state_glyphmetric = (1<<8),    /* glyph metric in a Type3 font */
-    pdf_state_glyphignore = (1<<9),    /* glyph will be ignored without error */
-    pdf_state_error       = (1<<10)    /* in error cleanup */
+    pdf_state_object       = (1<<0),    /* outside any document */
+    pdf_state_document     = (1<<1),    /* document */
+    pdf_state_page         = (1<<2),    /* page description in a document */
+    pdf_state_pattern      = (1<<3),    /* pattern in a document */
+    pdf_state_template     = (1<<4),    /* template in a document */
+    pdf_state_path         = (1<<5),    /* path in a page description */
+    pdf_state_font         = (1<<6),    /* font definition */
+    pdf_state_glyph        = (1<<7),    /* glyph description in a Type3 font */
+    pdf_state_glyphmetrics = (1<<8),    /* glyph metrics in a Type3 font */
+    pdf_state_glyphignore  = (1<<9),    /* glyph ignored without error */
+    pdf_state_error        = (1<<10)    /* in error cleanup */
 }
 pdf_state;
 
@@ -50,7 +50,7 @@ pdf_errpol;
 typedef enum
 {
     names_undef = 0,
-    names_3dannots,           /* internal for named 3D annotations */
+    names_annots,           /* internal for named 3D or Movie annotations */
     names_dests,
     names_javascript,
     names_ap,
@@ -167,6 +167,7 @@ typedef enum
     fo_subsetting,
     fo_unicodemap,
     fo_embedopentype,
+    fo_skipposttable,
     fo_vertical,
     fo_keepnative,
     fo_replacementchar,
@@ -421,6 +422,19 @@ static const pdc_keyconn pdf_mbox_keylist[] =
 #endif /* P_MBOX_C */
 
 
+#if defined(P_PAGE_C) || defined(P_TEMPLATE_C)
+
+static const pdc_keyconn pdf_tgroup_cs_pdfkeylist[] =
+{
+    {"DeviceGray",   color_gray},
+    {"DeviceRGB",    color_rgb},
+    {"DeviceCMYK",   color_cmyk},
+    {NULL, 0}
+};
+
+#endif /* P_PAGE_C || P_TEMPLATE_C */
+
+
 #if defined(P_DOCUMENT_C) || defined(P_PARAMS_C)
 
 static const pdc_keyconn pdf_compatibility_keylist[] =
@@ -492,7 +506,7 @@ static const pdc_keyconn pdf_renderingintent_pdfkeylist[] =
 #endif /* P_IMAGE_C || P_PARAMS_C || P_XGSTATE_C */
 
 
-#if defined(P_MBOX_C) || defined(P_XGSTATE_C)
+#if defined(P_MBOX_C) || defined(P_TABLE_C) || defined(P_XGSTATE_C)
 
 static const pdc_keyconn pdf_linecap_keylist[] =
 {
@@ -510,7 +524,19 @@ static const pdc_keyconn pdf_linejoin_keylist[] =
     {NULL, 0}
 };
 
-#endif /* P_MBOX_C || P_XGSTATE_C */
+#endif /* P_MBOX_C || P_TABLE_C || P_XGSTATE_C */
+
+
+#if defined(P_PARAMS_C) || defined(P_TEXTFLOW_C)
+
+static const pdc_keyconn pdf_fillrule_keylist[] =
+{
+    {"winding",   pdf_fill_winding },
+    {"evenodd",   pdf_fill_evenodd },
+    {NULL, 0}
+};
+
+#endif /* P_PARAMS_C || P_TEXTFLOW_C */
 
 
 #if defined(P_DOCUMENT_C) || defined(P_PARAMS_C) || defined(P_PDI_C)
@@ -622,7 +648,7 @@ static const pdc_keyconn pdf_glyphcheck_keylist[] =
 #endif /* P_BLOCK_C || P_PARAMS_C || P_TEXT_C || P_TEXTFLOW_C */
 
 
-#if defined(P_BLOCK_C) || defined(P_FIELDS_C) || \
+#if defined(P_ANNOTS_C) || defined(P_BLOCK_C) || defined(P_FIELDS_C) || \
     defined(P_IMAGE_C) || defined(P_TEXT_C)
 
 static const pdc_keyconn pdf_position_keylist[] =
@@ -635,7 +661,7 @@ static const pdc_keyconn pdf_position_keylist[] =
     {NULL, 0}
 };
 
-#endif /* P_BLOCK_C || P_FIELDS_C || P_IMAGE_C || P_TEXT_C */
+#endif /* P_ANNOTS_C || P_BLOCK_C || P_FIELDS_C || P_IMAGE_C || P_TEXT_C */
 
 
 #if defined(P_BLOCK_C) || defined(P_FIELDS_C) || \

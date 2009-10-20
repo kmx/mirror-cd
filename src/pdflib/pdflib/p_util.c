@@ -320,6 +320,9 @@ pdf_convert_hypertext(PDF *p, const char *text, int len,
 
     /* conversion to UTF-16-BE or PDFDocEncoding / EBCDIC */
     pdf_set_convertflags(p, &convflags);
+    if (pdc_logg_is_enabled(p->pdc, 3, trc_text))
+        convflags |= PDC_CONV_LOGGING;
+
     pdc_convert_string(p->pdc, hypertextformat, codepage, inev,
                        intext, len,
                        &textformat, outev, &outtext, outlen,
@@ -332,9 +335,13 @@ pdf_convert_hypertext(PDF *p, const char *text, int len,
         pdc_text_format outtextformat = PDC_UTF8;
         pdc_byte *newtext = NULL;
 
+        convflags = PDC_CONV_WITHBOM;
+        if (pdc_logg_is_enabled(p->pdc, 3, trc_text))
+            convflags |= PDC_CONV_LOGGING;
+
         pdc_convert_string(p->pdc, textformat, 0, NULL, outtext, *outlen,
                            &outtextformat, NULL, &newtext, outlen,
-                           PDC_CONV_WITHBOM, verbose);
+                           convflags, verbose);
         pdc_free(p->pdc, outtext);
         outtext = newtext;
     }
@@ -346,61 +353,101 @@ pdf_convert_hypertext(PDF *p, const char *text, int len,
 /*
  * Conversion from [EBCDIC-]UTF-8 to UTF-16 and from EBCDIC to PDFDoc
  */
-static void
-pdf_put_hypertext_ext(PDF *p, const char *text, pdc_bool isfilename)
+
+char *
+pdf_convert_pdfstring(PDF *p, const char *text, int inlen, int convflags,
+                      int *outlen)
 {
     pdc_byte *newtext = NULL;
-    pdc_encodingvector *outev = pdc_get_encoding_vector(p->pdc, pdc_pdfdoc);
-    int len = (int) pdc_strlen(text);
-    int convflags = PDC_CONV_WITHBOM | PDC_CONV_TRYBYTES;
 
     if (pdc_is_utf8_bytecode(text))
     {
         pdc_text_format textformat = PDC_UTF8;
         pdc_text_format outtextformat = pdc_utf16be;
+        pdc_encodingvector *outev = pdc_get_encoding_vector(p->pdc, pdc_pdfdoc);
 
         pdf_set_convertflags(p, &convflags);
-        pdc_convert_string(p->pdc, textformat, 0, NULL, (pdc_byte *) text, len,
-                           &outtextformat, outev, &newtext, &len,
-                           convflags, pdc_true);
-        text = (const char *) newtext;
-    }
 
-    if (isfilename)
-    {
-        if (pdc_is_utf16be_unicode(text))
-            pdc_error(p->pdc, PDC_E_IO_UNSUPP_UNINAME, 0, 0, 0, 0);
-        pdc_put_pdffilename(p->out, text, len);
+        pdc_convert_string(p->pdc, textformat, 0, NULL,
+                           (pdc_byte *) text, inlen,
+                           &outtextformat, outev, &newtext, outlen,
+                           convflags, pdc_true);
     }
     else
     {
-        pdc_put_pdfstring(p->out, text, len);
+        newtext = (pdc_byte *) text;
+        *outlen = inlen;
     }
 
-    if (newtext != NULL)
-        pdc_free(p->pdc, newtext);
+    return (char *) newtext;
 }
 
 void
 pdf_put_hypertext(PDF *p, const char *text)
 {
-    pdf_put_hypertext_ext(p, text, pdc_false);
+    int convflags = PDC_CONV_WITHBOM | PDC_CONV_TRYBYTES;
+    int inlen = (int) pdc_strlen(text);
+    int outlen;
+
+    char *newtext = pdf_convert_pdfstring(p, text, inlen, convflags, &outlen);
+
+    pdc_put_pdfstring(p->out, newtext, outlen);
+
+    if (newtext != text)
+        pdc_free(p->pdc, newtext);
 }
 
 void
 pdf_put_pdffilename(PDF *p, const char *text)
 {
-    pdf_put_hypertext_ext(p, text, pdc_true);
+    int convflags = PDC_CONV_FILENAME | PDC_CONV_TRYBYTES;
+    int inlen = (int) pdc_strlen(text);
+    int outlen;
+
+    char *newtext = pdf_convert_pdfstring(p, text, inlen, convflags, &outlen);
+
+    pdc_put_pdffilename(p->out, newtext, outlen);
+
+    if (newtext != text)
+        pdc_free(p->pdc, newtext);
+}
+
+void
+pdf_put_pdfunifilename(PDF *p, const char *text)
+{
+    int convflags = PDC_CONV_WITHBOM | PDC_CONV_TRYBYTES;
+    int inlen = (int) pdc_strlen(text);
+    int outlen;
+
+    char *newtext = pdf_convert_pdfstring(p, text, inlen, convflags, &outlen);
+
+    pdc_put_pdffilename(p->out, newtext, outlen);
+
+    if (newtext != text)
+        pdc_free(p->pdc, newtext);
 }
 
 
 /* ------------------------ name strings -------------------------------*/
 
 static void
-pdf_prepare_name_string(PDF *p, const char *name, int len,
+pdf_prepare_name_string(PDF *p, const char *name, int len, int maxlen,
                         char **newname, int *newlen,
                         pdc_encoding *htenc, int *htcp)
 {
+    if (name == NULL)
+    {
+        len = 0;
+        name = "";
+    }
+
+    if (len < 0 || len > maxlen)
+    {
+        pdc_error(p->pdc, PDC_E_ILLARG_STRINGLEN,
+                  pdc_errprintf(p->pdc, "%d", len),
+                  pdc_errprintf(p->pdc, "%d", PDC_SHRT_MAX), 0, 0);
+    }
+
     *newname = (char *) name;
     *newlen = len;
     *htenc = pdc_invalidenc;
@@ -422,9 +469,13 @@ pdf_convert_name(PDF *p, const char *name, int len, int flags)
     pdc_encoding htenc;
     int htcp;
 
-    pdf_prepare_name_string(p, name, len, &newname, &newlen, &htenc, &htcp);
+    pdf_prepare_name_string(p, name, len, PDC_SHRT_MAX,
+                            &newname, &newlen, &htenc, &htcp);
 
     flags |= PDC_CONV_EBCDIC;
+    if (pdc_logg_is_enabled(p->pdc, 3, trc_text))
+        flags |= PDC_CONV_LOGGING;
+
     resname = pdc_convert_name_ext(p->pdc, newname, newlen, htenc, htcp, flags);
     if (newname != name)
         pdc_free(p->pdc, newname);
@@ -442,10 +493,13 @@ pdf_convert_filename(PDF *p, const char *filename, int len,
     pdc_encoding htenc;
     int htcp;
 
-    pdf_prepare_name_string(p, filename, len, &newfilename, &newlen,
-                            &htenc, &htcp);
+    pdf_prepare_name_string(p, filename, len, PDC_FILENAMELEN - 1,
+                            &newfilename, &newlen, &htenc, &htcp);
 
     flags |= PDC_CONV_EBCDIC;
+    if (pdc_logg_is_enabled(p->pdc, 3, trc_text))
+        flags |= PDC_CONV_LOGGING;
+
     resfilename = pdc_convert_filename_ext(p->pdc, newfilename, len,
                                            paramname, htenc, htcp, flags);
     if (newfilename != filename)
@@ -455,15 +509,15 @@ pdf_convert_filename(PDF *p, const char *filename, int len,
 }
 
 void
-pdf_add_resource(PDF *p, const char *category, const char *resname)
+pdf_add_pdflib_resource(PDF *p, const char *category, const char *resname)
 {
     char *newresname;
     int newlen;
     pdc_encoding htenc;
     int htcp;
 
-    pdf_prepare_name_string(p, resname, 0, &newresname, &newlen,
-                            &htenc, &htcp);
+    pdf_prepare_name_string(p, resname, 0, PDC_FILENAMELEN,
+                            &newresname, &newlen, &htenc, &htcp);
     if (newlen)
     {
         char *tmpresname = pdc_utf16_to_utf8(p->pdc, newresname, newlen,
@@ -496,8 +550,10 @@ pdf_get_opt_textlist(PDF *p, const char *keyword, pdc_resopt *resopts,
     {
         pdc_byte *string = NULL;
         pdc_encodingvector *inev = NULL, *outev = NULL;
-        pdc_text_format intextformat = pdc_bytes, outtextformat = pdc_utf16be;
-        int convflags = PDC_CONV_WITHBOM | PDC_CONV_TRYBYTES;
+        pdc_text_format intextformat = pdc_bytes;
+        pdc_text_format outtextformat = pdc_utf16be;
+        pdc_text_format textformat;
+        int convflags = PDC_CONV_WITHBOM;
         pdc_bool isutf8;
         int i, outlen;
 
@@ -517,8 +573,10 @@ pdf_get_opt_textlist(PDF *p, const char *keyword, pdc_resopt *resopts,
                     inev = pdc_get_encoding_vector(p->pdc, enc);
             }
 
-            /* PDFDocEncoding */
             outev = pdc_get_encoding_vector(p->pdc, pdc_pdfdoc);
+
+            /* conversion to PDFDocEncoding if possible */
+            convflags |= PDC_CONV_TRYBYTES;
         }
         else
         {
@@ -531,9 +589,10 @@ pdf_get_opt_textlist(PDF *p, const char *keyword, pdc_resopt *resopts,
                 }
                 return 0;
             }
-            else if (enc >= 0)
+            else if (enc >= 0 && !isutf8)
             {
-                outev = pdc_get_encoding_vector(p->pdc, enc);
+                /* bug #2069: always conversion to UTF-16BE */
+                inev = pdc_get_encoding_vector(p->pdc, enc);
             }
         }
 
@@ -556,16 +615,17 @@ pdf_get_opt_textlist(PDF *p, const char *keyword, pdc_resopt *resopts,
             string = (pdc_byte *) strlist[i];
 
             {
-                if (ishypertext || isutf8)
+                if (ishypertext || isutf8 || inev != NULL)
                 {
                     intextformat = isutf8 ?  PDC_UTF8 : pdc_bytes;
 
-                    if (pdc_logg_is_enabled(p->pdc, 2, trc_optlist))
+                    if (pdc_logg_is_enabled(p->pdc, 3, trc_text))
                         convflags |= PDC_CONV_LOGGING;
                     pdf_set_convertflags(p, &convflags);
+                    textformat = outtextformat;
                     pdc_convert_string(p->pdc, intextformat, codepage, inev,
                                 string, (int) strlen((char *) string),
-                                &outtextformat, outev, &string, &outlen,
+                                &textformat, outev, &string, &outlen,
                                 convflags, pdc_true);
                     pdc_free(p->pdc, strlist[i]);
                     strlist[i] = (char *) string;
@@ -586,6 +646,98 @@ pdf_get_opt_textlist(PDF *p, const char *keyword, pdc_resopt *resopts,
     }
 
     return ns;
+}
+
+char *
+pdf_get_opt_filename(PDF *p, const char *keyword, pdc_resopt *resopts,
+                     pdc_encoding enc, int codepage)
+{
+    pdc_bool logg1 = pdc_logg_is_enabled(p->pdc, 1, trc_optlist);
+    pdc_bool logg3 = pdc_logg_is_enabled(p->pdc, 3, trc_text);
+    pdc_byte *filename = NULL;
+    char **strlist;
+
+    if (pdc_get_optvalues(keyword, resopts, NULL, &strlist))
+    {
+        pdc_encodingvector *inev = NULL, *outev = NULL;
+        pdc_text_format intextformat = pdc_bytes;
+        pdc_text_format outtextformat = pdc_utf16; /* sic! */
+        int convflags = PDC_CONV_NOBOM | PDC_CONV_TRYBYTES | PDC_CONV_NEWALLOC;
+        pdc_bool isutf8;
+        int ic, outlen;
+
+        /* whole option list or string list is in UTF-8 */
+        isutf8 = pdc_is_lastopt_utf8(resopts);
+
+        if (!isutf8)
+        {
+            if (enc < 0 && enc != pdc_unicode && enc != pdc_cid)
+                enc = pdf_get_hypertextencoding(p, "auto", &codepage,
+                                                pdc_true);
+            if (enc >= 0)
+                inev = pdc_get_encoding_vector(p->pdc, enc);
+        }
+        else
+        {
+            intextformat = PDC_UTF8;
+        }
+
+        if (logg1)
+        {
+            if (isutf8)
+            {
+                pdc_logg(p->pdc, "\tOption \"%s\" is "PDC_UTF8_STRG" encoded\n",
+                         keyword);
+            }
+            else
+            {
+                pdc_logg(p->pdc, "\tOption \"%s\" is %s encoded\n",
+                         keyword, pdc_get_user_encoding(p->pdc, enc));
+            }
+        }
+
+        outev = pdc_get_encoding_vector(p->pdc, pdc_winansi);
+
+        if (logg3)
+            convflags |= PDC_CONV_LOGGING;
+        pdf_set_convertflags(p, &convflags);
+
+        pdc_convert_string(p->pdc, intextformat, codepage, inev,
+                    (pdc_byte *) strlist[0], (int) strlen(strlist[0]),
+                    &outtextformat, outev, &filename, &outlen,
+                    convflags, pdc_true);
+
+        if (outtextformat == pdc_utf16)
+        {
+            pdc_ushort uv, *unifilename = (pdc_ushort *) filename;
+            int code;
+
+            if (p->compatibility < PDC_1_7)
+                pdc_error(p->pdc, PDC_E_IO_UNSUPP_PDFUNINAME, 0, 0, 0, 0);
+
+            /* we must replace non-WinAnsi characters by period
+             * and omit the BOM to get a WinAnsi string.
+             */
+            outlen /= 2;
+            for (ic = 0; ic < outlen; ic++)
+            {
+                uv = unifilename[ic];
+
+                code = pdc_get_encoding_bytecode(p->pdc, outev, uv);
+                if (code <= 0)
+                    uv = PDC_UNICODE_PERIOD;
+
+                filename[ic] = (char) uv;
+            }
+            filename[ic] = 0;
+        }
+
+        if (logg3)
+            pdc_logg_hexdump(p->pdc, "output filename", "\t\t",
+                             (char *) filename, strlen((char *) filename));
+    }
+
+    return (char *) filename;
 }
 
 char *
@@ -623,9 +775,10 @@ pdf_get_errorpolicy(PDF *p, pdc_resopt *resopts, pdc_bool verbose)
 
 /* -------------------------- handle check -------------------------------*/
 
-void
-pdf_check_handle(PDF *p, int handle, pdc_opttype type)
+int
+pdf_check_opt_handle(void *opaque, int handle, pdc_opttype type)
 {
+    PDF *p = (PDF*)opaque;
     int minval = 0, maxval = 0;
     pdc_bool empty = pdc_false;
 
@@ -701,13 +854,23 @@ pdf_check_handle(PDF *p, int handle, pdc_opttype type)
     }
 
     if (handle < minval || handle > maxval || empty)
+        return PDC_E_ILLARG_HANDLE;
+
+    return 0;
+}
+
+void
+pdf_check_handle(PDF *p, int handle, pdc_opttype type)
+{
+    if (pdf_check_opt_handle(p, handle, type))
     {
-        const char *stemp1 = pdc_errprintf(p->pdc, "%.*s", PDC_ERR_MAXSTRLEN,
-                                           pdc_get_handletype(type));
-        const char *stemp2 = pdc_errprintf(p->pdc, "%d",
-                      (p->pdc->hastobepos && type != pdc_stringhandle) ?
-                       handle + 1 : handle);
-        pdc_error(p->pdc, PDC_E_ILLARG_HANDLE, stemp1, stemp2, 0, 0);
+        if (p->pdc->hastobepos && type != pdc_stringhandle)
+            handle++;
+
+        pdc_error(p->pdc, PDC_E_ILLARG_HANDLE,
+                  pdc_errprintf(p->pdc, "%.*s", PDC_ERR_MAXSTRLEN,
+                                pdc_get_handletype(type)),
+                  pdc_errprintf(p->pdc, "%d", handle), 0, 0);
     }
 }
 

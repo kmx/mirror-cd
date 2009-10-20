@@ -234,13 +234,12 @@ void
 pdf_write_page_extgstates(PDF *p)
 {
     int i, total = 0;
-    int bias = p->curr_ppt->eg_bias;
 
     for (i = 0; i < p->extgstates_number; i++)
 	if (p->extgstates[i].used_on_current_page)
 	    total++;
 
-    if (total > 0 || bias)
+    if (total > 0)
     {
 	pdc_puts(p->out, "/ExtGState");
 	pdc_begin_dict(p->out);
@@ -253,12 +252,11 @@ pdf_write_page_extgstates(PDF *p)
 	    if (p->extgstates[i].used_on_current_page)
 	    {
 		p->extgstates[i].used_on_current_page = pdc_false; /* reset */
-		pdc_printf(p->out, "/GS%d", bias + i);
+		pdc_printf(p->out, "/GS%d", i);
 		pdc_objref(p->out, "", p->extgstates[i].obj_id);
 	    }
 	}
 
-	if (!bias)
 	    pdc_end_dict(p->out);
     }
 }
@@ -505,10 +503,14 @@ pdf__create_gstate(PDF *p, const char *optlist)
 void
 pdf__set_gstate(PDF *p, int gstate)
 {
-    int bias = p->curr_ppt->eg_bias;
+    pdf_extgstateresource *gs;
 
     pdf_check_handle(p, gstate, pdc_gstatehandle);
 
-    pdc_printf(p->out, "/GS%d gs\n", bias + gstate);
+    pdc_printf(p->out, "/GS%d gs\n", gstate);
     p->extgstates[gstate].used_on_current_page = pdc_true;
+
+    gs = &p->extgstates[gstate];
+    if (gs->opacity_fill != pdc_undef || gs->opacity_stroke != pdc_undef)
+        pdf_set_autotgroup(p, pdc_true);
 }

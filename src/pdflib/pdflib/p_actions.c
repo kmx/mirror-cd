@@ -36,7 +36,8 @@ typedef enum
    pdf_javascript   = (1<<9),
    pdf_setocgstate  = (1<<10),
    pdf_trans        = (1<<11),
-   pdf_goto3dview   = (1<<12)
+   pdf_goto3dview   = (1<<12),
+   pdf_movie        = (1<<13)
 }
 pdf_actiontype;
 
@@ -55,6 +56,7 @@ static const pdc_keyconn pdf_action_pdfkeylist[] =
     {"SetOCGState", pdf_setocgstate},
     {"Trans",       pdf_trans},
     {"GoTo3DView",  pdf_goto3dview},
+    {"Movie",       pdf_movie},
     {NULL, 0}
 };
 
@@ -116,10 +118,20 @@ static const pdc_keyconn pdf_filename_keylist[] =
     {NULL, 0}
 };
 
+#define PDF_MIN_MOVIEKEY 3
+
 static const pdc_keyconn pdf_operation_pdfkeylist[] =
 {
+    /* Launch */
     {"open",    1},
     {"print",   2},
+
+    /* Movie */
+    {"Play",    PDF_MIN_MOVIEKEY},
+    {"Stop",    4},
+    {"Pause",   5},
+    {"Resume",  6},
+
     {NULL, 0}
 };
 
@@ -131,6 +143,9 @@ static const pdc_keyconn pdf_3dview_keylist[] =
 
 
 
+
+
+
 #define PDF_LAYER_FLAG PDC_OPT_UNSUPP
 
 #define PDF_JAVASCRIPT_FLAG PDC_OPT_UNSUPP
@@ -139,7 +154,7 @@ static const pdc_keyconn pdf_3dview_keylist[] =
 static const pdc_defopt pdf_create_action_options[] =
 {
     /* deprecated */
-    {"actionwarning", pdc_booleanlist, PDC_OPT_NONE, 1, 1,
+    {"actionwarning", pdc_booleanlist, PDC_OPT_PDFLIB_7, 1, 1,
       0.0, 0.0, NULL},
 
     {"hypertextencoding", pdc_stringlist,  PDC_OPT_NONE, 1, 1,
@@ -170,7 +185,7 @@ static const pdc_defopt pdf_create_action_options[] =
       0.0, PDC_USHRT_MAX, NULL},
 
     {"script", pdc_stringlist, PDF_JAVASCRIPT_FLAG, 1, 1,
-      0.0, PDC_USHRT_MAX, NULL},
+      0.0, PDC_INT_MAX, NULL},
 
     {"scriptname", pdc_stringlist, PDF_JAVASCRIPT_FLAG, 1, 1,
       0.0, PDC_USHRT_MAX, NULL},
@@ -208,7 +223,7 @@ static const pdc_defopt pdf_create_action_options[] =
     {"3dview", pdc_3dviewhandle, PDF_3DVIEW_FLAG, 1, 1,
       0.0, 0.0, pdf_3dview_keylist},
 
-    {"target", pdc_stringlist, PDF_3DVIEW_FLAG, 1, 1,
+    {"target", pdc_stringlist, PDC_OPT_NONE, 1, 1,
       0.0, PDC_USHRT_MAX, NULL},
 
     {"transition", pdc_keywordlist, PDC_OPT_PDC_1_5, 1, 1,
@@ -229,6 +244,7 @@ typedef struct pdf_action_s
     pdf_dest *dest;
     pdc_encoding hypertextencoding;
     char *filename;
+    char *nativefilename;
     char *parameters;
     char *operation;
     char *defaultdir;
@@ -259,6 +275,7 @@ pdf_reclaim_action(void *item)
     action->dest = NULL;
     action->hypertextencoding = pdc_invalidenc;
     action->filename = NULL;
+    action->nativefilename = NULL;
     action->parameters = NULL;
     action->operation = NULL;
     action->defaultdir = NULL;
@@ -285,11 +302,18 @@ pdf_release_action(void *context, void *item)
     pdf_action *action = (pdf_action *) item;
 
     pdf_cleanup_destination(p, action->dest);
+    action->dest = NULL;
 
     if (action->filename)
     {
         pdc_free(p->pdc, action->filename);
         action->filename = NULL;
+    }
+
+    if (action->nativefilename)
+    {
+        pdc_free(p->pdc, action->nativefilename);
+        action->nativefilename = NULL;
     }
 
     if (action->parameters)
@@ -321,6 +345,7 @@ pdf_release_action(void *context, void *item)
         pdc_cleanup_optstringlist(p->pdc, action->namelist, action->nsnames);
         action->namelist = NULL;
     }
+
 
 }
 
@@ -466,20 +491,26 @@ pdf__create_action(PDF *p, const char *type, const char *optlist)
     for (i = 0; ; i++)
     {
         keyword = pdf_filename_keylist[i].word;
-        if (keyword)
-        {
-            if (pdc_get_optvalues(keyword, resopts, NULL, &strlist))
-            {
-                if (!pdf_opt_effectless(p, keyword, atype,
-                        (pdf_actiontype) pdf_filename_keylist[i].code))
-                {
-                    action->filename =
-                        (char *) pdc_save_lastopt(resopts, PDC_OPT_SAVE1ELEM);
-                }
-            }
-        }
-        else
+        if (keyword == NULL)
             break;
+
+        if (!pdc_get_optvalues(keyword, resopts, NULL, NULL) ||
+            pdf_opt_effectless(p, keyword, atype,
+                               (pdf_actiontype) pdf_filename_keylist[i].code))
+            continue;
+
+        /* DON'T change order */
+
+        /* native filename */
+        if (!i)
+            action->nativefilename = pdf_get_opt_filename(p, keyword, resopts,
+                                                          htenc, htcp);
+
+        /* Unicode filename */
+        pdf_get_opt_textlist(p, keyword, resopts, htenc, htcp, pdc_true,
+                             NULL, &action->filename, NULL);
+
+        pdc_save_lastopt(resopts, PDC_OPT_SAVE1ELEM);
     }
 
     keyword = "parameters";
@@ -490,9 +521,18 @@ pdf__create_action(PDF *p, const char *type, const char *optlist)
 
     keyword = "operation";
     if (pdc_get_optvalues(keyword, resopts, &k, NULL) &&
-        !pdf_opt_effectless(p, keyword, atype, pdf_launch))
+        !pdf_opt_effectless(p, keyword, atype,
+                            (pdf_actiontype) (pdf_launch | pdf_movie)))
+    {
+        if ((atype == pdf_launch && k >= PDF_MIN_MOVIEKEY) ||
+            (atype == pdf_movie && k < PDF_MIN_MOVIEKEY))
+        {
+            pdc_error(p->pdc, PDC_E_OPT_ILLKEYWORD, keyword,
+                      pdc_get_keyword(k, pdf_operation_pdfkeylist), 0, 0);
+        }
         action->operation =
             (char *) pdc_get_keyword(k, pdf_operation_pdfkeylist);
+    }
 
     keyword = "defaultdir";
     if (pdc_get_optvalues(keyword, resopts, NULL, NULL) &&
@@ -648,12 +688,18 @@ pdf_write_action(PDF *p, pdf_action *action, pdc_id next_id)
             /* Windows-specific launch parameters */
             pdc_puts(p->out, "/Win");
             pdc_begin_dict(p->out);                     /* Win dict */
-            pdc_printf(p->out, "/F");
-            pdf_put_hypertext(p, action->filename);
+            pdc_puts(p->out, "/F");
+            pdf_put_pdffilename(p, action->nativefilename);
             pdc_puts(p->out, "\n");
+            if (p->compatibility >= PDC_1_7)
+            {
+                pdc_puts(p->out, "/UF");
+                pdf_put_pdfunifilename(p, action->filename);
+                pdc_puts(p->out, "\n");
+            }
             if (action->parameters)
             {
-                pdc_printf(p->out, "/P");
+                pdc_puts(p->out, "/P");
                 pdf_put_hypertext(p, action->parameters);
                 pdc_puts(p->out, "\n");
                 pdc_free(p->pdc, action->parameters);
@@ -661,14 +707,14 @@ pdf_write_action(PDF *p, pdf_action *action, pdc_id next_id)
             }
             if (action->operation)
             {
-                pdc_printf(p->out, "/O");
+                pdc_puts(p->out, "/O");
                 pdf_put_hypertext(p, action->operation);
                 pdc_puts(p->out, "\n");
                 action->operation = NULL;
             }
             if (action->defaultdir)
             {
-                pdc_printf(p->out, "/D");
+                pdc_puts(p->out, "/D");
                 pdf_put_hypertext(p, action->defaultdir);
                 pdc_puts(p->out, "\n");
                 pdc_free(p->pdc, action->defaultdir);
@@ -681,9 +727,15 @@ pdf_write_action(PDF *p, pdf_action *action, pdc_id next_id)
             pdc_puts(p->out, "/F");
             pdc_begin_dict(p->out);                     /* F dict */
             pdc_puts(p->out, "/Type/Filespec\n");
-            pdc_printf(p->out, "/F");
-            pdf_put_pdffilename(p, action->filename);
+            pdc_puts(p->out, "/F");
+            pdf_put_pdffilename(p, action->nativefilename);
             pdc_puts(p->out, "\n");
+            if (p->compatibility >= PDC_1_7)
+            {
+                pdc_puts(p->out, "/UF");
+                pdf_put_pdfunifilename(p, action->filename);
+                pdc_puts(p->out, "\n");
+            }
             pdc_end_dict(p->out);                       /* F dict */
         }
 
@@ -711,7 +763,7 @@ pdf_write_action(PDF *p, pdf_action *action, pdc_id next_id)
     switch (action->atype)
     {
         case pdf_named:
-        pdc_printf(p->out, "/N");
+        pdc_puts(p->out, "/N");
 	pdf_put_pdfname(p, action->menuname);
         pdc_puts(p->out, "\n");
 
@@ -801,6 +853,7 @@ pdf_write_action(PDF *p, pdf_action *action, pdc_id next_id)
         break;
     }
 
+    /* Movie */
 
 
     pdc_end_dict(p->out);                              /* Action dict */
@@ -822,19 +875,27 @@ static const pdc_keyconn pdf_annotevent_keylist[] =
     {"up",         4},
     {"focus",      5},
     {"blur",       6},
+    {"open",       7},
+    {"close",      8},
+    {"visible",    9},
+    {"invisible", 10},
     {NULL, 0}
 };
 
 static const pdc_keyconn pdf_annotevent_pdfkeylist[] =
 {
-    {"A",  0},
-    {"E",  1},
-    {"X",  2},
-    {"D",  3},
-    {"U",  4},
-    {"Fo", 5},
-    {"Bl", 6},
-    {NULL, 0}
+    {"A",   0},
+    {"E",   1},
+    {"X",   2},
+    {"D",   3},
+    {"U",   4},
+    {"Fo",  5},
+    {"Bl",  6},
+    {"PO",  7},
+    {"PC",  8},
+    {"PV",  9},
+    {"PI", 10},
+    {NULL,  0}
 };
 
 static int pdf_annotevent_beginjava = 99;
@@ -862,6 +923,18 @@ static const pdc_defopt pdf_annotevent_options[] =
     {"blur", pdc_actionhandle, PDC_OPT_NONE, 1, PDC_USHRT_MAX,
       0.0, 0.0, NULL},
 
+    {"open", pdc_actionhandle, PDC_OPT_PDC_1_5, 1, PDC_USHRT_MAX,
+      0.0, 0.0, NULL},
+
+    {"close", pdc_actionhandle, PDC_OPT_PDC_1_5, 1, PDC_USHRT_MAX,
+      0.0, 0.0, NULL},
+
+    {"visible", pdc_actionhandle, PDC_OPT_PDC_1_5, 1, PDC_USHRT_MAX,
+      0.0, 0.0, NULL},
+
+    {"invisible", pdc_actionhandle, PDC_OPT_PDC_1_5, 1, PDC_USHRT_MAX,
+      0.0, 0.0, NULL},
+
     PDC_OPT_TERMINATE
 };
 
@@ -884,7 +957,7 @@ static int pdf_bookmarkevent_beginjava = 99;
 
 static const pdc_defopt pdf_bookmarkevent_options[] =
 {
-    {"activate", pdc_actionhandle, PDC_OPT_NONE, 1, 1,
+    {"activate", pdc_actionhandle, PDC_OPT_NONE, 1, PDC_USHRT_MAX,
       0.0, 0.0, NULL},
 
     PDC_OPT_TERMINATE
@@ -1059,12 +1132,13 @@ pdf_parse_and_write_actionlist(PDF *p, pdf_event_object eventobj,
             /* write action objects */
             if (act_idlist != NULL)
             {
+                ret_id = PDC_BAD_ID;
                 if (nsact == 1)
                 {
                     action = (pdf_action *) &pdc_vtr_at(p->actions, actlist[0],
                                                         pdf_action);
                     if (action->obj_id == PDC_BAD_ID)
-                        ret_id = pdf_write_action(p, action, PDC_BAD_ID);
+                        ret_id = pdf_write_action(p, action, ret_id);
                     else
                         ret_id = action->obj_id;
                 }
@@ -1077,8 +1151,6 @@ pdf_parse_and_write_actionlist(PDF *p, pdf_event_object eventobj,
                         ret_id = pdf_write_action(p, action, ret_id);
                     }
                 }
-                else
-                    ret_id = PDC_BAD_ID;
                 act_idlist[code] = ret_id;
             }
         }

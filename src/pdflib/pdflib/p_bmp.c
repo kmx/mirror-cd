@@ -36,7 +36,7 @@ pdf_process_BMP_data(
     PDF *p,
     int imageslot)
 {
-    pdf_image *image = &p->images[imageslot];
+    (void) imageslot;
 
     pdc_set_errmsg(p->pdc, PDF_E_UNSUPP_IMAGE, "BMP", 0, 0, 0);
 

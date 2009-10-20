@@ -25,12 +25,8 @@
 #include "p_page.h"
 #include "p_tagged.h"
 
-static const pdc_keyconn pdf_fillrule_keylist[] =
-{
-    {"winding",   pdf_fill_winding },
-    {"evenodd",   pdf_fill_evenodd },
-    {NULL, 0}
-};
+#include "pc_scope.h"
+#include "pc_file.h"
 
 /*
  * PDF_get_parameter() and PDF_set_parameter() deal with strings,
@@ -42,6 +38,7 @@ typedef struct
     char *	name;		/* parameter name */
     pdc_bool	mod_zero;	/* PDF_get_() modifier argument must be 0 */
     pdc_bool    check_scope;    /* check following scope for PDF_get_...() */
+    int         deprecated;     /* deprecated and unsupported level */
     int		scope;	        /* bit mask of legal states */
 
 }
@@ -53,7 +50,7 @@ static pdf_parm_descr parms[] =
 #include "p_params.h"
 #undef	pdf_gen_parm_descr
 
-    { "", 0, 0, 0 }
+    { "", 0, 0, 0, 0 }
 };
 
 enum
@@ -78,9 +75,26 @@ pdf_get_index(PDF *p, const char *key, pdc_bool setpar)
         if (pdc_stricmp(key, parms[i].name) == 0)
         {
             if ((setpar || parms[i].check_scope) &&
-                (p->state_stack[p->state_sp] & parms[i].scope) == 0)
-                pdc_error(p->pdc, PDF_E_DOC_SCOPE_SET, key,
-                          pdf_current_scope(p), 0, 0);
+                (p->state_stack[p->state_sp] & parms[i].scope) == 0 &&
+                (p->state_stack[p->state_sp] & pdf_state_glyphignore) == 0)
+            {
+                pdc_error(p->pdc,
+                          setpar ? PDF_E_DOC_SCOPE_SET : PDF_E_DOC_SCOPE_GET,
+                          key, pdf_current_scope(p), 0, 0);
+            }
+
+            if (parms[i].deprecated > 0)
+            {
+                pdc_logg_cond(p->pdc, 2, trc_api,
+                        "[Parameter \"%s\" is deprecated since PDFlib %d]\n",
+                        key, parms[i].deprecated);
+            }
+            else if (parms[i].deprecated < 0)
+            {
+                pdc_logg_cond(p->pdc, 2, trc_api,
+                        "[Parameter \"%s\" is unsupported]\n", key);
+            }
+
 	    return i;
         }
     }
@@ -110,7 +124,7 @@ pdf__set_parameter(PDF *p, const char *key, const char *value)
 {
     pdc_pagebox usebox = pdc_pbox_none;
     pdc_text_format textformat = pdc_auto;
-    char optlist[512];
+    char optlist[PDC_GEN_BUFSIZE];
     pdf_ppt *ppt;
     int i, k;
 
@@ -131,9 +145,7 @@ pdf__set_parameter(PDF *p, const char *key, const char *value)
             if (k == PDC_KEY_NOTFOUND)
                 pdc_error(p->pdc, PDC_E_PAR_ILLPARAM, value, key, 0, 0);
             usebox = (pdc_pagebox) k;
-            strcpy(optlist, key);
-            strcat(optlist, " ");
-            strcat(optlist, value);
+            pdc_sprintf(p->pdc, pdc_false, optlist, "%s %s", key, value);
             break;
 
         case PDF_PARAMETER_TEXTFORMAT:
@@ -156,7 +168,7 @@ pdf__set_parameter(PDF *p, const char *key, const char *value)
         case PDF_PARAMETER_ICCPROFILE:
         case PDF_PARAMETER_STANDARDOUTPUTINTENT:
 	{
-            pdf_add_resource(p, key, value);
+            pdf_add_pdflib_resource(p, key, value);
             break;
         }
 
@@ -393,8 +405,7 @@ pdf__set_parameter(PDF *p, const char *key, const char *value)
         }
 
         case PDF_PARAMETER_TRACEFILE:
-            strcpy(optlist, "filename ");
-            strcat(optlist, value);
+            pdc_sprintf(p->pdc, pdc_false, optlist, "filename %s", value);
             pdc_set_logg_options(p->pdc, optlist);
             break;
 
@@ -567,6 +578,15 @@ pdf__set_value(PDF *p, const char *key, double value)
 
     switch (i)
     {
+#if defined(WIN32) && !defined(__BORLANDC__)
+        case PDF_PARAMETER_MAXFILEHANDLES:
+            ivalue = pdc_set_maxfilehandles(p->pdc, ivalue);
+            if (ivalue == -1)
+                pdc_error(p->pdc, PDC_E_PAR_ILLVALUE,
+                    pdc_errprintf(p->pdc, "%f", value), key, 0, 0);
+        break;
+#endif
+
         case PDF_PARAMETER_COMPRESS:
 	    if (ivalue < 0 || ivalue > 9)
 		pdc_error(p->pdc, PDC_E_PAR_ILLVALUE,
@@ -827,6 +847,12 @@ pdf__get_value(PDF *p, const char *key, double mod)
 
     switch (i)
     {
+#if defined(WIN32) && !defined(__BORLANDC__)
+        case PDF_PARAMETER_MAXFILEHANDLES:
+            result = (double) pdc_get_maxfilehandles();
+        break;
+#endif
+
         case PDF_PARAMETER_COMPRESS:
             result = (double) pdc_get_compresslevel(p->out);
             break;
@@ -1124,6 +1150,10 @@ pdf__get_parameter(PDF *p, const char *key, double mod)
 
         case PDF_PARAMETER_CONFIGURATION:
             result = "lite";
+            break;
+
+        case PDF_PARAMETER_PRODUCT:
+            result = "PDFlib Lite";
             break;
 
         case PDF_PARAMETER_ERRORPOLICY:

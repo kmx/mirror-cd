@@ -67,21 +67,6 @@ static const pdc_keyconn pdf_taborder_pdfkeylist[] =
     {NULL, 0}
 };
 
-static const pdc_keyconn pdf_colorspace_pdfkeylist[] =
-{
-    {"DeviceGray",   color_gray},
-    {"DeviceRGB",    color_rgb},
-    {"DeviceCMYK",   color_cmyk},
-    {NULL, 0}
-};
-
-typedef struct
-{
-    pdf_colortype       colorspace;     /* color space                  */
-    pdc_bool            isolated;       /* isolated flag I              */
-    pdc_bool            knockout;       /* knockout flag K              */
-} pg_transgroup;
-
 typedef struct
 {
     pdf_labelstyle      style;          /* page label style             */
@@ -160,7 +145,8 @@ typedef struct
     pdc_scalar          userunit;       /* page user unit */
     char *		action;		/* "action" option string */
 
-    pg_transgroup       tgroup;         /* transparency group definition */
+    pdf_transgroup	tgroup;         /* transparency group definition */
+    pdc_bool            autotgroup;     /* create transp. group automatically */
 
 
     pdc_id *		act_idlist;			/* action object ids */
@@ -218,31 +204,28 @@ static const pdc_rectangle pdf_null_rect =
 /*********************** initialization & cleanup ***********************/
 
 static void
-pdf_init_ppt(PDF *p, pdc_bool new_ppt)
+pdf_init_ppt(PDF *p)
 {
     pdf_ppt *ppt = p->curr_ppt;
 
-    if (new_ppt)
-    {
-	ppt->cstate = 0;
-	ppt->tstate = 0;
+    ppt->cstate = (pdf_cstate *) 0;
+    ppt->tstate = (pdf_tstate *) 0;
 
-        ppt->mboxes = (pdc_vtr *) 0;
+    ppt->mboxes = (pdc_vtr *) 0;
 
-	ppt->cs_bias = 0;
-	ppt->eg_bias = 0;
-	ppt->fn_bias = 0;
-	ppt->pt_bias = 0;
-	ppt->sh_bias = 0;
-	ppt->xo_bias = 0;
-    }
+} /* pdf_init_ppt */
+
+static void
+pdf_init_ppt_states(PDF *p)
+{
+    pdf_ppt *ppt = p->curr_ppt;
 
     ppt->sl = 0;
 
     pdf_init_tstate(p);
     pdf_init_gstate(p);
     pdf_init_cstate(p);
-} /* pdf_init_ppt */
+} /* pdf_init_ppt_states */
 
 static void
 pdf_reset_ppt(pdf_ppt *ppt)
@@ -305,6 +288,7 @@ pdf_init_page_obj(page_obj *po)
     po->tgroup.colorspace = color_none;
     po->tgroup.isolated = pdc_false;
     po->tgroup.knockout = pdc_false;
+    po->autotgroup = pdc_false;
 
     po->annots_id = PDC_BAD_ID;
     po->contents_id = PDC_BAD_ID;
@@ -363,6 +347,9 @@ pdf_init_pages(PDF *p, const char **groups, int n_groups)
     dp->pages = (page_obj *) 0;
     dp->pnodes = (pdc_id *) 0;
 
+    p->curr_ppt = &dp->default_ppt;
+    pdf_init_ppt(p);
+
     dp->pages_capacity = PAGES_CHUNKSIZE;
     dp->pages = (page_obj *)
 	    pdc_malloc(p->pdc, sizeof (page_obj) * dp->pages_capacity, fn);
@@ -382,13 +369,6 @@ pdf_init_pages(PDF *p, const char **groups, int n_groups)
 
     dp->current_pnode	= 0;
     dp->current_pnode_kids = 0;
-
-    /* clients may set char/word spacing and horizontal scaling outside pages
-    ** for PDF_stringwidth() calculations, and they may set a color for use
-    ** in PDF_makespotcolor(). that's what default_ppt is good for.
-    */
-    p->curr_ppt = &dp->default_ppt;
-    pdf_init_ppt(p, pdc_true);
 
     for (i = 0; i < n_groups - 1; ++i)
 	for (k = i + 1; k < n_groups; ++k)
@@ -410,6 +390,13 @@ pdf_init_pages(PDF *p, const char **groups, int n_groups)
 	dp->groups[i].label.prefix = (char *) 0;
 	dp->groups[i].label.start = 0;
     }
+
+    /* clients may set char/word spacing and horizontal scaling outside pages
+    ** for PDF_stringwidth() calculations, and they may set a color for use
+    ** in PDF_makespotcolor(). that's what default_ppt is good for.
+    */
+    pdf_init_ppt_states(p);
+
 } /* pdf_init_pages */
 
 
@@ -806,22 +793,20 @@ pdf_write_pagelabels(PDF *p)
 static const pdc_defopt pdf_transgroup_options[] =
 {
     {"CS", pdc_keywordlist, PDC_OPT_NONE, 1, 1,
-      1.0, PDC_INT_MAX, pdf_colorspace_pdfkeylist},
+      1.0, PDC_INT_MAX, pdf_tgroup_cs_pdfkeylist},
 
     {"I", pdc_booleanlist, PDC_OPT_NONE, 1, 1,
       0.0, 0.0, NULL},
 
-    {"K", pdc_booleanlist, PDC_OPT_NONE, 1, 1, \
-      0.0, 0.0, NULL}, \
+    {"K", pdc_booleanlist, PDC_OPT_NONE, 1, 1,
+      0.0, 0.0, NULL},
 
     PDC_OPT_TERMINATE
 };
 
-static void
-pdf_set_transgroup(PDF *p, const char *optlist, int pageno)
+void
+pdf_set_transgroup(PDF *p, const char *optlist, pdf_transgroup *tgroup)
 {
-    pdf_pages * dp = p->doc_pages;
-    page_obj *  po = &dp->pages[pageno];
     pdc_resopt *resopts = NULL;
     int         inum;
 
@@ -829,29 +814,28 @@ pdf_set_transgroup(PDF *p, const char *optlist, int pageno)
                                    NULL, pdc_true);
 
     if (pdc_get_optvalues("CS", resopts, &inum, NULL))
-        po->tgroup.colorspace = (pdf_colortype) inum;
+        tgroup->colorspace = (pdf_colortype) inum;
 
-    pdc_get_optvalues("I", resopts, &po->tgroup.isolated, NULL);
-    pdc_get_optvalues("K", resopts, &po->tgroup.knockout, NULL);
+    pdc_get_optvalues("I", resopts, &tgroup->isolated, NULL);
+    pdc_get_optvalues("K", resopts, &tgroup->knockout, NULL);
 }
 
-static void
-write_transgroup(PDF *p, int pageno)
+void
+pdf_write_transgroup(PDF *p, pdf_transgroup *tgroup)
 {
-    pdf_pages * dp = p->doc_pages;
-    page_obj *po = &dp->pages[pageno];
-
     pdc_puts(p->out, "/Group");
     pdc_begin_dict(p->out);
-    pdc_printf(p->out, "/S/Transparency/CS/%s",
-               pdc_get_keyword(po->tgroup.colorspace,
-                               pdf_colorspace_pdfkeylist));
 
-    if (po->tgroup.isolated)
-        pdc_printf(p->out, "/I true");
+    pdc_puts(p->out, "/S/Transparency/CS/");
 
-    if (po->tgroup.knockout)
-        pdc_printf(p->out, "/K true");
+    pdc_printf(p->out, "%s", pdc_get_keyword(tgroup->colorspace,
+					     pdf_tgroup_cs_pdfkeylist));
+
+    if (tgroup->isolated)
+	pdc_puts(p->out, "/I true");
+
+    if (tgroup->knockout)
+	pdc_puts(p->out, "/K true");
 
     pdc_end_dict(p->out);
 }
@@ -949,7 +933,7 @@ pdf_search_page_bwd(PDF *p, int start_page, pdc_id id)
 } /* pdf_search_page_bwd */
 
 
-double
+pdc_scalar
 pdf_get_pageheight(PDF *p)
 {
     pdf_pages *	dp = p->doc_pages;
@@ -1099,10 +1083,19 @@ pdf_get_thumb_id(PDF *p)
 void
 pdf_set_thumb_id(PDF *p, pdc_id id)
 {
-    pdf_pages *	dp = p->doc_pages;
-    page_obj *	po = &dp->pages[dp->current_page];
+    pdf_pages * dp = p->doc_pages;
+    page_obj *  po = &dp->pages[dp->current_page];
 
     po->thumb_id = id;
+} /* pdf_set_thumb_id */
+
+void
+pdf_set_autotgroup(PDF *p, pdc_bool autotgroup)
+{
+    pdf_pages * dp = p->doc_pages;
+    page_obj *  po = &dp->pages[dp->current_page];
+
+    po->autotgroup = autotgroup;
 } /* pdf_set_thumb_id */
 
 
@@ -1323,7 +1316,7 @@ pdf_write_pages_tree(PDF *p)
             pdc_printf(p->out, "/Tabs/%s\n",
                 pdc_get_keyword(po->taborder, pdf_taborder_pdfkeylist));
 
-        if (po->userunit > 1.0)
+        if (po->userunit != 1.0)
             pdc_printf(p->out, "/UserUnit %f\n", po->userunit);
 
 	if (po->rotate > 0)
@@ -1345,8 +1338,11 @@ pdf_write_pages_tree(PDF *p)
 	    pdc_end_dict(p->out);
 	}
 
+        if (po->tgroup.colorspace == color_none && po->autotgroup)
+	    po->tgroup.colorspace = color_rgb;
+
         if (po->tgroup.colorspace != color_none)
-            write_transgroup(p, i);
+            pdf_write_transgroup(p, &po->tgroup);
 
 	pdf_write_box(p, po->boxes[pdf_artbox],		"ArtBox");
 	pdf_write_box(p, po->boxes[pdf_bleedbox],	"BleedBox");
@@ -1532,7 +1528,7 @@ static const pdc_keyconn pdf_userunit_keylist[] =
     {"transition", pdc_keywordlist, PDC_OPT_NONE, 1, 1, \
       0.0, 0.0, pdf_transition_keylist}, \
 \
-    {"transparencygroup", pdc_stringlist,  PDC_OPT_NONE, 1, 1, \
+    {"transparencygroup", pdc_stringlist,  PDC_OPT_PDC_1_4, 1, 1, \
       1.0, PDF_MAX_NAMESTRING, NULL}, \
 \
     {"taborder", pdc_keywordlist, PDC_OPT_PDC_1_5, 1, 1, \
@@ -1643,8 +1639,8 @@ get_page_options3(PDF *p, pdc_resopt *resopts, pdc_bool end_page)
     pdc_get_optvalues("taborder", resopts, &po->taborder, NULL);
     pdc_get_optvalues("duration", resopts, &po->duration, NULL);
     pdc_get_optvalues("userunit", resopts, &po->userunit, NULL);
-    if (po->userunit < 1.0)
-        po->userunit = 72.0 / (PDC_INCH2METER * fabs(po->userunit));
+    if (po->userunit < 0.0)
+        po->userunit = 72.0 / (PDC_INCH2METER * -po->userunit);
 
     if (pdc_get_optvalues("label", resopts, NULL, NULL))
     {
@@ -1654,7 +1650,7 @@ get_page_options3(PDF *p, pdc_resopt *resopts, pdc_bool end_page)
     }
 
     if (pdc_get_optvalues("transparencygroup", resopts, NULL, &slist))
-        pdf_set_transgroup(p, slist[0], pageno);
+        pdf_set_transgroup(p, slist[0], &po->tgroup);
 
     /* the "width" and "height" options must be processed BEFORE the
     ** "mediabox" option, since the latter dominates over the formers.
@@ -1711,6 +1707,8 @@ get_page_options3(PDF *p, pdc_resopt *resopts, pdc_bool end_page)
 } /* get_page_options3 */
 
 
+#if	0
+#endif
 
 static const pdc_defopt pdf_begin_page_ext_options[] =
 {
@@ -1807,6 +1805,7 @@ pdf__begin_page_ext(
 
     pg = dp->curr_pg = (pdf_page *) pdc_malloc(p->pdc, sizeof (pdf_page), fn);
     p->curr_ppt = &pg->ppt;
+    pdf_init_ppt(p);
 
     pg->contents_ids = (pdc_id *) 0;
     pg->annots = (pdc_vtr *) 0;
@@ -1845,7 +1844,7 @@ pdf__begin_page_ext(
     /* initialize the current ppt descriptor. p->ydirection
     ** must be set before pdf_init_ppt()!
     */
-    pdf_init_ppt(p, pdc_true);
+    pdf_init_ppt_states(p);
 
     pg->next_content = 0;
 
@@ -1866,6 +1865,8 @@ pdf__begin_page_ext(
 
     /* set color differing from PDF default */
     pdf_set_default_color(p, pdc_false);
+#if	0
+#endif
 
 
     if (!p->pdc->smokerun)
@@ -1903,6 +1904,7 @@ pdf_pg_suspend(PDF *p)
     {
 	pdf_page *pg = dp->curr_pg;
 
+
 	pdf_end_contents_section(p);
 
 	/* restore global parms.
@@ -1925,7 +1927,7 @@ pdf_pg_suspend(PDF *p)
 	p->curr_ppt = &dp->default_ppt;
     }
 
-    pdf_init_ppt(p, pdc_false);
+    pdf_init_ppt_states(p);
 } /* pdf_pg_suspend */
 
 
@@ -2131,6 +2133,8 @@ pdf__end_page_ext(PDF *p, const char *optlist)
 
     /* TODO (york): avoid memory leak in error case. */
     pg = dp->curr_pg;
+#if	0
+#endif
 
 
     pdf_end_contents_section(p);
@@ -2210,7 +2214,7 @@ pdf__end_page_ext(PDF *p, const char *optlist)
     /* restore the default ppt for out-of-page usage.
     */
     p->curr_ppt = &dp->default_ppt;
-    pdf_init_ppt(p, pdc_false);
+    pdf_init_ppt_states(p);
     PDF_SET_STATE(p, pdf_state_document);
     pdf_delete_page(p, pg);
     dp->curr_pg = (pdf_page *) 0;
@@ -2258,4 +2262,5 @@ pdf_set_transition(PDF *p, const char *transition)
 
     p->doc_pages->transition = i;
 }
+
 

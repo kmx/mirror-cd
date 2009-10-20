@@ -330,6 +330,21 @@ pdf_exit_handle_api(PDF *p, int retval)
     return retval;
 }
 
+static void
+pdf_logg_is_deprecated(PDF *p, const char *fn, int version)
+{
+    pdc_logg_cond(p->pdc, 2, trc_api,
+            "[Function \"%s\" is deprecated since PDFlib %d]\n",
+            fn, version);
+}
+
+static void
+pdf_logg_is_unsupported(PDF *p, const char *fn)
+{
+    pdc_logg_cond(p->pdc, 2, trc_api,
+            "[Function \"%s\" is unsupported]\n", fn);
+}
+
 
 /***************************
  *
@@ -628,6 +643,8 @@ PDF_attach_file(
         int len_descr = description ? (int) pdc_strlen(description) : 0;
         int len_auth = author ? (int) pdc_strlen(author) : 0;
 
+        pdf_logg_is_deprecated(p, fn, 6);
+
         pdf__attach_file(p, llx, lly, urx, ury, filename, 0,
             description, len_descr, author, len_auth, mimetype, icon);
 
@@ -659,6 +676,8 @@ PDF_attach_file2(
         author, len_auth, len_auth,
         mimetype, icon))
     {
+        pdf_logg_is_deprecated(p, fn, 6);
+
         pdf__attach_file(p, llx, lly, urx, ury, filename, len_filename,
             description, len_descr, author, len_auth, mimetype, icon);
 
@@ -688,6 +707,8 @@ PDF_add_note(
         int len_cont = contents ? (int) pdc_strlen(contents) : 0;
         int len_title = title ? (int) pdc_strlen(title) : 0;
 
+        pdf_logg_is_deprecated(p, fn, 6);
+
         pdf__add_note(p, llx, lly, urx, ury, contents, len_cont,
                       title, len_title, icon, open);
 
@@ -715,8 +736,57 @@ PDF_add_note2(
         (void *) p, llx, lly, urx, ury, contents, len_cont, len_cont,
         title, len_title, len_title, icon, open))
     {
+        pdf_logg_is_deprecated(p, fn, 6);
+
         pdf__add_note(p, llx, lly, urx, ury, contents, len_cont,
                       title, len_title, icon, open);
+
+        pdc_logg_exit_api(p->pdc, pdc_true, NULL);
+    }
+}
+
+PDFLIB_API void PDFLIB_CALL
+PDF_add_launchlink(
+    PDF *p,
+    double llx,
+    double lly,
+    double urx,
+    double ury,
+    const char *filename)
+{
+    static const char fn[] = "PDF_add_launchlink";
+
+    if (pdf_enter_api(p, fn, pdf_state_page,
+        "(p_%p, %f, %f, %f, %f, \"%s\")\n",
+        (void *)p, llx, lly, urx, ury, filename))
+    {
+        pdf_logg_is_deprecated(p, fn, 6);
+
+        pdf__add_launchlink(p, llx, lly, urx, ury, filename);
+
+        pdc_logg_exit_api(p->pdc, pdc_true, NULL);
+    }
+}
+
+PDFLIB_API void PDFLIB_CALL
+PDF_add_locallink(
+    PDF *p,
+    double llx,
+    double lly,
+    double urx,
+    double ury,
+    int page,
+    const char *optlist)
+{
+    static const char fn[] = "PDF_add_locallink";
+
+    if (pdf_enter_api(p, fn, pdf_state_page,
+        "(p_%p, %f, %f, %f, %f, %d, \"%T\")\n",
+        (void *) p, llx, lly, urx, ury, page, optlist, 0))
+    {
+        pdf_logg_is_deprecated(p, fn, 6);
+
+        pdf__add_locallink(p, llx, lly, urx, ury, page, optlist);
 
         pdc_logg_exit_api(p->pdc, pdc_true, NULL);
     }
@@ -740,50 +810,9 @@ PDF_add_pdflink(
         (void *) p, llx, lly, urx, ury, filename, page,
         optlist, 0))
     {
+        pdf_logg_is_deprecated(p, fn, 6);
+
         pdf__add_pdflink(p, llx, lly, urx, ury, filename, page, optlist);
-
-        pdc_logg_exit_api(p->pdc, pdc_true, NULL);
-    }
-}
-
-PDFLIB_API void PDFLIB_CALL
-PDF_add_launchlink(
-    PDF *p,
-    double llx,
-    double lly,
-    double urx,
-    double ury,
-    const char *filename)
-{
-    static const char fn[] = "PDF_add_launchlink";
-
-    if (pdf_enter_api(p, fn, pdf_state_page,
-        "(p_%p, %f, %f, %f, %f, \"%s\")\n",
-        (void *)p, llx, lly, urx, ury, filename))
-    {
-        pdf__add_launchlink(p, llx, lly, urx, ury, filename);
-
-        pdc_logg_exit_api(p->pdc, pdc_true, NULL);
-    }
-}
-
-PDFLIB_API void PDFLIB_CALL
-PDF_add_locallink(
-    PDF *p,
-    double llx,
-    double lly,
-    double urx,
-    double ury,
-    int page,
-    const char *optlist)
-{
-    static const char fn[] = "PDF_add_locallink";
-
-    if (pdf_enter_api(p, fn, pdf_state_page,
-        "(p_%p, %f, %f, %f, %f, %d, \"%T\")\n",
-        (void *) p, llx, lly, urx, ury, page, optlist, 0))
-    {
-        pdf__add_locallink(p, llx, lly, urx, ury, page, optlist);
 
         pdc_logg_exit_api(p->pdc, pdc_true, NULL);
     }
@@ -804,6 +833,8 @@ PDF_add_weblink(
         "(p_%p, %f, %f, %f, %f, \"%s\")\n",
         (void *) p, llx, lly, urx, ury, url))
     {
+        pdf_logg_is_deprecated(p, fn, 6);
+
         pdf__add_weblink(p, llx, lly, urx, ury, url);
 
         pdc_logg_exit_api(p->pdc, pdc_true, NULL);
@@ -845,6 +876,8 @@ PDF_set_border_color(
         (pdf_state) (pdf_state_document | pdf_state_page),
         "(p_%p, %f, %f, %f)\n", (void *) p, red, green, blue))
     {
+        pdf_logg_is_deprecated(p, fn, 6);
+
         pdf__set_border_color(p, red, green, blue);
 
         pdc_logg_exit_api(p->pdc, pdc_true, NULL);
@@ -863,6 +896,8 @@ PDF_set_border_dash(
         (pdf_state) (pdf_state_document | pdf_state_page),
         "(p_%p, %f, %f)\n", (void *) p, b, w))
     {
+        pdf_logg_is_deprecated(p, fn, 6);
+
         pdf__set_border_dash(p, b, w);
 
         pdc_logg_exit_api(p->pdc, pdc_true, NULL);
@@ -881,6 +916,8 @@ PDF_set_border_style(
         (pdf_state) (pdf_state_document | pdf_state_page),
         "(p_%p, \"%s\", %f)\n", (void *) p, style, width))
     {
+        pdf_logg_is_deprecated(p, fn, 6);
+
         pdf__set_border_style(p, style, width);
 
         pdc_logg_exit_api(p->pdc, pdc_true, NULL);
@@ -1020,6 +1057,8 @@ PDF_setgray(PDF *p, double g)
     if (pdf_enter_api(p, fn, pdf_state_content, "(p_%p, %f)\n",
         (void *) p, g))
     {
+        pdf_logg_is_deprecated(p, fn, 5);
+
         pdf__setcolor(p, "fillstroke", "gray", g, 0, 0, 0);
 
         pdc_logg_exit_api(p->pdc, pdc_true, NULL);
@@ -1034,6 +1073,8 @@ PDF_setgray_fill(PDF *p, double gray)
     if (pdf_enter_api(p, fn, pdf_state_content, "(p_%p, %f)\n",
         (void *) p, gray))
     {
+        pdf_logg_is_deprecated(p, fn, 5);
+
         pdf__setcolor(p, "fill", "gray", gray, 0, 0, 0);
 
         pdc_logg_exit_api(p->pdc, pdc_true, NULL);
@@ -1048,6 +1089,8 @@ PDF_setgray_stroke(PDF *p, double gray)
     if (pdf_enter_api(p, fn, pdf_state_content, "(p_%p, %f)\n",
         (void *) p, gray))
     {
+        pdf_logg_is_deprecated(p, fn, 5);
+
         pdf__setcolor(p, "stroke", "gray", gray, 0, 0, 0);
 
         pdc_logg_exit_api(p->pdc, pdc_true, NULL);
@@ -1062,6 +1105,8 @@ PDF_setrgbcolor(PDF *p, double r, double g, double b)
     if (pdf_enter_api(p, fn, pdf_state_content, "(p_%p, %f, %f, %f)\n",
         (void *) p, r, g, b))
     {
+        pdf_logg_is_deprecated(p, fn, 5);
+
         pdf__setcolor(p, "fillstroke", "rgb", r, g, b, 0);
 
         pdc_logg_exit_api(p->pdc, pdc_false, NULL);
@@ -1076,6 +1121,8 @@ PDF_setrgbcolor_fill(PDF *p, double r, double g, double b)
     if (pdf_enter_api(p, fn, pdf_state_content, "(p_%p, %f, %f, %f)\n",
         (void *) p, r, g, b))
     {
+        pdf_logg_is_deprecated(p, fn, 5);
+
         pdf__setcolor(p, "fill", "rgb", r, g, b, 0);
 
         pdc_logg_exit_api(p->pdc, pdc_true, NULL);
@@ -1090,6 +1137,8 @@ PDF_setrgbcolor_stroke(PDF *p, double r, double g, double b)
     if (pdf_enter_api(p, fn, pdf_state_content, "(p_%p, %f, %f, %f)\n",
         (void *) p, r, g, b))
     {
+        pdf_logg_is_deprecated(p, fn, 5);
+
         pdf__setcolor(p, "stroke", "rgb", r, g, b, 0);
 
         pdc_logg_exit_api(p->pdc, pdc_true, NULL);
@@ -1151,6 +1200,8 @@ PDF_close(PDF *p)
     if (pdf_enter_api(p, fn, pdf_state_document,
         "(p_%p)\n", (void *) p))
     {
+        pdf_logg_is_deprecated(p, fn, 6);
+
         pdf__end_document(p, "");
 
         pdc_logg_exit_api(p->pdc, pdc_true, NULL);
@@ -1204,6 +1255,8 @@ PDF_open_file(PDF *p, const char *filename)
     if (pdf_enter_api(p, fn, pdf_state_object, "(p_%p, \"%s\")\n",
         (void *) p, filename))
     {
+        pdf_logg_is_deprecated(p, fn, 6);
+
         retval = pdf__begin_document(p, filename, 0, "");
     }
 
@@ -1221,6 +1274,8 @@ PDF_open_mem(
     if (pdf_enter_api(p, fn, pdf_state_object,
         "(p_%p, wp_%p)\n", (void *) p, (void *) writeproc))
     {
+        pdf_logg_is_deprecated(p, fn, 6);
+
         pdf__begin_document_callback(p, writeproc, "");
 
         pdc_logg_exit_api(p->pdc, pdc_true, NULL);
@@ -1425,6 +1480,8 @@ PDF_rcurveto(PDF *p,
         "(p_%p, %f, %f, %f, %f, %f, %f)\n",
         (void *) p, x_1, y_1, x_2, y_2, x_3, y_3))
     {
+        pdf_logg_is_unsupported(p, fn);
+
         pdf__rcurveto(p, x_1, y_1, x_2, y_2, x_3, y_3);
 
         pdc_logg_exit_api(p->pdc, pdc_false, NULL);
@@ -1454,6 +1511,8 @@ PDF_rlineto(PDF *p, double x, double y)
     if (pdf_enter_api(p, fn, pdf_state_path, "(p_%p, %f, %f)\n",
         (void *) p, x, y))
     {
+        pdf_logg_is_unsupported(p, fn);
+
         pdf__rlineto(p, x, y);
 
         pdc_logg_exit_api(p->pdc, pdc_false, NULL);
@@ -1469,6 +1528,8 @@ PDF_rmoveto(PDF *p, double x, double y)
         (pdf_state) (pdf_state_content | pdf_state_path),
         "(p_%p, %f, %f)\n", (void *) p, x, y))
     {
+        pdf_logg_is_unsupported(p, fn);
+
         pdf__rmoveto(p, x, y);
 
         pdc_logg_exit_api(p->pdc, pdc_false, NULL);
@@ -1552,7 +1613,7 @@ PDF_create_fieldgroup(
 {
     static const char fn[] = "PDF_create_fieldgroup";
 
-    if (pdf_enter_api(p, fn, pdf_state_all,
+    if (pdf_enter_api(p, fn, pdf_state_documentall,
         "(p_%p, \"%T\", /*c*/%d, \"%T\")\n",
         (void *) p, name, len, len, optlist, 0))
     {
@@ -1585,6 +1646,8 @@ PDF_findfont(
         "(p_%p, \"%s\", \"%s\", %d)\n",
         (void *) p, fontname, encoding, embed))
     {
+        pdf_logg_is_deprecated(p, fn, 6);
+
         if (embed < 0 || embed > 1)
             pdc_error(p->pdc, PDC_E_ILLARG_INT,
                 "embed", pdc_errprintf(p->pdc, "%d", embed), 0, 0);
@@ -1602,7 +1665,7 @@ PDF_info_font(PDF *p, int font, const char *keyword, const char *optlist)
     static const char fn[] = "PDF_info_font";
     double retval = 0;
 
-    if (pdf_enter_api(p, fn, pdf_state_all,
+    if (pdf_enter_api(p, fn, pdf_state_documentall,
         "(p_%p, %d, \"%s\", \"%s\")\n",
         (void *) p, font, keyword, optlist))
     {
@@ -1853,7 +1916,11 @@ PDF_setpolydash(PDF *p, float *darray, int length)
     if (pdf_enter_api(p, fn, pdf_state_content,
         "(p_%p, darray_%p, /*c*/%d)\n", (void *) p, (void *) darray, length))
     {
-        char optlist[1024], *sopt;
+        char optlist[PDC_GEN_BUFSIZE], *sopt;
+
+        if (length > PDF_MAX_DASHLENGTH)
+            pdc_error(p->pdc, PDC_E_ILLARG_TOOMANY, "darray",
+                      pdc_errprintf(p->pdc, "%d", PDF_MAX_DASHLENGTH), 0, 0);
 
         sopt = optlist;
         sopt += pdc_sprintf(p->pdc, pdc_false, optlist, "dasharray {");
@@ -1921,6 +1988,9 @@ PDF_add_bookmark(
         "(p_%p, \"%T\", %d, %d)\n", (void *) p, text, 0, parent, open))
     {
         int len = text ? (int) pdc_strlen(text) : 0;
+
+        pdf_logg_is_deprecated(p, fn, 6);
+
         retval = pdf__add_bookmark(p, text, len, parent, open);
         pdc_logg_exit_api(p->pdc, pdc_true, "[%d]\n", retval);
     }
@@ -1943,6 +2013,8 @@ PDF_add_bookmark2(
         "(p_%p, \"%T\", /*c*/%d, %d, %d)\n",
         (void *) p, text, len, len, parent, open))
     {
+        pdf_logg_is_deprecated(p, fn, 6);
+
         retval = pdf__add_bookmark(p, text, len, parent, open);
         pdc_logg_exit_api(p->pdc, pdc_true, "[%d]\n", retval);
     }
@@ -2099,7 +2171,7 @@ PDF_fit_image(
     static const char fn[] = "PDF_fit_image";
 
     /* scope check dependent on image type in kernel function */
-    if (pdf_enter_api(p, fn, pdf_state_all,
+    if (pdf_enter_api(p, fn, pdf_state_firsttest,
         "(p_%p, %d, %f, %f, \"%T\")\n", (void *) p, image, x, y, optlist, 0))
     {
         if (p->pdc->hastobepos) image -= 1;
@@ -2154,7 +2226,9 @@ PDF_open_CCITT(
         (void *) p, filename, width, height,
         BitReverse, K, BlackIs1))
     {
-        char optlist[128];
+        char optlist[PDC_GEN_BUFSIZE];
+
+        pdf_logg_is_deprecated(p, fn, 6);
 
         pdc_sprintf(p->pdc, pdc_false, optlist,
             "width %d  height %d  bitreverse %s  K %d  invert %s",
@@ -2192,8 +2266,10 @@ PDF_open_image(
         width, height, components, bpc, params))
     {
         const char *filename = data;
-        char optlist[512];
+        char optlist[PDC_GEN_BUFSIZE];
         pdc_bool memory = pdc_false;
+
+        pdf_logg_is_deprecated(p, fn, 6);
 
         if (type == NULL || *type == '\0')
             pdc_error(p->pdc, PDC_E_ILLARG_EMPTY, "type", 0, 0, 0);
@@ -2293,7 +2369,9 @@ PDF_open_image_file(
         "(p_%p, \"%s\", \"%s\", \"%s\", %d)\n",
         (void *) p, type, filename, stringparam, intparam))
     {
-        char optlist[128];
+        char optlist[PDC_GEN_BUFSIZE];
+
+        pdf_logg_is_deprecated(p, fn, 6);
 
         optlist[0] = 0;
         if (stringparam != NULL && *stringparam != '\0')
@@ -2338,10 +2416,12 @@ PDF_place_image(
     static const char fn[] = "PDF_place_image";
 
     /* scope check dependent on image type in kernel function */
-    if (pdf_enter_api(p, fn, pdf_state_all,
+    if (pdf_enter_api(p, fn, pdf_state_firsttest,
         "(p_%p, %d, %f, %f, %f)\n", (void *) p, image, x, y, scale))
     {
-        char optlist[128];
+        char optlist[PDC_GEN_BUFSIZE];
+
+        pdf_logg_is_deprecated(p, fn, 6);
 
         pdc_sprintf(p->pdc, pdc_false, optlist, "dpi none  scale %f", scale);
         if (p->pdc->hastobepos) image -= 1;
@@ -2529,6 +2609,8 @@ PDF_begin_page(PDF *p, double width, double height)
     if (pdf_enter_api(p, fn, pdf_state_document, "(p_%p, %f, %f)\n",
        (void *) p, width, height))
     {
+        pdf_logg_is_deprecated(p, fn, 6);
+
         pdf__begin_page(p, width, height);
 
         pdc_logg_exit_api(p->pdc, pdc_true, NULL);
@@ -2556,6 +2638,8 @@ PDF_end_page(PDF *p)
 
     if (pdf_enter_api(p, fn, pdf_state_page, "(p_%p)\n", (void *) p))
     {
+        pdf_logg_is_deprecated(p, fn, 6);
+
         pdf__end_page_ext(p, "");
 
         pdc_logg_exit_api(p->pdc, pdc_true, NULL);
@@ -3259,7 +3343,7 @@ PDF_add_table_cell(PDF *p, int table, int column, int row, const char *text,
     static const char fn[] = "PDF_add_table_cell";
     int retval = -1;
 
-    if (pdf_enter_api(p, fn, pdf_state_all,
+    if (pdf_enter_api(p, fn, pdf_state_documentall,
         "(p_%p, %d, %d, %d, \"%T\", /*c*/%d, \"%T\")\n",
         (void *) p, table, column, row, text, len, len, optlist, 0))
     {
@@ -3274,7 +3358,7 @@ PDF_delete_table(PDF *p, int table, const char *optlist)
 {
     static const char fn[] = "PDF_delete_table";
 
-    if (pdf_enter_api(p, fn, pdf_state_all,
+    if (pdf_enter_api(p, fn, pdf_state_documentall,
         "(p_%p, %d, \"%T\")\n", (void *) p, table, optlist, 0))
     {
         pdc_error(p->pdc, PDF_E_UNSUPP_TABLES, 0, 0, 0, 0);
@@ -3308,7 +3392,7 @@ PDF_info_table(PDF *p, int table, const char *keyword)
     static const char fn[] = "PDF_info_table";
     double retval = -1;
 
-    if (pdf_enter_api(p, fn, pdf_state_all,
+    if (pdf_enter_api(p, fn, pdf_state_documentall,
         "(p_%p, %d, \"%s\")\n", (void *) p, table, keyword))
     {
         pdc_error(p->pdc, PDF_E_UNSUPP_TABLES, 0, 0, 0, 0);
@@ -3432,6 +3516,8 @@ PDF_begin_template(PDF *p, double width, double height)
     if (pdf_enter_api(p, fn, (pdf_state) (pdf_state_document | pdf_state_page),
         "(p_%p, %f, %f)\n", (void *) p, width, height))
     {
+        pdf_logg_is_deprecated(p, fn, 7);
+
         retval = pdf__begin_template(p, width, height, "");
     }
 
@@ -3444,8 +3530,8 @@ PDF_begin_template_ext(PDF *p, double width, double height, const char *optlist)
     static const char fn[] = "\nPDF_begin_template_ext";
     int retval = -1;
 
-    if (pdf_enter_api(p, fn, pdf_state_document, "(p_%p, %f, %f, \"%T\")\n",
-        (void *) p, width, height, optlist, 0))
+    if (pdf_enter_api(p, fn, (pdf_state) (pdf_state_document | pdf_state_page),
+        "(p_%p, %f, %f, \"%T\")\n", (void *) p, width, height, optlist, 0))
     {
         retval = pdf__begin_template(p, width, height, optlist);
     }
@@ -3612,6 +3698,8 @@ PDF_show_boxed(
         "(p_%p, \"%T\", %f, %f, %f, %f, \"%s\", \"%s\")\n",
         (void *) p, text, 0, left, bottom, width, height, hmode, feature))
     {
+        pdf_logg_is_deprecated(p, fn, 6);
+
         retval = pdf__show_boxed(p, text, 0, left, bottom, width, height,
                                  hmode, feature);
 
@@ -3641,6 +3729,8 @@ PDF_show_boxed2(
         (void *) p, text, len, len, left, bottom, width, height,
         hmode, feature))
     {
+        pdf_logg_is_deprecated(p, fn, 6);
+
         retval = pdf__show_boxed(p, text, len, left, bottom, width, height,
                                    hmode, feature);
 
@@ -3730,6 +3820,8 @@ PDF_xshow(PDF *p, const char *text, int len, const double *xadvancelist)
     if (pdf_enter_api(p, fn, pdf_state_content,
         "(p_%p, \"%T\", %d, %p)\n", (void *) p, text, len, len, xadvancelist))
     {
+        pdf_logg_is_unsupported(p, fn);
+
         pdf__xshow(p, text, len, xadvancelist);
 
         pdc_logg_exit_api(p->pdc, pdc_true, NULL);
@@ -3750,7 +3842,7 @@ PDF_add_textflow(PDF *p, int textflow, const char *text, int len,
     static const char fn[] = "PDF_add_textflow";
     int retval = -1;
 
-    if (pdf_enter_api(p, fn, pdf_state_all,
+    if (pdf_enter_api(p, fn, pdf_state_documentall,
         "(p_%p, %d, \"%T\", /*c*/%d, \"%T\")\n",
         (void *) p, textflow, text, len, len, optlist, 0))
     {
@@ -3766,7 +3858,7 @@ PDF_create_textflow(PDF *p, const char *text, int len, const char *optlist)
     static const char fn[] = "PDF_create_textflow";
     int retval = -1;
 
-    if (pdf_enter_api(p, fn, pdf_state_all,
+    if (pdf_enter_api(p, fn, pdf_state_documentall,
         "(p_%p, \"%T\", /*c*/%d, \"%T\")\n",
         (void *) p, text, len, len, optlist, 0))
     {
@@ -3781,7 +3873,7 @@ PDF_delete_textflow(PDF *p, int textflow)
 {
     static const char fn[] = "PDF_delete_textflow";
 
-    if (pdf_enter_api(p, fn, pdf_state_all,
+    if (pdf_enter_api(p, fn, pdf_state_documentall,
         "(p_%p, %d)\n", (void *) p, textflow))
     {
         pdc_error(p->pdc, PDF_E_UNSUPP_TEXTFLOWS, 0, 0, 0, 0);
@@ -3821,7 +3913,7 @@ PDF_info_textflow(PDF *p, int textflow, const char *keyword)
     static const char fn[] = "PDF_info_textflow";
     double retval = -1;
 
-    if (pdf_enter_api(p, fn, pdf_state_all,
+    if (pdf_enter_api(p, fn, pdf_state_documentall,
         "(p_%p, %d, \"%s\")\n", (void *) p, textflow, keyword))
     {
         pdc_error(p->pdc, PDF_E_UNSUPP_TEXTFLOWS, 0, 0, 0, 0);
@@ -3896,7 +3988,7 @@ PDF_end_glyph(PDF *p)
     static const char fn[] = "PDF_end_glyph";
 
     if (pdf_enter_api(p, fn,
-            (pdf_state) (pdf_state_glyph | pdf_state_glyphmetric |
+            (pdf_state) (pdf_state_glyph | pdf_state_glyphmetrics |
                          pdf_state_glyphignore),
             "(p_%p)\n", (void *) p))
     {

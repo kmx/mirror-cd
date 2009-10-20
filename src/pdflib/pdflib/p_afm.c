@@ -218,7 +218,7 @@ pdf_parse_afm(
     static const char fn[] = "pdf_parse_afm";
     fnt_font_metric *ftm = &font->ft.m;
     const char *afmtype = NULL;
-    char **wordlist, *keyword, *arg1;
+    char **wordlist = NULL, *keyword, *arg1;
     char line[AFM_LINEBUF];
     int i, cmp, lo, hi, nwords, nglyphs = 0, nline = 0;
     int tablen = ((sizeof keyStrings) / (sizeof (char *)));

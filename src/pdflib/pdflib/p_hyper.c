@@ -544,7 +544,8 @@ pdf__add_nameddest(
     pdf_dest *dest;
     int inum;
 
-    if (!name)
+    len = pdc_check_text_length(p->pdc, &name, len, PDF_MAXSTRINGSIZE);
+    if (!len)
         pdc_error(p->pdc, PDC_E_ILLARG_EMPTY, "name", 0, 0, 0);
 
     resopts = pdc_parse_optionlist(p->pdc, optlist,
@@ -955,6 +956,10 @@ pdf__create_bookmark(PDF *p, const char *text, int len, const char *optlist)
     int ns, inum, outlen, retval = 0;
     int jndex = -2;
 
+    len = pdc_check_text_length(p->pdc, &text, len, PDF_MAXSTRINGSIZE);
+    if (!len)
+        pdc_error(p->pdc, PDC_E_ILLARG_EMPTY, "text", 0, 0, 0);
+
     /* Initialize */
     pdf_init_outline(p, &self);
     hypertextformat = p->hypertextformat;
@@ -1196,11 +1201,16 @@ pdf_cleanup_outlines(PDF *p)
 int
 pdf__add_bookmark(PDF *p, const char *text, int len, int parent, int open)
 {
+    static const char *fn = "pdf__add_bookmark";
     pdf_outline self;
     pdf_dest *dest = (pdf_dest *) p->bookmark_dest;
     char *hypertext = NULL;
     int acthdl;
     int retval = 0;
+
+    len = pdc_check_text_length(p->pdc, &text, len, PDF_MAXSTRINGSIZE);
+    if (!len)
+        pdc_error(p->pdc, PDC_E_ILLARG_EMPTY, "text", 0, 0, 0);
 
     pdf_init_outline(p, &self);
 
@@ -1212,16 +1222,21 @@ pdf__add_bookmark(PDF *p, const char *text, int len, int parent, int open)
     /* creating a Launch action - defined via bookmarkdest */
     if (dest->filename)
     {
-        char actoptlist[2048];
+        char *actoptlist;
 
-        sprintf(actoptlist, "filename {%s} ", dest->filename);
+        actoptlist = (char *)
+            pdc_malloc(p->pdc, strlen(dest->filename) + 80, fn);
+        pdc_sprintf(p->pdc, pdc_false, actoptlist, "filename {%s} ",
+                    dest->filename);
         acthdl = pdf__create_action(p, "Launch", actoptlist);
         if (acthdl != -1)
         {
             if (p->pdc->hastobepos) acthdl++;
-            sprintf(actoptlist, "activate %d", acthdl);
+            pdc_sprintf(p->pdc, pdc_false, actoptlist, "activate %d", acthdl);
             self.action = pdc_strdup(p->pdc, actoptlist);
         }
+
+        pdc_free(p->pdc, actoptlist);
     }
     else
     {
@@ -1311,21 +1326,38 @@ pdf__set_info(PDF *p, const char *key, const char *value, int len)
     static const char fn[] = "pdf__set_info";
     char *key_buf, *val_buf;
     pdf_info *oldentry, *newentry;
+    const char **kp;
+    static const char *forbidden_keys[] =
+    {
+        "Producer",
+        "CreationDate",
+        "ModDate",
+        "GTS_PDFXVersion",
+        "GTS_PDFXConformance",
+        "ISO_PDFEVersion"
+    };
 
     if (key == NULL || !*key)
         pdc_error(p->pdc, PDC_E_ILLARG_EMPTY, "key", 0, 0, 0);
 
-    if (!strcmp(key, "Producer") ||
-        !strcmp(key, "CreationDate") ||
-        !strcmp(key, "ModDate"))
-        pdc_error(p->pdc, PDC_E_ILLARG_STRING, "key", key, 0, 0);
+    len = pdc_check_text_length(p->pdc, &value, len, PDF_MAXSTRINGSIZE);
+
+    for (kp = forbidden_keys;
+        kp != sizeof(forbidden_keys) / sizeof(char *) + forbidden_keys;
+        kp += 1)
+    {
+        if (!strcmp(*kp, key))
+        {
+            pdc_error(p->pdc, PDC_E_ILLARG_STRING, "key", key, 0, 0);
+        }
+    }
 
     /* converting key */
     key_buf = pdf_convert_name(p, key, 0, 0);
 
     /* convert text string */
     val_buf = pdf_convert_hypertext_depr(p, value, len);
-    if (!val_buf)
+    if (val_buf == NULL)
         pdc_error(p->pdc, PDC_E_ILLARG_EMPTY, "value", 0, 0, 0);
 
     /* special handling required for "Trapped" */
@@ -1365,14 +1397,17 @@ pdf__set_info(PDF *p, const char *key, const char *value, int len)
 pdc_id
 pdf_write_info(PDF *p, pdc_bool moddate)
 {
+    pdc_bool logg3 = pdc_logg_is_enabled(p->pdc, 3, trc_xmp);
     char time_str[PDC_TIME_SBUF_SIZE];
-    char producer[PDF_MAX_PARAMSTRING];
+    char producer[PDC_GEN_BUFSIZE];
     pdf_info    *info;
     pdc_id      info_id;
 
 
 
     const char  *product = "PDFlib Lite";
+
+    (void) logg3;
 
 
     if (!p->pdc->smokerun)
@@ -1427,10 +1462,10 @@ pdf_write_info(PDF *p, pdc_bool moddate)
      */
 
     if (p->pdc->binding)
-        sprintf(producer, "%s %s (%s/%s)", product,
+        pdc_sprintf(p->pdc, pdc_false, producer, "%s %s (%s/%s)", product,
             PDFLIB_VERSIONSTRING, p->pdc->binding, PDF_PLATFORM);
     else
-        sprintf(producer, "%s %s (%s)", product,
+        pdc_sprintf(p->pdc, pdc_false, producer, "%s %s (%s)", product,
             PDFLIB_VERSIONSTRING, PDF_PLATFORM);
 
     pdc_puts(p->out, "/Producer ");
@@ -1445,5 +1480,6 @@ pdf_write_info(PDF *p, pdc_bool moddate)
 
     return info_id;
 }
+
 
 

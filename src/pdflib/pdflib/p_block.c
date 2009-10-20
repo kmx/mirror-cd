@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------*
  |              PDFlib - A library for generating PDF on the fly             |
  +---------------------------------------------------------------------------+
- | Copyright (c) 1997-2007 Thomas Merz and PDFlib GmbH. All rights reserved. |
+ | Copyright (c) 1997-2009 Thomas Merz and PDFlib GmbH. All rights reserved. |
  +---------------------------------------------------------------------------+
  |                                                                           |
  |    This software is subject to the PDFlib license. It is NOT in the       |

@@ -45,7 +45,8 @@ typedef enum
     ann_polyline        = (1<<13),
     ann_popup           = (1<<14),
     ann_fileattachment  = (1<<15),
-    ann_3d              = (1<<16)
+    ann_3d              = (1<<16),
+    ann_movie           = (1<<17)
 }
 pdf_annottype;
 
@@ -68,6 +69,7 @@ static const pdc_keyconn pdf_annottype_pdfkeylist[] =
     {"Popup",           ann_popup},
     {"FileAttachment",  ann_fileattachment},
     {"3D",              ann_3d},
+    {"Movie",           ann_movie},
     {NULL, 0}
 };
 
@@ -98,20 +100,21 @@ typedef enum
     anndict_inklist    = (1<<8),
     anndict_l          = (1<<9),
     anndict_le         = (1<<10),
-    anndict_name       = (1<<11),
-    anndict_nm         = (1<<12),
-    anndict_open       = (1<<13),
-    anndict_parent     = (1<<14),
-    anndict_popup      = (1<<15),
-    anndict_q          = (1<<16),
-    anndict_quadpoints = (1<<17),
-    anndict_rect       = (1<<18),
-    anndict_subtype    = (1<<19),
-    anndict_t          = (1<<20),
-    anndict_vertices   = (1<<21),
-    anndict_3dd        = (1<<22),
-    anndict_3da        = (1<<23),
-    anndict_3dv        = (1<<24)
+    anndict_movie      = (1<<11),
+    anndict_name       = (1<<12),
+    anndict_nm         = (1<<13),
+    anndict_open       = (1<<14),
+    anndict_parent     = (1<<15),
+    anndict_popup      = (1<<16),
+    anndict_q          = (1<<17),
+    anndict_quadpoints = (1<<18),
+    anndict_rect       = (1<<19),
+    anndict_subtype    = (1<<20),
+    anndict_t          = (1<<21),
+    anndict_vertices   = (1<<22),
+    anndict_3dd        = (1<<23),
+    anndict_3da        = (1<<24),
+    anndict_3dv        = (1<<25)
 }
 pdf_anndictentries;
 
@@ -136,6 +139,7 @@ static const pdc_keyconn pdf_forb_entries_pdfkeylist[] =
     {"InkList",    anndict_inklist},
     {"L",          anndict_l},
     {"LE",         anndict_le},
+    {"Movie",      anndict_movie},
     {"Parent",     anndict_parent},
     {"Popup",      anndict_popup},
     {"Q",          anndict_q},
@@ -263,6 +267,46 @@ static const pdc_keyconn pdf_3dview_keylist[] =
 };
 
 
+typedef enum
+{
+    movieposter_none = -1,
+    movieposter_auto = -2
+}
+pdf_movieposter_states;
+
+static const pdc_keyconn pdf_movieposter_keylist[] =
+{
+    {"none",     movieposter_none},
+    {"auto",     movieposter_auto},
+    {NULL, 0}
+};
+
+typedef enum
+{
+    playmode_once,
+    playmode_open,
+    playmode_repeat,
+    playmode_palindrome
+}
+pdf_playmode_states;
+
+static const pdc_keyconn pdf_playmode_pdfkeylist[] =
+{
+    {"Once",       playmode_once},
+    {"Open",       playmode_open},
+    {"Repeat",     playmode_repeat},
+    {"Palindrome", playmode_palindrome},
+    {NULL, 0}
+};
+
+#define PDF_ANN_FULLSCREEN -9999
+
+static const pdc_keyconn pdf_windowscale_keylist[] =
+{
+    {"fullscreen",  PDF_ANN_FULLSCREEN},
+    {NULL, 0}
+};
+
 
 #define PDF_LAYER_FLAG PDC_OPT_UNSUPP
 
@@ -270,7 +314,7 @@ static const pdc_keyconn pdf_3dview_keylist[] =
 static const pdc_defopt pdf_create_annot_options[] =
 {
     /* deprecated */
-    {"annotwarning", pdc_booleanlist, PDC_OPT_NONE, 1, 1,
+    {"annotwarning", pdc_booleanlist, PDC_OPT_PDFLIB_7, 1, 1,
       0.0, 0.0, NULL},
 
     {"usercoordinates", pdc_booleanlist, PDC_OPT_NONE, 1, 1,
@@ -411,6 +455,24 @@ static const pdc_defopt pdf_create_annot_options[] =
     {"3dinitialview", pdc_3dviewhandle, PDF_3DANNOT_FLAG, 1, 1,
       0.0, 0.0, pdf_3dview_keylist},
 
+    {"movieposter", pdc_templatehandle, PDC_OPT_NONE, 1, 1,
+      0.0, 0.0, pdf_movieposter_keylist},
+
+    {"showcontrols", pdc_booleanlist, PDC_OPT_NONE, 1, 1,
+      0.0, 0.0, NULL},
+
+    {"playmode", pdc_keywordlist, PDC_OPT_NONE, 1, 1,
+      0.0, 0.0, pdf_playmode_pdfkeylist},
+
+    {"windowscale", pdc_scalarlist, PDC_OPT_NONE, 1, 1,
+      PDC_FLOAT_PREC, PDC_FLOAT_MAX, pdf_windowscale_keylist},
+
+    {"windowposition", pdc_scalarlist, PDC_OPT_NONE, 1, 2,
+      0.0, 100.0, pdf_position_keylist},
+
+    {"soundvolume", pdc_scalarlist, PDC_OPT_NONE, 1, 1,
+      -1.0, 1.0, NULL},
+
     PDC_OPT_TERMINATE
 };
 
@@ -454,6 +516,7 @@ typedef struct pdf_annot_s
     char *subject;
     char *contents;
     char *filename;
+    char *nativefilename;
     char *mimetype;
     const char *iconname;
     pdc_off_t filesize;
@@ -465,6 +528,13 @@ typedef struct pdf_annot_s
     char *action;
 
 
+
+    pdc_id movieposter;
+    pdc_bool showcontrols;
+    pdf_playmode_states playmode;
+    pdc_scalar windowscale;
+    pdc_scalar windowposition[2];
+    pdc_scalar soundvolume;
 }
 pdf_annot;
 
@@ -511,6 +581,7 @@ pdf_reclaim_annot(void *item)
     ann->subject = NULL;
     ann->contents = NULL;
     ann->filename = NULL;
+    ann->nativefilename = NULL;
     ann->mimetype = NULL;
     ann->iconname = NULL;
     ann->filesize = 0;
@@ -524,6 +595,14 @@ pdf_reclaim_annot(void *item)
 
 
 
+
+    ann->movieposter = PDC_BAD_ID /* = movieposter_none */;
+    ann->showcontrols = pdc_false;
+    ann->playmode = playmode_once;
+    ann->windowscale = 0;
+    ann->windowposition[0] = 50.0;
+    ann->windowposition[1] = 50.0;
+    ann->soundvolume = 1.0;
 }
 
 static void
@@ -572,6 +651,11 @@ pdf_release_annot(void *context, void *item)
         {
             pdc_free(p->pdc, ann->filename);
             ann->filename = NULL;
+        }
+        if (ann->nativefilename)
+        {
+            pdc_free(p->pdc, ann->nativefilename);
+            ann->nativefilename = NULL;
         }
         if (ann->mimetype)
         {
@@ -848,6 +932,7 @@ pdf__create_annotation(PDF *p,
     char **strlist = NULL;
     pdc_scalar *line;
     int i, j, k, ns, nss[2];
+    pdf_colortype maxcs = color_rgb;
     pdf_ppt *ppt = p->curr_ppt;
     pdc_matrix *ctm = &ppt->gstate[ppt->sl].ctm;
 
@@ -872,6 +957,9 @@ pdf__create_annotation(PDF *p,
         pdc_error(p->pdc, PDC_E_PAR_VERSION, type,
                   pdc_get_pdfversion(p->pdc, PDC_1_5), 0, 0);
     }
+
+    if (p->compatibility >= PDC_1_6)
+        maxcs = color_cmyk;
 
     /* Parsing option list */
     pdf_set_clientdata(p, &cdata);
@@ -931,7 +1019,7 @@ pdf__create_annotation(PDF *p,
     ns = pdc_get_optvalues(keyword, resopts, NULL, &strlist);
     if (ns)
     {
-        pdf_parse_coloropt(p, keyword, strlist, ns, (int) color_rgb,
+        pdf_parse_coloropt(p, keyword, strlist, ns, (int) maxcs,
                            &ann->annotcolor);
     }
 
@@ -1017,7 +1105,7 @@ pdf__create_annotation(PDF *p,
     keyword = "orientate";
     if (pdc_get_optvalues(keyword, resopts, &ann->orientate, NULL))
         pdf_opt_effectless(p, keyword, atype,
-                           (pdf_annottype) (ann_freetext | ann_stamp));
+                (pdf_annottype) (ann_freetext | ann_stamp));
 
     keyword = "contents";
     if (atype == ann_freetext)
@@ -1069,10 +1157,22 @@ pdf__create_annotation(PDF *p,
 
     keyword = "filename";
     if (pdc_get_optvalues(keyword, resopts, NULL, NULL) &&
-        !pdf_opt_effectless(p, keyword, atype, ann_fileattachment))
+        !pdf_opt_effectless(p, keyword, atype,
+                           (pdf_annottype) (ann_fileattachment | ann_movie)))
     {
-        ann->filename = (char *) pdc_save_lastopt(resopts, PDC_OPT_SAVE1ELEM);
-        ann->filesize = pdf_check_file(p, ann->filename, pdc_true);
+        /* DON'T change order */
+
+        /* native filename */
+        ann->nativefilename = pdf_get_opt_filename(p, keyword, resopts,
+                          ann->hypertextencoding, ann->hypertextcodepage);
+
+        pdf_get_opt_textlist(p, keyword, resopts, ann->hypertextencoding,
+                             ann->hypertextcodepage, pdc_true,
+                             NULL, &ann->filename, NULL);
+        pdc_save_lastopt(resopts, PDC_OPT_SAVE1ELEM);
+
+        if (atype == ann_fileattachment)
+            ann->filesize = pdf_check_file(p, ann->filename, pdc_true);
     }
 
     keyword = "mimetype";
@@ -1115,7 +1215,7 @@ pdf__create_annotation(PDF *p,
                 (pdf_annottype) (ann_line | ann_polyline |
                                  ann_square | ann_circle)))
     {
-        pdf_parse_coloropt(p, keyword, strlist, ns, (int) color_rgb,
+        pdf_parse_coloropt(p, keyword, strlist, ns, (int) maxcs,
                            &ann->interiorcolor);
     }
 
@@ -1173,6 +1273,24 @@ pdf__create_annotation(PDF *p,
     keyword = "action";
     if (pdc_get_optvalues(keyword, resopts, NULL, &strlist))
     {
+        /*
+         * PDF 1.7 allows the A action dictionary only for annotation types
+         * link, widget and screen. Widget is handled elsewhere, and screen
+         * is not yet implemented, so only link is allowed with compatiblity
+         * 1.7.
+         * Must be extended that also screen annotation is accepted here
+         * once it is implemented.
+         */
+        if (p->compatibility >= PDC_1_7)
+        {
+            if (ann->atype != ann_link)
+            {
+                pdc_error(p->pdc, PDF_E_ANN_ACTIONNOTALLOWED,
+                        pdc_get_keyword(ann->atype, pdf_annottype_pdfkeylist),
+                        0, 0, 0);
+            }
+        }
+
         if (ann->dest)
         {
             pdf_cleanup_destination(p, ann->dest);
@@ -1188,15 +1306,83 @@ pdf__create_annotation(PDF *p,
 
 
 
+    keyword = "movieposter";
+    if (pdc_get_optvalues(keyword, resopts, &ns, NULL))
+    {
+        pdf_opt_effectless(p, keyword, atype, ann_movie);
+        if (ns < 0)
+        {
+            ann->movieposter = (pdc_id) ns;
+        }
+        else
+        {
+#if 0
+            int cstype = pdf_get_image_colorspace(p, ns);
+
+            if (cstype != (int) DeviceGray && cstype != (int) DeviceRGB)
+                pdc_error(p->pdc, PDF_E_ANN_ILLTEMPLATE, 0, 0, 0, 0);
+#endif
+            ann->movieposter = pdf_get_xobject(p, ns);
+        }
+    }
+
+    keyword = "showcontrols";
+    if (pdc_get_optvalues(keyword, resopts, &ann->showcontrols, NULL))
+        pdf_opt_effectless(p, keyword, atype, ann_movie);
+
+    keyword = "playmode";
+    if (pdc_get_optvalues(keyword, resopts, &ns, NULL))
+    {
+        pdf_opt_effectless(p, keyword, atype, ann_movie);
+        ann->playmode = (pdf_playmode_states) ns;
+    }
+
+    keyword = "windowscale";
+    if (pdc_get_optvalues(keyword, resopts, &ann->windowscale, NULL))
+        pdf_opt_effectless(p, keyword, atype, ann_movie);
+
+    keyword = "windowposition";
+    ns = pdc_get_optvalues(keyword, resopts, ann->windowposition, NULL);
+    if (ns)
+    {
+        pdf_opt_effectless(p, keyword, atype, ann_movie);
+        pdf_set_position_values(p, ann->windowposition, ns);
+    }
+
+    keyword = "soundvolume";
+    if (pdc_get_optvalues(keyword, resopts, &ann->soundvolume, NULL))
+        pdf_opt_effectless(p, keyword, atype, ann_movie);
+
+    /* named annotation, to be accessible by a GoTo3DView or Movie action */
+    if ((atype == ann_3d || atype == ann_movie) && ann->name != NULL)
+    {
+        char *name = (char *) pdc_strdup(p->pdc, ann->name);
+
+        ann->obj_id = pdc_alloc_id(p->out);
+        pdf_insert_name(p, name, names_annots, ann->obj_id);
+    }
+
+    /* work-around for Acrobat 8 (see bug #1225) */
+    if (ann->annotcolor.type == (int) color_none &&
+        (atype == ann_square || atype == ann_circle))
+    {
+        ann->annotcolor.type = (int) color_rgb;
+        ann->annotcolor.value[0] = 1.0;
+        ann->annotcolor.value[1] = 1.0;
+        ann->annotcolor.value[2] = 1.0;
+    }
+
     /* required options */
     keyword = NULL;
-    if (ann->contents == NULL && atype != ann_link && atype != ann_popup)
+    if (ann->contents == NULL &&
+        atype != ann_link && atype != ann_popup && atype != ann_movie)
         keyword = "contents";
     if (ann->fontsize == 0 && atype == ann_freetext)
         keyword = "fontsize";
     if (ann->font == -1 && atype == ann_freetext)
         keyword = "font";
-    if (ann->filename == NULL && atype == ann_fileattachment)
+    if (ann->filename == NULL &&
+        (atype == ann_fileattachment || atype == ann_movie))
         keyword = "filename";
     if (ann->line == NULL && atype == ann_line)
         keyword = "line";
@@ -1302,12 +1488,10 @@ pdf_write_annots_root(PDF *p, pdc_vtr *annots, pdf_widget *widgetlist)
     return result;
 }
 
-#define BUFSIZE 256
-
 static void
 pdf_write_defappstring(PDF *p, pdf_annot *ann)
 {
-    char buf[BUFSIZE], *bufc;
+    char buf[PDC_GEN_BUFSIZE], *bufc;
     pdf_coloropt *fs;
     int ct;
 
@@ -1346,6 +1530,57 @@ pdf_write_defappstring(PDF *p, pdf_annot *ann)
     pdc_puts(p->out, "/DA");
     pdf_put_hypertext(p, buf);
     pdc_puts(p->out, "\n");
+}
+
+static void
+pdf_write_colorentry(PDF *p, const char *keyname, pdf_coloropt *coloropt)
+{
+    if (p->compatibility < PDC_1_6)
+    {
+        if (coloropt->type != (int) color_none)
+        {
+            pdc_printf(p->out, "%s[%f %f %f]\n",
+                       keyname,
+                       coloropt->value[0],
+                       coloropt->value[1],
+                       coloropt->value[2]);
+        }
+    }
+    else
+    {
+        switch (coloropt->type)
+        {
+            case color_none:
+            /* this doesn't work in Acrobat 8
+            pdc_printf(p->out, "%s[0]\n",
+                       keyname);
+            */
+            break;
+
+            case color_gray:
+            pdc_printf(p->out, "%s[%f]\n",
+                       keyname,
+                       coloropt->value[0]);
+            break;
+
+            case color_rgb:
+            pdc_printf(p->out, "%s[%f %f %f]\n",
+                       keyname,
+                       coloropt->value[0],
+                       coloropt->value[1],
+                       coloropt->value[2]);
+            break;
+
+            case color_cmyk:
+            pdc_printf(p->out, "%s[%f %f %f %f]\n",
+                       keyname,
+                       coloropt->value[0],
+                       coloropt->value[1],
+                       coloropt->value[2],
+                       coloropt->value[3]);
+            break;
+        }
+    }
 }
 
 void
@@ -1449,11 +1684,7 @@ pdf_write_page_annots(PDF *p, pdc_vtr *annots)
         }
 
         /* Annotation color */
-        if (ann->annotcolor.type != (int) color_none)
-        {
-            pdc_printf(p->out, "/C[%f %f %f]\n", ann->annotcolor.value[0],
-                       ann->annotcolor.value[1], ann->annotcolor.value[2]);
-        }
+        pdf_write_colorentry(p, "/C", &ann->annotcolor);
 
         /* Title */
         if (ann->title && *ann->title)
@@ -1608,7 +1839,7 @@ pdf_write_page_annots(PDF *p, pdc_vtr *annots)
             case ann_stamp:
             case ann_freetext:
             if (ann->orientate)
-                pdc_printf(p->out, "/Rotate %d", ann->orientate);
+                pdc_printf(p->out, "/Rotate %d\n", ann->orientate);
             break;
 
             default:
@@ -1622,13 +1853,7 @@ pdf_write_page_annots(PDF *p, pdc_vtr *annots)
             case ann_polyline:
             case ann_square:
             case ann_circle:
-            if (ann->interiorcolor.type != (int) color_none)
-            {
-                pdc_printf(p->out, "/IC[%f %f %f]\n",
-                           ann->interiorcolor.value[0],
-                           ann->interiorcolor.value[1],
-                           ann->interiorcolor.value[2]);
-            }
+            pdf_write_colorentry(p, "/IC", &ann->interiorcolor);
             break;
 
             /* Parent Annotation */
@@ -1651,12 +1876,21 @@ pdf_write_page_annots(PDF *p, pdc_vtr *annots)
             /* File specification */
             case ann_fileattachment:
             {
+                /* see bug #1439 */
+                const char *basename = pdc_file_strip_dirs(ann->nativefilename);
+
                 pdc_puts(p->out, "/FS");
                 pdc_begin_dict(p->out);                 /* FS dict */
                 pdc_puts(p->out, "/Type/Filespec\n");
                 pdc_puts(p->out, "/F");
-                pdf_put_pdffilename(p, ann->filename);
+                pdf_put_pdffilename(p, basename);
                 pdc_puts(p->out, "\n");
+                if (p->compatibility >= PDC_1_7)
+                {
+                    pdc_puts(p->out, "/UF");
+                    pdf_put_pdfunifilename(p, basename);
+                    pdc_puts(p->out, "\n");
+                }
 
                 /* alloc id for the actual embedded file stream */
                 ann->obj_id = pdc_alloc_id(p->out);
@@ -1668,6 +1902,110 @@ pdf_write_page_annots(PDF *p, pdc_vtr *annots)
             }
             break;
 
+
+            case ann_movie:
+            {
+                pdc_puts(p->out, "/Movie");
+                pdc_begin_dict(p->out);                 /* Movie dict */
+
+                /* File specification */
+                pdc_puts(p->out, "/F");
+                pdc_begin_dict(p->out);                 /* F dict */
+                pdc_puts(p->out, "/Type/Filespec\n");
+                pdc_puts(p->out, "/F");
+                pdf_put_pdffilename(p, ann->nativefilename);
+                pdc_puts(p->out, "\n");
+                if (p->compatibility >= PDC_1_7)
+                {
+                    pdc_puts(p->out, "/UF");
+                    pdf_put_pdfunifilename(p, ann->filename);
+                    pdc_puts(p->out, "\n");
+                }
+                pdc_end_dict(p->out);                   /* F dict */
+
+                /* Aspect - not supported by Acrobat */
+                /* Rotate - doesn't work */
+
+                /* Poster */
+                if (ann->movieposter != movieposter_none)
+                {
+                    if (ann->movieposter == movieposter_auto)
+                        pdc_puts(p->out, "/Poster true");
+                    else
+                        pdc_objref(p->out, "/Poster", ann->movieposter);
+                }
+
+                pdc_end_dict(p->out);                   /* Movie dict */
+
+                if (ann->soundvolume != 1.0 ||
+                    ann->showcontrols ||
+                    ann->playmode != playmode_once ||
+                    ann->windowscale != 0)
+                {
+                    pdc_puts(p->out, "/A");
+                    pdc_begin_dict(p->out);             /* Activation dict */
+
+                    /* Start, Duration, Rate, Synchronus - not supported */
+
+                    /* Volume */
+                    if (ann->soundvolume != 1.0)
+                        pdc_printf(p->out, "/Volume %f\n", ann->soundvolume);
+
+                    /* ShowControls */
+                    if (ann->showcontrols)
+                        pdc_puts(p->out, "/ShowControls true\n");
+
+                    /* Mode */
+                    if (ann->playmode != playmode_once)
+                        pdc_printf(p->out, "/Mode/%s\n",
+                                   pdc_get_keyword(ann->playmode,
+                                                   pdf_playmode_pdfkeylist));
+
+                    /* window */
+                    if (ann->windowscale != 0)
+                    {
+                        int sx, sy;
+
+                        if (ann->windowscale == PDF_ANN_FULLSCREEN)
+                        {
+                            /* see PDF Reference 1.7, Appendix H, 153. */
+                            sx = 999;
+                            sy = 1;
+                        }
+                        else
+                        {
+                            pdc_scalar sf, sp;
+
+                            sp = 1;
+                            for (i = 0; ; i++)
+                            {
+                                sf = sp * ann->windowscale;
+                                if (sf == (double) (int) (sf) || i == 5)
+                                    break;
+                                sp *= 10;
+                            }
+
+                            sx = (int) sf;
+                            sy = (int) sp;
+                        }
+
+                        /* FWScale */
+                        pdc_printf(p->out, "/FWScale[%d %d]\n", sx, sy);
+
+                        /* FWPosition */
+                        if (ann->windowposition[0] != 50.0 ||
+                            ann->windowposition[1] != 50.0)
+                        {
+                            pdc_printf(p->out, "/FWPosition[%f %f]\n",
+                                       ann->windowposition[0] / 100.0,
+                                       1.0 - ann->windowposition[1] / 100.0);
+                        }
+                    }
+
+                    pdc_end_dict(p->out);               /* Activation dict */
+                }
+            }
+            break;
 
             default:
             break;
@@ -1704,9 +2042,13 @@ pdf_create_link(
     const char *utext,
     int len)
 {
-    char optlist[2048];
+    static const char *fn = "pdf_create_link";
+    char *optlist;
     char *name;
     int acthdl;
+
+    name = pdf_convert_name(p, utext, len, PDC_CONV_WITHBOM);
+    optlist = (char *) pdc_malloc(p->pdc, strlen(name) + 80, fn);
 
     if (!pdc_stricmp(type, "URI"))
         strcpy(optlist, "url {");
@@ -1714,11 +2056,7 @@ pdf_create_link(
         strcpy(optlist, "destname {");
     else if (!pdc_stricmp(type, "GoToR"))
         strcpy(optlist, "destination {page 1} filename {");
-
-    name = pdf_convert_name(p, utext, len, PDC_CONV_WITHBOM);
     strcat(optlist, name);
-    pdc_free(p->pdc, name);
-
     strcat(optlist, "}");
 
     acthdl = pdf__create_action(p, type, optlist);
@@ -1730,6 +2068,9 @@ pdf_create_link(
         strcat(optlist, annopts);
         pdf__create_annotation(p, llx, lly, urx, ury, "Link", optlist);
     }
+
+    pdc_free(p->pdc, optlist);
+    pdc_free(p->pdc, name);
 }
 
 void
@@ -1830,6 +2171,7 @@ pdf__attach_file(
     pdf_init_rectangle(p, ann, llx, lly, urx, ury, NULL);
     pdf_insert_annot_params(p, ann);
     ann->filename = pdc_strdup(p->pdc, filename);
+    ann->nativefilename = pdc_strdup(p->pdc, filename);
     ann->filesize = pdf_check_file(p, ann->filename, pdc_true);
     ann->contents = pdf_convert_hypertext_depr(p, description, len_descr);
     ann->title = pdf_convert_hypertext_depr(p, author, len_auth);
@@ -1891,18 +2233,25 @@ pdf__add_pdflink(
     int page,
     const char *optlist)
 {
-    char actoptlist[2048], *sopt;
+    static const char *fn = "pdf__add_pdflink";
+    char *actoptlist, *sopt;
     pdf_annot *ann;
     int acthdl;
+    size_t size;
 
     if (filename == NULL || *filename == '\0')
         pdc_error(p->pdc, PDC_E_ILLARG_EMPTY, "filename", 0, 0, 0);
+
+    if (optlist == NULL)
+        optlist = "";
+
+    size = strlen(filename) + strlen(optlist) + 80;
+    actoptlist = (char *) pdc_malloc(p->pdc, size, fn);
 
     /* creating a GoToR action */
     actoptlist[0] = 0;
     sopt = actoptlist;
     sopt += pdc_sprintf(p->pdc, pdc_false, sopt, "filename {%s} ", filename);
-    if (optlist == NULL) optlist = "";
     sopt += pdc_sprintf(p->pdc, pdc_false, sopt, "destination {%s page %d} ",
                         optlist, page);
     acthdl = pdf__create_action(p, "GoToR", actoptlist);
@@ -1919,6 +2268,8 @@ pdf__add_pdflink(
         ann->action = pdc_strdup(p->pdc, actoptlist);
         ann->display = disp_noprint;
     }
+
+    pdc_free(p->pdc, actoptlist);
 }
 
 void
@@ -1930,12 +2281,22 @@ pdf__add_launchlink(
     pdc_scalar ury,
     const char *filename)
 {
-    char actoptlist[2048], *sopt;
+    static const char *fn = "pdf__add_launchlink";
+    char *actoptlist, *sopt;
     pdf_annot *ann;
     int acthdl;
+    size_t size;
 
     if (filename == NULL || *filename == '\0')
         pdc_error(p->pdc, PDC_E_ILLARG_EMPTY, "filename", 0, 0, 0);
+    size = strlen(filename) + 80;
+    if (p->launchlink_parameters)
+        size += strlen(p->launchlink_parameters);
+    if (p->launchlink_operation)
+        size += strlen(p->launchlink_operation);
+    if (p->launchlink_defaultdir)
+        size += strlen(p->launchlink_defaultdir);
+    actoptlist = (char *) pdc_malloc(p->pdc, size, fn);
 
     /* creating a Launch action */
     actoptlist[0] = 0;
@@ -1976,6 +2337,8 @@ pdf__add_launchlink(
         ann->action = pdc_strdup(p->pdc, actoptlist);
         ann->display = disp_noprint;
     }
+
+    pdc_free(p->pdc, actoptlist);
 }
 
 void
@@ -2008,12 +2371,14 @@ pdf__add_weblink(
     pdc_scalar ury,
     const char *url)
 {
-    char actoptlist[2048];
+    static const char *fn = "pdf__add_weblink";
+    char *actoptlist;
     pdf_annot *ann;
     int acthdl;
 
     if (url == NULL || *url == '\0')
         pdc_error(p->pdc, PDC_E_ILLARG_EMPTY, "url", 0, 0, 0);
+    actoptlist = (char *) pdc_malloc(p->pdc, strlen(url) + 80, fn);
 
     /* creating a URI action */
     pdc_sprintf(p->pdc, pdc_false, actoptlist, "url {%s} ", url);
@@ -2031,6 +2396,8 @@ pdf__add_weblink(
         ann->action = pdc_strdup(p->pdc, actoptlist);
         ann->display = disp_noprint;
     }
+
+    pdc_free(p->pdc, actoptlist);
 }
 
 void
@@ -2073,6 +2440,3 @@ pdf__set_border_dash(PDF *p, pdc_scalar b, pdc_scalar w)
     p->border_dash1 = b;
     p->border_dash2 = w;
 }
-
-
-

@@ -29,6 +29,7 @@
 #define PDF_RETURN_BOXFULL   "_boxfull"
 #define PDF_RETURN_NEXTPAGE  "_nextpage"
 #define PDF_RETURN_STOP      "_stop"
+#define PDF_RETURN_ATMARK    "_mark%d"
 
 typedef enum
 {
@@ -146,7 +147,7 @@ typedef struct
 }
 pdf_fit_options;
 
-typedef struct pdf_fittext_s pdf_fittext;
+typedef struct pdf_fitres_s pdf_fitres;
 
 
 /* font option definitions */
@@ -155,6 +156,7 @@ typedef struct pdf_fittext_s pdf_fittext;
 #define PDF_SUBSETTING_FLAG PDC_OPT_UNSUPP
 #define PDF_AUTOCIDFONT_FLAG PDC_OPT_UNSUPP
 #define PDF_EMBEDOPENTYPE_FLAG PDC_OPT_UNSUPP
+#define PDF_SKIPPOSTTABLE_FLAG PDC_OPT_UNSUPP
 #define PDF_CHARREF_FLAG PDC_OPT_UNSUPP
 #define PDF_ESCAPESEQU_FLAG PDC_OPT_UNSUPP
 #define PDF_GLYPHCHECK_FLAG PDC_OPT_UNSUPP
@@ -192,7 +194,7 @@ typedef struct pdf_fittext_s pdf_fittext;
       0.0, 0.0, pdf_fontstyle_pdfkeylist}, \
 \
     /* deprecated */ \
-    {"fontwarning", pdc_booleanlist, PDC_OPT_NONE, 1, 1, \
+    {"fontwarning", pdc_booleanlist, PDC_OPT_PDFLIB_7, 1, 1, \
       0.0, 0.0, NULL}, \
 \
     {"monospace", pdc_integerlist, PDC_OPT_NONE, 1, 1, \
@@ -228,6 +230,12 @@ typedef struct pdf_fittext_s pdf_fittext;
     {"embedopentype", pdc_booleanlist, PDF_EMBEDOPENTYPE_FLAG, 1, 1, \
       0.0, 0.0, NULL}, \
 \
+    {"skipposttable", pdc_booleanlist, PDF_SKIPPOSTTABLE_FLAG, 1, 1, \
+      0.0, 0.0, NULL}, \
+\
+    {"dropcorewidths", pdc_booleanlist, PDC_OPT_NONE, 1, 1, \
+      0.0, 0.0, NULL}, \
+\
     {"keepnative", pdc_booleanlist, PDF_KEEPNATIVE_FLAG, 1, 1, \
       0.0, 0.0, NULL}, \
 \
@@ -255,7 +263,7 @@ typedef struct pdf_fittext_s pdf_fittext;
       PDC_FLOAT_MIN, PDC_FLOAT_MAX, NULL}, \
 \
     /* deprecated */ \
-    {"glyphwarning", pdc_booleanlist, PDC_OPT_NONE, 1, 1, \
+    {"glyphwarning", pdc_booleanlist, PDC_OPT_PDFLIB_7, 1, 1, \
      0.0, 0.0, NULL}, \
 \
     {"fillcolor", pdc_stringlist, PDC_OPT_NONE, 1, 5, \
@@ -317,15 +325,15 @@ typedef struct pdf_fittext_s pdf_fittext;
       PDC_FLOAT_MIN, PDC_FLOAT_MAX, pdf_underlineposition_keylist}, \
 \
     /* deprecated */ \
-    {"weblink", pdc_stringlist, PDC_OPT_NONE, 1, 1, \
+    {"weblink", pdc_stringlist, PDC_OPT_PDFLIB_7, 1, 1, \
       0.0, PDC_INT_MAX, NULL}, \
 \
     /* deprecated */ \
-    {"locallink", pdc_stringlist, PDC_OPT_NONE, 1, 1, \
+    {"locallink", pdc_stringlist, PDC_OPT_PDFLIB_7, 1, 1, \
       0.0, PDC_INT_MAX, NULL}, \
 \
     /* deprecated */ \
-    {"pdflink", pdc_stringlist, PDC_OPT_NONE, 1, 1, \
+    {"pdflink", pdc_stringlist, PDC_OPT_PDFLIB_7, 1, 1, \
       0.0, PDC_INT_MAX, NULL}, \
 \
     {"charref", pdc_booleanlist, PDF_CHARREF_FLAG, 1, 1, \
@@ -359,7 +367,7 @@ typedef struct pdf_fittext_s pdf_fittext;
       0.0, 0.0, NULL}, \
 \
     /* deprecated */ \
-    {"imagewarning", pdc_booleanlist, PDC_OPT_NONE, 1, 1, \
+    {"imagewarning", pdc_booleanlist, PDC_OPT_PDFLIB_7, 1, 1, \
       0.0, 0.0, NULL}, \
 \
     {"dpi", pdc_scalarlist, PDC_OPT_NONE, 1, 2, \
@@ -459,7 +467,7 @@ void pdf_init_text_options(PDF *p, pdf_text_options *to);
 void pdf_get_text_options(PDF *p, pdf_text_options *to, pdc_resopt *resopts);
 pdc_resopt *pdf_parse_fittextline_optlist(PDF *p, pdf_text_options *to,
         pdf_fit_options *fit, const char *optlist);
-int pdf_fit_textline_internal(PDF *p, pdf_fittext *fitres,
+pdc_bool pdf_fit_textline_internal(PDF *p, pdf_fitres *fitres,
         pdf_text_options *to, pdf_fit_options *fit, pdc_matrix *matrix);
 void pdf_calculate_textline_size(PDF *p, pdf_text_options *to,
         pdf_fit_options *fit, pdc_scalar *width, pdc_scalar *height);
@@ -472,13 +480,13 @@ void pdf_draw_leader_text(PDF *p, pdc_scalar xstart, pdc_scalar ybase,
         pdf_text_options *to);
 
 int pdf_get_approximate_uvlist(PDF *p, pdf_font *currfont,
-        pdc_encodingvector *ev, int usv, pdc_bool replace, pdc_ushort *uvlist,
-        pdc_ushort *cglist);
+        pdc_encodingvector *ev, int usv, pdc_bool replace, pdf_fitres *fitres,
+        pdc_ushort *uvlist, pdc_ushort *cglist);
 void pdf_get_input_textformat(pdf_font *currfont,
         pdc_text_format *intextformat, int *convflags);
-int pdf_check_textstring(PDF *p, const char *text, int len, int flags,
-        pdf_text_options *to, pdc_byte **outtext, int *outlen, int *outcharlen,
-        pdc_bool verbose);
+pdc_bool pdf_check_textstring(PDF *p, const char *text, int len, int flags,
+        pdf_text_options *to, pdf_fitres *fittext, pdc_byte **outtext,
+        int *outlen, int *outcharlen, pdc_bool verbose);
 pdc_scalar pdf_calculate_textsize(PDF *p, const pdc_byte *text, int len,
         int charlen, pdf_text_options *to, int breakchar, pdc_scalar *height,
         pdc_bool verbose);

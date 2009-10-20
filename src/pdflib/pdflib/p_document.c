@@ -17,8 +17,6 @@
  */
 
 
-#undef MVS_TEST
-
 #define P_DOCUMENT_C
 
 /* For checking the beta expiration date */
@@ -32,6 +30,8 @@
 
 
 
+
+#include "pc_strconst.h"
 
 
 #if (defined(WIN32) || defined(OS2)) && !defined(WINCE)
@@ -62,8 +62,8 @@ typedef enum
     open_bookmarks,
     open_thumbnails,
     open_fullscreen,
-    open_attachments
-
+    open_attachments,
+    open_layers
 }
 pdf_openmode;
 
@@ -74,7 +74,7 @@ static const pdc_keyconn pdf_openmode_keylist[] =
     {"thumbnails",  open_thumbnails},
     {"fullscreen",  open_fullscreen},
     {"attachments", open_attachments},
-
+    {"layers",      open_layers},
     {NULL, 0}
 };
 
@@ -86,7 +86,7 @@ static const pdc_keyconn pdf_openmode_pdfkeylist[] =
     {"UseThumbs",      open_thumbnails},
     {"FullScreen",     open_fullscreen},
     {"UseAttachments", open_attachments},
-
+    {"UseOC",          open_layers},
     {NULL, 0}
 };
 
@@ -125,7 +125,7 @@ static const pdc_keyconn pdf_nonfullscreen_keylist[] =
     {"none",        open_none},
     {"bookmarks",   open_bookmarks},
     {"thumbnails",  open_thumbnails},
-
+    {"layers",      open_layers},
     {NULL, 0}
 };
 
@@ -235,7 +235,7 @@ static const pdc_keyconn pdc_permissions_keylist[] =
     {"pdfx", pdc_keywordlist, PDF_ICC_FLAG, 1, 1, \
       0.0, 0.0, pdf_pdfx_keylist}, \
 \
-    {"compatibility", pdc_keywordlist, PDC_OPT_IGNOREIF1, 1, 1, \
+    {"compatibility", pdc_keywordlist, PDC_OPT_NONE, 1, 1, \
       0.0, 0.0, pdf_compatibility_keylist}, \
 \
     {"flush", pdc_keywordlist, PDC_OPT_NONE, 1, 1, \
@@ -284,9 +284,11 @@ static const pdc_keyconn pdc_permissions_keylist[] =
     {"tempdirname", pdc_stringlist,  PDF_LINEARIZE_FLAG, 1, 1, \
       4.0, 400.0, NULL}, \
 
-
 #if defined(MVS) || defined(MVS_TEST)
 #define PDF_DOCUMENT_OPTIONS10 \
+\
+    {"filemode", pdc_stringlist,  PDC_OPT_NONE, 1, 1, \
+      0.0, PDF_MAX_NAMESTRING, NULL}, \
 \
     {"recordsize", pdc_integerlist, PDF_LINEARIZE_FLAG, 1, 1, \
       0.0, 32768.0, NULL}, \
@@ -351,6 +353,11 @@ struct pdf_document_s
 
 
 
+#if defined(MVS) || defined(MVS_TEST)
+    char *fopenparams;               /* additional fopen() parameter string */
+    char **tempfilenames;            /* 2 temporary file names */
+#endif
+
     pdc_bool moddate;                /* modified date will be created */
     char lang[PDF_MAX_LANGCODE + 1]; /* default natural language */
     char *action;                    /* document actions */
@@ -393,6 +400,11 @@ pdf_init_get_document(PDF *p)
 
 
 
+
+#if defined(MVS) || defined(MVS_TEST)
+        doc->fopenparams = NULL;
+        doc->tempfilenames = NULL;
+#endif
 
         doc->moddate = pdc_false;
         doc->lang[0] = 0;
@@ -451,6 +463,20 @@ pdf_cleanup_document_internal(PDF *p)
         }
 
 
+
+#if defined(MVS) || defined(MVS_TEST)
+        if (doc->fopenparams)
+        {
+            pdc_free(p->pdc, doc->fopenparams);
+            doc->fopenparams = NULL;
+        }
+
+        if (doc->tempfilenames)
+        {
+            pdc_cleanup_optstringlist(p->pdc, doc->tempfilenames, 2);
+            doc->tempfilenames = NULL;
+        }
+#endif
 
 
         if (doc->searchindexname)
@@ -607,6 +633,8 @@ pdf_parse_and_write_viewerpreferences(PDF *p, const char *optlist,
     if (pdc_get_optvalues("nonfullscreenpagemode", resopts, &inum, NULL) &&
         inum != (int) open_none)
     {
+        if (inum == (int) open_layers)
+            pdc_error(p->pdc, PDF_E_UNSUPP_LAYER, 0, 0, 0, 0);
         writevpdict = pdc_true;
         if (output) pdc_printf(p->out, "/NonFullScreenPageMode/%s\n",
                    pdc_get_keyword(inum, pdf_openmode_pdfkeylist));
@@ -687,7 +715,8 @@ pdf_parse_and_write_viewerpreferences(PDF *p, const char *optlist,
             pdc_printf(p->out, "/PrintPageRange");
             pdc_begin_array(p->out);
             for (i = 0; i < nv; i++)
-                pdc_printf(p->out, "%d ", prs[i]);
+                /* because of bug #1623: -1 */
+                pdc_printf(p->out, "%d ", prs[i] - 1);
             pdc_end_array(p->out);
         }
     }
@@ -718,7 +747,8 @@ static const pdc_defopt pdf_search_options[] =
 };
 
 static void
-pdf_parse_search_optlist(PDF *p, const char *optlist)
+pdf_parse_search_optlist(PDF *p, const char *optlist,
+                         pdc_encoding htenc, int htcp)
 {
     pdf_document *doc = p->document;
     pdc_resopt *resopts = NULL;
@@ -727,9 +757,9 @@ pdf_parse_search_optlist(PDF *p, const char *optlist)
     resopts = pdc_parse_optionlist(p->pdc, optlist,
                               pdf_search_options, NULL, pdc_true);
 
-    if (pdc_get_optvalues("filename", resopts, NULL, NULL))
-        doc->searchindexname =
-            (char *) pdc_save_lastopt(resopts, PDC_OPT_SAVE1ELEM);
+    if (pdf_get_opt_textlist(p, "filename", resopts, htenc, htcp,
+                             pdc_true, NULL, &doc->searchindexname, NULL))
+        pdc_save_lastopt(resopts, PDC_OPT_SAVE1ELEM);
 
     if (pdc_get_optvalues("indextype", resopts, NULL, NULL))
         doc->searchindextype =
@@ -759,6 +789,11 @@ pdf_write_search_indexes(PDF *p)
         pdc_puts(p->out, "/Type/Filespec");
         pdc_puts(p->out, "/F");
         pdf_put_pdffilename(p, doc->searchindexname);
+        if (p->compatibility >= PDC_1_7)
+        {
+            pdc_printf(p->out, "/UF");
+            pdf_put_pdfunifilename(p, doc->searchindexname);
+        }
         pdc_end_dict(p->out);                           /* Index */
         pdc_end_dict(p->out);                           /* Indexes */
         pdc_end_array(p->out);
@@ -853,9 +888,9 @@ pdf_parse_attachments_optlist(PDF *p, char **optlists, int ns,
         resopts = pdc_parse_optionlist(p->pdc, optlists[i],
                             pdf_attachments_options, &cdata, pdc_true);
 
-        if (pdc_get_optvalues("filename", resopts, NULL, NULL))
-            fat->filename =
-                (char *) pdc_save_lastopt(resopts, PDC_OPT_SAVE1ELEM);
+        if (pdf_get_opt_textlist(p, "filename", resopts, htenc, htcp,
+                                 pdc_true, NULL, &fat->filename, NULL))
+            pdc_save_lastopt(resopts, PDC_OPT_SAVE1ELEM);
 
         if (pdf_get_opt_textlist(p, "description", resopts, htenc, htcp,
                                  pdc_true, NULL, &fat->description, NULL))
@@ -881,6 +916,7 @@ pdf_write_attachments(PDF *p)
     static const char fn[] = "pdf_write_attachments";
     pdf_document *doc = p->document;
     pdc_id attachment_id, obj_id;
+    const char *basename;
     char *name;
     int i;
 
@@ -894,10 +930,19 @@ pdf_write_attachments(PDF *p)
             attachment_id = pdc_begin_obj(p->out, PDC_NEW_ID);
             pdc_begin_dict(p->out);                 /* FS dict */
 
+            /* see bug #1439 */
+            basename = pdc_file_strip_dirs(fat->filename);
+
             pdc_puts(p->out, "/Type/Filespec\n");
             pdc_printf(p->out, "/F");
-            pdf_put_pdffilename(p, fat->filename);
+            pdf_put_pdffilename(p, basename);
             pdc_puts(p->out, "\n");
+            if (p->compatibility >= PDC_1_7)
+            {
+                pdc_printf(p->out, "/UF");
+                pdf_put_pdfunifilename(p, basename);
+                pdc_puts(p->out, "\n");
+            }
 
             if (fat->description != NULL)
             {
@@ -921,7 +966,7 @@ pdf_write_attachments(PDF *p)
 
             /* insert name in tree */
             if (fat->name == NULL)
-                name = pdc_strdup_ext(p->pdc, fat->filename, 0, fn);
+                name = pdc_strdup_ext(p->pdc, basename, 0, fn);
             else
                 name = pdc_strdup_ext(p->pdc, fat->name, 0, fn);
             pdf_insert_name(p, name, names_embeddedfiles, attachment_id);
@@ -1066,6 +1111,10 @@ pdf_get_document_common_options(PDF *p, pdc_resopt *resopts, int fcode)
 
     if (pdc_get_optvalues("openmode", resopts, &inum, NULL))
         doc->openmode = (pdf_openmode) inum;
+
+        if (doc->openmode ==  open_layers)
+            pdc_error(p->pdc, PDF_E_UNSUPP_LAYER, 0, 0, 0, 0);
+
     if (doc->openmode == open_attachments && p->compatibility < PDC_1_6)
         pdc_error(p->pdc, PDC_E_OPT_VERSION, "openmode=attachments",
                   pdc_get_pdfversion(p->pdc, p->compatibility), 0, 0);
@@ -1101,7 +1150,7 @@ pdf_get_document_common_options(PDF *p, pdc_resopt *resopts, int fcode)
     }
 
     if (pdc_get_optvalues("search", resopts, NULL, &strlist))
-        pdf_parse_search_optlist(p, strlist[0]);
+        pdf_parse_search_optlist(p, strlist[0], htenc, htcp);
 
 
     pdc_get_optvalues("moddate", resopts, &doc->moddate, NULL);
@@ -1187,6 +1236,14 @@ pdf_begin_document_internal(PDF *p, const char *optlist, pdc_bool callback)
 
 
 
+#if defined(MVS) || defined(MVS_TEST)
+        if (pdc_get_optvalues("filemode", resopts, NULL, NULL))
+        {
+            doc->fopenparams =
+                (char *) pdc_save_lastopt(resopts, PDC_OPT_SAVE1ELEM);
+        }
+#endif
+
 	n_groups = pdc_get_optvalues("groups", resopts, NULL, &groups);
     }
 
@@ -1208,23 +1265,6 @@ pdf_begin_document_internal(PDF *p, const char *optlist, pdc_bool callback)
 
     /* common options */
     pdf_get_document_common_options(p, resopts, PDF_FC_BEGIN_DOCUMENT);
-
-
-    /* deprecated */
-    p->bookmark_dest = pdf_init_destination(p);
-
-    pdf_init_images(p);
-    pdf_init_xobjects(p);
-    pdf_init_fonts(p);
-    pdf_init_outlines(p);
-    pdf_init_annot_params(p);
-    pdf_init_colorspaces(p);
-    pdf_init_pattern(p);
-    pdf_init_shadings(p);
-    pdf_init_extgstates(p);
-
-
-
 
 
     /* create document digest */
@@ -1268,22 +1308,58 @@ pdf_begin_document_internal(PDF *p, const char *optlist, pdc_bool callback)
         oc.filename = "";
 
 
+#if defined(MVS) || defined(MVS_TEST)
+    oc.fopenparams = doc->fopenparams;
+#endif
 
-    if (!pdc_init_output((void *) p, p->out, doc->compatibility, &oc))
+
+    PDC_TRY(p->pdc)
     {
-        if (oc.filename && *oc.filename)
+        if (!pdc_init_output((void *) p, p->out, doc->compatibility, &oc))
         {
-            pdc_set_fopen_errmsg(p->pdc,
-                pdc_get_fopen_errnum(p->pdc, PDC_E_IO_WROPEN), "PDF ",
-                pdc_errprintf(p->pdc, "%.*s", PDC_ERR_MAXSTRLEN, oc.filename));
+            if (oc.filename && *oc.filename)
+            {
+                pdc_set_fopen_errmsg(p->pdc,
+                    pdc_get_fopen_errnum(p->pdc, PDC_E_IO_WROPEN), "PDF ",
+                    pdc_errprintf(p->pdc, "%.*s", PDC_ERR_MAXSTRLEN,
+                                  oc.filename));
+                if (verbose)
+                {
+                    pdf_cleanup_document_internal(p);
+                    PDC_RETHROW(p->pdc);
+                }
+            }
 
-            if (verbose)
-                pdc_error(p->pdc, -1, 0, 0, 0, 0);
+            pdf_cleanup_document_internal(p);
+            PDC_EXIT_TRY(p->pdc);
+            return -1;
         }
-
+    }
+    PDC_CATCH(p->pdc)
+    {
         pdf_cleanup_document_internal(p);
+        if (verbose)
+            PDC_RETHROW(p->pdc);
+
         return -1;
     }
+
+    /* deprecated */
+    p->bookmark_dest = pdf_init_destination(p);
+
+    pdf_init_images(p);
+    pdf_init_xobjects(p);
+    pdf_init_fonts(p);
+    pdf_init_outlines(p);
+    pdf_init_annot_params(p);
+    pdf_init_colorspaces(p);
+    pdf_init_pattern(p);
+    pdf_init_shadings(p);
+    pdf_init_extgstates(p);
+
+
+
+
 
     /* Write the constant /ProcSet array once at the beginning */
     p->procset_id = pdc_begin_obj(p->out, PDC_NEW_ID);
@@ -1323,8 +1399,8 @@ pdf__begin_document(PDF *p, const char *filename, int len, const char *optlist)
          * The Intel version of the Metrowerks compiler doesn't have setmode().
          */
 #if !defined(__MWERKS__) && (defined(WIN32) || defined(OS2))
-#if defined WINCE
-        _setmode(fileno(fp), _O_BINARY);
+#if !defined(__BORLANDC__) && !defined(OS2)
+        _setmode(_fileno(fp), _O_BINARY);
 #else
         setmode(fileno(fp), O_BINARY);
 #endif
@@ -1466,58 +1542,121 @@ pdf_get_id_from_nametree(PDF *p, pdf_nametree_type type, const char *name)
     return PDC_BAD_ID;
 }
 
+#define PDF_TREE_LEAF_SIZE 32
+
+static char *
+pdf_get_numbered_name(PDF *p, pdf_nametree_type type, int ia, int *in, int nn)
+{
+    int i, j = ia, n = 0;
+
+    for (i = ia; i < p->names_number; i++)
+    {
+        if (p->names[i].type == type)
+        {
+            n++;
+            if (n == nn)
+            {
+                if (in != NULL)
+                    *in = i;
+
+                return p->names[i].name;
+            }
+            j = i;
+        }
+    }
+
+    return (in != NULL) ? NULL : p->names[j].name;
+}
+
 static pdc_id
 pdf_write_names(PDF *p, pdf_nametree_type type)
 {
+    static const char fn[] = "pdf_write_names";
     pdc_id ret = PDC_BAD_ID;
-    int i, ibeg = -1, iend = 0;
+    int i, nnames = 0;
 
     for (i = 0; i < p->names_number; i++)
     {
         if (p->names[i].type == type)
         {
-            if (ibeg == -1)
-                ibeg = i;
-            iend = i;
+            nnames++;
         }
     }
 
-    if (ibeg > -1)
+    if (nnames)
     {
+        char *name;
+        int nleafs, nnodes, ik, il, ia, nn;
+        pdc_id *idlist;
+
+        nnodes = nnames / PDF_TREE_LEAF_SIZE;
+        if (!nnodes)
+            nleafs = nnames;
+        else
+            nleafs = PDF_TREE_LEAF_SIZE;
+        if (nnames > nnodes * nleafs)
+            nnodes++;
+
+        idlist = (pdc_id *) pdc_malloc(p->pdc,
+                                (size_t) (nnodes * sizeof(pdc_id)), fn);
+
+        for (i = 0; i < nnodes; i++)
+            idlist[i] = pdc_alloc_id(p->out);
+
         ret = pdc_begin_obj(p->out, PDC_NEW_ID);    /* Names object */
+        pdc_begin_dict(p->out);
 
-        pdc_begin_dict(p->out);                     /* Node dict */
-
-        /*
-         * Because we have only the 1 tree - the root tree
-         * the /Limits entry is not allowed (see chapter 3.8.5).
-         *
-        pdc_puts(p->out, "/Limits");
+        pdc_puts(p->out, "/Kids");
         pdc_begin_array(p->out);
-        pdf_put_hypertext(p, p->names[ibeg].name);
-        pdf_put_hypertext(p, p->names[iend].name);
-        pdc_end_array(p->out);
-         */
-
-        pdc_puts(p->out, "/Names");
-        pdc_begin_array(p->out);
-
-        for (i = ibeg; i <= iend; i++)
-        {
-            if (p->names[i].type == type)
-            {
-                pdf_put_hypertext(p, p->names[i].name);
-                pdc_objref(p->out, "", p->names[i].obj_id);
-            }
-        }
-
+        for (i = 0; i < nnodes; i++)
+            pdc_objref_c(p->out, idlist[i]);
         pdc_end_array(p->out);
 
-        pdc_end_dict(p->out);                       /* Node dict */
-
+        pdc_end_dict(p->out);
         pdc_end_obj(p->out);                        /* Names object */
 
+        ia = 0;
+        for (ik = 0; ik < nnodes; ik++)
+        {
+            pdc_begin_obj(p->out, idlist[ik]);
+            pdc_begin_dict(p->out);
+
+            pdc_puts(p->out, "/Limits");
+            pdc_begin_array(p->out);
+
+            name = pdf_get_numbered_name(p, type, ia, NULL, 1);
+            pdc_put_pdfstring(p->out, name, pdc_strlen(name));
+
+            nn = (ik == nnodes - 1) ? p->names_number : nleafs;
+            name = pdf_get_numbered_name(p, type, ia, NULL, nn);
+            pdc_put_pdfstring(p->out, name, pdc_strlen(name));
+
+            pdc_end_array(p->out);
+
+            pdc_puts(p->out, "/Names");
+            pdc_begin_array(p->out);
+
+            for (il = 0; il < nn; il++)
+            {
+                name = pdf_get_numbered_name(p, type, ia, &ia, 1);
+                if (name == NULL)
+                    break;
+
+                pdc_put_pdfstring(p->out, name, pdc_strlen(name));
+                pdc_objref(p->out, "", p->names[ia].obj_id);
+                ia++;
+            }
+
+            pdc_end_array(p->out);
+
+            pdc_end_dict(p->out);
+            pdc_end_obj(p->out);
+        }
+
+        pdc_free(p->pdc, idlist);
+
     }
+
     return ret;
 }
 
@@ -1527,7 +1666,7 @@ name_compare( const void*  a, const void*  b)
     pdf_name *p1 = (pdf_name *) a;
     pdf_name *p2 = (pdf_name *) b;
 
-    return strcmp(p1->name, p2->name);
+    return pdc_wstrcmp(p1->name, p2->name);
 }
 
 /* ---------------------------- write document -------------------------- */
@@ -1557,17 +1696,29 @@ pdf_write_pages_and_catalog(PDF *p, pdc_id orig_root_id)
     /* name tree dictionaries */
     if (p->names_number)
     {
+        char *name;
+        int i, outlen, inlen;
+
+        for (i = 0; i < p->names_number; i++)
+        {
+            inlen = strlen(p->names[i].name);
+            name = pdf_convert_pdfstring(p, p->names[i].name, inlen,
+                                PDC_CONV_WITHBOM | PDC_CONV_TRYBYTES, &outlen);
+
+            if (name != p->names[i].name)
+                pdc_free(p->pdc, p->names[i].name);
+
+            p->names[i].name = name;
+        }
 
         qsort(p->names, (size_t) p->names_number, sizeof(pdf_name),
               name_compare);
-
 
         names_dests_id = pdf_write_names(p, names_dests);
         names_javascript_id = pdf_write_names(p, names_javascript);
         names_ap_id = pdf_write_names(p, names_ap);
         names_embeddedfiles_id = pdf_write_names(p, names_embeddedfiles);
     }
-
 
     (void) forpdfa;
 
@@ -1718,6 +1869,8 @@ pdf_write_document(PDF *p)
 void
 pdf_cleanup_document(PDF *p)
 {
+    pdf_cleanup_pages(p);
+
     if (PDF_GET_STATE(p) != pdf_state_object)
     {
         /* Don't call pdc_cleanup_output() here because we may still need
@@ -1727,7 +1880,7 @@ pdf_cleanup_document(PDF *p)
         pdf_delete_actions(p);
 
         pdf_cleanup_destination(p, p->bookmark_dest); /* deprecated */
-        pdf_cleanup_pages(p);
+        p->bookmark_dest = NULL;
         pdf_cleanup_document_internal(p);
         pdf_cleanup_info(p);
         pdf_cleanup_fonts(p);
@@ -1933,6 +2086,10 @@ pdf_set_viewerpreference(PDF *p, const char *viewerpreference)
     doc->writevpdict |=
         pdf_parse_and_write_viewerpreferences(p, optlist, pdc_false);
 }
+
+
+
+
 
 
 

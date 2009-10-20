@@ -428,7 +428,8 @@ pdf_init_text_options(PDF *p, pdf_text_options *to)
 static pdf_text_optflags pdf_toptflags[] =
 {
     to_font, to_fontsize, to_textrendering, to_charspacing,
-    to_horizscaling, to_italicangle, to_wordspacing, to_textrise
+    to_horizscaling, to_italicangle, to_fakebold, to_wordspacing,
+    to_textrise, to_underlinewidth, to_underlineposition
 };
 
 void
@@ -454,6 +455,13 @@ pdf_set_text_options(PDF *p, pdf_text_options *to)
                 if (!(currto->mask & (1 << tflag)) &&
                     to->font == currto->font)
                     break;
+                if (currto->font != -1 &&
+                    (p->fonts[to->font].metricflags & font_italic) !=
+                    (p->fonts[currto->font].metricflags & font_italic))
+                {
+                    to->mask |= (1 << to_italicangle);
+                    currto->mask = to->mask; /* otherwise order dependent */
+                }
                 ts->font = currto->font = to->font;
                 continue;
 
@@ -593,7 +601,8 @@ pdf_calculate_text_options(PDF *p, pdf_text_options *to, pdc_bool force,
 {
     pdc_bool kminfs = pdc_false;
 
-    if (to->mask & (1 << to_fontsize) || force)
+    if (to->mask & (1U << to_fontsize) ||
+        (force && to->fontsize != PDC_FLOAT_MIN))
     {
         pdc_scalar fontsize;
 
@@ -632,12 +641,9 @@ pdf_calculate_text_options(PDF *p, pdf_text_options *to, pdc_bool force,
             fontsize *= 1000.0 / fm;
         }
 
-        if (fontscale < 1.0 && fabs(fontsize) < minfontsize)
+        if (fontscale < 1.0 && PDC_ABS(fontsize) < minfontsize)
         {
-            if (fontsize > 0)
-                fontsize = minfontsize;
-            else
-                fontsize = -minfontsize;
+            fontsize = PDC_SIGN(fontsize) * minfontsize;
             kminfs = pdc_true;
         }
         to->fontsize = fontsize;
@@ -919,7 +925,7 @@ pdf_begin_text(PDF *p)
          (currto->mask & (1L << to_fontsize)) || !ts->glyphinit))
     {
         pdc_printf(p->out, "/F%d %f Tf\n",
-            ppt->fn_bias + currto->font, p->ydirection * currto->fontsize);
+            currto->font, p->ydirection * currto->fontsize);
 
         currfont->used_in_current_doc = pdc_true;
         currfont->used_on_current_page = pdc_true;
@@ -998,6 +1004,31 @@ pdf_reset_tstate(PDF *p)
 
 /* ------------------- Text string checking function ---------------------- */
 
+struct pdf_fitres_s
+{
+    pdc_bool verbose;
+    pdc_vector start;           /* text start position */
+    pdc_vector end;             /* text end position */
+    pdc_vector writingdir;      /* unit vector of text writing direction */
+    pdc_vector perpendiculardir;/* unit vector perpendicular to writing dir. */
+    pdc_vector scale;           /* x/y scaling */
+    pdc_scalar angle;           /* rotation angle of writingdir in degree */
+    pdc_scalar width;           /* textline width */
+    pdc_scalar height;          /* textline height */
+    pdc_scalar mwidth;          /* textline width with margins */
+    pdc_scalar mheight;         /* textline height with margins */
+    pdc_scalar ascender;        /* textline ascender */
+    pdc_scalar capheight;       /* textline capheight */
+    pdc_scalar xheight;         /* textline xheight */
+    pdc_scalar descender;       /* textline descender */
+    int unmappedchars;          /* number of characters not contained
+                                 * in the encoding and not in the font */
+    int replacedchars;          /* number of characters replaced by
+                                 * typografically similar characters */
+    int unknownchars;           /* number of characters replaced by
+                                 * given replcement character */
+};
+
 typedef struct pdf_ligat_s pdf_ligat;
 
 struct pdf_ligat_s
@@ -1067,7 +1098,7 @@ pdf_cleanup_ligat(PDF *p, pdf_ligat *list)
 
 int
 pdf_get_approximate_uvlist(PDF *p, pdf_font *currfont, pdc_encodingvector *ev,
-                    int usv, pdc_bool replace,
+                    int usv, pdc_bool replace, pdf_fitres *fitres,
                     pdc_ushort *uvlist, pdc_ushort *cglist)
 {
     int cg = 0, nv = 1;
@@ -1090,6 +1121,13 @@ pdf_get_approximate_uvlist(PDF *p, pdf_font *currfont, pdc_encodingvector *ev,
             uvlist[0] = 0;
         }
         nv = 1;
+
+        if (fitres != NULL)
+            fitres->unknownchars++;
+    }
+    else if (fitres != NULL)
+    {
+        fitres->replacedchars++;
     }
 
     return nv;
@@ -1168,14 +1206,14 @@ pdf_get_input_textformat(pdf_font *currfont,
  * (pdc_malloc_tmp, pdc_free_tmp) containing the converted string
  * if flag PDF_USE_TMPALLOC is set.
  *
- * If return value is -1 an error was occurred, otherwise >= 0.
- * glyphcheck = none: the number of unmapped glyphs will be returned.
+ * If return value is pdc_false an error was occurred, otherwise pdc_true.
  *
  */
 
-int
+pdc_bool
 pdf_check_textstring(PDF *p, const char *text, int len, int flags,
-                     pdf_text_options *to, pdc_byte **outtext_p, int *outlen,
+                     pdf_text_options *to, pdf_fitres *fitres,
+                     pdc_byte **outtext_p, int *outlen,
                      int *outcharlen, pdc_bool verbose)
 {
     static const char fn[] = "pdf_check_textstring";
@@ -1191,13 +1229,13 @@ pdf_check_textstring(PDF *p, const char *text, int len, int flags,
     pdc_text_format intextformat = to->textformat;
     pdc_text_format outtextformat = pdc_utf16;
 
+    int maxlen = PDF_MAXDICTSIZE;
     int charlen = 1, newcharlen = 1;
     int convflags = PDC_CONV_NOBOM;
-    int unmapgids = 0;
 
     pdf_ligat *ligat, *ligatlist = NULL;
     pdc_byte *intext = (pdc_byte *) text, *outtext = NULL;
-    int newlen = -1, maxlen, replchar;
+    int newlen = -1, replchar;
 
     if (logg1)
     {
@@ -1236,6 +1274,10 @@ pdf_check_textstring(PDF *p, const char *text, int len, int flags,
     {
         if (logg2)
             pdc_logg(p->pdc, "\t\ttext is passed through as is\n");
+
+        if (intextformat > pdc_bytes2)
+            pdc_warning(p->pdc, PDF_E_TEXT_BADTEXTFORMAT,
+                        pdc_get_textformat(intextformat), 0, 0, 0);
 
         outtext = (pdc_byte *) ((flags & PDF_USE_TMPALLOC) ?
              pdc_malloc_tmp(p->pdc, (size_t) len + 2, fn, NULL, NULL) :
@@ -1327,12 +1369,29 @@ pdf_check_textstring(PDF *p, const char *text, int len, int flags,
         }
 
         /* maximal text string length - found out emprirically! */
-        maxlen = (currfont->codesize == 1) ? PDF_MAXARRAYSIZE : PDF_MAXDICTSIZE;
-        if (!(flags & PDF_KEEP_TEXTLEN) && *outlen > maxlen)
+        if (*outlen > maxlen && !(flags & PDF_KEEP_TEXTLEN))
         {
-            pdc_set_errmsg(p->pdc, PDF_E_TEXT_TOOLONG,
-                           pdc_errprintf(p->pdc, "%d", maxlen), 0, 0, 0);
-            goto PDF_CHECK_TEXT_ERROR;
+            int textlen = *outlen;
+
+            if (!to->kerning && to->wordspacing == 0.0)
+            {
+                if (currfont->codesize == 1)
+                    textlen /= charlen;
+                maxlen = PDF_MAXTEXTSIZE;
+            }
+            else
+            {
+                if (currfont->codesize == 2)
+                    maxlen *= charlen;
+            }
+
+            if (textlen > maxlen)
+            {
+                pdc_set_errmsg(p->pdc, PDF_E_TEXT_TOOLONG,
+                               pdc_errprintf(p->pdc, "%d", textlen),
+                               pdc_errprintf(p->pdc, "%d", maxlen), 0, 0);
+                goto PDF_CHECK_TEXT_ERROR;
+            }
         }
 
         len = *outlen / charlen;
@@ -1360,7 +1419,6 @@ pdf_check_textstring(PDF *p, const char *text, int len, int flags,
                     /* glyph id for code value not available */
                     if (gid <= 0)
                     {
-                        unmapgids++;
                         if (to->glyphcheck == text_error)
                         {
                             pdc_set_errmsg(p->pdc, PDF_E_FONT_CODENOTFOUND1,
@@ -1374,7 +1432,13 @@ pdf_check_textstring(PDF *p, const char *text, int len, int flags,
                                        pdc_errprintf(p->pdc, "x%02X", code),
                                        currfont->ft.name, 0, 0);
                             code = currfont->replacementcode;
+
+                            if (fitres != NULL)
+                                fitres->unknownchars++;
                         }
+
+                        if (fitres != NULL)
+                            fitres->unmappedchars++;
                     }
                 }
 
@@ -1435,7 +1499,6 @@ pdf_check_textstring(PDF *p, const char *text, int len, int flags,
                     /* encoding vector hasn't defined [Uni]code */
                     if (usv <= 0 || code <= 0)
                     {
-                        unmapgids++;
                         if (to->glyphcheck == text_error)
                         {
                             if (usv <= 0)
@@ -1458,6 +1521,7 @@ pdf_check_textstring(PDF *p, const char *text, int len, int flags,
                             usvp = (usv <= 0) ? code : usv;
                             nv = pdf_get_approximate_uvlist(p, currfont, ev,
                                                             usv, pdc_true,
+                                                            fitres,
                                                             uvlist, cglist);
                             usv = (int) uvlist[0];
                             code = (int) cglist[0];
@@ -1468,6 +1532,9 @@ pdf_check_textstring(PDF *p, const char *text, int len, int flags,
                                               enc, charlen, uvlist, cglist, nv);
                             }
                         }
+
+                        if (fitres != NULL)
+                            fitres->unmappedchars++;
                     }
                     else
                     {
@@ -1476,7 +1543,6 @@ pdf_check_textstring(PDF *p, const char *text, int len, int flags,
                         /* glyph id for code not available */
                         if (gid <= 0 && currfont->gid0code != code)
                         {
-                            unmapgids++;
                             if (to->glyphcheck == text_error)
                             {
                                 pdc_set_errmsg(p->pdc, PDF_E_FONT_CODENOTFOUND2,
@@ -1495,6 +1561,7 @@ pdf_check_textstring(PDF *p, const char *text, int len, int flags,
                                 usvp = (usv <= 0) ? code : usv;
                                 nv = pdf_get_approximate_uvlist(p, currfont, ev,
                                                                 usv, pdc_true,
+                                                                fitres,
                                                                 uvlist, cglist);
                                 usv = (int) uvlist[0];
                                 code = (int) cglist[0];
@@ -1505,6 +1572,9 @@ pdf_check_textstring(PDF *p, const char *text, int len, int flags,
                                               enc, charlen, uvlist, cglist, nv);
                                 }
                             }
+
+                            if (fitres != NULL)
+                                fitres->unmappedchars++;
                         }
                     }
                 }
@@ -1603,7 +1673,11 @@ pdf_check_textstring(PDF *p, const char *text, int len, int flags,
                 "\tChecked and converted text of length %d: \"%T\"\n",
                 *outlen, outtext, *outlen);
     }
-    return unmapgids;
+
+    if (*outlen)
+        return pdc_true;
+
+    verbose = pdc_false;
 
     PDF_CHECK_TEXT_ERROR:
 
@@ -1618,12 +1692,12 @@ pdf_check_textstring(PDF *p, const char *text, int len, int flags,
     pdf_cleanup_ligat(p, ligatlist);
 
     if (verbose)
-        pdc_error(p->pdc, -1, 0, 0, 0, 0);
+        PDC_RETHROW(p->pdc);
 
     *outtext_p = NULL;
     *outlen = 0;
 
-    return -1;
+    return pdc_false;
 }
 
 
@@ -1790,10 +1864,9 @@ pdf__stringwidth(PDF *p, const char *text, int len, int font,
     pdc_scalar width = 0, height = 0;
     pdf_text_options to = *p->curr_ppt->currto;
 
-    if (text && len == 0)
-        len = (int) strlen(text);
-    if (text == NULL || len <= 0)
-        return width;
+    len = pdc_check_text_length(p->pdc, &text, len, PDF_MAXTEXTSIZE);
+    if (!len)
+        return 0.0;
 
     pdf_check_handle(p, font, pdc_fonthandle);
 
@@ -1802,11 +1875,12 @@ pdf__stringwidth(PDF *p, const char *text, int len, int font,
     /* convert text string */
     to.font = font;
     to.fontsize = fontsize;
-    pdf_check_textstring(p, text, len, PDF_KEEP_TEXTLEN | PDF_USE_TMPALLOC,
-                         &to, &utext, &len, &charlen, pdc_true);
-    if (utext && len)
+    if (pdf_check_textstring(p, text, len, PDF_KEEP_TEXTLEN | PDF_USE_TMPALLOC,
+                             &to, NULL, &utext, &len, &charlen, pdc_true))
+    {
         width = pdf_calculate_textsize(p, utext, len, charlen,
                                        &to, -1, &height, pdc_true);
+    }
 
     return width;
 }
@@ -1835,7 +1909,7 @@ pdf_put_fieldtext(PDF *p, const char *text, int font)
     {
         pdf_put_hypertext(p, text);
     }
-    else
+    else if (font > -1)
     {
         static const char fn[] = "pdf_put_fieldtext";
         pdf_font *currfont = &p->fonts[font];
@@ -2301,15 +2375,9 @@ pdf__show_text(
     int charlen = 1;
     pdc_scalar width = 0, height = 0;
 
-    if (text && len == 0)
-        len = (int) strlen(text);
-    if (text == NULL || len <= 0)
-    {
-        if (cont)
-            len = 0;
-        else
-            return;
-    }
+    len = pdc_check_text_length(p->pdc, &text, len, PDF_MAXTEXTSIZE);
+    if (!len && !cont)
+        return;
 
     /* no font set */
     if (currto->font == -1)
@@ -2318,14 +2386,17 @@ pdf__show_text(
     if (len)
     {
         /* convert text string */
-        pdf_check_textstring(p, text, len, PDF_USE_TMPALLOC,
-                             currto, &utext, &len, &charlen, pdc_true);
-        if (utext == NULL || (!cont && !len))
+        if (pdf_check_textstring(p, text, len, PDF_USE_TMPALLOC,
+                        currto, NULL, &utext, &len, &charlen, pdc_true))
+        {
+            /* width and height of text string */
+            width = pdf_calculate_textsize(p, utext, len, charlen,
+                                           currto, -1, &height, pdc_true);
+        }
+        else if (!cont)
+        {
             return;
-
-        /* width and height of text string */
-        width = pdf_calculate_textsize(p, utext, len, charlen,
-                                       currto, -1, &height, pdc_true);
+        }
     }
     else
     {
@@ -2350,9 +2421,8 @@ pdf__xshow(PDF *p, const char *text, int len, const pdc_scalar *xadvancelist)
     size_t nbytes = 0;
     pdc_scalar width, height;
 
-    if (text && len == 0)
-        len = (int) strlen(text);
-    if (text == NULL || !len)
+    len = pdc_check_text_length(p->pdc, &text, len, PDF_MAXTEXTSIZE);
+    if (!len)
         return;
 
     /* no font set */
@@ -2360,28 +2430,28 @@ pdf__xshow(PDF *p, const char *text, int len, const pdc_scalar *xadvancelist)
         pdc_error(p->pdc, PDF_E_TEXT_NOFONT, 0, 0, 0, 0);
 
     /* convert text string */
-    pdf_check_textstring(p, text, len, PDF_USE_TMPALLOC,
-                         currto, &utext, &len, &charlen, pdc_true);
-    if (utext == NULL || !len)
-        return;
+    if (pdf_check_textstring(p, text, len, PDF_USE_TMPALLOC,
+                             currto, NULL, &utext, &len, &charlen, pdc_true))
+    {
+        /* allocating glyph widths arrays */
+        nbytes = (size_t) (len / charlen) * sizeof(pdc_scalar);
+        currto->xadvancelist = (pdc_scalar *) pdc_malloc_tmp(p->pdc,
+                                                 nbytes, fn, NULL, NULL);
+        memcpy(currto->xadvancelist, xadvancelist, nbytes);
+        currto->nglyphs = len / charlen;
 
-    /* allocating glyph widths arrays */
-    nbytes = (size_t) (len / charlen) * sizeof(pdc_scalar);
-    currto->xadvancelist = (pdc_scalar *) pdc_malloc_tmp(p->pdc,
-                                             nbytes, fn, NULL, NULL);
-    memcpy(currto->xadvancelist, xadvancelist, nbytes);
-    currto->nglyphs = len / charlen;
-
-    /* length of text */
-    width = pdf_calculate_textsize(p, utext, len, charlen,
-                                   currto, -1, &height, pdc_true);
+        /* length of text */
+        width = pdf_calculate_textsize(p, utext, len, charlen,
+                                       currto, -1, &height, pdc_true);
 
 
-    /* place text */
-    pdf_place_text(p, utext, len, charlen, currto, width, height, pdc_false);
+        /* place text */
+        pdf_place_text(p, utext, len, charlen, currto, width, height,
+                       pdc_false);
 
-    currto->xadvancelist = NULL;
-    currto->nglyphs = 0;
+        currto->xadvancelist = NULL;
+        currto->nglyphs = 0;
+    }
 }
 
 
@@ -2390,24 +2460,6 @@ pdf__xshow(PDF *p, const char *text, int len, const pdc_scalar *xadvancelist)
 
 
 /* ----------------------- Text fitting function ------------------------ */
-
-struct pdf_fittext_s
-{
-    pdc_vector start;           /* text start position */
-    pdc_vector end;             /* text end position */
-    pdc_vector writingdir;      /* unit vector of text writing direction */
-    pdc_vector perpendiculardir;/* unit vector perpendicular to writing dir. */
-    pdc_vector scale;           /* x/y scaling */
-    pdc_scalar angle;           /* rotation angle of writingdir in degree */
-    pdc_scalar width;           /* textline width */
-    pdc_scalar height;          /* textline height */
-    pdc_scalar mwidth;          /* textline width with margins */
-    pdc_scalar mheight;         /* textline height with margins */
-    pdc_scalar ascender;        /* textline ascender */
-    pdc_scalar capheight;       /* textline capheight */
-    pdc_scalar xheight;         /* textline xheight */
-    pdc_scalar descender;       /* textline descender */
-};
 
 
 /* definitions of fit text options */
@@ -2482,9 +2534,8 @@ pdf_parse_textline_options(PDF *p, const char *text, int len,
 {
     pdf_ppt *ppt = p->curr_ppt;
 
-    if (text && len == 0)
-        len = (int) strlen(text);
-    if (text == NULL || len <= 0)
+    len = pdc_check_text_length(p->pdc, &text, len, PDF_MAXTEXTSIZE);
+    if (!len)
         return pdc_false;
 
     /* initialize text options */
@@ -2508,8 +2559,8 @@ pdf_parse_textline_options(PDF *p, const char *text, int len,
     return pdc_true;
 }
 
-int
-pdf_fit_textline_internal(PDF *p, pdf_fittext *fitres,
+pdc_bool
+pdf_fit_textline_internal(PDF *p, pdf_fitres *fitres,
                           pdf_text_options *to, pdf_fit_options *fit,
                           pdc_matrix *matrix)
 {
@@ -2531,9 +2582,11 @@ pdf_fit_textline_internal(PDF *p, pdf_fittext *fitres,
     pdc_scalar ascender, capheight, xheight, descender;
     pdc_scalar x, y, tx = 0, ty = 0, basey = 0;
     pdc_bool hasfitbox = pdc_false;
+    pdc_bool hasboxwidth = pdc_false;
+    pdc_bool verbose = pdc_true;
     pdc_scalar font2user;
     int indangle = fit->orientate / 90;
-    int unmapgids = 0, i;
+    int i;
 
     (void) ppt;
 
@@ -2552,12 +2605,13 @@ pdf_fit_textline_internal(PDF *p, pdf_fittext *fitres,
                                fontsizeref);
     if (!blind)
         pdf_set_text_options(p, to);
+    else
+        verbose = fitres->verbose;
 
     /* convert text string */
-    unmapgids = pdf_check_textstring(p, to->text, to->textlen, PDF_USE_TMPALLOC,
-                                     to, &utext, &len, &charlen, pdc_true);
-    if (utext == NULL || !len)
-        return -1;
+    if (!pdf_check_textstring(p, to->text, to->textlen, PDF_USE_TMPALLOC,
+                              to, fitres, &utext, &len, &charlen, verbose))
+        return pdc_false;
 
     if (to->nglyphs && len/charlen != to->nglyphs)
         pdc_warning(p->pdc, PDF_E_TEXT_SIZENOMATCH,
@@ -2568,8 +2622,11 @@ pdf_fit_textline_internal(PDF *p, pdf_fittext *fitres,
     width = pdf_calculate_textsize(p, utext, len, charlen,
                                    to, -1, &height, pdc_true);
     width = pdf_trim_textwidth(width, to);
+
+    /* incredible bug #1451
     if (PDC_FLOAT_ISNULL(width))
         return -1;
+    */
 
     /* font specifics */
     font2user = to->fontsize / 1000.0;
@@ -2589,7 +2646,8 @@ pdf_fit_textline_internal(PDF *p, pdf_fittext *fitres,
     boxheight -= 2 * elemmargin.y;
     if (boxheight < 0)
         boxheight = 0;
-    hasfitbox = boxwidth > PDC_FLOAT_PREC && boxheight > PDC_FLOAT_PREC;
+    hasboxwidth = boxwidth > PDC_FLOAT_PREC;
+    hasfitbox = hasboxwidth && boxheight > PDC_FLOAT_PREC;
 
     /* kind of text box */
     pdf_get_mbox_boxheight(p, fit->matchbox, textyextent);
@@ -2680,8 +2738,10 @@ pdf_fit_textline_internal(PDF *p, pdf_fittext *fitres,
         switch(enc)
         {
             case pdc_cid:
+            /* non-Unicode compatible CMaps seem to work (see bug #1605)
             if (currfont->codesize != 2)
                 poschar = -1;
+            */
             break;
 
             case pdc_glyphid:
@@ -2701,12 +2761,23 @@ pdf_fit_textline_internal(PDF *p, pdf_fittext *fitres,
             break;
         }
 
+        if (to->glyphcheck == text_error && poschar == -1)
+        {
+            pdc_set_errmsg(p->pdc, PDF_E_TEXT_ALIGNCHARNOTFOUND,
+                           pdc_errprintf(p->pdc, "%04X", fit->alignchar),
+                                         0, 0, 0);
+            if (verbose)
+                PDC_RETHROW(p->pdc);
+
+            return pdc_false;
+        }
+
         /* width and height of text part ranging to decimal character */
         decwidth = pdf_calculate_textsize(p, utext, len, charlen,
                                           to, poschar, &decheight, pdc_true);
 
         /* position found */
-        if (decwidth > 0)
+        if (decwidth > 0 && !PDC_FLOAT_ISNULL(width))
         {
             /* relative position of position character */
             pos1 = decwidth / width;
@@ -2925,7 +2996,7 @@ pdf_fit_textline_internal(PDF *p, pdf_fittext *fitres,
     {
         pdc_scalar mwidth = 2 * fabs(elemmargin.x);
         pdc_scalar mheight = 2 * fabs(elemmargin.y);
-        pdc_scalar vlen;
+        pdc_scalar wlen, plen;
 
         /* start position */
         pdc_transform_point(&m, x, y, &tx, &ty);
@@ -2950,41 +3021,48 @@ pdf_fit_textline_internal(PDF *p, pdf_fittext *fitres,
         /* relative vector from start to end  */
         tx = fitres->end.x - fitres->start.x;
         ty = fitres->end.y - fitres->start.y;
-        vlen = sqrt(tx * tx + ty * ty);
+        wlen = sqrt(tx * tx + ty * ty);
         if (!vertical)
         {
             /* width and x scaling */
-            fitres->width = vlen;
-            fitres->mwidth = vlen + mwidth;
-            fitres->scale.x = fitres->width / width;
+            fitres->width = wlen;
+            fitres->mwidth = wlen + mwidth;
+        }
+        else
+        {
+            /* height and y scaling */
+            fitres->height = wlen;
+            fitres->mheight = wlen + mheight;
+        }
 
-            /* unit vector of base line */
-            fitres->writingdir.x = tx / vlen;
-            fitres->writingdir.y = ty / vlen;
+        /* unit vector of writingdir line */
+        if (!PDC_FLOAT_ISNULL(wlen))
+        {
+            fitres->writingdir.x = tx / wlen;
+            fitres->writingdir.y = ty / wlen;
+        }
+        else
+        {
+            fitres->writingdir.x = 0;
+            fitres->writingdir.y = 0;
+        }
 
+        if (!vertical)
+        {
             /* relative vector of fontsize */
             tx = x;
             ty = y + p->ydirection * height;
             pdc_transform_point(&m, tx, ty, &tx, &ty);
             tx -= fitres->start.x;
             ty -= fitres->start.y;
-            vlen = sqrt(tx * tx + ty * ty);
+            plen = sqrt(tx * tx + ty * ty);
 
             /* height and y scaling */
-            fitres->height = vlen;
-            fitres->mheight = vlen + mheight;
-            fitres->scale.y = fitres->height / height;
+            fitres->height = plen;
+            fitres->mheight = plen + mheight;
         }
         else
         {
-            /* height and y scaling */
-            fitres->height = vlen;
-            fitres->mheight = vlen + mheight;
-            fitres->scale.y = fitres->height / height;
-
-            /* unit vector of perpendiculardir line */
-            fitres->writingdir.x = tx / vlen;
-            fitres->writingdir.y = ty / vlen;
 
             /* relative vector of width */
             tx = x + width;
@@ -2992,17 +3070,34 @@ pdf_fit_textline_internal(PDF *p, pdf_fittext *fitres,
             pdc_transform_point(&m, tx, ty, &tx, &ty);
             tx -= fitres->start.x;
             ty -= fitres->start.y;
-            vlen = sqrt(tx * tx + ty * ty);
+            plen = sqrt(tx * tx + ty * ty);
 
             /* width ans x scaling */
-            fitres->width = vlen;
-            fitres->mwidth = vlen + mwidth;
-            fitres->scale.x = fitres->width / width;
+            fitres->width = plen;
+            fitres->mwidth = plen + mwidth;
         }
 
         /* unit vector of perpendiculardir line */
-        fitres->perpendiculardir.x = tx / vlen;
-        fitres->perpendiculardir.y = ty / vlen;
+        if (!PDC_FLOAT_ISNULL(plen))
+        {
+            fitres->perpendiculardir.x = tx / plen;
+            fitres->perpendiculardir.y = ty / plen;
+        }
+        else
+        {
+            fitres->perpendiculardir.x = 0;
+            fitres->perpendiculardir.y = 0;
+        }
+
+        if (!PDC_FLOAT_ISNULL(width))
+            fitres->scale.x = fitres->width / width;
+        else
+            fitres->scale.x = 1.0;
+
+        if (!PDC_FLOAT_ISNULL(height))
+            fitres->scale.y = fitres->height / height;
+        else
+            fitres->scale.y = 1.0;
 
         /* rotation angle of base line */
         fitres->angle = atan2(fitres->writingdir.y, fitres->writingdir.x) /
@@ -3030,17 +3125,20 @@ pdf_fit_textline_internal(PDF *p, pdf_fittext *fitres,
         /* create a link - deprecated - */
         if (to->link)
         {
-            pdf_check_textstring(p, to->text, to->textlen,
+            if (pdf_check_textstring(p, to->text, to->textlen,
                                  PDF_USE_TMPALLOC | PDF_KEEP_UNICODE,
-                                 to, &utext, &len, &charlen, pdc_true);
-            pdf_create_link(p, to->linktype, x, y + p->ydirection * descender,
-                            x + width, y + p->ydirection * to->fontsize,
-                            to->link, (char *) utext, len);
-            pdc_free_tmp(p->pdc, utext);
+                                 to, NULL, &utext, &len, &charlen, pdc_true))
+            {
+                pdf_create_link(p, to->linktype,
+                                x, y + p->ydirection * descender,
+                                x + width, y + p->ydirection * to->fontsize,
+                                to->link, (char *) utext, len);
+                pdc_free_tmp(p->pdc, utext);
+            }
         }
     }
 
-    return unmapgids;
+    return pdc_true;
 }
 
 void
@@ -3048,10 +3146,11 @@ pdf_calculate_textline_size(PDF *p, pdf_text_options *to, pdf_fit_options *fit,
                     pdc_scalar *width, pdc_scalar *height)
 {
     pdf_ppt *ppt = p->curr_ppt;
-    pdf_fittext fitres;
+    pdf_fitres fitres;
     pdc_matrix ctminv;
 
     /* calculate textline size for table cells */
+    fitres.verbose = pdc_true;
     fitres.width = 0.0;
     fitres.height = 0.0;
     pdf_fit_textline_internal(p, &fitres, to, fit, NULL);
@@ -3120,8 +3219,13 @@ static const pdc_keyconn pdf_info_keylist[] =
     {"capheight",        14},
     {"xheight",          15},
     {"descender",        16},
-    {"unmappedglyphs",   17},
-    {"angle",            18},
+    {"angle",            17},
+
+    {"unmappedglyphs",   20}, /* deprecated */
+    {"unmappedchars",    20},
+    {"replacedchars",    21},
+    {"unknownchars",     22},
+    {"wellformed",       23},
     {NULL, 0}
 };
 
@@ -3132,8 +3236,8 @@ pdf__info_textline(PDF *p, const char *text, int len, const char *keyword,
     pdf_ppt *ppt = p->curr_ppt;
     pdf_text_options to;
     pdf_fit_options fit;
-    pdf_fittext fitres;
-    double tinfo = 0;
+    pdf_fitres fitres;
+    double tinfo = 0.0;
     int retval, infokey;
 
     if (!keyword || !*keyword)
@@ -3149,10 +3253,14 @@ pdf__info_textline(PDF *p, const char *text, int len, const char *keyword,
     if (retval)
     {
         /* calculate textline */
+        fitres.verbose = to.glyphwarning;
+        fitres.unmappedchars = 0;
+        fitres.replacedchars = 0;
+        fitres.unknownchars = 0;
         retval = pdf_fit_textline_internal(p, &fitres, &to, &fit, NULL);
         pdf_cleanup_fit_options(p, &fit);
 
-        if (retval > -1)
+        if (retval)
         {
             pdf_font *currfont = &p->fonts[to.font];
             pdc_matrix ctminv;
@@ -3277,11 +3385,24 @@ pdf__info_textline(PDF *p, const char *text, int len, const char *keyword,
                 break;
 
                 case 17:
-                tinfo = (double) retval;
+                tinfo = (double) fitres.angle;
                 break;
 
-                case 18:
-                tinfo = (double) fitres.angle;
+                case 20:
+                tinfo = (double) fitres.unmappedchars;
+                break;
+
+                case 21:
+                tinfo = (double) fitres.replacedchars;
+                break;
+
+                case 22:
+                tinfo = (double) fitres.unknownchars;
+                break;
+
+                /* wellformed */
+                case 23:
+                tinfo = (double) 1;
                 break;
             }
         }
@@ -3289,6 +3410,7 @@ pdf__info_textline(PDF *p, const char *text, int len, const char *keyword,
 
     return tinfo;
 }
+
 
 
 
@@ -3363,11 +3485,7 @@ pdf__show_boxed(
     pdf_alignment mode = text_left;
     pdc_bool blind = pdc_false;
 
-    /* text length */
-    if (text == NULL)
-        return 0;
-    if (!len)
-        len = (int) strlen(text);
+    len = pdc_check_text_length(p->pdc, &text, len, PDF_MAXTEXTSIZE);
     if (!len)
         return 0;
 
@@ -3451,10 +3569,9 @@ pdf__show_boxed(
         int charlen;
 
         /* convert text string */
-        pdf_check_textstring(p, text, len,
+        if (!pdf_check_textstring(p, text, len,
                     PDF_KEEP_CONTROL | PDF_KEEP_TEXTLEN | PDF_USE_TMPALLOC,
-                    currto, &utext, &len, &charlen, pdc_true);
-        if (utext == NULL || !len)
+                    currto, NULL, &utext, &len, &charlen, pdc_true))
             return 0;
 
         utext[len] = 0;

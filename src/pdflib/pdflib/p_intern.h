@@ -109,14 +109,21 @@ enum
 };
 #endif
 
-#define pdf_state_content       \
+#define pdf_state_content  \
     (pdf_state) (pdf_state_page | pdf_state_pattern | \
                  pdf_state_template | pdf_state_glyph)
 
-#define pdf_state_all							\
-    (pdf_state) (pdf_state_object | pdf_state_document | pdf_state_page |  \
-                 pdf_state_pattern | pdf_state_template | pdf_state_path | \
-                 pdf_state_font | pdf_state_glyph)
+#define pdf_state_firsttest \
+    (pdf_state) (pdf_state_document | pdf_state_content | \
+                 pdf_state_path | pdf_state_font | \
+                 pdf_state_glyphmetrics)
+
+#define pdf_state_documentall \
+    (pdf_state) (pdf_state_document | pdf_state_content | \
+                 pdf_state_path | pdf_state_font | \
+                 pdf_state_glyphmetrics | pdf_state_glyphignore)
+
+#define pdf_state_all (pdf_state) (pdf_state_object | pdf_state_documentall)
 
 #define PDF_STATE_STACK_SIZE    4
 
@@ -198,6 +205,14 @@ typedef struct pdf_widget_s pdf_widget;
 typedef struct pdf_xobject_s pdf_xobject;
 
 
+/* -------------------- transparency group -------------------- */
+typedef struct
+{
+    pdf_colortype       colorspace;     /* color space                  */
+    pdc_bool            isolated;       /* isolated flag I              */
+    pdc_bool            knockout;       /* knockout flag K              */
+} pdf_transgroup;
+
 /* -------------------- special graphics state -------------------- */
 typedef struct {
     pdc_matrix  ctm;            /* current transformation matrix */
@@ -230,16 +245,6 @@ typedef struct
 
     pdc_vtr *           mboxes;         /* matchbox chain */
 
-    /* in update mode, the resource numbers generally don't start
-    ** with 0, but with a bias value derived from the original
-    ** page's resources.
-    */
-    int			cs_bias;	/* colorspaces */
-    int			eg_bias;	/* extended gstates */
-    int			fn_bias;	/* fonts */
-    int			pt_bias;	/* patterns */
-    int			sh_bias;	/* shadings */
-    int			xo_bias;	/* xobjects */
 } pdf_ppt;
 
 /* Force graphics or color operator output, avoiding the optimization
@@ -736,6 +741,7 @@ void pdf_cleanup_image(PDF *p, int im);
 void pdf_get_image_size(PDF *p, int im, pdc_scalar *width, pdc_scalar *height);
 void pdf_get_image_resolution(PDF *p, int im, pdc_scalar *dpi_x,
         pdc_scalar *dpi_y);
+int pdf_get_image_colorspace(PDF *p, int im);
 
 
 
@@ -810,7 +816,7 @@ int pdf_search_page_fwd(PDF *p, int start_page, pdc_id id);
 int pdf_search_page_bwd(PDF *p, int start_page, pdc_id id);
 int pdf_xlat_pageno(PDF *p, int pageno, const char *groupname);
 
-double pdf_get_pageheight(PDF *p);
+pdc_scalar pdf_get_pageheight(PDF *p);
 const pdc_rectangle *pdf_get_pagebox(PDF *p, pdf_pagebox box);
 void pdf_set_pagebox_llx(PDF *p, pdf_pagebox box, pdc_scalar llx);
 void pdf_set_pagebox_lly(PDF *p, pdf_pagebox box, pdc_scalar lly);
@@ -818,11 +824,14 @@ void pdf_set_pagebox_urx(PDF *p, pdf_pagebox box, pdc_scalar urx);
 void pdf_set_pagebox_ury(PDF *p, pdf_pagebox box, pdc_scalar ury);
 void pdf_set_pagebox(PDF *p, pdf_pagebox box, pdc_scalar llx, pdc_scalar lly,
 	pdc_scalar urx, pdc_scalar ury);
+void pdf_set_transgroup(PDF *p, const char *optlist, pdf_transgroup *tgroup);
+void pdf_write_transgroup(PDF *p, pdf_transgroup *tgroup);
 
 pdc_vtr *pdf_get_annots_list(PDF *p);
 void pdf_set_annots_list(PDF *p, pdc_vtr *annots);
 pdc_id pdf_get_thumb_id(PDF *p);
 void pdf_set_thumb_id(PDF *p, pdc_id id);
+void pdf_set_autotgroup(PDF *p, pdc_bool autotgroup);
 
 void pdf_begin_contents_section(PDF *p);
 void pdf_end_contents_section(PDF *p);
@@ -979,12 +988,16 @@ char *pdf_convert_hypertext_depr(PDF *p, const char *text, int len);
 char *pdf_convert_hypertext(PDF *p, const char *text, int len,
         pdc_text_format hypertextformat, pdc_encoding hypertextencoding,
         int codepage, int *outlen, pdc_bool oututf8, pdc_bool verbose);
+char *pdf_convert_pdfstring(PDF *p, const char *text, int inlen, int convflags,
+        int *outlen);
 void pdf_put_hypertext(PDF *p, const char *text);
 char *pdf_convert_name(PDF *p, const char *name, int len, int flags);
 const char *pdf_convert_filename(PDF *p, const char *filename, int len,
         const char *paramname, int flags);
-void pdf_add_resource(PDF *p, const char *category, const char *resname);
+void pdf_add_pdflib_resource(PDF *p, const char *category, const char *resname);
 void pdf_put_pdffilename(PDF *p, const char *text);
+void pdf_put_pdfunifilename(PDF *p, const char *text);
+int pdf_check_opt_handle(void *opaque, int handle, pdc_opttype type);
 void pdf_check_handle(PDF *p, int value, pdc_opttype type);
 void pdf_set_clientdata(PDF *p, pdc_clientdata *clientdata);
 void pdf_init_stringlists(PDF *p);
@@ -995,6 +1008,8 @@ const char *pdf_get_utilstring(PDF *p, int i);
 int pdf_get_opt_textlist(PDF *p, const char *keyword, pdc_resopt *resopts,
        pdc_encoding enc, int codepage, pdc_bool ishypertext,
        const char *fieldname, char **text, char ***textlist);
+char *pdf_get_opt_filename(PDF *p, const char *keyword, pdc_resopt *resopts,
+        pdc_encoding enc, int codepage);
 char *pdf_get_opt_utf8name(PDF *p, const char *keyword, pdc_resopt *resopts);
 pdc_bool pdf_get_errorpolicy(PDF *p, pdc_resopt *resopts, pdc_bool verbose);
 
@@ -1020,6 +1035,7 @@ pdc_id  pdf_get_gstate_id(PDF *p, int gstate);
 
 
 #endif  /* P_INTERN_H */
+
 
 
 

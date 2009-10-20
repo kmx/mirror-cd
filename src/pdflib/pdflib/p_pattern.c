@@ -59,13 +59,12 @@ void
 pdf_write_page_pattern(PDF *p)
 {
     int i, total = 0;
-    int bias = p->curr_ppt->pt_bias;
 
     for (i = 0; i < p->pattern_number; i++)
 	if (p->pattern[i].used_on_current_page)
 	    total++;
 
-    if (total > 0 || bias)
+    if (total > 0)
     {
 	pdc_puts(p->out, "/Pattern");
 	pdc_begin_dict(p->out);
@@ -78,12 +77,11 @@ pdf_write_page_pattern(PDF *p)
 	    if (p->pattern[i].used_on_current_page)
 	    {
 		p->pattern[i].used_on_current_page = pdc_false; /* reset */
-		pdc_printf(p->out, "/P%d", bias + i);
+		pdc_printf(p->out, "/P%d", i);
 		pdc_objref(p->out, "", p->pattern[i].obj_id);
 	    }
 	}
 
-	if (!bias)
 	    pdc_end_dict(p->out);
     }
 }

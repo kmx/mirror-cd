@@ -14,14 +14,9 @@ ifeq ($(TEC_UNAME), sparc)
   DEFINES = WORDS_BIGENDIAN
 endif
 
-# Changes to PDFlib-Lite-7.0.0p3 (search for CDPDF): 
+# Changes to PDFlib-Lite-7.0.4p4 (search for CDPDF): 
 #     pdflib/pdcore/pc_config.h - added default PDF_PLATFORM  
 #     pdflib/pdflib/p_intern.h - removed support for other image formats, leave this to IM */
-#     pdflib/pdflib/p_png.c - added some type casts, fixed position of pdf_png_read_data, renamed flate to pdf_comp_flate.  
-#     pdflib/pdflib/p_gif.c - added missing pdf_cleanup_gif
-#     pdflib/pdflib/p_jpeg.c - added missing pdf_cleanup_jpeg
-#     pdflib/pdflib/p_tiff.c - fixed pdf_is_TIFF_file definition
-#     pdflib/pdflib/p_image.h - replaced toff_t by pdc_uint32
   
 srcdir := pdflib/font
 INCLUDES := $(INCLUDES) $(srcdir)
