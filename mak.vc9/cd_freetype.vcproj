@@ -93,6 +93,10 @@
 			Name="FreeType2"
 			>
 			<File
+				RelativePath="..\src\freetype2\autofit\afpic.c"
+				>
+			</File>
+			<File
 				RelativePath="..\src\freetype2\autofit\autofit.c"
 				>
 			</File>
@@ -105,7 +109,7 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\freetype2\base\ftbase.c"
+				RelativePath="..\src\freetype2\cff\cffpic.c"
 				>
 			</File>
 			<File
@@ -121,11 +125,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\freetype2\smooth\ftspic.c"
+				>
+			</File>
+			<File
 				RelativePath="..\src\freetype2\gxvalid\gxvalid.c"
 				>
 			</File>
 			<File
 				RelativePath="..\src\freetype2\otvalid\otvalid.c"
+				>
+			</File>
+			<File
+				RelativePath="..\src\freetype2\otvalid\otvmath.c"
 				>
 			</File>
 			<File
@@ -145,7 +157,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\freetype2\pshinter\pshpic.c"
+				>
+			</File>
+			<File
 				RelativePath="..\src\freetype2\psnames\psnames.c"
+				>
+			</File>
+			<File
+				RelativePath="..\src\freetype2\psnames\pspic.c"
 				>
 			</File>
 			<File
@@ -153,7 +173,15 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\freetype2\raster\rastpic.c"
+				>
+			</File>
+			<File
 				RelativePath="..\src\freetype2\sfnt\sfnt.c"
+				>
+			</File>
+			<File
+				RelativePath="..\src\freetype2\sfnt\sfntpic.c"
 				>
 			</File>
 			<File
@@ -162,6 +190,10 @@
 			</File>
 			<File
 				RelativePath="..\src\freetype2\truetype\truetype.c"
+				>
+			</File>
+			<File
+				RelativePath="..\src\freetype2\truetype\ttpic.c"
 				>
 			</File>
 			<File
@@ -184,6 +216,14 @@
 				Name="base"
 				>
 				<File
+					RelativePath="..\src\freetype2\base\basepic.c"
+					>
+				</File>
+				<File
+					RelativePath="..\src\freetype2\base\ftadvanc.c"
+					>
+				</File>
+				<File
 					RelativePath="..\src\freetype2\base\ftapi.c"
 					>
 				</File>
@@ -200,7 +240,15 @@
 					>
 				</File>
 				<File
+					RelativePath="..\src\freetype2\base\ftcid.c"
+					>
+				</File>
+				<File
 					RelativePath="..\src\freetype2\base\ftdebug.c"
+					>
+				</File>
+				<File
+					RelativePath="..\src\freetype2\base\ftfstype.c"
 					>
 				</File>
 				<File
@@ -237,6 +285,14 @@
 				</File>
 				<File
 					RelativePath="..\src\freetype2\base\ftpfr.c"
+					>
+				</File>
+				<File
+					RelativePath="..\src\freetype2\base\ftpic.c"
+					>
+				</File>
+				<File
+					RelativePath="..\src\freetype2\base\ftsnames.c"
 					>
 				</File>
 				<File
