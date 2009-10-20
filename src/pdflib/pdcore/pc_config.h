@@ -37,22 +37,6 @@
 #endif
 
 /*
- * Byte order
- * WORDS_BIGENDIAN will be set by the configure script on most platforms.
- * Only on platforms where there is no configure script we must set the
- * endianness explicitly (most importantly CodeWarrior on the Mac)
- */
-#undef PDC_ISBIGENDIAN
-#if defined(WORDS_BIGENDIAN) || defined(__POWERPC__) || defined(__MC68K__)
-#define PDC_ISBIGENDIAN 1
-#if !defined(WORDS_BIGENDIAN)
-#define WORDS_BIGENDIAN
-#endif
-#else
-#define PDC_ISBIGENDIAN 0
-#endif
-
-/*
  * Define for compiler supporting file open function _wfopen
  * for Unicode filenames.
  */
@@ -84,6 +68,9 @@
 
 #undef PDC_PATHSEP
 #define PDC_PATHSEP     "\\"
+
+#undef PDC_PATHSEP_ALT
+#define PDC_PATHSEP_ALT "/"
 
 #if defined(_WIN32_WCE) && (_WIN32_WCE >= 300)
 #define PDF_PLATFORM    "Windows CE"
@@ -155,13 +142,33 @@
 
 /* try to identify the Mac OS X command line compiler */
 
-#if (defined(__ppc__) && defined(__APPLE__)) \
-    || (defined(__i386__) && defined(__APPLE__))
+#if defined(__APPLE__) && (defined(__ppc__) || \
+    defined(__i386__) || defined(__ppc64__) || defined(__x86_64__))
 
 /* #define MACOSX CDPDF */
 
 /* Mac OS X 10.2 (Jaguar) defines this, but we use it for Mac OS 9 below */
 #undef MAC
+
+#if !defined(PDF_PLATFORM) && defined(PDF_MAC_PLATFORM)
+
+#if defined(__ppc__)
+#define PDF_PLATFORM    PDF_MAC_PLATFORM" ppc"
+#endif /* __ppc__ */
+
+#if defined(__ppc64__)
+#define PDF_PLATFORM    PDF_MAC_PLATFORM" ppc64"
+#endif /* __ppc64__ */
+
+#if defined(__x86_64__)
+#define PDF_PLATFORM    PDF_MAC_PLATFORM" 64"
+#endif /* __x86_64__ */
+
+#if !defined(PDF_PLATFORM)
+#define PDF_PLATFORM    PDF_MAC_PLATFORM
+#endif
+
+#endif /* PDF_PLATFORM */
 
 #ifndef PDF_PLATFORM
 #define PDF_PLATFORM    "Mac OS X"
@@ -180,7 +187,34 @@
 #undef MAC         /* CDPDF */
 #undef MACOSX      /* CDPDF */
 
-#ifdef	MAC
+/*
+ * Byte order
+ * WORDS_BIGENDIAN will be set by the configure script on most platforms.
+ * Only on platforms where there is no configure script we must set the
+ * endianness explicitly (most importantly CodeWarrior on the Mac)
+ *
+ * And we have to explicitly set it on Platforms where crosscompiling
+ * is used (like Mac to create Universal Binaries)
+ */
+#undef PDC_ISBIGENDIAN
+#if defined(__APPLE__)
+#  if defined(__POWERPC__) || defined(__MC68K__) \
+	    || defined(__ppc64__) || defined(__ppc__)
+#    define PDC_ISBIGENDIAN 1
+#  else
+#    define PDC_ISBIGENDIAN 0
+#  endif
+#else /* MAC */
+#  if defined(WORDS_BIGENDIAN)
+#    define PDC_ISBIGENDIAN 1
+#  else
+#    define PDC_ISBIGENDIAN 0
+#  endif
+#endif /* MAC */
+
+
+
+#if defined(MAC) && !defined(__ppc64__)
 #define WRITEMODE	"wb"
 #define APPENDMODE	"ab"
 #define PDC_PATHSEP     ":"
@@ -190,9 +224,10 @@
 #define PDF_PLATFORM	"Mac OS 9"
 #endif	/* MAC */
 
+#if defined(MAC) || defined(MACOSX)
+
 /* ------------------ Carbon Handling for both Mac OS 9 and X --------------- */
 
-#if defined(MAC) || defined(MACOSX)
 /*
  * By default we always build a carbonized version of the library,
  * but allow non-Carbon builds to be triggered by setting the
@@ -201,6 +236,7 @@
 
 #ifdef PDF_TARGET_API_MAC_CLASSIC
 #undef PDF_TYPE1_HOSTFONT_SUPPORTED
+#define PDF_ALLOW_MAC_DEPR_FUNCS
 #else
 #define PDF_TARGET_API_MAC_CARBON
 #endif
@@ -209,7 +245,45 @@
 #define TARGET_API_MAC_CARBON 1
 #endif
 
-#endif  /* MAC */
+/* ---------------- Enabling special MAC functionality --------------------- */
+
+#ifdef PDF_TARGET_API_MAC_CARBON
+
+/* It must be distinguished between 32-bit and 64-bit Mac OS X versions,
+ * because PDFlib uses MAC API functions, especially the old QuickDraw
+ * functions, which are not available on 64-bit Mac OS X platforms.
+ * These functions are already deprecated from Mac OS X v10.4 and
+ * shall be disabled also for 32-bit versions in future releases.
+ * Therefore we set the define PDF_MACATS_SUPPORTED for all CPU versions.
+ *
+ * PDF_MACATS_SUPPORTED:
+ * - ATS font handling (each type of host font name support possible)
+ *
+ * PDF_ALLOW_MAC_DEPR_FUNCS:
+ * - Only QuickDraw font names possible
+ * - FileSpec instead of FileRef functions (also in ATS)
+ * - File type creation (PDF_FILETYPE_SUPPORTED) for PDF files, otherwise none
+ * - Global variable __MacOSErrNo for special error codes supported
+ *
+ * PDF_MAC_LEGACY:
+ * Differentiates between the two versions above (compiler define).
+ *
+ * PDF_MAC_NOCORESERVICES:
+ * Disables PDF_FEATURE_HOSTFONT (see pc_core.h) and PDF_FILETYPE_SUPPORTED
+ * (see pc_output.c) (compiler define). This is relevant for the PHP wrapper
+ * on MAC (see bug #1588).
+ *
+ */
+
+#if defined(PDF_MAC_LEGACY)
+#define PDF_ALLOW_MAC_DEPR_FUNCS
+#else
+#define PDF_MACATS_SUPPORTED
+#endif /* PDF_MAC_LEGACY */
+
+#endif /* PDF_TARGET_API_MAC_CARBON */
+
+#endif /* MAC || MACOSX */
 
 /* ----------------------------------- BeOS --------------------------------- */
 
@@ -234,6 +308,9 @@
 # ifndef _LARGE_FILE_API
    #error You need to compile this module with DEFINE(_LARGE_FILE_API)
 # endif
+
+#define _LARGEFILE_SOURCE
+
 # ifndef __TERASPACE__
    #error You need to compile this module with TERASPACE(*YES *TSIFC)
 STGMDL(*TERASPACE)
@@ -350,8 +427,12 @@ STGMDL(*TERASPACE)
 #endif  /* !READBMODE_PLUS */
 
 #ifndef WRITEMODE
-#define WRITEMODE	"wb"
-#endif	/* !WRITEMODE */
+#define WRITEMODE       "wb"
+#endif  /* !WRITEMODE */
+
+#ifndef WRITEMODE_V
+#define WRITEMODE_V       "wb"
+#endif  /* !WRITEMODE_V */
 
 #ifndef APPENDMODE
 #define APPENDMODE	"ab"
@@ -360,6 +441,10 @@ STGMDL(*TERASPACE)
 #ifndef PDC_PATHSEP
 #define PDC_PATHSEP     "/"
 #endif  /* !PDC_PATHSEP */
+
+#ifndef PDC_PATHSEP_ALT
+#define PDC_PATHSEP_ALT "\\"
+#endif  /* !PDC_PATHSEP_ALT */
 
 #ifndef PDC_TMPDIR_ENV
 #define PDC_TMPDIR_ENV  "TMPDIR"

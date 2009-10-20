@@ -44,6 +44,7 @@ typedef unsigned short	tt_ufword;
 #define TT_NUMEXPSTRINGS  379
 #define TT_NUMEXPERTGIDS  166
 
+#define TT_TABTAG_SIZE      4
 #define TT_OFFSETTAB_SIZE  12
 
 /* flags for fnt_set_tt_fontarrays */
@@ -55,6 +56,7 @@ typedef unsigned short	tt_ufword;
 #define TT_FONT_m_widths        (1<<5)
 #define TT_FONT_names           (1<<6)
 #define TT_FONT_name2unitab     (1<<7)
+#define TT_FONT_gid2cid         (1<<8)
 
 typedef enum
 {
@@ -124,7 +126,7 @@ tt_cff_oper;
 
 typedef struct
 {
-    char	tag[5];
+    char	tag[TT_TABTAG_SIZE + 1];
     tt_ulong	checksum;
     tt_ulong	offset;
     tt_ulong	length;
@@ -143,7 +145,9 @@ typedef enum
 {
     tt_wenc_symbol  = 0,
     tt_wenc_text    = 1,
+    tt_wenc_sjis    = 2,
     tt_wenc_mtext   = 3,
+    tt_wenc_big5    = 4,
     tt_wenc_utext   = 10
 } tt_win_encoding_id;
 
@@ -457,10 +461,13 @@ typedef struct
     pdc_bool    issymbol;       /* symbol font */
     pdc_bool    haswinuni;      /* has a "Microsoft standard character
                                  * to glyph index mapping table"
-                                 * cmap (3, 1) format 4 or
+                                 * cmap (3, 1, 4) format 4 or
                                  * cmap (3,10) format 12 or
                                  * cmap (0, 3) format 4 (mac old case) */
     pdc_bool    hasonlymac;     /* has only macroman cmap (0,1) */
+    pdc_bool    hasbig5cmap;    /* has Big5 cmap cmap (3,4) */
+    pdc_bool    forcesubset;    /* subset will be forced to set unique cmap */
+    pdc_bool    gidunequcid;    /* GID != SID */
 
     char *utf16fontname;        /* UTF-16-BE font name for TTC fonts */
     int fnamelen;               /* font name length */
@@ -508,6 +515,7 @@ typedef struct
 /* Functions */
 
 #define FNT_TT2PDF(v) (int) PDC_ROUND(v * 1000.0 / ttf->tab_head->unitsPerEm)
+#define FNT_PDF2TT(v) (int) (v * ttf->tab_head->unitsPerEm / 1000.0)
 
 #define TT_ASSERT(ttf, cond)         \
         ((cond) ? (void) 0 : tt_assert(ttf))
@@ -520,6 +528,7 @@ void     *tt_get_tab(tt_file *ttf, char *tag, size_t nbytes, pdc_bool tterror,
                      tt_ulong *offset);
 void      tt_get_tab_maxp(tt_file *ttf);
 void      tt_get_tab_head(tt_file *ttf);
+void      tt_get_tab_hhea(tt_file *ttf);
 void      tt_get_tab_cmap(tt_file *ttf);
 pdc_bool  tt_get_tab_CFF_(tt_file *ttf);
 void      tt_get_tab_OS_2(tt_file *ttf);
@@ -553,6 +562,7 @@ pdc_bool  fnt_test_tt_font(pdc_core *pdc, tt_byte *img, tt_ulong *n_fonts,
 pdc_bool  fnt_is_opentype_font(tt_file *ttf);
 pdc_bool  fnt_check_tt_font(pdc_core *pdc, const char *filename,
                 const char *fontname, fnt_font *font, pdc_bool requested);
+
 
 
 #endif /* FT_TRUETYPE_H */

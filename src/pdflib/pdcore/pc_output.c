@@ -33,7 +33,7 @@
 #include <winbase.h>
 #endif
 
-#if defined(MAC) || defined (MACOSX)
+#if !defined(PDF_MAC_NOCORESERVICES) && (defined(MAC) || defined (MACOSX))
 
 /*
  * Setting the file type requires either Carbon or InterfaceLib/Classic.
@@ -41,15 +41,13 @@
  * the code for setting the file type and creator.
  */
 
-#if !defined(MACOSX) || defined(PDF_TARGET_API_MAC_CARBON)
+#if !defined(MACOSX) || (defined(PDF_TARGET_API_MAC_CARBON) && \
+     defined(PDF_ALLOW_MAC_DEPR_FUNCS))
 #define PDF_FILETYPE_SUPPORTED
-#endif
-
-#ifdef PDF_FILETYPE_SUPPORTED
 #include <Files.h>
 #endif
 
-#endif /* defined(MAC) || defined (MACOSX) */
+#endif /* !PDF_MAC_NOCORESERVICES && (MAC || MACOSX) */
 
 #ifdef HAVE_LIBZ
 #include "zlib.h"
@@ -82,7 +80,8 @@ struct pdc_output_s {
 
     FILE	*fp;			/* output file stream */
 #if defined(MVS) || defined(MVS_TEST)
-    int		blocksize;		/* file record size */
+    const char *fopenparams;            /* additional fopen() parameters */
+    int		recordsize;		/* file record size */
 #endif
 
     /* client-supplied data sink procedure */
@@ -103,6 +102,14 @@ struct pdc_output_s {
     unsigned char id[2][MD5_DIGEST_LENGTH];
     void	*opaque;		/* this will be used to store PDF *p */
 };
+
+/* ----------- service function to get PDF version string  -------------- */
+
+const char *
+pdc_get_pdfversion(pdc_core *pdc, int compatibility)
+{
+    return pdc_errprintf(pdc, "%d.%d", compatibility / 10, compatibility % 10);
+}
 
 /* --------------------- PDFlib stream handling ----------------------- */
 
@@ -164,14 +171,14 @@ pdc_init_stream(
 {
     static const char fn[] = "pdc_init_stream";
 
-#if defined(MAC) || defined(MACOSX)
+#if (defined(MAC) || defined(MACOSX)) && defined(PDF_FILETYPE_SUPPORTED)
 #if !defined(TARGET_API_MAC_CARBON) || defined(__MWERKS__)
     FCBPBRec	fcbInfo;
     Str32	name;
 #endif	/* TARGET_API_MAC_CARBON */
     FInfo	fInfo;
     FSSpec	fSpec;
-#endif	/* defined(MAC) || defined(MACOSX) */
+#endif  /* (MAC || MACOSX) && PDF_FILETYPE_SUPPORTED */
 
     /*
      * This may be left over from the previous run. We deliberately
@@ -229,29 +236,42 @@ pdc_init_stream(
         {
 	    out->fp = stdout;
 #if !defined(__MWERKS__) && (defined(WIN32) || defined(OS2))
-#if defined WINCE
-	    _setmode(fileno(stdout), _O_BINARY);
+#if !defined(__BORLANDC__) && !defined(OS2)
+	    _setmode(_fileno(stdout), _O_BINARY);
 #else
 	    setmode(fileno(stdout), O_BINARY);
-#endif /* !WINCE */
+#endif /* !__BORLANDC__ && !OS2 */
 #endif
 	}
         else
         {
 #endif /* !MAC */
+            char fopenparams[200]; /* sufficient */
 
 #if defined(MVS) || defined(MVS_TEST)
-	    out->fp = pdc_fopen_logg(out->pdc, filename,
-			    (out->blocksize <= 1) ? WRITEMODE_V : WRITEMODE);
+            if (out->fopenparams != (char *) 0)
+            {
+                strcpy(fopenparams, WRITEMODE);
+                strcat(fopenparams, ",");
+                strcat(fopenparams, out->fopenparams);
+            }
+            else if (out->recordsize <= 1)
+            {
+                strcpy(fopenparams, WRITEMODE_V);
+            }
+            else
+            {
+                strcpy(fopenparams, WRITEMODE);
+            }
 #else
-	    out->fp = pdc_fopen_logg(out->pdc, filename, WRITEMODE);
+            strcpy(fopenparams, WRITEMODE);
 #endif
 
+            out->fp = pdc_fopen_logg(out->pdc, filename, fopenparams);
 	    if (out->fp == NULL)
 		return pdc_false;
 
-#ifdef PDF_FILETYPE_SUPPORTED
-#if defined(MAC) || defined(MACOSX)
+#if (defined(MAC) || defined(MACOSX)) && defined(PDF_FILETYPE_SUPPORTED)
             if (!pdc->ptfrun)
             {
                 /* set the proper type and creator for the output file */
@@ -260,7 +280,6 @@ pdc_init_stream(
                 if (FSPathMakeFSSpec((const UInt8 *) filename, &fSpec) == noErr)
                 {
                     FSpGetFInfo(&fSpec, &fInfo);
-
                     fInfo.fdType = 'PDF ';
                     fInfo.fdCreator = 'CARO';
                     FSpSetFInfo(&fSpec, &fInfo);
@@ -283,8 +302,7 @@ pdc_init_stream(
                 }
 #endif  /* !defined(TARGET_API_MAC_CARBON) || defined(__MWERKS__) */
             }
-#endif	/* defined(MAC) || defined(MACOSX) */
-#endif /* PDF_FILETYPE_SUPPORTED */
+#endif	/* (MAC || MACOSX) && PDF_FILETYPE_SUPPORTED */
 
 #if !((defined(MAC) || defined (MACOSX)) && defined(__MWERKS__))
 	}
@@ -550,7 +568,8 @@ pdc_init_outctl(pdc_outctl *oc)
     oc->writeproc	= 0;
     oc->flush		= pdc_flush_page;
 #if defined(MVS) || defined(MVS_TEST)
-    oc->blocksize	= 0;
+    oc->fopenparams     = 0;
+    oc->recordsize      = 0;
 #endif
 } /* pdc_init_outctl */
 
@@ -577,7 +596,8 @@ pdc_init_output(
     out->opaque		= opaque;
     out->lastobj	= 0;
 #if defined(MVS) || defined(MVS_TEST)
-    out->blocksize	= oc->blocksize;
+    out->fopenparams    = oc->fopenparams;
+    out->recordsize     = oc->recordsize;
 #endif
 
     if (out->file_offset == NULL) {
@@ -776,66 +796,82 @@ void
 pdc_put_pdffilename(pdc_output *out, const char *text, int len)
 {
     static const char *fn = "pdc_put_pdffilename";
+    pdc_byte *btext = (pdc_byte *) text;
+    pdc_bool isuni = pdc_is_utf16be_unicode(btext);
     char *ttext;
+    pdc_byte c, cp, cpp;
+    int i, ia = 0, j = 0;
 
-#if defined(WIN32) || defined(MAC)
-    int i, j = 0, k = 0;
-#endif
+    ttext = (char *) pdc_calloc(out->pdc, (size_t) (len + 4), fn);
 
-    if (!len)
-        len = (int) strlen(text);
-
-    ttext = (char *) pdc_malloc(out->pdc, (size_t) (len + 4), fn);
-    strcpy(ttext, text);
-
-#if defined(WIN32)
-
-    /* absolute path name */
-    if (strchr(ttext, PDF_COLON) != NULL || text[0] == PDF_BACKSLASH)
+    if (isuni)
     {
-        ttext[j] = PDF_SLASH;
-        j++;
+        ttext[0] = PDF_BOM0;
+        ttext[1] = PDF_BOM1;
+        ia = 2;
+        j = 2;
     }
-    for (i = k; i < len; i++)
+
+    /* absolute path name:
+     * r:\pdfdocs\spec.pdf -> /r/pdfdocs/spec.pdf
+     * pclib/eng:\pdfdocs\spec.pdf -> /pclib/eng/pdfdocs/spec.pdf
+     */
+    cp = 0x7F;
+    for (i = ia; i < len; i++)
     {
-        if (text[i] == PDF_BACKSLASH)
+        c = btext[i];
+        if (c == PDF_COLON && (!isuni || cp == 0))
+        {
+            if (isuni)
+            {
+                ttext[j] = 0;
+                j++;
+            }
             ttext[j] = PDF_SLASH;
-        else if (text[i] == PDF_COLON)
-            continue;
-        else
-            ttext[j] = text[i];
-        j++;
+            j++;
+
+            break;
+        }
+        cp = c;
     }
+
+    cp = 0x7F;
+    cpp = 0x7F;
+    for (i = ia; i < len; i++)
+    {
+        c = btext[i];
+
+        if ((c == PDF_BACKSLASH || c == PDF_SLASH || c == PDF_COLON) &&
+            (!isuni || cp == 0))
+        {
+            /* convert to slash, but avoid multiple slashes */
+            if (cpp != PDF_SLASH)
+            {
+                c = PDF_SLASH;
+            }
+            else
+            {
+                if (isuni)
+                    j--;
+                continue;
+            }
+        }
+
+        ttext[j] = c;
+        j++;
+
+        cp = c;
+        if (c)
+            cpp = c;
+    }
+
     len = j;
-
-#elif defined(MAC)
-
-    /* absolute path name */
-    if (text[0] != PDF_COLON)
-    {
-        ttext[j] = PDF_SLASH;
-        j++;
-    }
-    else
-    {
-        k = 1;
-    }
-    for (i = k; i < len; i++)
-    {
-        if (text[i] == PDF_COLON)
-            ttext[j] = PDF_SLASH;
-        else
-            ttext[j] = text[i];
-        j++;
-    }
-    len = j;
-
-#endif
 
     pdc_put_pdfstring(out, ttext, len);
 
     pdc_free(out->pdc, ttext);
 }
+
 
 /* --------------------------- Streams --------------------------- */
 
@@ -1016,11 +1052,11 @@ pdc_write_eof(pdc_output *out)
 #if defined(MVS) || defined(MVS_TEST)
     int i, k;
 
-    if (out->blocksize > 1)
+    if (out->recordsize > 1)
     {
-	if ((i = (pdc_tell_out(out) + 6) % out->blocksize) != 0)
+	if ((i = (pdc_tell_out(out) + 6) % out->recordsize) != 0)
 	{
-	    for (k = 0; k < out->blocksize - i - 1; ++k)
+	    for (k = 0; k < out->recordsize - i - 1; ++k)
 		pdc_putc(out, PDF_SPACE);
 
 	    pdc_putc(out, PDF_NEWLINE);
@@ -1075,8 +1111,6 @@ pdc_write_trailer(
 
 /* ---------------------- High-level output functions ---------------------- */
 
-#define PDC_LINEBUFLEN  4048             /* len of line output buffer */
-
 /*
  * Write a native encoded string to the output.
  */
@@ -1113,7 +1147,7 @@ pdc_putc(pdc_output *out, const char c)
 void
 pdc_printf(pdc_output *out, const char *fmt, ...)
 {
-    char buf[PDC_LINEBUFLEN];
+    char buf[PDC_GEN_BUFSIZE];
     va_list ap;
 
     va_start(ap, fmt);

@@ -17,8 +17,12 @@
  */
 
 #include "pc_util.h"
+#include "pc_file.h"
 #include "pc_geom.h"
 #include "pc_ctype.h"
+
+#define PDC_PCBITS_SIZE   32
+#define PDC_MAX_PERCENTS  (8 * PDC_PCBITS_SIZE)
 
 /* result of an option */
 struct pdc_resopt_s
@@ -29,7 +33,7 @@ struct pdc_resopt_s
     void             *val;     /* list of parsed values */
     char             *origval; /* original value as string */
     int               flags;   /* flags */
-    int               pcmask;  /* percentage mask */
+    char              pcbits[PDC_PCBITS_SIZE];  /* percentage bits */
     int               currind; /* index of current option */
     int               lastind; /* index of last option */
     pdc_bool          isutf8;  /* optionlist UTF-8 encoded */
@@ -94,11 +98,22 @@ int
 pdc_get_keycode(const char *keyword, const pdc_keyconn *keyconn)
 {
     int i;
-    for (i = 0; keyconn[i].word != 0; i++)
+
+    for (i = 0; keyconn[i].word != NULL; i++)
     {
-        if (!strcmp(keyword, keyconn[i].word))
+        const char *s1 = keyword;
+        const char *s2 = keyconn[i].word;
+
+        for (; *s1; ++s1, ++s2)
+        {
+            if (*s1 != *s2)
+                break;
+        }
+
+        if (*s1 == *s2)
             return keyconn[i].code;
     }
+
     return PDC_KEY_NOTFOUND;
 }
 
@@ -106,11 +121,22 @@ int
 pdc_get_keycode_ci(const char *keyword, const pdc_keyconn *keyconn)
 {
     int i;
-    for (i = 0; keyconn[i].word != 0; i++)
+
+    for (i = 0; keyconn[i].word != NULL; i++)
     {
-        if (!pdc_stricmp(keyword, keyconn[i].word))
+        const char *s1 = keyword;
+        const char *s2 = keyconn[i].word;
+
+        for (; *s1; ++s1, ++s2)
+        {
+            if (pdc_tolower(*s1) != pdc_tolower(*s2))
+                break;
+        }
+
+        if (pdc_tolower(*s1) == pdc_tolower(*s2))
             return keyconn[i].code;
     }
+
     return PDC_KEY_NOTFOUND;
 }
 
@@ -118,9 +144,10 @@ int
 pdc_get_keycode_unique(const char *keyword, const pdc_keyconn *keyconn)
 {
     int i, j;
+
     size_t len = strlen(keyword);
 
-    for (i = 0; keyconn[i].word != 0; i++)
+    for (i = 0; keyconn[i].word != NULL; i++)
     {
         if (!strncmp(keyword, keyconn[i].word, len))
         {
@@ -130,6 +157,7 @@ pdc_get_keycode_unique(const char *keyword, const pdc_keyconn *keyconn)
             return keyconn[i].code;
         }
     }
+
     return PDC_KEY_NOTFOUND;
 }
 
@@ -214,11 +242,13 @@ const char *
 pdc_get_keyword(int keycode, const pdc_keyconn *keyconn)
 {
     int i;
-    for (i = 0; keyconn[i].word != 0; i++)
+
+    for (i = 0; keyconn[i].word != NULL; i++)
     {
         if (keycode == keyconn[i].code)
             return keyconn[i].word;
     }
+
     return NULL;
 }
 
@@ -226,11 +256,22 @@ const char *
 pdc_get_int_keyword(const char *keyword, const pdc_keyconn *keyconn)
 {
     int i;
-    for (i = 0; keyconn[i].word != 0; i++)
+
+    for (i = 0; keyconn[i].word != NULL; i++)
     {
-        if (!pdc_stricmp(keyword, keyconn[i].word))
+        const char *s1 = keyword;
+        const char *s2 = keyconn[i].word;
+
+        for (; *s1; ++s1, ++s2)
+        {
+            if (pdc_tolower(*s1) != pdc_tolower(*s2))
+                break;
+        }
+
+        if (pdc_tolower(*s1) == pdc_tolower(*s2))
             return keyconn[i].word;
     }
+
     return NULL;
 }
 
@@ -309,10 +350,10 @@ pdc_parse_optionlist(pdc_core *pdc, const char *optlist,
 {
     static const char *fn = "pdc_parse_optionlist";
     pdc_bool logg5 = pdc_logg_is_enabled(pdc, 5, trc_optlist);
-    const char *stemp1 = NULL, *stemp2 = NULL, *stemp3 = NULL;
+    const char *stemp1 = NULL, *stemp2 = NULL, *stemp3 = NULL, *s1, *s2;
     char **items = NULL, *keyword = NULL;
     char **values = NULL, *value = NULL, **strings = NULL;
-    int i, j, k, nd, is, iss, it, iv;
+    int i, j, k, nd, is, iss, it, iv, icoord;
     int numdef, nitems = 0, nvalues, ncoords = 0, errcode = 0;
     void *resval;
     double dz, maxval;
@@ -375,15 +416,31 @@ pdc_parse_optionlist(pdc_core *pdc, const char *optlist,
     /* loop over all option list elements */
     for (is = 0; is < nitems; is++)
     {
+        pdc_bool isequal = pdc_false;
+
         /* search keyword */
         boolval = pdc_undef;
         keyword = items[is];
         for (it = 0; it < numdef; it++)
         {
+            s1 = keyword;
+            s2 = defopt[it].name;
+
+            /* if (!pdc_stricmp(keyword, defopt[it].name))
+             *     isequal = pdc_true;
+             */
+            for (; *s1; ++s1, ++s2)
+            {
+                if (pdc_tolower(*s1) != pdc_tolower(*s2))
+                    break;
+            }
+            if (pdc_tolower(*s1) == pdc_tolower(*s2))
+                isequal = pdc_true;
+
             /* special handling for booleans */
             if (defopt[it].type == pdc_booleanlist)
             {
-                if (!pdc_stricmp(keyword, defopt[it].name) ||
+                if (isequal ||
                     (keyword[1] != 0 &&
                      !pdc_stricmp(&keyword[2], defopt[it].name)))
                 {
@@ -398,7 +455,7 @@ pdc_parse_optionlist(pdc_core *pdc, const char *optlist,
                             boolval = pdc_false;
                             break;
                         }
-                        else
+                        else if (isequal)
                         {
                             boolval = pdc_true;
                             break;
@@ -407,7 +464,8 @@ pdc_parse_optionlist(pdc_core *pdc, const char *optlist,
                 }
             }
 
-            if (!pdc_stricmp(keyword, defopt[it].name)) break;
+            if (isequal)
+                break;
         }
 
         if (logg5)
@@ -516,6 +574,14 @@ pdc_parse_optionlist(pdc_core *pdc, const char *optlist,
             goto PDC_OPT_SYNTAXERROR;
         }
 
+        /* deprecated option since PDFlib 7 */
+        if (dopt->flags & PDC_OPT_PDFLIB_7)
+        {
+            pdc_logg_cond(pdc, 2, trc_api,
+                  "[Option \"%s\" is deprecated since PDFlib 7]\n",
+                  keyword);
+        }
+
         /* option already exists */
         if (resopt[it].num)
         {
@@ -614,6 +680,9 @@ pdc_parse_optionlist(pdc_core *pdc, const char *optlist,
                             (size_t) (nvalues * pdc_typesizes[dopt->type]), fn);
         resopt[it].num = nvalues;
         resopt[it].currind = it;
+
+        if (dopt->flags & PDC_OPT_PERCENT)
+            memset(resopt[it].pcbits, 0, PDC_PCBITS_SIZE);
 
         if (logg5)
             pdc_logg(pdc, "{");
@@ -767,6 +836,7 @@ pdc_parse_optionlist(pdc_core *pdc, const char *optlist,
 
                         iz = PDC_KEY_NOTFOUND;
                         j = 0;
+                        icoord = ncoords;
                         for (i = 0; i < np; i++)
                         {
                             char *sk = strings[i];
@@ -788,18 +858,15 @@ pdc_parse_optionlist(pdc_core *pdc, const char *optlist,
                                     if (sk[k] == '%')
                                     {
                                         sk[k] = 0;
-                                        if (ncoords < 32)
+                                        if (ncoords < PDC_MAX_PERCENTS)
                                         {
-                                            resopt[it].pcmask |= (1L <<ncoords);
+                                            pdc_setbit(resopt[it].pcbits,
+                                                       ncoords);
                                         }
                                         else
                                         {
                                             errcode = PDC_E_OPT_TOOMANYPERCVALS;
                                         }
-                                    }
-                                    else
-                                    {
-                                        resopt[it].pcmask &= ~(1L << ncoords);
                                     }
                                 }
 
@@ -808,7 +875,7 @@ pdc_parse_optionlist(pdc_core *pdc, const char *optlist,
                                 {
                                     errcode = PDC_E_OPT_ILLNUMBER;
                                 }
-                                else if (resopt[it].pcmask & (1L << ncoords))
+                                else if (pdc_getbit(resopt[it].pcbits, ncoords))
                                 {
                                     if (dopt->flags & PDC_OPT_PERCRANGE)
                                     {
@@ -838,7 +905,15 @@ pdc_parse_optionlist(pdc_core *pdc, const char *optlist,
                         }
 
                         if (dopt->flags & PDC_OPT_CLOSEPOLY)
+                        {
                             pl->p[pl->np - 1] = pl->p[0];
+                            if (pdc_getbit(resopt[it].pcbits, icoord))
+                                pdc_setbit(resopt[it].pcbits, ncoords);
+                            ncoords++;
+                            if (pdc_getbit(resopt[it].pcbits, icoord + 1))
+                                pdc_setbit(resopt[it].pcbits, ncoords);
+                            ncoords++;
+                        }
                     }
                     pdc_cleanup_stringlist(pdc, strings);
                 }
@@ -915,18 +990,14 @@ pdc_parse_optionlist(pdc_core *pdc, const char *optlist,
                     if (value[i] == '%')
                     {
                         value[i] = 0;
-                        if (iv < 32)
+                        if (iv < PDC_MAX_PERCENTS)
                         {
-                            resopt[it].pcmask |= (1L << iv);
+                            pdc_setbit(resopt[it].pcbits, iv);
                         }
                         else
                         {
                             errcode = PDC_E_OPT_TOOMANYPERCVALS;
                         }
-                    }
-                    else
-                    {
-                        resopt[it].pcmask &= ~(1L << iv);
                     }
                 }
 
@@ -966,7 +1037,7 @@ pdc_parse_optionlist(pdc_core *pdc, const char *optlist,
                 }
                 else
                 {
-                    if (resopt[it].pcmask & (1L << iv))
+                    if (pdc_getbit(resopt[it].pcbits, iv))
                     {
                         if (dopt->flags & PDC_OPT_PERCRANGE)
                         {
@@ -1221,6 +1292,7 @@ pdc_get_optvalues(const char *keyword, pdc_resopt *resopt,
 
     if (resopt)
     {
+        const char *s1, *s2;
         int i, cmp;
         int lo = 0;
         int hi = resopt[0].numdef;
@@ -1228,7 +1300,16 @@ pdc_get_optvalues(const char *keyword, pdc_resopt *resopt,
         while (lo < hi)
         {
             i = (lo + hi) / 2;
-            cmp = strcmp(keyword, resopt[i].defopt->name);
+
+            s1 = keyword;
+            s2 = resopt[i].defopt->name;
+
+            for (; *s1; ++s1, ++s2)
+            {
+                if (*s1 != *s2)
+                    break;
+            }
+            cmp = (*s1 - *s2);
 
             /* keyword found */
             if (cmp == 0)
@@ -1319,8 +1400,8 @@ pdc_is_lastopt_percent(pdc_resopt *resopt, int ind)
 {
     int i = resopt[0].lastind;
 
-    if (i > -1 && resopt[i].num < 32)
-        return (resopt[i].pcmask & (1L << ind)) ? pdc_true : pdc_false;
+    if (i > -1 && resopt[i].num < PDC_MAX_PERCENTS)
+        return pdc_getbit(resopt[i].pcbits, ind) ? pdc_true : pdc_false;
     else
         return pdc_false;
 }
@@ -1366,6 +1447,26 @@ pdc_get_opt_utf8strings(pdc_core *pdc, const char *keyword, pdc_resopt *resopt,
     }
 
     return ns;
+}
+
+const char *
+pdc_get_opt_filename(pdc_core *pdc, const char *keyword, pdc_resopt *resopts)
+{
+    const char *filename = NULL;
+    char **strlist;
+
+    if (pdc_get_optvalues(keyword, resopts, NULL, &strlist))
+    {
+        pdc_bool isutf8 = pdc_is_lastopt_utf8(resopts);
+        int flags = PDC_CONV_WITHBOM;
+
+        if (isutf8)
+            flags |= PDC_CONV_ISUTF8;
+
+        filename = pdc_convert_filename(pdc, strlist[0], 0, keyword, flags);
+    }
+
+    return filename;
 }
 
 void

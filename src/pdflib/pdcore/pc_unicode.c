@@ -596,6 +596,12 @@ pdc_convertUTF8toUTF32 (
 
    --------------------------------------------------------------------- */
 
+const char *
+pdc_get_textformat(int textformat)
+{
+    return pdc_get_keyword(textformat, pdc_textformat_keylist);
+}
+
 static const pdc_keyconn pdc_utfformat_keylist[] =
 {
     {"8",     pdc_utf8},
@@ -773,8 +779,9 @@ pdc_convert_string(pdc_core *pdc,
                    pdc_byte **outstring, int *outlen, int flags,
                    pdc_bool verbose)
 {
+    /* text_nocheck: see bug #1664 */
     return pdc_convert_textstring(pdc, inutf, codepage, inev,
-                   NULL, 0, -1, instring, inlen, oututf_p, outev,
+                   NULL, 0, text_nocheck, instring, inlen, oututf_p, outev,
                    outstring, outlen, flags, verbose);
 }
 
@@ -791,6 +798,7 @@ pdc_convert_textstring(pdc_core *pdc,
     static const char *fn = "pdc_convert_textstring";
     pdc_bool logg = flags & PDC_CONV_LOGGING;
     const char *stemp1 = NULL, *stemp2 = NULL;
+    char sbuf[64];
     pdc_text_format oututf = *oututf_p;
     pdc_text_format oututf_s;
     pdc_ushort *usinstr = (pdc_ushort *) instring;
@@ -806,9 +814,26 @@ pdc_convert_textstring(pdc_core *pdc,
     (void) tabsize;
     (void) replchar;
 
+    if (logg || pdc_logg_is_enabled(pdc, 5, trc_encoding))
+    {
+        pdc_logg(pdc, "\n");
+        if (!logg)
+            pdc_logg(pdc, "\t\ttext string of length %d will be converted...\n",
+                     inlen);
+        logg = pdc_true;
+    }
+
     if (logg)
+    {
         pdc_logg(pdc, "\t\tinput textformat for string conversion: %s\n",
                  pdc_get_keyword(inutf, pdc_textformat_keylist));
+
+        if (inev != NULL)
+            pdc_logg(pdc, "\t\tinput encoding: %s\n", inev->apiname);
+
+        if (outev != NULL)
+            pdc_logg(pdc, "\t\toutput encoding: %s\n", outev->apiname);
+    }
 
     /* prophylactic */
     if (!inlen)
@@ -900,7 +925,7 @@ pdc_convert_textstring(pdc_core *pdc,
         if (codepage > 0)
         {
 #if defined(WIN32)
-            if (!(flags & PDC_CONV_ANALYZE))
+            if (!(flags & PDC_CONV_ANALYZE) && inlen > 0)
             {
                 if (logg)
                     pdc_logg(pdc,
@@ -1006,13 +1031,13 @@ pdc_convert_textstring(pdc_core *pdc,
              (inutf == pdc_utf16le &&  PDC_ISBIGENDIAN)))
         {
             if (inalloc)
-                pdc_swap_bytes((char *) instring, inlen, NULL);
+                pdc_swap_bytes2((char *) instring, inlen, NULL);
             else
             {
                 instr = (pdc_byte *) ((flags & PDC_CONV_TMPALLOC) ?
                      pdc_calloc_tmp(pdc, (size_t) (inlen + 2), fn, NULL, NULL) :
                      pdc_calloc(pdc, (size_t) (inlen + 2), fn));
-                pdc_swap_bytes((char *) instring, inlen, (char *) instr);
+                pdc_swap_bytes2((char *) instring, inlen, (char *) instr);
 
                 inalloc = pdc_true;
                 instring = instr;
@@ -1022,10 +1047,36 @@ pdc_convert_textstring(pdc_core *pdc,
         inutf = pdc_utf16;
     }
 
-    /* illegal UTF-16 */
+    /* conversion to UTF-32 by swapping */
+    if (inlen && inutf == pdc_utf32)
+    {
+
+        if ((pdc_is_utf32be_unicode(instring) && !PDC_ISBIGENDIAN) ||
+            (pdc_is_utf32le_unicode(instring) &&  PDC_ISBIGENDIAN))
+        {
+            if (inalloc)
+                pdc_swap_bytes4((char *) instring, inlen, NULL);
+            else
+            {
+                instr = (pdc_byte *) ((flags & PDC_CONV_TMPALLOC) ?
+                     pdc_calloc_tmp(pdc, (size_t) (inlen + 4), fn, NULL, NULL) :
+                     pdc_calloc(pdc, (size_t) (inlen + 4), fn));
+                pdc_swap_bytes4((char *) instring, inlen, (char *) instr);
+
+                inalloc = pdc_true;
+                instring = instr;
+                instr = NULL;
+            }
+        }
+    }
+
+    /* illegal UTF-16 / UTF-32 */
     if (inutf >= pdc_utf16 && inlen % 2)
     {
-        errcode = PDC_E_CONV_ILLUTF16;
+        if (inutf == pdc_utf32 && inlen % 4)
+            errcode = PDC_E_CONV_ILLUTF32;
+        else
+            errcode = PDC_E_CONV_ILLUTF16;
         goto PDC_CONV_ERROR;
     }
 
@@ -1102,7 +1153,7 @@ pdc_convert_textstring(pdc_core *pdc,
         {
             pdc_convers_result result = conversionOK;
             pdc_byte *instringa, *instra, *instringe, *instre;
-            UTF8 *isa8, *ise8;
+            UTF8 *isa8 = NULL, *ise8 = NULL;
             UTF16 *isa16, *ise16;
             UTF32 *isa32, *ise32;
 
@@ -1197,16 +1248,44 @@ pdc_convert_textstring(pdc_core *pdc,
 
                 case sourceExhausted:
                 case sourceIllegal:
-                if (inutf == pdc_utf8 && (flags & PDC_CONV_INFLATE))
+                if (inutf == pdc_utf8)
                 {
-                    pdc_inflate_ascii((char *) instring, inlen, (char *) instr,
-                                      pdc_utf16);
-                    instra = instr + 2 * inlen;
+                    UTF8 *bp, *bpe;
+                    char *sb = sbuf;
+
+                    bpe = MIN(ise8 - 1, isa8 + 3);
+                    for (bp = isa8; bp <= bpe; bp++)
+                        sb += sprintf(sb, "\\x%02X", *bp);
+                    if (*bp)
+                        sb += sprintf(sb, "...");
+                    sb += sprintf(sb, " (");
+                    for (bp = isa8; bp <= bpe; bp++)
+                        sb += sprintf(sb, "%c", *bp);
+                    if (*bp)
+                        sb += sprintf(sb, "...");
+                    sb += sprintf(sb, ")");
+                    stemp1 = sbuf;
+
+                    stemp2 = pdc_errprintf(pdc, "%d", isa8 - (UTF8 *)instringa);
+
+                    if (flags & PDC_CONV_INFLATE)
+                    {
+                        pdc_warning(pdc, PDC_E_CONV_ILLUTF8SEQU, stemp1, stemp2,
+                                    0, 0);
+
+                        pdc_inflate_ascii((char *) instring, inlen,
+                                          (char *) instr, pdc_utf16);
+                        instra = instr + 2 * inlen;
+                    }
+                    else
+                    {
+                        errcode = PDC_E_CONV_ILLUTF8SEQU;
+                    }
                 }
                 else
                 {
-                    errcode = PDC_E_CONV_ILLUTF;
                     stemp1 = pdc_get_keyword((int)inutf, pdc_utfformat_keylist);
+                    errcode = PDC_E_CONV_ILLUTF;
                 }
                 break;
 
@@ -1383,6 +1462,7 @@ pdc_convert_textstring(pdc_core *pdc,
                     pdc_free(pdc, instring);
             }
 
+            inalloc = pdc_true;
             instring = instr;
             instr = NULL;
             inlen = len;
@@ -1456,7 +1536,7 @@ pdc_convert_textstring(pdc_core *pdc,
                 toswap = PDC_ISBIGENDIAN;
             }
             if (toswap)
-                pdc_swap_bytes((char *) &instring[i], inlen - i, NULL);
+                pdc_swap_bytes2((char *) &instring[i], inlen - i, NULL);
         }
 
         if (hasbom)
@@ -1530,7 +1610,8 @@ pdc_convert_textstring(pdc_core *pdc,
  *            flags & PDC_CONV_ISUTF8 is set the string will be duplicated.
  *            Otherwise the string has encoding enc and codepage
  *            codepage.
- *            If enc < pdc_winansi the string is "host" encoded.
+ *            If enc == pdc_unicode the string is "UTF-16" encoded.
+ *            Otherwise: If enc < pdc_winansi the string is "host" encoded.
  *
  *  len  > 0: The string is a UTF-16 string of len bytes.
  *
@@ -1539,6 +1620,7 @@ char *
 pdc_convert_name_ext(pdc_core *pdc, const char *name, int len,
                      pdc_encoding enc, int codepage, int flags)
 {
+    static const char fn[] = "pdc_convert_name_ext";
     pdc_encodingvector *ev = NULL;
     pdc_text_format nameformat = pdc_utf16;
     pdc_text_format outnameformat = pdc_utf8;
@@ -1551,32 +1633,39 @@ pdc_convert_name_ext(pdc_core *pdc, const char *name, int len,
 
     if (len == 0)
     {
-        pdc_bool hasbom = pdc_is_utf8_bytecode(name);
-        pdc_bool withbom = (flags & PDC_CONV_WITHBOM) ? pdc_true : pdc_false;
-
         /* already [EBCDIC-]UTF-8 encoded */
-        if ((flags & PDC_CONV_ISUTF8) || hasbom)
+        if ((flags & PDC_CONV_ISUTF8) || pdc_is_utf8_bytecode(name))
         {
-            if ((hasbom && withbom) || (!hasbom && !withbom))
-                outname = pdc_strdup(pdc, name);
-            else if (hasbom && !withbom)
-                outname = pdc_strdup(pdc, &name[3]);
-            else if (!hasbom && withbom)
-                outname = pdc_strdup_withbom(pdc, name);
+            if (!(flags & PDC_CONV_WITHBOM))
+                flags |= PDC_CONV_NOBOM;
+
+            if (!(flags & PDC_CONV_EBCDIC))
+                flags |= PDC_CONV_ASCII;
+
+            /* On EBCDIC platforms EBCDIC-UTF-8 name strings are expected */
+            outname = pdc_strdup_ext(pdc, name, (flags & ~PDC_CONV_EBCDIC), fn);
+
             if (outname != NULL)
-            {
                 return outname;
-            }
         }
 
-        /* 8-bit encoded string */
-        nameformat = pdc_bytes;
-        if (enc < pdc_winansi)
-            ev = pdc_get_encoding_vector(pdc, pdc_find_encoding(pdc, "host"));
+        /* see bug #1486 */
+        if (enc == pdc_unicode)
+        {
+            /* UTF-16 encoded string */
+            len = (int) pdc_wstrlen(name);
+        }
         else
-            ev = pdc_get_encoding_vector(pdc, enc);
+        {
+            /* 8-bit encoded string */
+            nameformat = pdc_bytes;
+            if (enc < pdc_winansi)
+                ev = pdc_get_encoding_vector(pdc,pdc_find_encoding(pdc,"host"));
+            else
+                ev = pdc_get_encoding_vector(pdc, enc);
 
-        len = (int) strlen(name);
+            len = (int) strlen(name);
+        }
     }
 
     if (flags & PDC_CONV_EBCDIC)
@@ -1602,6 +1691,8 @@ pdc_convert_name(pdc_core *pdc, const char *name, int len, int flags)
     return pdc_convert_name_ext(pdc, name, len, pdc_invalidenc, 0, flags);
 }
 
+/* returned string is temporary allocated
+*/
 char *
 pdc_utf8_to_hostbytes(pdc_core *pdc, pdc_bool honorlang, char *name)
 {
@@ -1623,16 +1714,19 @@ pdc_utf8_to_hostbytes(pdc_core *pdc, pdc_bool honorlang, char *name)
 
     pdc_convert_string(pdc, informat, 0, NULL, (pdc_byte *) name, len,
                 &outformat, outev, &outname, &len,
-                PDC_CONV_TRYBYTES | PDC_CONV_NOBOM, pdc_true);
+                PDC_CONV_TRYBYTES | PDC_CONV_NOBOM | PDC_CONV_TMPALLOC,
+                pdc_true);
     if (outformat == pdc_utf16)
     {
-        pdc_free(pdc, outname);
+        pdc_free_tmp(pdc, outname);
         outname = NULL;
     }
 
     return (char *) outname;
 }
 
+/* returned string is temporary allocated
+*/
 char *
 pdc_hostbytes_to_utf8(pdc_core *pdc, pdc_bool honorlang, char *name)
 {
@@ -1654,7 +1748,7 @@ pdc_hostbytes_to_utf8(pdc_core *pdc, pdc_bool honorlang, char *name)
 
     pdc_convert_string(pdc, informat, 0, inev, (pdc_byte *) name, len,
                 &outformat, NULL, &outname, &len,
-                PDC_CONV_NOBOM, pdc_true);
+                PDC_CONV_NOBOM | PDC_CONV_TMPALLOC, pdc_true);
 
     return (char *) outname;
 }
@@ -1702,11 +1796,37 @@ pdc_utf8_to_utf16(pdc_core *pdc, const char *utf8string, const char *format,
     if (format && *format)
     {
         int k = pdc_get_keycode_ci(format, pdc_textformat_keylist);
+
+        /* see bug #2175 */
+        if (k == PDC_KEY_NOTFOUND)
+        {
+            char **sfl;
+            const char *sf;
+            int ns, i;
+
+            sf = NULL;
+            ns = pdc_split_stringlist(pdc, format, NULL, 0, &sfl);
+            for (i = 0; i < ns; i++)
+            {
+                if (!strcmp(sfl[i], "inflate"))
+                    flags |= PDC_CONV_INFLATE;
+                else
+                    sf = sfl[i];
+            }
+            if (sf != NULL)
+                k = pdc_get_keycode_ci(sf, pdc_textformat_keylist);
+            else
+                k = pdc_utf16;
+
+            pdc_cleanup_stringlist(pdc, sfl);
+        }
+
         if (k == PDC_KEY_NOTFOUND ||
             ((pdc_text_format) k != pdc_utf16 &&
              (pdc_text_format) k != pdc_utf16be &&
              (pdc_text_format) k != pdc_utf16le))
             pdc_error(pdc, PDC_E_ILLARG_STRING, "format", format, 0, 0);
+
         outtextformat = (pdc_text_format) k;
     }
 
@@ -1875,7 +1995,7 @@ pdc_char32_to_char16(pdc_core *pdc, int usv, pdc_ushort *uvlist,
             return 2;
         }
 
-        pdc_set_errmsg(pdc, PDC_E_CONV_ILLUTF32,
+        pdc_set_errmsg(pdc, PDC_E_CONV_ILLUTF32CHAR,
                        pdc_errprintf(pdc, "%05X", usv), 0, 0, 0);
 
         if (verbose)

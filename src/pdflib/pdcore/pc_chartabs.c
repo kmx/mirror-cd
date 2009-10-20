@@ -33,26 +33,53 @@ int
 pdc_glyphname2codelist(const char *glyphname, const pdc_glyph_tab *glyphtab,
                        int tabsize, pdc_ushort *codelist)
 {
+    const char *s1, *s2;
     int lo = 0;
     int hi = glyphname ? tabsize : lo;
-    int nv = 0;
+    int i, j, cmp, nv = 0;
 
     while (lo < hi)
     {
-        int i = (lo + hi) / 2;
-        int cmp = strcmp(glyphname, glyphtab[i].name);
+        i = (lo + hi) / 2;
+
+        s1 = glyphname;
+        s2 = glyphtab[i].name;
+        for (; *s1; ++s1, ++s2)
+        {
+            if (*s1 != *s2)
+                break;
+        }
+        cmp = (*s1 - *s2);
 
         if (cmp == 0)
         {
+            j = i;
             for (; i >= 1; i--)
             {
-                if (strcmp(glyphname, glyphtab[i-1].name))
+                s1 = glyphname;
+                s2 = glyphtab[i-1].name;
+                for (; *s1; ++s1, ++s2)
+                {
+                    if (*s1 != *s2)
+                        break;
+                }
+                if (*s1 != *s2)
                     break;
             }
             for (; i < tabsize; i++)
             {
-                if (strcmp(glyphname, glyphtab[i].name))
-                    break;
+                if (i > j)
+                {
+                    s1 = glyphname;
+                    s2 = glyphtab[i].name;
+                    for (; *s1; ++s1, ++s2)
+                    {
+                        if (*s1 != *s2)
+                            break;
+                    }
+                    if (*s1 != *s2)
+                        break;
+                }
                 codelist[nv] = glyphtab[i].code;
                 nv++;
             }
@@ -75,13 +102,23 @@ int
 pdc_glyphname2code(const char *glyphname, const pdc_glyph_tab *glyphtab,
                    int tabsize)
 {
+    const char *s1, *s2;
     int lo = 0;
     int hi = glyphname ? tabsize : lo;
+    int i, cmp;
 
     while (lo < hi)
     {
-        int i = (lo + hi) / 2;
-        int cmp = strcmp(glyphname, glyphtab[i].name);
+        i = (lo + hi) / 2;
+
+        s1 = glyphname;
+        s2 = glyphtab[i].name;
+        for (; *s1; ++s1, ++s2)
+        {
+            if (*s1 != *s2)
+                break;
+        }
+        cmp = (*s1 - *s2);
 
         if (cmp == 0)
             return (int) glyphtab[i].code;
@@ -175,13 +212,23 @@ const char *
 pdc_glyphname2glyphname(const char *glyphname,
                         const pdc_glyph_tab *glyphtab, int tabsize)
 {
+    const char *s1, *s2;
     int lo = 0;
     int hi = tabsize;
+    int cmp, i;
 
     while (lo < hi)
     {
-        int i = (lo + hi) / 2;
-        int cmp = strcmp(glyphname, glyphtab[i].name);
+        i = (lo + hi) / 2;
+
+        s1 = glyphname;
+        s2 = glyphtab[i].name;
+        for (; *s1; ++s1, ++s2)
+        {
+            if (*s1 != *s2)
+                break;
+        }
+        cmp = (*s1 - *s2);
 
         if (cmp == 0)
             return glyphtab[i].name;
@@ -332,15 +379,25 @@ pdc_glyphname2altunicode(const char *glyphname)
 pdc_bool
 pdc_is_std_charname(const char *glyphname)
 {
+    const char *s1, *s2;
     int lo = 0;
     int hi = ((sizeof pc_standard_latin_charset) / (sizeof (char *)));
+    int cmp, i;
 
     if (glyphname)
     {
         while (lo < hi)
         {
-            int i = (lo + hi) / 2;
-            int cmp = strcmp(glyphname, pc_standard_latin_charset[i]);
+            i = (lo + hi) / 2;
+
+            s1 = glyphname;
+            s2 = pc_standard_latin_charset[i];
+            for (; *s1; ++s1, ++s2)
+            {
+                if (*s1 != *s2)
+                    break;
+            }
+            cmp = (*s1 - *s2);
 
             if (cmp == 0)
                 return pdc_true;
@@ -578,7 +635,7 @@ pdc_string2unicode(pdc_core *pdc, const char *text, int i_flags,
 
     if (seterr)
     {
-        pdc_set_errmsg(pdc, PDC_E_CONV_ILLUTF32, &text[i], 0, 0, 0);
+        pdc_set_errmsg(pdc, PDC_E_CONV_ILLUTF32CHAR, &text[i], 0, 0, 0);
         if (verbose)
             pdc_error(pdc, -1, 0, 0, 0, 0);
     }

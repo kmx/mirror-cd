@@ -38,9 +38,13 @@ gen(1, 7001, FONT_PREFIX, "Font '$1': ")
 
 gen(0, 7002, FONT_HOSTNOTFOUND, "Host font not found")
 
+gen(0, 7003, FONT_HOSTNOTFOUND2,
+    "Host font not found (maybe unsupported QuickDraw font name specified)")
+
 gen(1, 7004, FONT_UNSUPP_FORMAT, "Font format '$1' not supported")
 
-gen(0, 7006, FONT_TTHOSTNOTFOUND, "TrueType host font not found")
+gen(2, 7006, FONT_HOSTNOTLOADED,
+    "Couldn't load $1 host font (system error code $2)")
 
 gen(1, 7007, FONT_NAMETOOLONG,
     "Font name too long (max. $1 characters)")

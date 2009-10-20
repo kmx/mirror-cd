@@ -20,16 +20,11 @@
 #define PC_EBCDIC_H
 
 
-void    pdc_ebcdic2ascii(char *s);
-void    pdc_ebcdic2ascii_len(char *s, size_t len);
-void    pdc_ascii2ebcdic_len(char *s, size_t len);
-void    pdc_ascii2ebcdic(char *s);
-void    pdc_ascii2ebcdic_char(char *c);
-void    pdc_ascii2ebcdic_int(int *i);
-void    pdc_ebcdic2ascii_int(int *i);
-void	pdc_ebcdic2ascii_byte(pdc_byte *c);
-void    pdc_ebcdic2pdfascii(char *s);
-void    pdc_ebcdic2pdfascii_len(char *s, size_t len);
+/* must be defined everywhere (see encoding "winansi_ebcdic") */
+#if !defined(PDF_CODEPAGE)
+#define PDF_CODEPAGE 37
+#endif
+
 
 #endif	/* PC_EBCDIC_H */
 

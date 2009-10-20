@@ -84,7 +84,8 @@ struct pdc_core_priv_s
 					/* the time of pdc_enter_api()	*/
 
     /* ------------ error handling ------------ */
-    pdc_bool		in_error;
+    pdc_bool            in_error;       /* while initializing pdcore or */
+                                        /* while creating error resp.   */
     char *              premsg;
     char                errbuf[PDC_ERRBUF_SIZE];
     char		errparms[4][PDC_ERRPARM_SIZE];
@@ -203,7 +204,17 @@ pdc_panic(pdc_core *pdc, const char *fmt, ...)
     va_list ap;
 
     va_start(ap, fmt);
-    pdc_vsnprintf(pdc->pr->errbuf, PDC_ERRPARM_SIZE, fmt, ap);
+
+#if defined (PDC_NO_VSNPRINTF)
+    vsprintf(pdc->pr->errbuf, fmt, ap);
+#else
+#if defined(WIN32)
+    _vsnprintf(pdc->pr->errbuf, PDC_ERRPARM_SIZE, fmt, ap);
+#else
+    vsnprintf(pdc->pr->errbuf, PDC_ERRPARM_SIZE, fmt, ap);
+#endif
+#endif
+
     va_end(ap);
 
     (*pdc->pr->errorhandler)(pdc->pr->opaque, PDF_UnknownError,
@@ -364,7 +375,8 @@ pdc_new_core(
     pdc->uniqueno = 0;
 
 
-#ifdef  PDC_DEBUG
+
+#ifdef PDC_DEBUG
     pdc->pr->hexdump = pdc_true;
 #endif
 
@@ -378,11 +390,12 @@ pdc_new_core(
 
     /* initialize error & exception handling.
     */
-    pdc->pr->in_error = pdc_false;
+    pdc->pr->in_error = pdc_true;  /* disable error messages */
     pdc->pr->x_thrown = pdc_false;
     pdc->pr->epcount = 0;
     pdc->pr->errnum = 0;
     pdc->pr->premsg = NULL;
+    pdc->pr->errbuf[0] = 0;
     pdc->pr->apiname[0] = 0;
     pdc->pr->x_sp = -1;
     pdc->pr->x_ssize = PDC_XSTACK_INISIZE;
@@ -415,7 +428,19 @@ pdc_new_core(
         pdc->pr->err_tables[i].ei = (pdc_error_info *) 0;
 
     pdc_register_errtab(pdc, PDC_ET_CORE, core_errors, N_CORE_ERRORS);
+
+    /* initialize mempool for strings
+    */
     pdc_init_strings(pdc);
+    if (pdc->bstr_pool == NULL || pdc->ustr_pool == NULL)
+    {
+        (*freeproc)(opaque, pdc);
+        return (pdc_core *) 0;
+    }
+
+    /* enable error messages
+    */
+    pdc->pr->in_error = pdc_false;
 
     return pdc;
 }
@@ -476,7 +501,8 @@ pdc_malloc(pdc_core *pdc, size_t size, const char *caller)
     /* the behavior of malloc(0) is undefined in ANSI C, and may
      * result in a NULL pointer return value which makes PDFlib bail out.
      */
-    if (size == (size_t) 0 || (long) size < 0L) {
+    if (size == (size_t) 0 || (long) size < 0L)
+    {
 	size = (size_t) 1;
 	pdc_error(pdc, PDC_E_INT_ALLOC0, caller, 0, 0, 0);
     }
@@ -506,7 +532,8 @@ pdc_calloc(pdc_core *pdc, size_t size, const char *caller)
     if (logg1)
         pdc_logg(pdc, "\ttry to calloc %ld bytes\n", size);
 
-    if (size == (size_t) 0 || (long) size < 0L) {
+    if (size == (size_t) 0 || (long) size < 0L)
+    {
 	size = (size_t) 1;
 	pdc_error(pdc, PDC_E_INT_ALLOC0, caller, 0, 0, 0);
     }
@@ -534,7 +561,8 @@ pdc_realloc(pdc_core *pdc, void *mem, size_t size, const char *caller)
     if (logg1)
         pdc_logg(pdc, "\ttry to realloc %p to %ld bytes\n", mem, size);
 
-    if (size == (size_t) 0 || (long) size < 0L) {
+    if (size == (size_t) 0 || (long) size < 0L)
+    {
         size = (size_t) 1;
         pdc_error(pdc, PDC_E_INT_ALLOC0, caller, 0, 0, 0);
     }
@@ -722,7 +750,7 @@ const char *pdc_errprintf(pdc_core *pdc, const char *fmt, ...)
         pdc->pr->epcount = 0;
 
     va_start(ap, fmt);
-    pdc_vsnprintf(pdc->pr->errparms[pdc->pr->epcount], PDC_ERRPARM_SIZE,
+    pdc_vsnprintf(pdc, pdc->pr->errparms[pdc->pr->epcount], PDC_ERRPARM_SIZE,
                   fmt, ap);
     va_end(ap);
 
@@ -835,6 +863,7 @@ pdc_push_errmsg(
     const pdc_error_info *ei = get_error_info(pdc, errnum);
 
     pdc_pop_errmsg(pdc);
+    pdc->pr->errnum = 0;
 
     make_errmsg(pdc, ei, parm1, parm2, parm3, parm4, pdc_false);
 
@@ -851,13 +880,17 @@ pdc_set_errmsg(
     const char *parm3,
     const char *parm4)
 {
-    const pdc_error_info *ei = get_error_info(pdc, errnum);
+    if (errnum != 0)
+    {
+        const pdc_error_info *ei = get_error_info(pdc, errnum);
 
-    make_errmsg(pdc, ei, parm1, parm2, parm3, parm4, pdc_false);
+        make_errmsg(pdc, ei, parm1, parm2, parm3, parm4, pdc_false);
+    }
 
     pdc->pr->errnum = errnum;
 
-    pdc_logg_cond(pdc, 2, trc_warning,
+    if (errnum)
+        pdc_logg_cond(pdc, 2, trc_warning,
                 "[Reason for error message %d: \"%s\"]\n",
                 pdc->pr->errnum, pdc->pr->errbuf);
 
@@ -901,7 +934,7 @@ pdc_error(
     const char *parm3,
     const char *parm4)
 {
-    const char *logmsg;
+    const char *logmsg = NULL;
 
     /* avoid recursive errors, but allow rethrow.
     */
@@ -921,18 +954,22 @@ pdc_error(
 
     if (pdc->pr->x_sp > pdc->pr->x_sp0)
     {
-	logmsg = "\n[/// Exception %d in %s ]";
+        if (pdc_logg_is_enabled(pdc, 2, trc_warning))
+	    logmsg = "[Nested exception %d in %s]";
     }
     else
     {
-	logmsg = "\n[+++ Exception %d in %s ]";
+	logmsg = "\n[Last exception %d in %s]";
     }
 
-    pdc_logg(pdc, logmsg, pdc->pr->errnum,
-	(pdc->pr->errnum == 0 || !pdc->pr->apiname) ? "" : pdc->pr->apiname,
-	pdc->pr->x_sp0 + 1, pdc->pr->x_sp - pdc->pr->x_sp0);
+    if (logmsg != NULL)
+    {
+        pdc_logg(pdc, logmsg, pdc->pr->errnum,
+	    (pdc->pr->errnum == 0 || !pdc->pr->apiname) ? "" : pdc->pr->apiname,
+	    pdc->pr->x_sp0 + 1, pdc->pr->x_sp - pdc->pr->x_sp0);
 
-    pdc_logg(pdc, "[\"%s\"]\n\n", pdc->pr->errbuf);
+        pdc_logg(pdc, "[\"%s\"]\n\n", pdc->pr->errbuf);
+    }
 
     if (pdc->pr->x_sp == -1)
     {
@@ -966,6 +1003,9 @@ pdc_jmpbuf *
 pdc_jbuf(pdc_core *pdc)
 {
     static const char fn[] = "pdc_jbuf";
+
+    pdc_logg_cond(pdc, 3, trc_api,
+                  "[TRY to level %d]\n", pdc->pr->x_sp + 1);
 
     if (++pdc->pr->x_sp == pdc->pr->x_ssize)
     {
@@ -1026,6 +1066,9 @@ pdc_jbuf(pdc_core *pdc)
 void
 pdc_exit_try(pdc_core *pdc)
 {
+    pdc_logg_cond(pdc, 3, trc_api,
+                  "[EXIT_TRY at level %d]\n", pdc->pr->x_sp);
+
     if (pdc->pr->x_sp == -1)
     {
         strcpy(pdc->pr->errbuf, "exception stack underflow");
@@ -1041,6 +1084,9 @@ int
 pdc_catch_intern(pdc_core *pdc)
 {
     pdc_bool result;
+
+    pdc_logg_cond(pdc, 3, trc_api,
+                  "[CATCH intern at level %d]\n", pdc->pr->x_sp);
 
     if (pdc->pr->x_sp == -1)
     {
@@ -1063,6 +1109,9 @@ int
 pdc_catch_extern(pdc_core *pdc)
 {
     pdc_bool result;
+
+    pdc_logg_cond(pdc, 3, trc_api,
+                  "[CATCH at level %d]\n", pdc->pr->x_sp);
 
     if (pdc->pr->x_sp == -1)
     {
@@ -1120,14 +1169,6 @@ const char *
 pdc_get_errpref(pdc_core *pdc)
 {
     return pdc->pr->premsg;
-}
-
-/* ----------- service function to get PDF version string  -------------- */
-
-const char *
-pdc_get_pdfversion(pdc_core *pdc, int compatibility)
-{
-    return pdc_errprintf(pdc, "%d.%d", compatibility / 10, compatibility % 10);
 }
 
 

@@ -175,6 +175,16 @@ extern const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
 #  define F_OPEN(name, mode) fopen((name), (mode))
 #endif
 
+/* PDFlib GmbH: we need this before redefining vsnprintf (Visuals Studio 2008)*/
+/* Diagnostic functions */
+#ifdef DEBUG
+#  include <stdio.h>
+   extern int z_verbose;
+   extern void z_error    OF((char *m));
+#  define Assert(cond,msg) {if(!(cond)) z_error(msg);}
+#else
+#  define Assert(cond,msg)
+#endif
          /* functions */
 
 #if defined(STDC99) || (defined(__TURBOC__) && __TURBOC__ >= 0x550)
@@ -239,15 +249,6 @@ extern const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
    extern void zmemzero OF((Bytef* dest, uInt len));
 #endif
 
-/* Diagnostic functions */
-#ifdef DEBUG
-#  include <stdio.h>
-   extern int z_verbose;
-   extern void z_error    OF((char *m));
-#  define Assert(cond,msg) {if(!(cond)) z_error(msg);}
-#else
-#  define Assert(cond,msg)
-#endif
 
 /* PDFlib GmbH: we don't like trace messages from here. */
 #if 0

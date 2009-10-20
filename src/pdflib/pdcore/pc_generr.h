@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------*
  |              PDFlib - A library for generating PDF on the fly             |
  +---------------------------------------------------------------------------+
- | Copyright (c) 1997-2006 Thomas Merz and PDFlib GmbH. All rights reserved. |
+ | Copyright (c) 1997-2009 Thomas Merz and PDFlib GmbH. All rights reserved. |
  +---------------------------------------------------------------------------+
  |                                                                           |
  |    This software is subject to the PDFlib license. It is NOT in the       |
@@ -111,15 +111,22 @@ gen(2, 1046, IO_WROPEN_SV,
 gen(0, 1048, IO_UNSUPP_UNINAME,
     "Unicode file names are not supported on this platform")
 
+gen(0, 1049, IO_UNSUPP_PDFUNINAME,
+    "Unicode file names require PDF 1.7")
+
 gen(1, 1050, IO_COMPRESS, "Compression error ($1)")
 
 gen(0, 1052, IO_NOBUFFER, "Don't fetch buffer contents when writing to file")
 
 gen(2, 1054, IO_BADFORMAT, "'$1' does not appear to be a $2 file")
 
+gen(2, 1055, IO_WRITE,
+    "Error writing data to file '$1' (system error code $2)")
+
 gen(1, 1056, IO_READ, "Error reading data from file '$1'")
 
-gen(1, 1057, IO_WRITE, "Error writing data to file '$1'")
+gen(3, 1057, IO_WRITE_CODETEXT,
+    "Error writing data to file '$1' (system error code $2: $3)")
 
 gen(3, 1058, IO_ILLSYNTAX, "$1file '$2': Syntax error in line $3")
 
@@ -134,7 +141,15 @@ gen(2, 1064, IO_RDOPEN_QU,
 gen(2, 1066, IO_WROPEN_QU,
     "Couldn't open $1file '$2' for writing (quota exceeded)")
 
+gen(1, 1068, IO_TOOLONG_FULLNAME,
+    "Fully specified file name too long (>= 1024 bytes): '$1'")
 
+
+gen(2, 1080, IO_TOOFEW_REQFILEHDLS,
+    "Too few requested file handles $1 (< $2)")
+
+gen(2, 1081, IO_TOOMANY_REQFILEHDLS,
+    "Too many requested file handles $1 (> $2)")
 
 
 /* -------------------------------------------------------------------- */
@@ -171,10 +186,13 @@ gen(1, 1111, ILLARG_FLOAT_NAN,
 gen(1, 1112, ILLARG_UTF, "Illegal UTF-$1 sequence in string")
 */
 
-gen(2, 1114, ILLARG_MATRIX, "Matrix [$1] is degenerate")
+gen(2, 1114, ILLARG_MATRIX, "Matrix [$1] is degenerated")
 
 gen(2, 1116, ILLARG_TOOLONG,
     "String parameter '$1' is limited to $2 characters")
+
+gen(2, 1117, ILLARG_STRINGLEN,
+    "String length has bad value $1 (minimum 0, maximum $2)")
 
 gen(2, 1118, ILLARG_HANDLE,
     "Handle parameter or option of type '$1' has bad value $2")
@@ -184,6 +202,8 @@ gen(1, 1120, ILLARG_NONNEG, "Parameter '$1' must not be negative")
 */
 
 gen(1, 1122, ILLARG_LANG_CODE, "Unsupported language code '$1'")
+
+gen(2, 1124, ILLARG_TOOMANY, "Too many '$1' parameters (maximum $2)")
 
 
 /* -------------------------------------------------------------------- */
@@ -204,7 +224,7 @@ gen(2, 1210, PAR_SCOPE_GET, "Can't get parameter '$1' in scope '$2'")
 
 gen(2, 1212, PAR_SCOPE_SET, "Can't set parameter '$1' in scope '$2'")
 
-gen(2, 1214, PAR_VERSION, "Parameter '$1' requires PDF $2 or above")
+gen(2, 1214, PAR_VERSION, "Parameter '$1' requires PDF $2")
 
 gen(1, 1216, PAR_ILLKEY, "Illegal attempt to set parameter '$1'")
 
@@ -218,6 +238,8 @@ gen(3, 1219, RES_BADRES2,
 gen(1, 1220, PAR_UNSUPPKEY, "Unknown or unsupported key '$1'")
 
 gen(1, 1250, PAR_ILLSECT, "Illegal section '$1'")
+
+gen(1, 1260, PAR_NODATA, "No data supplied ($1)")
 
 
 
@@ -317,12 +339,18 @@ gen(2, 1501, CONV_ILLUTF16SUR,  "Invalid UTF-16 surrogate pair <U+$1,U+$2>")
 
 gen(0, 1502, CONV_MEMOVERFLOW,  "Out of memory in UTF string conversion")
 
+gen(0, 1503, CONV_ILLUTF32,
+    "Invalid UTF-32 string (byte count not a multiple of four)")
+
 gen(1, 1504, CONV_ILLUTF, "Invalid UTF-$1 string")
 
-gen(1, 1505, CONV_ILLUTF32, "Invalid UTF-32 character U+$1")
+gen(1, 1505, CONV_ILLUTF32CHAR, "Invalid UTF-32 character U+$1")
 
 gen(1, 1506, CONV_ILL_MBTEXTSTRING,
     "Invalid text string according to the current codepage '$1'")
+
+gen(2, 1507, CONV_ILLUTF8SEQU,
+    "Invalid UTF-8 sequence $1 at byte index $2")
 
 gen(1, 1508, CONV_UNSUPP_MBTEXTFORM,
     "Multi byte text format (codepage $1) not supported on this platform")
@@ -393,6 +421,8 @@ gen(0, 1907, INT_ILLFLOAT, "Bad floating point number for PDF")
 
 gen(2, 1908, INT_BADFORMAT, "Unknown vsprintf() format '$1' ($2)")
 
+gen(0, 1909, INT_FORMOVERFLOW, "Buffer overflow in formatting function")
+
 gen(1, 1910, INT_ALLOC0,
     "Tried to allocate 0 or negative number of bytes in function $1")
 
@@ -429,13 +459,14 @@ gen(1, 1940, INT_BADERRNO,
 
 gen(1, 1950, INT_LONGNAME_MISSING, "Long name is missing at index $1")
 
+gen(1, 1970, INT_ILLDOCTYPE, "Illegal document type '$1'")
+
 
 
 
 #undef	gen
 #undef	pdc_genNames
 #undef	pdc_genInfo
-
 
 
 

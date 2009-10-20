@@ -23,20 +23,21 @@
 #undef	NUM0
 #undef	PDFSP	
 
-#define LOWER	0x0001
-#define UPPER	0x0002
-#define DIGIT	0x0004
-#define PUNCT	0x0008
-#define SPACE	0x0010
+#define LOWER	PDC_ISLOWER
+#define UPPER	PDC_ISUPPER
+#define DIGIT	PDC_ISDIGIT
+#define PUNCT	PDC_ISPUNCT
+#define SPACE	PDC_ISSPACE
+#define SPACE2	PDC_ISSPACE2
 
-#define OCT	0x0100
-#define HEX	0x0200
-#define DELIM	0x0400
-#define NUM0	0x0800			/* '+'  '-'  '.'  '0'..'9'	*/
-#define PDFSP	0x1000			/* ' ' NUL HT NL CR FF		*/
+#define OCT	PDC_ISOCT
+#define HEX	PDC_ISXDIGIT
+#define DELIM	PDC_ISDELIM
+#define NUM0	PDC_ISNUM0
+#define PDFSP	PDC_ISPDFSP
 
 
-static const unsigned short pdc_ctype[256] =
+const unsigned short pdc_ctype[256] =
 {
     PDFSP,				/* 0x00 = NUL	*/
 
@@ -53,7 +54,7 @@ static const unsigned short pdc_ctype[256] =
     0, 0, 0, 0, 0, 0, 0, 0,		/* 0x10 .. 0x17 */
     0, 0, 0, 0, 0, 0, 0, 0,		/* 0x18 .. 0x1F */
 
-    SPACE | PDFSP,			/* 0x20 = ' '	*/
+    SPACE | SPACE2 | PDFSP,		/* 0x20 = ' '	*/
     PUNCT,				/* 0x21 = '!'	*/
     PUNCT,				/* 0x22 = '"'	*/
     PUNCT,				/* 0x23 = '#'	*/
@@ -175,135 +176,3 @@ static const unsigned short pdc_ctype[256] =
     0, 0, 0, 0, 0, 0, 0, 0,		/* 0xF0 .. 0xF7 */
     0, 0, 0, 0, 0, 0, 0, 0,		/* 0xF8 .. 0xFF */
 }; /* pdc_ctype */
-
-
-pdc_bool pdc__isalnum(pdc_byte c)
-{
-
-    return (pdc_ctype[c] & (LOWER | UPPER | DIGIT)) != 0;
-}
-
-pdc_bool pdc__isalpha(pdc_byte c)
-{
-
-    return (pdc_ctype[c] & (LOWER | UPPER)) != 0;
-}
-
-pdc_bool pdc__isdigit(pdc_byte c)
-{
-
-    return (pdc_ctype[c] & DIGIT) != 0;
-}
-
-pdc_bool pdc__islower(pdc_byte c)
-{
-
-    return (pdc_ctype[c] & LOWER) != 0;
-}
-
-pdc_bool pdc__isprint(pdc_byte c)
-{
-
-    if (c == 0x20)
-	return pdc_true;
-
-    return (pdc_ctype[c] & (LOWER | UPPER | DIGIT | PUNCT)) != 0;
-}
-
-pdc_bool pdc__ispunct(pdc_byte c)
-{
-
-    return (pdc_ctype[c] & PUNCT) != 0;
-}
-
-pdc_bool pdc__isspace(pdc_byte c)
-{
-
-    return (pdc_ctype[c] & SPACE) != 0;
-}
-
-pdc_bool pdc__isupper(pdc_byte c)
-{
-
-    return (pdc_ctype[c] & UPPER) != 0;
-}
-
-pdc_bool pdc__isxdigit(pdc_byte c)
-{
-
-    return (pdc_ctype[c] & HEX) != 0;
-}
-
-pdc_byte pdc__tolower(pdc_byte c)
-{
-    if (!pdc_isupper(c))
-    {
-	return c;
-    }
-    else
-    {
-	return (pdc_byte) (c + 0x20);
-    }
-}
-
-pdc_byte pdc__toupper(pdc_byte c)
-{
-    if (!pdc_islower(c))
-    {
-	return c;
-    }
-    else
-    {
-	return (pdc_byte) (c - 0x20);
-    }
-}
-
-pdc_bool pdc__isalpha_a(pdc_byte c)
-{
-    return (pdc_ctype[c] & (LOWER | UPPER)) != 0;
-}
-
-pdc_bool pdc__isdecdt_a(pdc_byte c)
-{
-    return (pdc_ctype[c] & DIGIT) != 0;
-}
-
-pdc_bool pdc__isdelim_a(pdc_byte c)
-{
-    return (pdc_ctype[c] & DELIM) != 0;
-}
-
-pdc_bool pdc__ishexdt_a(pdc_byte c)
-{
-    return (pdc_ctype[c] & HEX) != 0;
-}
-
-pdc_bool pdc__islower_a(pdc_byte c)
-{
-    return (pdc_ctype[c] & LOWER) != 0;
-}
-
-pdc_bool pdc__isnum0_a(pdc_byte c)
-{
-    return (pdc_ctype[c] & NUM0) != 0;
-}
-
-pdc_bool pdc__isoctdt_a(pdc_byte c)
-{
-    return (pdc_ctype[c] & OCT) != 0;
-}
-
-pdc_bool pdc__isspace_a(pdc_byte c)
-{
-    return (pdc_ctype[c] & PDFSP) != 0;
-}
-
-pdc_bool pdc__isspecial_a(pdc_byte c)
-{
-    return (pdc_ctype[c] & (PDFSP | DELIM)) != 0;
-}
-
-pdc_bool pdc__isupper_a(pdc_byte c)
-{
-    return (pdc_ctype[c] & UPPER) != 0;
-}

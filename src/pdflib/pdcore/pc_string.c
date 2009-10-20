@@ -43,7 +43,7 @@ void pdc_cleanup_strings(pdc_core *pdc)
 {
     pdc_mp_delete(pdc->bstr_pool);
     pdc_mp_delete(pdc->ustr_pool);
-} /* pdc_init_strings */
+} /* pdc_cleanup_strings */
 
 
 /************************************************************************/
@@ -416,7 +416,7 @@ pdc_bs_puts(pdc_bstr *dst, const pdc_byte *src)
     if (!src)
 	return;
 
-    pdc_bs_write(dst, src, strlen(src));
+    pdc_bs_write(dst, src, strlen((char *) src));
 } /* pdc_bs_puts */
 
 

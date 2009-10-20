@@ -284,10 +284,13 @@ int ZEXPORT deflateInit2_(
     s->hash_mask = s->hash_size - 1;
     s->hash_shift =  ((s->hash_bits+MIN_MATCH-1)/MIN_MATCH);
 
-    s->window = (Bytef *) ZALLOC(strm, s->w_size, 2*sizeof(Byte));
+    /* PDFlib GmbH Bug #1707: increase the buffer size by 2x2 bytes to
+     * avoid problems with memory access beyond the end in the assembler code
+     */
+    s->window = (Bytef *) ZALLOC(strm, 2+s->w_size, 2*sizeof(Byte));
     /* we don't use calloc -> to satisfy purify
      * at least here memset is needed */
-    memset((void *)s->window, 0, (size_t) s->w_size * 2*sizeof(Byte));
+    memset((void *)s->window, 0, (size_t) (2+s->w_size) * 2*sizeof(Byte));
 
     s->prev   = (Posf *)  ZALLOC(strm, s->w_size, sizeof(Pos));
     s->head   = (Posf *)  ZALLOC(strm, s->hash_size, sizeof(Pos));

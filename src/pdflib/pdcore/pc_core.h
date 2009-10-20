@@ -37,7 +37,7 @@
 #define PDF_FEATURE_NOT_PUBLIC
 
 
-/* ------------------------- general  ------------------------- */
+/* ------------------------- C types ------------------------- */
 
 typedef struct pdc_core_priv_s pdc_core_priv;
 typedef struct pdc_core_s pdc_core;
@@ -65,13 +65,16 @@ typedef unsigned int   pdc_uint32;
 */
 #if	defined(_LARGEFILE_SOURCE)
     #if defined(WIN32)
-	typedef __int64	pdc_off_t;
+	typedef __int64			pdc_off_t;
+	typedef unsigned __int64	pdc_uoff_t;
     #else
 #include <sys/types.h>
-	typedef off_t	pdc_off_t;
+	typedef off_t			pdc_off_t;
+	typedef unsigned long long	pdc_uoff_t;
     #endif
 #else
-	typedef long	pdc_off_t;
+	typedef long			pdc_off_t;
+	typedef unsigned long		pdc_uoff_t;
 #endif
 
 /* use this one for casts from "off_t" to "long" - so we can "grep"
@@ -79,25 +82,12 @@ typedef unsigned int   pdc_uint32;
 */
 typedef long pdc_off_t1;
 
-
+/* boolean values */
 #define pdc_undef      -1
 #define pdc_false       0
 #define pdc_true	1
 
-#define	PDC_1_1			11		/* PDF 1.1 = Acrobat 2 */
-#define	PDC_1_2			12		/* PDF 1.2 = Acrobat 3 */
-#define	PDC_1_3			13		/* PDF 1.3 = Acrobat 4 */
-#define	PDC_1_4			14		/* PDF 1.4 = Acrobat 5 */
-#define	PDC_1_5			15		/* PDF 1.5 = Acrobat 6 */
-#define	PDC_1_6			16		/* PDF 1.6 = Acrobat 7 */
-#define	PDC_1_7			17		/* PDF 1.7 = Acrobat 8 */
-#define PDC_X_X_LAST		17
-
-/* Acrobat limit for page dimensions */
-#define PDF_ACRO_MINPAGE       (3.0)           /* 1/24 inch = 0.106 cm */
-#define PDF_ACRO_MAXPAGE       (14400.0)       /* 200  inch = 508 cm   */
-
-
+/* --------------------------- new pdcore  --------------------------- */
 
 typedef void  (*pdc_error_fp)(void *opaque, int type, const char *msg);
 typedef void* (*pdc_alloc_fp)(void *opaque, size_t size, const char *caller);
@@ -110,16 +100,6 @@ pdc_core *pdc_new_core(pdc_error_fp errorhandler, pdc_alloc_fp allocproc,
     const char *appname, const char *version);
 
 void pdc_delete_core(pdc_core *pdc);
-
-typedef enum
-{
-    pdc_pbox_none,
-    pdc_pbox_art,
-    pdc_pbox_bleed,
-    pdc_pbox_crop,
-    pdc_pbox_media,
-    pdc_pbox_trim
-} pdc_pagebox;
 
 /* ------------------------- memory management  ------------------------- */
 
@@ -239,11 +219,6 @@ void		pdc_rethrow(pdc_core *pdc);
 #define PDC_RETHROW(pdc)	pdc_rethrow(pdc)
 
 
-/* ----------- service function to get PDF version string  -------------- */
-
-const char *pdc_get_pdfversion(pdc_core *pdc, int compatibility);
-
-
 /* --------------------------- debug hexdump  --------------------------- */
 
 #ifdef  PDC_DEBUG
@@ -266,5 +241,10 @@ void    pdc_hexdump(pdc_core *pdc, const char *msg, const char *text, int tlen);
 */
 #define PDC_LICFILE_ENV "PDFLIBLICENSEFILE"
 
+/* default base name for license file
+*/
+#define PDC_LICFILE_NAME "licensekeys.txt"
 
 #endif	/* PC_CORE_H */
+
+

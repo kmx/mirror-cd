@@ -198,13 +198,12 @@ tt_get_offset(tt_file *ttf, tt_byte offsize)
 static void
 tt_get_dirent(tt_dirent *dirent, tt_file *ttf)
 {
-    tt_read(ttf, dirent->tag, 4);
-    dirent->tag[4] = 0;
+    tt_read(ttf, dirent->tag, TT_TABTAG_SIZE);
+    dirent->tag[TT_TABTAG_SIZE] = 0;
     dirent->checksum = tt_get_ulong(ttf);
     dirent->offset = tt_get_ulong(ttf);
     dirent->length = tt_get_ulong(ttf);
 } /* tt_get_dirent */
-
 
 int
 tt_tag2idx(tt_file *ttf, char *tag)
@@ -232,6 +231,10 @@ tt_get_tab(tt_file *ttf, char *tag, size_t nbytes, pdc_bool tterror,
             tt_error(ttf);
         return NULL;
     }
+
+    pdc_logg_cond(pdc, 3, trc_font,
+        "\t\treading table \"%s\" (offset=0x%05X, length=%d)\n",
+        tag, ttf->dir[idx].offset, ttf->dir[idx].length);
 
     tt_seek(ttf, (long) ttf->dir[idx].offset);
 
@@ -298,6 +301,28 @@ tt_get_cmap6(tt_file *ttf, tt_cmap0_6 *cm0_6)
 } /* tt_get_cmap6 */
 
 static void
+tt_cleanup_cmap4(tt_file *ttf, tt_cmap4 *cm4)
+{
+    pdc_core *pdc = ttf->pdc;
+
+    if (cm4 != (tt_cmap4 *) 0)
+    {
+        if (cm4->endCount != (tt_ushort *) 0)
+            pdc_free(pdc, cm4->endCount);
+        if (cm4->startCount != (tt_ushort *) 0)
+            pdc_free(pdc, cm4->startCount);
+        if (cm4->idDelta != (tt_short *) 0)
+            pdc_free(pdc, cm4->idDelta);
+        if (cm4->idRangeOffs != (tt_ushort *) 0)
+            pdc_free(pdc, cm4->idRangeOffs);
+        if (cm4->glyphIdArray != (tt_ushort *) 0)
+            pdc_free(pdc, cm4->glyphIdArray);
+
+        pdc_free(pdc, cm4);
+    }
+}
+
+static tt_cmap4 *
 tt_get_cmap4(tt_file *ttf, tt_cmap4 *cm4)
 {
     static const char *fn = "tt_get_cmap4";
@@ -321,62 +346,56 @@ tt_get_cmap4(tt_file *ttf, tt_cmap4 *cm4)
 
     segs = cm4->segCountX2 / 2;
 
-    cm4->numGlyphIds  = (tt_ushort)(
-        ((cm4->length - ( 16L + 8L * segs )) & 0xFFFFU) / 2);
-
-    TT_IOCHECK(ttf, 0 <= cm4->numGlyphIds);
-
-    cm4->endCount =
-	(tt_ushort *)
-            pdc_malloc(pdc, (size_t) (sizeof (tt_ushort) * segs), fn);
-    cm4->startCount =
-	(tt_ushort *)
-            pdc_malloc(pdc, (size_t) (sizeof (tt_ushort) * segs), fn);
-    cm4->idDelta =
-	(tt_short *)
-            pdc_malloc(pdc, (size_t) (sizeof (tt_ushort) * segs), fn);
-    cm4->idRangeOffs =
-	(tt_ushort *)
-            pdc_malloc(pdc, (size_t) (sizeof (tt_ushort) * segs), fn);
-
-    if (cm4->numGlyphIds)
+    if (segs >= 1)
     {
-        cm4->glyphIdArray = (tt_ushort *)
-            pdc_malloc(pdc,
-                (size_t) (sizeof (tt_ushort) * cm4->numGlyphIds), fn);
-    }
+        cm4->numGlyphIds  = (tt_ushort)(
+            ((cm4->length - ( 16L + 8L * segs )) & 0xFFFFU) / 2);
 
-    for (i = 0; i < segs; ++i)
-        cm4->endCount[i] = tt_get_ushort(ttf);
+        TT_IOCHECK(ttf, 0 <= cm4->numGlyphIds);
 
-    TT_IOCHECK(ttf, cm4->endCount[segs - 1] == 0xFFFF);
+        cm4->endCount =
+            (tt_ushort *)
+                pdc_malloc(pdc, (size_t) (sizeof (tt_ushort) * segs), fn);
+        cm4->startCount =
+            (tt_ushort *)
+                pdc_malloc(pdc, (size_t) (sizeof (tt_ushort) * segs), fn);
+        cm4->idDelta =
+            (tt_short *)
+                pdc_malloc(pdc, (size_t) (sizeof (tt_ushort) * segs), fn);
+        cm4->idRangeOffs =
+            (tt_ushort *)
+                pdc_malloc(pdc, (size_t) (sizeof (tt_ushort) * segs), fn);
 
-    (void) tt_get_ushort(ttf);     /* padding */
-    for (i = 0; i < segs; ++i)  cm4->startCount[i] = tt_get_ushort(ttf);
-    for (i = 0; i < segs; ++i)  cm4->idDelta[i] = tt_get_short(ttf);
-    for (i = 0; i < segs; ++i)  cm4->idRangeOffs[i] = tt_get_ushort(ttf);
-
-    for (i = 0; i < cm4->numGlyphIds; ++i)
-        cm4->glyphIdArray[i] = tt_get_ushort(ttf);
-
-    /* empty cmap */
-    if (segs == 1 && cm4->endCount[0] == cm4->startCount[0])
-    {
-        cm4->segCountX2 = 0;
-        pdc_free(pdc, cm4->endCount);
-        cm4->endCount = (tt_ushort *) 0;
-        pdc_free(pdc, cm4->startCount);
-        cm4->startCount = (tt_ushort *) 0;
-        pdc_free(pdc, cm4->idDelta);
-        cm4->idDelta = (tt_short *)  0;
-        pdc_free(pdc, cm4->idRangeOffs);
-        cm4->idRangeOffs = (tt_ushort *) 0;
         if (cm4->numGlyphIds)
         {
-            pdc_free(pdc, cm4->glyphIdArray);
-            cm4->glyphIdArray = (tt_ushort *) 0;
+            cm4->glyphIdArray = (tt_ushort *)
+                pdc_malloc(pdc,
+                    (size_t) (sizeof (tt_ushort) * cm4->numGlyphIds), fn);
         }
+
+        for (i = 0; i < segs; ++i)
+            cm4->endCount[i] = tt_get_ushort(ttf);
+
+        TT_IOCHECK(ttf, cm4->endCount[segs - 1] == 0xFFFF);
+
+        (void) tt_get_ushort(ttf);     /* padding */
+        for (i = 0; i < segs; ++i)  cm4->startCount[i] = tt_get_ushort(ttf);
+        for (i = 0; i < segs; ++i)  cm4->idDelta[i] = tt_get_short(ttf);
+        for (i = 0; i < segs; ++i)  cm4->idRangeOffs[i] = tt_get_ushort(ttf);
+
+        for (i = 0; i < cm4->numGlyphIds; ++i)
+            cm4->glyphIdArray[i] = tt_get_ushort(ttf);
     }
+
+    /* empty cmap */
+    if (segs == 0 || (segs == 1 && cm4->endCount[0] == cm4->startCount[0]))
+    {
+        tt_cleanup_cmap4(ttf, cm4);
+
+        cm4 = (tt_cmap4 *) 0;
+    }
+
+    return cm4;
 
 } /* tt_get_cmap4 */
 
@@ -452,6 +471,8 @@ tt_get_tab_cmap(tt_file *ttf)
                             pdc_malloc(pdc, sizeof (tt_cmap0_6), fn);
 		tp->mac->format = 0;
                 tt_get_cmap0(ttf, tp->mac);
+
+                offset_mac = offsetEncTab;
 	    }
 	    else if (tableFormat == 6 && tp->mac == (tt_cmap0_6 *) 0)
 	    {
@@ -459,53 +480,67 @@ tt_get_tab_cmap(tt_file *ttf)
                             pdc_malloc(pdc, sizeof (tt_cmap0_6), fn);
 		tp->mac->format = 6;
                 tt_get_cmap6(ttf, tp->mac);
+
+                offset_mac = offsetEncTab;
 	    }
-            offset_mac = offsetEncTab;
+            else if (numEncTabs == 1 && tableFormat == 4)
+            {
+                /* simulating Windows */
+                tp->win = (tt_cmap4 *) pdc_malloc(pdc, sizeof (tt_cmap4), fn);
+                tp->win->format = tableFormat;
+                tp->win->encodingID = encodingID;
+                tp->win = tt_get_cmap4(ttf, tp->win);
+
+                /* cmap picking not necessary */
+            }
 	}
 
         /*
-         * platformID: 0  encodingID: 3    tableFormat: 4  (old mac)
-         * platformID: 3  encodingID: 0/1  tableFormat: 4
+         * platformID: 0  encodingID: 3     tableFormat: 4  (old mac)
+         * platformID: 3  encodingID: 0/1/4 tableFormat: 4  preferred!
          */
-        else if ((tp->win == (tt_cmap4 *) 0 && tableFormat == 4) &&
+        else if (tableFormat == 4 &&
                  ((platformID == tt_pfid_win &&
                    (encodingID == tt_wenc_symbol ||
-                    encodingID == tt_wenc_text)) ||
+                    encodingID == tt_wenc_text ||
+                    encodingID == tt_wenc_big5)) ||
                   (platformID == tt_pfid_uni &&
                    encodingID == tt_wenc_mtext)))
         {
-            tp->win = (tt_cmap4 *) pdc_malloc(pdc, sizeof (tt_cmap4), fn);
-            tp->win->format = tableFormat;
-
-            /* we suppose a windows platform (see old mac hostfont Times) */
-            if (encodingID == tt_wenc_mtext)
+            if (tp->win == (tt_cmap4 *) 0 ||
+                (tp->win != (tt_cmap4 *) 0 &&
+                 ((tp->win->encodingID == tt_wenc_mtext ||
+                   tp->win->encodingID == tt_wenc_big5) &&
+                  encodingID < tt_wenc_mtext)))
             {
-                encodingID = tt_wenc_text;
-            }
+                if (tp->win != (tt_cmap4 *) 0)
+                    tt_cleanup_cmap4(ttf, tp->win);
+                tp->win = (tt_cmap4 *) pdc_malloc(pdc, sizeof (tt_cmap4), fn);
 
-            tt_get_cmap4(ttf, tp->win);
-
-            if (tp->win->segCountX2)
-            {
+                tp->win->format = tableFormat;
                 tp->win->encodingID = encodingID;
+                tp->win = tt_get_cmap4(ttf, tp->win);
+
+                if (tp->win != (tt_cmap4 *) 0)
+                    offset_win = offsetEncTab;
             }
-            else
-            {
-                pdc_free(pdc, tp->win);
-                tp->win = (tt_cmap4 *) 0;
-            }
-            offset_win = offsetEncTab;
         }
 
 
         tt_seek(ttf, pos);
     } /* for */
 
+    /* we suppose a windows platform (see old mac hostfont Times) */
+    if (tp->win && tp->win->encodingID == tt_wenc_mtext)
+    {
+        encodingID = tt_wenc_text;
+    }
+
     /* is symbol font */
     ttf->issymbol = (tp->win && tp->win->encodingID == tt_wenc_symbol) ?
                     pdc_true : pdc_false;
 
-    /* has Unicode cmap */
+    /* has Unicode/CMap cmap */
     ttf->haswinuni = (!ttf->issymbol && (tp->win || tp->ucs4)) ?
                      pdc_true : pdc_false;
 
@@ -540,6 +575,7 @@ tt_get_tab_cmap(tt_file *ttf)
         }
         else
         {
+            ttf->hasbig5cmap = tp->win->encodingID == tt_wenc_big5;
             tp->encoding = tt_wenc_text;
             tp->format = tp->win->format;
             tp->offset = offset_win;
@@ -553,12 +589,16 @@ tt_get_tab_cmap(tt_file *ttf)
         tp->platform, tp->encoding, tp->format,
         ttf->issymbol ? "symbol" : "text");
 
+    if (ttf->hasbig5cmap)
+        pdc_logg_cond(ttf->pdc, 1, trc_font, "\t\tCID font with Big5 cmap\n");
+
     /* for subsetting and symbolic font:
      * tp->platform = tt_pfid_mac according PDF specification
      * otherwise GS will emit an error message
      */
     if (ttf->issymbol && offset_mac > 0)
     {
+        ttf->forcesubset = !ttf->hasonlymac;
         tp->platform = tt_pfid_mac;
         tp->encoding = tt_wenc_symbol;
         tp->format = tp->mac->format;
@@ -600,7 +640,7 @@ tt_get_tab_head(tt_file *ttf)
     tp->glyphDataFormat         = tt_get_short(ttf);
 } /* tt_get_tab_head */
 
-static void
+void
 tt_get_tab_hhea(tt_file *ttf)
 {
     tt_tab_hhea *tp = NULL;
@@ -764,7 +804,6 @@ tt_get_tab_name(tt_file *ttf)
     tp->englishname4 = NULL;
     tp->englishname6 = NULL;
     tp->producer = NULL;
-
     tp->format = tt_get_ushort(ttf);
 
     /* Format 0 is the only document one, but some Apple fonts use 65535.
@@ -781,6 +820,13 @@ tt_get_tab_name(tt_file *ttf)
     pdc_logg_cond(pdc, 1, trc_font,
         "\tRecords in name table of format %d: %d:\n",
         tp->format, tp->numNameRecords);
+
+    if (ttf->utf16fontname != NULL)
+    {
+        pdc_logg_cond(pdc, 1, trc_font,
+            "\tSearching for a host font with Unicode name \"%T\"\n",
+            ttf->utf16fontname, ttf->fnamelen);
+    }
 
     /* this was observed. we ignore it in TET */
     if (ttf->fortet && tp->numNameRecords == 0)
@@ -865,7 +911,7 @@ tt_get_tab_name(tt_file *ttf)
             if (namerec->length && namerec->namid == namid)
             {
                 /* TTC font search */
-                if (ttf->utf16fontname)
+                if (ttf->utf16fontname != NULL)
                 {
                     /* read font name */
                     if (localname == NULL)
@@ -925,7 +971,7 @@ tt_get_tab_name(tt_file *ttf)
     }
 
     /* TTC font not found */
-    if (ttf->utf16fontname)
+    if (ttf->utf16fontname != NULL)
         return pdc_false;
 
     /* English font names */
@@ -1018,6 +1064,7 @@ void
 tt_get_tab_OS_2(tt_file *ttf)
 {
     pdc_bool logg3 = pdc_logg_is_enabled(ttf->pdc, 3, trc_font);
+    pdc_bool logg5 = pdc_logg_is_enabled(ttf->pdc, 5, trc_font);
     int i, j;
 
     tt_tab_OS_2 *tp = NULL;
@@ -1077,7 +1124,8 @@ tt_get_tab_OS_2(tt_file *ttf)
     for (i = 0; i < PDC_NUMCHARCOLL; i++)
     {
         j = i + 17;
-        if (tp->ulCodePageRange1 & (1<<j))
+        if (tp->ulCodePageRange1 & (1<<j) || (ttf->hasbig5cmap &&
+            tt_cpflag2charcoll[i] == cc_traditional_chinese))
             tp->charcolls[i] = tt_cpflag2charcoll[i];
         else
             tp->charcolls[i] = cc_none;
@@ -1098,6 +1146,15 @@ tt_get_tab_OS_2(tt_file *ttf)
 	tp->usDefaultChar = 0;
 	tp->usBreakChar = 0;
 	tp->usMaxContext = 0;
+    }
+
+    if (logg5)
+    {
+        pdc_logg(ttf->pdc, "\t\t\tusFirstCharIndex=0x%04X\n",
+                 ttf->tab_OS_2->usFirstCharIndex);
+        if (ttf->tab_cmap && ttf->tab_cmap->win)
+            pdc_logg(ttf->pdc, "\t\t\tstartCount[0]=0x%04X\n",
+                     ttf->tab_cmap->win->startCount[0]);
     }
 
     /* there are fonts with inconsistent usFirstCharIndex */
@@ -1191,7 +1248,12 @@ tt_get_tab_post(tt_file *ttf)
     tp->maxMemType42 = tt_get_ulong(ttf);
     tp->minMemType1 = tt_get_ulong(ttf);
     tp->maxMemType1 = tt_get_ulong(ttf);
+    tp->numberOfGlyphs = ttf->numGlyphs;
 
+    /* there are subset fonts with different number of glyphs
+     * see bug #1418
+     */
+    ttf->numGlyphs = MAX(tp->numberOfGlyphs, ttf->numGlyphs);
 
 } /* tt_get_tab_post */
 
@@ -1278,6 +1340,7 @@ fnt_test_tt_font(pdc_core *pdc, tt_byte *img, tt_ulong *n_fonts,
 
     return pdc_true;
 }
+
 
 pdc_bool
 fnt_is_opentype_font(tt_file *ttf)
@@ -1387,22 +1450,43 @@ tt_unicode2gidx(tt_file *ttf, int usv, pdc_bool logg)
     pdc_core *pdc = ttf->pdc;
     tt_cmap4 *cm4 = ttf->tab_cmap->win;
     pdc_ushort uv;
-    int segs;
-    int gidx = 0;
-    int i;
+    int lo, hi, segs;
+    int gidx = 0, i = 0;
 
     uv = (pdc_ushort) usv;
-    if (logg) pdc_logg(pdc, "\t\t\tU+%04X: ", uv);
+    if (logg) pdc_logg(pdc, "\t\t\tUCS2: %04X: ", uv);
     segs = cm4->segCountX2 / 2;
 
-    for (i = 0; i < segs; ++i)
-        if (uv <= cm4->endCount[i])
-            break;
+    lo = 0;
+    hi = segs;
+    while (lo < hi)
+    {
+        i = (lo + hi) / 2;
 
-    if (logg) pdc_logg(pdc, "i=%d start=U+%04X  ", i, cm4->startCount[i]);
+        if (uv <= cm4->endCount[i])
+        {
+            if (uv >= cm4->startCount[i])
+            {
+                break;
+            }
+            else if (!i || uv > cm4->endCount[i - 1])
+            {
+                i = -1;
+                break;
+            }
+        }
+
+        if (uv < cm4->startCount[i])
+            hi = i;
+        else
+            lo = i + 1;
+    }
+
+
+    if (logg) pdc_logg(pdc, "i=%d start=UCS2: %04X  ", i, cm4->startCount[i]);
 
     TT_IOCHECK(ttf, i != segs);
-    if (uv < cm4->startCount[i] || uv == 0xFFFF)
+    if (i == -1 || uv == 0xFFFF)
     {
         if (logg) pdc_logg(pdc, "==> gidx=0\n");
         return 0;
@@ -1478,11 +1562,15 @@ tt_gidx2width(tt_file *ttf, int gidx)
 void
 fnt_set_tt_fontvalues(tt_file *ttf)
 {
+    pdc_bool logg3 = pdc_logg_is_enabled(ttf->pdc, 3, trc_font);
     fnt_font *font = ttf->font;
     fnt_font_metric *ftm = &font->m;
 
     if (ttf->onlyCFF)
         return;
+
+    if (logg3)
+        pdc_logg(ttf->pdc, "\tUnits per EM: %d\n", ttf->tab_head->unitsPerEm);
 
     if (ttf->tab_head)
     {
@@ -1601,6 +1689,9 @@ fnt_set_tt_fontarrays(tt_file *ttf, int flags)
             ** like that; perhaps we have to apply similar tricks then...
             */
             uvoffset = (ttf->tab_OS_2->usFirstCharIndex & 0xFF00);
+
+            if (logg5)
+                pdc_logg(pdc, "\t\tuvoffset=0x%04X\n", uvoffset);
         }
         else
         {
@@ -2140,6 +2231,8 @@ fnt_check_tt_font(pdc_core *pdc, const char *filename, const char *fontname,
  * ttf->verbose = pdc_false;
  * ttf->kerning = pdc_true;
  * ttf->vertical = pdc_true;
+ * ttf->ignorename = pdc_true;
+ * ttf->cmst = ~NULL;
  * ttf->fortet = pdc_true;
  *
  * ttf->check = pdc_true;
@@ -2201,6 +2294,9 @@ fnt_new_tt(pdc_core *pdc, fnt_font *font)
     ttf->issymbol = pdc_false;
     ttf->haswinuni = pdc_false;
     ttf->hasonlymac = pdc_false;
+    ttf->hasbig5cmap = pdc_false;
+    ttf->forcesubset = pdc_false;
+    ttf->gidunequcid = pdc_false;
 
 
     ttf->utf16fontname = (char *) 0;
@@ -2214,9 +2310,6 @@ void
 fnt_delete_tt(tt_file *ttf)
 {
     pdc_core *pdc = ttf->pdc;
-    int i;
-
-    (void) i;
 
     if (ttf->check == pdc_false && ttf->fp != (pdc_file *) 0)
         pdc_fclose(ttf->fp);
@@ -2243,24 +2336,14 @@ fnt_delete_tt(tt_file *ttf)
 
     if (ttf->tab_cmap != (tt_tab_cmap *) 0)
     {
-        if (ttf->tab_cmap->mac != (tt_cmap0_6 *) 0) {
+        if (ttf->tab_cmap->mac != (tt_cmap0_6 *) 0)
+        {
             if (ttf->tab_cmap->mac->glyphIdArray)
                 pdc_free(pdc, ttf->tab_cmap->mac->glyphIdArray);
             pdc_free(pdc, ttf->tab_cmap->mac);
         }
 
-        if (ttf->tab_cmap->win != (tt_cmap4 *) 0)
-        {
-            tt_cmap4 *cm4 = (tt_cmap4 *) ttf->tab_cmap->win;
-
-            if (cm4->endCount != 0)     pdc_free(pdc, cm4->endCount);
-            if (cm4->startCount != 0)   pdc_free(pdc, cm4->startCount);
-            if (cm4->idDelta != 0)      pdc_free(pdc, cm4->idDelta);
-            if (cm4->idRangeOffs != 0)  pdc_free(pdc, cm4->idRangeOffs);
-            if (cm4->glyphIdArray != 0) pdc_free(pdc, cm4->glyphIdArray);
-
-            pdc_free(pdc, cm4);
-        }
+        tt_cleanup_cmap4(ttf, ttf->tab_cmap->win);
 
         if (ttf->tab_cmap->ucs4 != (tt_cmap12 *) 0)
         {

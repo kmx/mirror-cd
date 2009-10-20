@@ -57,17 +57,17 @@ static const fnt_cmap_info fnt_predefined_cmaps[] =
     { "GBK-EUC-V",        cc_simplified_chinese, 0, PDC_1_3, 2, 2, 2, 2, 1},
     { "GBKp-EUC-H",       cc_simplified_chinese, 0, PDC_1_4, 0, 2, 2, 2, 0},
     { "GBKp-EUC-V",       cc_simplified_chinese, 0, PDC_1_4, 0, 2, 2, 2, 1},
-    { "GBK2K-H",          cc_simplified_chinese, 0, PDC_1_4, 0, 4, 4, 4, 0},
-    { "GBK2K-V",          cc_simplified_chinese, 0, PDC_1_4, 0, 4, 4, 4, 1},
+    { "GBK2K-H",          cc_simplified_chinese, 0, PDC_1_4, 0, 4, 4, 5, 0},
+    { "GBK2K-V",          cc_simplified_chinese, 0, PDC_1_4, 0, 4, 4, 5, 1},
     { "UniGB-UCS2-H",     cc_simplified_chinese, 2, PDC_1_3, 2, 4, 4, 4, 0},
     { "UniGB-UCS2-V",     cc_simplified_chinese, 2, PDC_1_3, 2, 4, 4, 4, 1},
-    { "UniGB-UTF16-H",    cc_simplified_chinese, 2, PDC_1_5, 0, 0, 4, 4, 0},
-    { "UniGB-UTF16-V",    cc_simplified_chinese, 2, PDC_1_5, 0, 0, 4, 4, 1},
+    { "UniGB-UTF16-H",    cc_simplified_chinese, 2, PDC_1_5, 0, 0, 4, 5, 0},
+    { "UniGB-UTF16-V",    cc_simplified_chinese, 2, PDC_1_5, 0, 0, 4, 5, 1},
 
     { "B5pc-H",           cc_traditional_chinese, 0, PDC_1_3, 0, 0, 0, 0, 0},
     { "B5pc-V",           cc_traditional_chinese, 0, PDC_1_3, 0, 0, 0, 0, 1},
-    { "HKscs-B5-H",       cc_traditional_chinese, 0, PDC_1_4, 0, 3, 3, 3, 0},
-    { "HKscs-B5-V",       cc_traditional_chinese, 0, PDC_1_4, 0, 3, 3, 3, 1},
+    { "HKscs-B5-H",       cc_traditional_chinese, 0, PDC_1_4, 0, 3, 3, 5, 0},
+    { "HKscs-B5-V",       cc_traditional_chinese, 0, PDC_1_4, 0, 3, 3, 5, 1},
     { "ETen-B5-H",        cc_traditional_chinese, 0, PDC_1_3, 0, 0, 0, 0, 0},
     { "ETen-B5-V",        cc_traditional_chinese, 0, PDC_1_3, 0, 0, 0, 0, 1},
     { "ETenms-B5-H",      cc_traditional_chinese, 0, PDC_1_3, 0, 0, 0, 0, 0},
@@ -94,7 +94,7 @@ static const fnt_cmap_info fnt_predefined_cmaps[] =
     { "Identity-H",       cc_identity, 0, PDC_1_3, 0, 0, 0, 0, 0},
     { "Identity-V",       cc_identity, 0, PDC_1_3, 0, 0, 0, 0, 1},
 
-    { NULL,               0, 0, 0, 0, 0, 0, 0, 0},
+    { NULL,               cc_none, 0, 0, 0, 0, 0, 0, 0},
 };
 
 static int
@@ -246,8 +246,11 @@ fnt_get_maxcid(int charcoll, int supplement)
             return 22352;
 
             case 4:
-            default:
             return 29063;
+
+            case 5:
+            default:
+            return 30283;
         }
 
         case cc_traditional_chinese:
@@ -266,8 +269,11 @@ fnt_get_maxcid(int charcoll, int supplement)
             return 18845;
 
             case 4:
-            default:
             return 18964;
+
+            case 5:
+            default:
+            return 19087;
         }
 
         case cc_korean:

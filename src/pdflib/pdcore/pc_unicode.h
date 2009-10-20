@@ -134,8 +134,8 @@
 #define PDF_BOM4                 0xBF
 
 /*
- * check whether the string is plain C or UTF16 unicode
- * by looking for the BOM in big-endian or little-endian format resp.
+ * check whether the string is UTF-16 unicode by looking for the BOM
+ * in big-endian or little-endian format resp.
  * s must not be NULL.
  */
 #define pdc_is_utf16be_unicode(s) \
@@ -147,8 +147,24 @@
          ((pdc_byte *)(s))[1] == PDF_BOM0)
 
 /*
- * check whether the string is plain C or UTF8 unicode
- * by looking for the BOM
+ * check whether the string is UTF-32 unicode by looking for the BOM
+ * in big-endian or little-endian format resp.
+ * s must not be NULL.
+ */
+#define pdc_is_utf32be_unicode(s) \
+        (((pdc_byte *)(s))[0] == 0x00 && \
+         ((pdc_byte *)(s))[1] == 0x00 && \
+         ((pdc_byte *)(s))[2] == PDF_BOM0 && \
+         ((pdc_byte *)(s))[3] == PDF_BOM1)
+
+#define pdc_is_utf32le_unicode(s) \
+        (((pdc_byte *)(s))[0] == PDF_BOM1 && \
+         ((pdc_byte *)(s))[1] == PDF_BOM0 && \
+         ((pdc_byte *)(s))[2] == 0x00 && \
+         ((pdc_byte *)(s))[3] == 0x00)
+
+/*
+ * check whether the string is UTF-8 unicode by looking for the BOM
  * s must not be NULL.
  */
 #define pdc_is_utf8_unicode(s) \
@@ -211,6 +227,10 @@ pdc_convers_flags;
 #define PDC_CONV_KEEPLBCHAR (1<<15)
 #define PDC_CONV_LOGGING    (1<<16)
 #define PDC_CONV_ISUTF8     (1<<17)
+#define PDC_CONV_ASCII      (1<<18)
+#define PDC_CONV_MAXSTRLEN  (1<<19)
+#define PDC_CONV_FILENAME   (1<<20)
+
 
 /* DON'T change the order */
 typedef enum
@@ -242,7 +262,9 @@ static const pdc_keyconn pdc_textformat_keylist[] =
     {"utf16le",    pdc_utf16le},
     {NULL, 0}
 };
-#endif /* PC_UNICODE_C  */
+#endif /* PC_UNICODE_C */
+
+const char *pdc_get_textformat(int textformat);
 
 int pdc_convert_string(pdc_core *pdc,
     pdc_text_format inutf, int codepage, pdc_encodingvector *inev,

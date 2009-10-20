@@ -231,6 +231,8 @@ pdc_priv_glyphtab *pdc_get_pglyphtab_ptr(pdc_core *pdc);
 void pdc_init_encoding(pdc_core *pdc, pdc_encodingvector *ev,
                        const char *name);
 pdc_encodingvector *pdc_new_encoding(pdc_core *pdc, const char *name);
+void pdc_refresh_encoding(pdc_core *pdc, pdc_encodingvector *ev,
+        const char *name);
 void pdc_cleanup_encoding(pdc_core *pdc, pdc_encodingvector *ev);
 pdc_encodingvector *pdc_copy_encoding(pdc_core *pdc, pdc_encodingvector *evfrom,
         const char *name);

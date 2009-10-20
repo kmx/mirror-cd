@@ -19,6 +19,40 @@
 #ifndef PC_RESOURCE_H
 #define PC_RESOURCE_H
 
+#ifdef PC_RESOURCE_C
+#if !defined(WIN32) && !defined(AS400) && !defined(MVS)
+
+/* default SearchPath list for UNIX like systems
+*/
+
+/* %s: $HOME
+*/
+static const char *rootdirectories[] =
+{
+    "/usr/local",
+    "%s",
+    NULL
+};
+
+/*
+ * first  %s: root directory
+ * second %s: pdc->prodname
+ * third  %s: pdc->version without revision: <major>.<minor>
+ */
+static const char *defsearchpathlist[] =
+{
+    "%s/PDFlib",
+    "%s/PDFlib/%s",
+    "%s/PDFlib/%s/%s",
+    "%s/PDFlib/%s/%s/resource/cmap",
+    "%s/PDFlib/%s/%s/resource/fonts",
+    "%s/PDFlib/%s/%s/resource/icc",
+    NULL
+};
+
+#endif /* !WIN32 && !AS400 && !MVS */
+#endif /* PC_RESOURCE_C */
+
 /* pdcore logg classes (maximal PDC_CLASSLIST_SIZE) */
 typedef enum
 {
@@ -42,7 +76,9 @@ typedef enum
     trc_warning,        /* logging of disabled warnings */
     trc_wordfinder,     /* word finder logging */
     trc_xmp,            /* xmp logging */
-    trc_zones           /* zones logging */
+    trc_zones,          /* zones logging */
+
+    trc_numclasses      /* number of classes */
 }
 pdc_logg_class;
 

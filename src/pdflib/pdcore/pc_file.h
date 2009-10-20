@@ -19,29 +19,6 @@
 #ifndef PC_FILE_H
 #define PC_FILE_H
 
-#if (defined(MAC) || defined(MACOSX))
-
-#include <Files.h>
-
-#ifdef PDF_TARGET_API_MAC_CARBON
-
-OSStatus FSMakePath(SInt16 volRefNum, SInt32 dirID, ConstStr255Param name,
-           UInt8 *path, UInt32 maxPathSize);
-
-OSStatus FSPathMakeFSSpec(const UInt8 *path, FSSpec *spec);
-
-#else
-
-#include <Aliases.h>
-
-OSErr FSpGetFullPath(const FSSpec *spec, short *fullPathLength,
-        Handle *fullPath);
-
-OSErr FSpLocationFromFullPath(short fullPathLength,
-		const void *fullPath, FSSpec *spec);
-
-#endif /* !PDF_TARGET_API_MAC_CARBON */
-#endif /* (defined(MAC) || defined(MACOSX)) */
 
 #define PDC_FILENAMELEN  1024    /* maximum file name length */
 
@@ -74,19 +51,26 @@ typedef struct pdc_file_s pdc_file;
 
 /* pc_file.c */
 
+#if defined(WIN32)
+int pdc_set_maxfilehandles(pdc_core *pdc, int maxfps);
+int pdc_get_maxfilehandles(void);
+#endif
+
 int		pdc__fseek(FILE *fp, pdc_off_t offset, int whence);
 pdc_off_t	pdc__ftell(FILE *fp);
 size_t		pdc__fread(void *ptr, size_t size, size_t nmemb, FILE *fp);
 size_t          pdc__fwrite(const void *ptr, size_t size, size_t nmemb,
                             FILE *fp);
-int		pdc__fgetc(FILE *fp);
-int		pdc__feof(FILE *fp);
+
+#define         pdc__fgetc(fp)  fgetc(fp)
+#define         pdc__feof(fp)   feof(fp)
 
 FILE   *pdc_get_fileptr(pdc_file *sfp);
 pdc_core   *pdc_get_pdcptr(pdc_file *sfp);
 int     pdc_get_fopen_errnum(pdc_core *pdc, int errnum);
 void    pdc_set_fopen_errmsg(pdc_core *pdc, int errnum, const char *qualifier,
                             const char *filename);
+void    pdc_set_fwrite_errmsg(pdc_core *pdc, const char *filename);
 pdc_bool pdc_check_fopen_errmsg(pdc_core *pdc, pdc_bool requested);
 
 void    *pdc_read_file(pdc_core *pdc, FILE *fp, pdc_off_t *o_filelen,
@@ -127,8 +111,8 @@ int     pdc_fgetc(pdc_file *sfp);
 int     pdc_feof(pdc_file *sfp);
 void    pdc_fclose(pdc_file *sfp);
 void    pdc_fclose_logg(pdc_core *pdc, FILE *fp);
-void    pdc_file_fullname(const char *dirname, const char *basename,
-                          char *fullname);
+void    pdc_file_fullname(pdc_core *pdc, const char *dirname,
+                const char *basename, char *fullname);
 char *pdc_file_fullname_mem(pdc_core *pdc, const char *dirname,
         const char *basename);
 char *pdc_file_concat(pdc_core *pdc, const char *dirname, const char *basename,

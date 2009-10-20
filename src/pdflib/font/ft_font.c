@@ -393,10 +393,11 @@ pdc_encodingvector *
 fnt_create_font_ev(pdc_core *pdc, fnt_font *font)
 {
     pdc_encodingvector *ev = NULL;
-    char encname[128];
+    char encname[PDC_GEN_BUFSIZE];
 
     pdc->uniqueno++;
-    sprintf(encname, "encoding_%s_%d", font->name, pdc->uniqueno);
+    pdc_sprintf(pdc, pdc_false, encname, "encoding_%s_%d",
+                font->name, pdc->uniqueno);
     ev = pdc_new_encoding(pdc, encname);
     pdc_insert_encoding_vector(pdc, ev);
     font->enc = pdc_find_encoding(pdc, encname);
@@ -424,24 +425,35 @@ fnt_check_weight(int weight)
 
 static const pdc_keyconn fnt_fontweight_keylist[] =
 {
-    {"none",        FNT_FW_DONTCARE},
-    {"thin",        FNT_FW_THIN},
-    {"extralight",  FNT_FW_EXTRALIGHT},
-    {"ultralight",  FNT_FW_ULTRALIGHT},
-    {"light",       FNT_FW_LIGHT},
-    {"normal",      FNT_FW_NORMAL},
-    {"regular",     FNT_FW_REGULAR},
+    {"None",        FNT_FW_DONTCARE},
+    {"Thin",        FNT_FW_THIN},
+    {"Extralight",  FNT_FW_EXTRALIGHT},
+    {"Ultralight",  FNT_FW_ULTRALIGHT},
+    {"Light",       FNT_FW_LIGHT},
+    {"Normal",      FNT_FW_NORMAL},
+    {"Regular",     FNT_FW_REGULAR},
     {"",            FNT_FW_REGULAR},
-    {"medium",      FNT_FW_MEDIUM},
-    {"semibold",    FNT_FW_SEMIBOLD},
-    {"semi",        FNT_FW_SEMIBOLD},
-    {"demibold",    FNT_FW_DEMIBOLD},
-    {"bold",        FNT_FW_BOLD},
-    {"extrabold",   FNT_FW_EXTRABOLD},
-    {"extra",       FNT_FW_EXTRABOLD},
-    {"ultrabold",   FNT_FW_ULTRABOLD},
-    {"heavy",       FNT_FW_HEAVY},
-    {"black",       FNT_FW_BLACK},
+    {"Medium",      FNT_FW_MEDIUM},
+    {"Semibold",    FNT_FW_SEMIBOLD},
+    {"Semi",        FNT_FW_SEMIBOLD},
+    {"Demibold",    FNT_FW_DEMIBOLD},
+    {"Bold",        FNT_FW_BOLD},
+    {"Extrabold",   FNT_FW_EXTRABOLD},
+    {"Extra",       FNT_FW_EXTRABOLD},
+    {"Ultrabold",   FNT_FW_ULTRABOLD},
+    {"Heavy",       FNT_FW_HEAVY},
+    {"Black",       FNT_FW_BLACK},
+    {"0",           FNT_FW_DONTCARE},
+    {"100",         FNT_FW_THIN},
+    {"200",         FNT_FW_EXTRALIGHT},
+    {"300",         FNT_FW_LIGHT},
+    {"400",         FNT_FW_NORMAL},
+    {"500",         FNT_FW_MEDIUM},
+    {"600",         FNT_FW_SEMIBOLD},
+    {"700",         FNT_FW_BOLD},
+    {"800",         FNT_FW_EXTRABOLD},
+    {"900",         FNT_FW_BLACK},
+
     {NULL, 0}
 };
 

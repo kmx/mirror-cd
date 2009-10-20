@@ -30,7 +30,9 @@
 #include <windows.h>
 #include <process.h>
 #include <io.h>
+#define PDC_FILENO _fileno
 #else
+#define PDC_FILENO fileno
 #if defined(MAC)
 #include <MacErrors.h>
 #else
@@ -49,6 +51,37 @@
 #include <errno.h>
 #include <descrip.h>
 #include <ssdef.h>
+#endif
+
+#if defined(WIN32) && !defined(__BORLANDC__)
+
+#define PDC_MAXFILEHANDLES 2048
+
+/* set a new maximum for the number of simultaneously open files.
+ * if return = -1 error occured
+ */
+int
+pdc_set_maxfilehandles(pdc_core *pdc, int maxfps)
+{
+    const char *stemp = pdc_errprintf(pdc, "%d", maxfps);
+
+    if (maxfps < _IOB_ENTRIES)
+        pdc_error(pdc, PDC_E_IO_TOOFEW_REQFILEHDLS, stemp,
+                  pdc_errprintf(pdc, "%d", _IOB_ENTRIES), 0, 0);
+
+    if (maxfps > PDC_MAXFILEHANDLES)
+        pdc_error(pdc, PDC_E_IO_TOOMANY_REQFILEHDLS, stemp,
+                  pdc_errprintf(pdc, "%d", PDC_MAXFILEHANDLES), 0, 0);
+
+    return _setmaxstdio(maxfps);
+}
+
+int
+pdc_get_maxfilehandles(void)
+{
+    return _getmaxstdio();
+}
+
 #endif
 
 /* platform independent wrapper functions for 64-bit file handling.
@@ -76,10 +109,10 @@ pdc__fseek(FILE *fp, pdc_off_t offset, int whence)
 	    {
 		pdc_off_t pos, len;
 
-		pos = _telli64(fileno(fp));
-		_lseeki64(fileno(fp), 0, SEEK_END);
-		len = _telli64(fileno(fp));
-		_lseeki64(fileno(fp), pos, SEEK_SET);
+		pos = _telli64(PDC_FILENO(fp));
+		_lseeki64(PDC_FILENO(fp), 0, SEEK_END);
+		len = _telli64(PDC_FILENO(fp));
+		_lseeki64(PDC_FILENO(fp), pos, SEEK_SET);
 
 		len += offset;
 		return fsetpos(fp, &len);
@@ -113,29 +146,55 @@ pdc__ftell(FILE *fp)
 #endif
 }
 
+
+/* we had troubles writing a block of 80 MB via network on a windows platform.
+** this could be fixed by breaking down the entire block into 1 MB pieces.
+*/
+#undef	PDC_BLOCKSIZE
+#define	PDC_BLOCKSIZE	1048576
+
 size_t
 pdc__fread(void *ptr, size_t size, size_t nmemb, FILE *fp)
 {
-    return fread(ptr, size, nmemb, fp);
+    char * cp = (char *) ptr;
+    size_t total = size * nmemb;
+    size_t left = total;
+    size_t n, r;
+
+    do
+    {
+	n = (left < PDC_BLOCKSIZE) ? left : PDC_BLOCKSIZE;
+	r = fread(cp, 1, n, fp);
+
+	left -= r;
+	cp += r;
+    } while (r == n && left != 0);
+
+    return total - left;
 }
 
 size_t
 pdc__fwrite(const void *ptr, size_t size, size_t nmemb, FILE *fp)
 {
-    return fwrite(ptr, size, nmemb, fp);
+    const char *cp = (const char *) ptr;
+    size_t total = size * nmemb;
+    size_t left = total;
+    size_t n, r;
+
+    do
+    {
+	n = (left < PDC_BLOCKSIZE) ? left : PDC_BLOCKSIZE;
+	r = fwrite(cp, 1, n, fp);
+
+	left -= r;
+	cp += r;
+    } while (r == n && left != 0);
+
+    return total - left;
 }
 
-int
-pdc__fgetc(FILE *fp)
-{
-    return fgetc(fp);
-}
+#undef	PDC_BLOCKSIZE
 
-int
-pdc__feof(FILE *fp)
-{
-    return feof(fp);
-}
 
 struct pdc_file_s
 {
@@ -289,7 +348,7 @@ pdc_get_fopen_errnum(pdc_core *pdc, int errnum)
 #endif
 #ifdef EMACOSERR
         case EMACOSERR:
-#if defined(MAC)
+#if defined(MAC) && defined(PDF_ALLOW_MAC_DEPR_FUNCS)
 
         switch (__MacOSErrNo)
         {
@@ -341,6 +400,9 @@ pdc_get_fopen_errnum(pdc_core *pdc, int errnum)
         {
             return outnum;
         }
+#else
+        outnum = errnum;
+        break;
 #endif
         break;
 #endif
@@ -386,7 +448,7 @@ pdc_get_fopen_errnum(pdc_core *pdc, int errnum)
 #endif
         default:
 
-        /* observed on Solaris */
+        /* observed on Solaris because of thread unsafe errno */
         if (errno == 0)
             pdc_error(pdc, PDC_E_INT_BADERRNO, 0, 0, 0, 0);
 
@@ -408,8 +470,10 @@ pdc_set_fopen_errmsg(pdc_core *pdc, int errnum, const char *qualifier,
     const char *stemp2 = NULL;
     int errno1 = errno;
 
-#if defined(EMACOSERR) && defined(MAC)
+#if defined(EMACOSERR)
+#if defined(MAC) && defined(PDF_ALLOW_MAC_DEPR_FUNCS)
     errno1 = (int) __MacOSErrNo;
+#endif
 #endif
 
     errnum = pdc_get_fopen_errnum(pdc, errnum);
@@ -436,6 +500,31 @@ pdc_set_fopen_errmsg(pdc_core *pdc, int errnum, const char *qualifier,
     pdc_set_errmsg(pdc, errnum, qualifier, filename, stemp1, stemp2);
 }
 
+void
+pdc_set_fwrite_errmsg(pdc_core *pdc, const char *filename)
+{
+    const char *stemp1 = NULL;
+    const char *stemp2 = NULL;
+    int errno1 = errno;
+    int errnum = PDC_E_IO_WRITE;
+
+#if defined(EMACOSERR)
+#if defined(MAC) && defined(PDF_ALLOW_MAC_DEPR_FUNCS)
+    errno1 = (int) __MacOSErrNo;
+#endif
+#endif
+
+    stemp1 = pdc_errprintf(pdc, "%d", errno1);
+
+#ifdef PDC_HAS_STRERROR
+    stemp2 = strerror(errno1);
+    if (stemp2 != NULL)
+        errnum = PDC_E_IO_WRITE_CODETEXT;
+#endif
+
+    pdc_set_errmsg(pdc, errnum, filename, stemp1, stemp2, 0);
+}
+
 pdc_bool
 pdc_check_fopen_errmsg(pdc_core *pdc, pdc_bool requested)
 {
@@ -452,7 +541,7 @@ pdc_logg_openclose(pdc_core *pdc, FILE *fp, pdc_bool opened)
     {
 #if defined(WIN32)
         errno2 = (int) GetLastError();
-#elif defined(MAC)
+#elif defined(MAC) && defined(PDF_ALLOW_MAC_DEPR_FUNCS)
         errno2 = __MacOSErrNo;
 #endif
         pdc_logg(pdc, "\t%p", fp);
@@ -462,7 +551,7 @@ pdc_logg_openclose(pdc_core *pdc, FILE *fp, pdc_bool opened)
             pdc_logg(pdc, " closed");
 #if PDC_FILENO_EXISTS
         if (fp != NULL && opened)
-            pdc_logg(pdc, ", fileno=%d", fileno(fp));
+            pdc_logg(pdc, ", fileno=%d", PDC_FILENO(fp));
 #endif
         pdc_logg(pdc, ", errno=%d", errno1);
         if (errno2 != 0)
@@ -519,6 +608,7 @@ filelen = len;
  * will be deleted and a new char pointer to the Latin-1 string will
  * be returned. Otherwise an execption will be thrown.
  *
+ * Returned string is temporary allocated.
  */
 char *
 pdc_check_filename(pdc_core *pdc, char *filename)
@@ -526,7 +616,7 @@ pdc_check_filename(pdc_core *pdc, char *filename)
 #if !defined(PDC_UNICODE_FILENAME)
     char *ffname = pdc_utf8_to_hostbytes(pdc, pdc->honorlang, filename);
 
-    pdc_free(pdc, filename);
+    pdc_free_tmp(pdc, filename);
     if (ffname == NULL)
         pdc_error(pdc, PDC_E_IO_UNSUPP_UNINAME, 0, 0, 0, 0);
     filename = (char *) ffname;
@@ -535,6 +625,9 @@ pdc_check_filename(pdc_core *pdc, char *filename)
     return filename;
 }
 
+/*
+ * Returned string is temporary allocated.
+ */
 char *
 pdc_get_filename(pdc_core *pdc, char *filename)
 {
@@ -543,7 +636,7 @@ pdc_get_filename(pdc_core *pdc, char *filename)
 #if defined(PDC_UNICODE_FILENAME)
     static const char fn[] = "pdc_get_filename";
 
-    ffname = pdc_strdup_ext(pdc, filename, 0, fn);
+    ffname = pdc_strdup_ext(pdc, filename, PDC_CONV_TMPALLOC, fn);
 #else
     ffname = pdc_hostbytes_to_utf8(pdc, pdc->honorlang, filename);
 #endif
@@ -553,10 +646,12 @@ pdc_get_filename(pdc_core *pdc, char *filename)
 
 /*
  * pdc_convert_filename_ext converts a file name as string of name type
- * (see function pdc_convert_name) to a [EBCDIC-]UTF-8 string with or
+ * (see function pdc_convert_name_ext) to a [EBCDIC-]UTF-8 string with or
  * without a BOM. If the compiler doesn't allow Unicode filenames
  * (see define PDC_UNICODE_FILENAME) the filename is Latin-1 encoded
  * if possible or an exception will be thrown.
+ *
+ * Returned string is temporary allocated.
  *
  */
 const char *
@@ -570,6 +665,9 @@ pdc_convert_filename_ext(pdc_core *pdc, const char *filename, int len,
 
     if (filename == NULL)
         pdc_error(pdc, PDC_E_ILLARG_EMPTY, paramname, 0, 0, 0);
+
+    /* temporary allocation will be enforced */
+    flags |= PDC_CONV_TMPALLOC;
 
     fname = pdc_convert_name_ext(pdc, filename, len, enc, codepage, flags);
 
@@ -585,12 +683,13 @@ pdc_convert_filename_ext(pdc_core *pdc, const char *filename, int len,
 #endif
     }
 
-    outfilename = pdc_errprintf(pdc, "%s", &fname[i]);
-    pdc_free(pdc, fname);
-
+    outfilename = &fname[i];
     return outfilename;
 }
 
+/*
+ * Returned string is temporary allocated.
+ */
 const char *
 pdc_convert_filename(pdc_core *pdc, const char *filename, int len,
                      const char *paramname, pdc_bool withbom)
@@ -613,16 +712,21 @@ FILE *
 pdc_fopen_logg(pdc_core *pdc, const char *filename, const char *mode)
 {
     FILE *fp = NULL;
+    int i = 0;
+
 
 #if defined(PDC_UNICODE_FILENAME)
 
     pdc_byte *outfilename = NULL;
     pdc_text_format nameformat = PDC_UTF8;
     pdc_text_format targetnameformat = pdc_utf16;
-    int len = (int) strlen(filename);
+    int len = (int) pdc_strlen(filename);
     int outlen = 0;
 
-    /* convert filename from UTF-8 to UTF-16 or Latin-1 */
+    if (pdc_is_utf16be_unicode(filename))
+        nameformat = pdc_utf16be;
+
+    /* convert filename from UTF-8 / UTF-16BE to UTF-16 or Latin-1 */
     pdc_convert_string(pdc, nameformat, 0, NULL, (pdc_byte *) filename, len,
                        &targetnameformat, NULL, &outfilename, &outlen,
                        PDC_CONV_TRYBYTES | PDC_CONV_NOBOM, pdc_true);
@@ -634,7 +738,6 @@ pdc_fopen_logg(pdc_core *pdc, const char *filename, const char *mode)
     else
     {
         wchar_t wmode[8];
-        int i;
 
         len = (int) strlen(mode);
         for (i = 0; i < len; i++)
@@ -649,10 +752,16 @@ pdc_fopen_logg(pdc_core *pdc, const char *filename, const char *mode)
 #else
     (void) pdc;
 
-    fp = fopen(filename, mode);
+    /* due to honorlang, codeset of LANG: UTF-8 */
+    if (pdc_is_utf8_bytecode(filename))
+        i = 3;
+
+    fp = fopen(&filename[i], mode);
 #endif
 
     pdc_logg_openclose(pdc, fp, pdc_true);
+
+
 
     return fp;
 }
@@ -663,6 +772,9 @@ pdc_fopen(pdc_core *pdc, const char *filename, const char *qualifier,
 {
     static const char fn[] = "pdc_fopen";
     pdc_file *sfp;
+
+    /* reset error number */
+    pdc_set_errmsg(pdc, 0, 0, 0, 0, 0);
 
     sfp = (pdc_file *) pdc_calloc(pdc, sizeof(pdc_file), fn);
 
@@ -804,43 +916,53 @@ pdc_freadall(pdc_file *sfp, size_t *filelen, pdc_bool *ismem)
     return result;
 }
 
-static int
-pdc_fgetc_e(pdc_file *sfp)
-{
-    int c = pdc_fgetc(sfp);
-    return c;
-}
-
 char *
 pdc_fgetline(char *s, int size, pdc_file *sfp)
 {
     int i, c;
 
-    c = pdc_fgetc_e(sfp);
+
+    c = pdc_fgetc(sfp);
     if (c == EOF)
         return NULL;
+
 
     size--;
     for (i = 0; i < size; i++)
     {
-        if (c == '\n' || c == '\r' || c == EOF) break;
+        if (c == '\n' || c == '\r')
+            break;
         s[i] = (char) c;
-        c = pdc_fgetc_e(sfp);
+
+        c = pdc_fgetc(sfp);
+        if (c == EOF)
+        {
+            i++;
+            break;
+        }
+
     }
     s[i] = 0;
 
     /* Skip windows line end \r\n */
     if (c == '\r')
     {
-        c = pdc_fgetc_e(sfp);
+        c = pdc_fgetc(sfp);
+        if (c != EOF)
+        {
+            if (c != '\n')
+            {
+                if (sfp->fp)
+                {
 
-        if (c != '\n' && c != EOF)
-	{
-	    if (sfp->fp)
-		ungetc(c, sfp->fp);
-	    else
-		pdc_fseek(sfp, -1, SEEK_CUR);
-	}
+                    ungetc(c, sfp->fp);
+                }
+                else
+                {
+                    pdc_fseek(sfp, -1, SEEK_CUR);
+                }
+            }
+        }
     }
     return s;
 }
@@ -947,7 +1069,17 @@ pdc_fwrite(const void *ptr, size_t size, size_t nmemb, pdc_file *sfp)
         size_t poslen, nbytes = 0;
 
         if (sfp->fp)
-            return pdc__fwrite(ptr, size, nmemb, sfp->fp);
+        {
+            size_t total = pdc__fwrite(ptr, size, nmemb, sfp->fp);
+
+            if (total < size * nmemb)
+            {
+                pdc_set_fwrite_errmsg(sfp->pdc, sfp->filename);
+                PDC_RETHROW(sfp->pdc);
+            }
+
+            return total;
+        }
 
         nbytes = size * nmemb;
         if (sfp->pos + nbytes > sfp->limit)
@@ -1059,13 +1191,17 @@ pdc_fclose(pdc_file *sfp)
 
 /*
  * Concatenating a directory name with a file base name to a full valid
- * file name. On MVS platforms an extension at the end of basename
- * will be discarded.
+ * file name of maximal length PDC_FILENAMELEN - 1.
+ *
+ * On MVS platforms an extension at the end of basename will be discarded.
  */
 void
-pdc_file_fullname(const char *dirname, const char *basename, char *fullname)
+pdc_file_fullname(pdc_core *pdc, const char *dirname, const char *basename,
+                  char *fullname)
 {
     const char *pathsep = PDC_PATHSEP;
+    const char *stemp = NULL;
+    size_t len = 0;
 
 #ifdef MVS
     pdc_bool lastterm = pdc_false;
@@ -1073,6 +1209,10 @@ pdc_file_fullname(const char *dirname, const char *basename, char *fullname)
 
     if (!dirname || !dirname[0])
     {
+        len += strlen(basename);
+        if (len >= PDC_FILENAMELEN)
+            goto PDC_FILE_ERROR;
+
         strcpy(fullname, basename);
     }
     else
@@ -1084,6 +1224,10 @@ pdc_file_fullname(const char *dirname, const char *basename, char *fullname)
             strcat(fullname, PDC_FILEQUOT);
 #endif
 
+        len += strlen(dirname);
+        if (len >= PDC_FILENAMELEN)
+            goto PDC_FILE_ERROR;
+
         strcat(fullname, dirname);
 
 #ifdef VMS
@@ -1093,6 +1237,10 @@ pdc_file_fullname(const char *dirname, const char *basename, char *fullname)
         else if (fullname[strlen(fullname)-1] == ']')
             pathsep = "";
 #endif
+
+        len += strlen(pathsep) + strlen(basename);
+        if (len >= PDC_FILENAMELEN)
+            goto PDC_FILE_ERROR;
 
         strcat(fullname, pathsep);
         strcat(fullname, basename);
@@ -1120,11 +1268,25 @@ pdc_file_fullname(const char *dirname, const char *basename, char *fullname)
         }
         if (lastterm)
         {
+            len += strlen(PDC_PATHTERM) + strlen(PDC_FILEQUOT);
+            if (len >= PDC_FILENAMELEN)
+                goto PDC_FILE_ERROR;
+
             strcat(fullname, PDC_PATHTERM);
             strcat(fullname, PDC_FILEQUOT);
         }
     }
 #endif
+
+    return;
+
+    PDC_FILE_ERROR:
+
+    if (!dirname || !dirname[0])
+        stemp = pdc_errprintf(pdc, "%s", basename);
+    else
+        stemp = pdc_errprintf(pdc, "%s%s%s", dirname, pathsep, basename);
+    pdc_error(pdc, PDC_E_IO_TOOLONG_FULLNAME, stemp, 0, 0, 0);
 }
 
 #define EXTRA_SPACE     32     /* extra space for separators, FILEQUOT etc. */
@@ -1142,7 +1304,7 @@ pdc_file_fullname_mem(pdc_core *pdc, const char *dirname, const char *basename)
     len += EXTRA_SPACE;
     fullname = (char *) pdc_malloc(pdc, len, fn);
 
-    pdc_file_fullname(dirname, basename, fullname);
+    pdc_file_fullname(pdc, dirname, basename, fullname);
 
     return fullname;
 }
@@ -1178,11 +1340,10 @@ const char *
 pdc_file_strip_dirs(const char *pathname)
 {
     const char *scan = pathname + strlen(pathname);
-    char charsep = PDC_PATHSEP[0];
 
     while (pathname <= --scan)
     {
-        if (*scan == charsep)
+        if (*scan == PDC_PATHSEP[0] || *scan == PDC_PATHSEP_ALT[0])
             return scan + 1;
     }
 
@@ -1197,11 +1358,10 @@ char *
 pdc_file_strip_name(char *pathname)
 {
     char *scan = pathname + strlen(pathname);
-    char charsep = PDC_PATHSEP[0];
 
     while (pathname <= --scan)
     {
-        if (*scan == charsep)
+        if (*scan == PDC_PATHSEP[0] || *scan == PDC_PATHSEP_ALT[0])
         {
             *scan = 0;
             break;
@@ -1463,7 +1623,7 @@ pdc_temppath(
     if (!outbuf)
         outbuf = pdc_file_fullname_mem(pdc, dirname, name);
     else
-        pdc_file_fullname(dirname, name, outbuf);
+        pdc_file_fullname(pdc, dirname, name, outbuf);
     return outbuf;
 }
 
@@ -1474,7 +1634,7 @@ pdc_fwrite_ascii(pdc_core *pdc, const char *str, size_t len, FILE *fp)
 {
 
     (void) pdc;
-    len = fwrite(str, 1, len, fp);
+    len = pdc__fwrite(str, 1, len, fp);
 
 
     return len;
@@ -1499,11 +1659,12 @@ pdc_write_file(
     if (sfp != NULL)
     {
         wlen = pdc_fwrite_ascii(pdc, content, len, sfp->fp);
-        pdc_fclose(sfp);
-        if (wlen != len)
+        if (wlen < len)
         {
-            pdc_set_errmsg(pdc, PDC_E_IO_WRITE, filename, 0, 0, 0);
+            pdc_set_fwrite_errmsg(pdc, filename);
+            PDC_RETHROW(pdc);
         }
+        pdc_fclose(sfp);
     }
 
 
@@ -1512,37 +1673,4 @@ pdc_write_file(
 
 
 
-#if defined(MAC) || defined(MACOSX)
-
-#ifdef PDF_TARGET_API_MAC_CARBON
-
-/* Construct an FSSpec from a Posix path name. Only required for
- * Carbon (host font support and file type/creator).
- */
-
-OSStatus
-FSPathMakeFSSpec(const UInt8 *path, FSSpec *spec)
-{
-    OSStatus        result;
-    FSRef           ref;
-
-    /* convert the POSIX path to an FSRef */
-    result = FSPathMakeRef(path, &ref, NULL);
-
-    if (result != noErr)
-            return result;
-
-    /* and then convert the FSRef to an FSSpec */
-    result = FSGetCatalogInfo(&ref, kFSCatInfoNone, NULL, NULL, spec, NULL);
-
-    return result;
-}
-
-
-#else
-
-
-#endif /* !PDF_TARGET_API_MAC_CARBON */
-
-#endif /* (defined(MAC) || defined(MACOSX)) */
 

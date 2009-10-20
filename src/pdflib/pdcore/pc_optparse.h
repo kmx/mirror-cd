@@ -196,7 +196,7 @@ struct pdc_defopt_s
 {
     const char        *name;    /* name of option keyword */
     pdc_opttype        type;    /* type of option */
-    int                flags;   /* flags (see below) */
+    unsigned int       flags;   /* flags (see below) */
     int                minnum;  /* permitted minimal number of values */
     int                maxnum;  /* permitted maximal number of values */
     double             minval;  /* minimal permitted value / length of string */
@@ -208,49 +208,51 @@ struct pdc_defopt_s
     {NULL, pdc_booleanlist, 0L, 0, 0, 0.0, 0.0, NULL}
 
 #define PDC_OPT_NONE       (0)      /* no flag specified */
-#define PDC_OPT_NOZERO     (1L<<0)  /* zero value not allowed */
-#define PDC_OPT_NOSPACES   (1L<<1)  /* white spaces in strings not allowed */
-#define PDC_OPT_REQUIRED   (1L<<2)  /* option is required */
-#define PDC_OPT_BUILDOR    (1L<<3)  /* build an OR bit pattern by keycodes */
-#define PDC_OPT_INTLIST    (1L<<4)  /* keylist is list of allowed integers */
-#define PDC_OPT_IGNOREIF1  (1L<<5)  /* option is ignored if previous option is
+#define PDC_OPT_NOZERO     (1U<<0)  /* zero value not allowed */
+#define PDC_OPT_NOSPACES   (1U<<1)  /* white spaces in strings not allowed */
+#define PDC_OPT_REQUIRED   (1U<<2)  /* option is required */
+#define PDC_OPT_BUILDOR    (1U<<3)  /* build an OR bit pattern by keycodes */
+#define PDC_OPT_INTLIST    (1U<<4)  /* keylist is list of allowed integers */
+#define PDC_OPT_IGNOREIF1  (1U<<5)  /* option is ignored if previous option is
                                      * specified */
-#define PDC_OPT_IGNOREIF2  (1L<<6)  /* option is ignored if either of
+#define PDC_OPT_IGNOREIF2  (1U<<6)  /* option is ignored if either of
                                      * previous two options is specified */
-#define PDC_OPT_UNSUPP     (1L<<8)  /* option is not supported in this
+#define PDC_OPT_UNSUPP     (1U<<8)  /* option is not supported in this
                                      * configuration */
-#define PDC_OPT_REQUIRIF1  (1L<<9)  /* option is required if previous option is
+#define PDC_OPT_REQUIRIF1  (1U<<9)  /* option is required if previous option is
                                      * specified */
-#define PDC_OPT_REQUIRIF2  (1L<<10) /* option is required if either of
+#define PDC_OPT_REQUIRIF2  (1U<<10) /* option is required if either of
                                      * previous two options is specified */
-#define PDC_OPT_EVENNUM    (1L<<11) /* array has even number of elements */
-#define PDC_OPT_ODDNUM     (1L<<12) /* array has odd number of elements */
+#define PDC_OPT_EVENNUM    (1U<<11) /* array has even number of elements */
+#define PDC_OPT_ODDNUM     (1U<<12) /* array has odd number of elements */
 
-/* member "compatibility" of pdc_clientdata_s must be specified (1L<<13) ... */
-#define PDC_OPT_PDC_1_3    (1L<<PDC_1_3) /* compatibility PDC_1_3 */
-#define PDC_OPT_PDC_1_4    (1L<<PDC_1_4) /* compatibility PDC_1_4 */
-#define PDC_OPT_PDC_1_5    (1L<<PDC_1_5) /* compatibility PDC_1_5 */
-#define PDC_OPT_PDC_1_6    (1L<<PDC_1_6) /* compatibility PDC_1_6 */
-#define PDC_OPT_PDC_1_7    (1L<<PDC_1_7) /* compatibility PDC_1_7 */
+/* member "compatibility" of pdc_clientdata_s must be specified (1U<<13) ... */
+#define PDC_OPT_PDC_1_3    (1U<<PDC_1_3) /* compatibility PDC_1_3 */
+#define PDC_OPT_PDC_1_4    (1U<<PDC_1_4) /* compatibility PDC_1_4 */
+#define PDC_OPT_PDC_1_5    (1U<<PDC_1_5) /* compatibility PDC_1_5 */
+#define PDC_OPT_PDC_1_6    (1U<<PDC_1_6) /* compatibility PDC_1_6 */
+#define PDC_OPT_PDC_1_7    (1U<<PDC_1_7) /* compatibility PDC_1_7 */
 
-#define PDC_OPT_CASESENS   (1L<<20) /* case-sensitive keywords */
-#define PDC_OPT_PERCENT    (1L<<21) /* number maybe with percent sign (123%) */
-#define PDC_OPT_DUPORIGVAL (1L<<22) /* duplicate original value */
-#define PDC_OPT_SUBOPTLIST (1L<<23) /* string list is a suboptlist */
-#define PDC_OPT_CONVUTF8   (1L<<24) /* string has to be converted to UTF-8 */
-#define PDC_OPT_ISBOX      (1L<<25) /* polyline is a box (four coordinates) */
-#define PDC_OPT_PERCRANGE  (1L<<26) /* number only in the range 0% - 100% */
+#define PDC_OPT_CASESENS   (1U<<20) /* case-sensitive keywords */
+#define PDC_OPT_PERCENT    (1U<<21) /* number maybe with percent sign (123%) */
+#define PDC_OPT_DUPORIGVAL (1U<<22) /* duplicate original value */
+#define PDC_OPT_SUBOPTLIST (1U<<23) /* string list is a suboptlist */
+#define PDC_OPT_CONVUTF8   (1U<<24) /* string has to be converted to UTF-8 */
+#define PDC_OPT_ISBOX      (1U<<25) /* polyline is a box (four coordinates) */
+#define PDC_OPT_PERCRANGE  (1U<<26) /* number only in the range 0% - 100% */
 
-#define PDC_OPT_KEYLIST1   (1L<<27) /* use key list only for first element */
-#define PDC_OPT_CLOSEPOLY  (1L<<28) /* close polyline, minimal vertices = 3 */
+#define PDC_OPT_KEYLIST1   (1U<<27) /* use key list only for first element */
+#define PDC_OPT_CLOSEPOLY  (1U<<28) /* close polyline, minimal vertices = 3 */
+
+#define PDC_OPT_PDFLIB_7   (1U<<31) /* deprecated since PDFlib 7 */
 
 /* flags for single result */
-#define PDC_OPT_SAVEALL    (1L<<0)  /* save all pointers */
-#define PDC_OPT_SAVE1ELEM  (1L<<1)  /* save only first string list element */
-#define PDC_OPT_SAVEORIG   (1L<<2)  /* save original value string */
+#define PDC_OPT_SAVEALL    (1U<<0)  /* save all pointers */
+#define PDC_OPT_SAVE1ELEM  (1U<<1)  /* save only first string list element */
+#define PDC_OPT_SAVEORIG   (1U<<2)  /* save original value string */
 
 /* flag for UTF-8 value */
-#define PDC_OPT_ISUTF8     (1L<<9)  /* string[list] is UTF-8 */
+#define PDC_OPT_ISUTF8     (1U<<9)  /* string[list] is UTF-8 */
 
 /* key word not found */
 #define PDC_KEY_NOTFOUND  -1234567890
@@ -284,6 +286,8 @@ pdc_bool pdc_is_lastopt_percent(pdc_resopt *resopt, int ind);
 pdc_bool pdc_is_lastopt_utf8(pdc_resopt *resopt);
 int pdc_get_opt_utf8strings(pdc_core *pdc, const char *keyword,
         pdc_resopt *resopt, int flags, char ***strings);
+const char *pdc_get_opt_filename(pdc_core *pdc, const char *keyword,
+        pdc_resopt *resopts);
 void pdc_cleanup_optionlist(pdc_core *pdc, pdc_resopt *resopt);
 void pdc_cleanup_optstringlist(pdc_core *pdc, char **stringlist, int ns);
 const char *pdc_get_handletype(pdc_opttype type);

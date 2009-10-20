@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------------------*
  |              PDFlib - A library for generating PDF on the fly             |
  +---------------------------------------------------------------------------+
- | Copyright (c) 1997-2006 Thomas Merz and PDFlib GmbH. All rights reserved. |
+ | Copyright (c) 1997-2008 Thomas Merz and PDFlib GmbH. All rights reserved. |
  +---------------------------------------------------------------------------+
  |                                                                           |
  |    This software is subject to the PDFlib license. It is NOT in the       |
@@ -28,6 +28,8 @@
 #if defined(WIN32)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#else
+#include <unistd.h>
 #endif
 
 
@@ -219,6 +221,7 @@ pdc_get_resourcefile(pdc_core *pdc)
 static void
 pdc_read_resourcefile(pdc_core *pdc, const char *filename)
 {
+    pdc_bool logg1 = pdc_logg_is_enabled(pdc, 1, trc_resource);
     pdc_reslist *resl = pdc_get_reslist(pdc);
     pdc_file *fp = NULL;
     char **linelist;
@@ -226,7 +229,9 @@ pdc_read_resourcefile(pdc_core *pdc, const char *filename)
     char *category = NULL;
     char *uprfilename = NULL;
     char tmpname[PDC_FILENAMELEN];
-#if defined(AS400) || defined(WIN32)
+    char prodname[32];
+    char prodversion[32];
+    char *c;
 #define BUFSIZE 2048
     char buffer[BUFSIZE];
 #ifdef WIN32
@@ -234,11 +239,35 @@ pdc_read_resourcefile(pdc_core *pdc, const char *filename)
     HKEY hKey = NULL;
     DWORD size, lType;
 #endif
-#endif
-    int il, nlines = 0, nextcat, begin;
+    int il, ip, nlines = 0, nextcat, begin;
 
-    pdc_logg_cond(pdc, 1, trc_resource,
-                      "\n\tSearching for resource file...\n");
+    if (logg1)
+        pdc_logg(pdc, "\n\tSearching for resource file...\n");
+
+    /* product name */
+    strcpy(prodname, pdc->prodname);
+
+    /* product version: <major>.<minor> */
+    strcpy(prodversion, pdc->version);
+    if (strlen(pdc->version))
+    {
+        c = strchr(prodversion, '.');
+        if (c != NULL)
+        {
+            c++;
+            if (*c)
+            {
+                c++;
+                if (pdc_isdigit(*c))
+                    c++;
+                *c = 0;
+            }
+        }
+    }
+
+    if (logg1)
+        pdc_logg(pdc, "\tProduct name=%s, version=%s\n",
+                 prodname, prodversion);
 
 #ifdef WIN32
 
@@ -251,24 +280,28 @@ pdc_read_resourcefile(pdc_core *pdc, const char *filename)
 #endif  /* WIN32 */
 
 #ifdef AS400
-    pdc_logg_cond(pdc, 1, trc_resource,
-                      "\tSet AS400 default resources\n");
-    strcpy (buffer, "/pdflib/");
-    strcat (buffer, pdc->version);
-    il = (int) strlen(buffer);
-    strcat (buffer, "/fonts");
+    if (logg1)
+        pdc_logg(pdc, "\tSet AS400 default SearchPath entries\n");
+
+    sprintf(buffer, "/%s/%s/fonts", prodname, pdc->version);
     pdc_add_resource(pdc, "SearchPath", buffer, "");
-    strcpy(&buffer[il], "/bind/data");
+
+    sprintf(buffer, "/%s/%s/bind/data", prodname, pdc->version);
     pdc_add_resource(pdc, "SearchPath", buffer, "");
 #endif  /* AS400 */
+
+#ifdef MVS
+    (void) buffer;
+    (void) ip;
+#endif
 
 #ifdef WIN32
     /* process registry entries */
     if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, regkey, 0L,
         (REGSAM) KEY_QUERY_VALUE, &hKey) == ERROR_SUCCESS)
     {
-        pdc_logg_cond(pdc, 1, trc_resource,
-                           "\tRead registry key \"%s\":\n", REGISTRYKEY);
+        if (logg1)
+            pdc_logg(pdc, "\tRead registry key \"%s\":\n", regkey);
 
         size = BUFSIZE - 2;
         if (RegQueryValueExA(hKey, "searchpath", (LPDWORD) NULL,
@@ -276,17 +309,49 @@ pdc_read_resourcefile(pdc_core *pdc, const char *filename)
             == ERROR_SUCCESS && *buffer)
         {
             char **pathlist;
-            int ip, np;
+            int np;
+
+            if (logg1)
+                pdc_logg(pdc, "\tsearchpath entry: \"%s\"\n", buffer);
 
             np = pdc_split_stringlist(pdc, buffer, ";", 0, &pathlist);
             for (ip = 0; ip < np; ip++)
+            {
+                /* TODO: we should only accessible directories */
                 pdc_add_resource(pdc, "SearchPath", pathlist[ip], "");
+            }
             pdc_cleanup_stringlist(pdc, pathlist);
         }
 
         RegCloseKey(hKey);
     }
 #endif  /* WIN32 */
+
+#if !defined(WIN32) && !defined(AS400) && !defined(MVS)
+    if (logg1)
+        pdc_logg(pdc, "\tSet UNIX default SearchPath entries\n");
+
+    for (il = 0; rootdirectories[il] != NULL; il++)
+    {
+        const char *home = pdc_getenv("HOME");
+
+        if (home != NULL)
+             sprintf(tmpname, rootdirectories[il], home);
+        else
+             strcpy(tmpname, rootdirectories[il]);
+
+        /* we allow only accessible root directories */
+        if (access(tmpname, X_OK) != -1)
+        {
+            for (ip = 0; defsearchpathlist[ip] != NULL; ip++)
+            {
+                sprintf(buffer, defsearchpathlist[ip],
+                        tmpname, prodname, prodversion);
+                pdc_add_resource(pdc, "SearchPath", buffer, "");
+            }
+        }
+    }
+#endif /* !WIN32 && !AS400 && !MVS */
 
     /* searching for name of upr file */
     uprfilename = (char *)filename;
@@ -309,6 +374,9 @@ pdc_read_resourcefile(pdc_core *pdc, const char *filename)
                                      &lType, (LPBYTE) buffer, &size)
                     == ERROR_SUCCESS && *buffer)
                 {
+                    if (logg1)
+                        pdc_logg(pdc, "\tresourcefile entry: \"%s\"\n", buffer);
+
                     uprfilename = buffer;
                 }
 
@@ -324,7 +392,7 @@ pdc_read_resourcefile(pdc_core *pdc, const char *filename)
             uprfilename = pdc_strtolower(tmpname);
 
             /* user-supplied upr file */
-            fp = pdc_fsearch_fopen(pdc, uprfilename, NULL, NULL, 0);
+            fp = pdc_fsearch_fopen(pdc, uprfilename, NULL, "UPR ", 0);
             if (fp == NULL)
             {
                 uprfilename = NULL;
@@ -336,8 +404,8 @@ pdc_read_resourcefile(pdc_core *pdc, const char *filename)
     {
         char *resfilename = resl->filename;
 
-        pdc_logg_cond(pdc, 1, trc_resource,
-                           "\tRead resource file \"%s\":\n", uprfilename);
+        if (logg1)
+            pdc_logg(pdc, "\tRead resource file \"%s\":\n", uprfilename);
 
         resl->filename = pdc_strdup(pdc, uprfilename);
         if (resfilename)
@@ -411,23 +479,26 @@ pdc_add_resource_ext(pdc_core *pdc, const char *category, const char *resname,
                      const char *resvalue, pdc_encoding enc, int codepage)
 {
     static const char fn[] = "pdc_add_resource";
+    pdc_bool logg1 = pdc_logg_is_enabled(pdc, 1, trc_resource);
     pdc_reslist *resl = pdc_get_reslist(pdc);
     pdc_rescategory rescat;
     pdc_category *cat = NULL, *lastcat = NULL;
     pdc_res *res = NULL, *lastres = NULL;
     char *resnamutf8 = NULL;
     char *resvalutf8 = NULL;
-    int resnamflags = PDC_CONV_EBCDIC;
-    int resvalflags = PDC_CONV_EBCDIC;
+    int resnamflags = PDC_CONV_EBCDIC | PDC_CONV_TMPALLOC;
+    int resvalflags = PDC_CONV_EBCDIC | PDC_CONV_TMPALLOC;
     int k;
 
-    if (!resvalue || !strlen(resvalue))
-        pdc_logg_cond(pdc, 1, trc_resource,
-               "\tAdd \"%s\" to resource category \"%s\"\n", resname, category);
-    else
-        pdc_logg_cond(pdc, 1, trc_resource,
-               "\tAdd \"%s=%s\" to resource category \"%s\"\n",
-               resname, resvalue, category);
+    if (logg1)
+    {
+        if (!resvalue || !strlen(resvalue))
+            pdc_logg(pdc, "\tAdd \"%s\" to resource category \"%s\"\n",
+                     resname, category);
+        else
+            pdc_logg(pdc, "\tAdd \"%s=%s\" to resource category \"%s\"\n",
+                     resname, resvalue, category);
+    }
 
     /* We no longer raise an error but silently ignore unknown categories */
     k = pdc_get_keycode_ci(category, pdc_rescategories);
@@ -502,7 +573,7 @@ pdc_add_resource_ext(pdc_core *pdc, const char *category, const char *resname,
         }
         else
         {
-            resvalutf8 = pdc_strdup(pdc, "");
+            resvalutf8 = pdc_strdup_ext(pdc, "", PDC_CONV_TMPALLOC, fn);
         }
         pdc_cleanup_stringlist(pdc, strlist);
     }
@@ -531,8 +602,6 @@ pdc_add_resource_ext(pdc_core *pdc, const char *category, const char *resname,
         {
             if (!strlen(resnamutf8) || !strlen(resvalutf8))
             {
-                pdc_free(pdc, resnamutf8);
-                pdc_free(pdc, resvalutf8);
                 if (resvalue == NULL)
                     pdc_error(pdc, PDC_E_RES_BADRES, resname, category, 0, 0);
                 else
@@ -549,15 +618,12 @@ pdc_add_resource_ext(pdc_core *pdc, const char *category, const char *resname,
         {
             if (strlen(resvalutf8))
             {
-                if (resnamutf8 != NULL)
-                    pdc_free(pdc, resnamutf8);
-                pdc_free(pdc, resvalutf8);
                 pdc_error(pdc, PDC_E_RES_BADRES, resname, category, 0, 0);
             }
 
             if (resvalutf8 != NULL)
             {
-                pdc_free(pdc, resvalutf8);
+                pdc_free_tmp(pdc, resvalutf8);
                 resvalutf8 = NULL;
             }
 
@@ -570,11 +636,12 @@ pdc_add_resource_ext(pdc_core *pdc, const char *category, const char *resname,
             {
                 /* delete all entries */
                 if (resnamutf8 != NULL)
-                    pdc_free(pdc, resnamutf8);
+                    pdc_free_tmp(pdc, resnamutf8);
                 pdc_delete_rescategory(pdc, lastcat, cat, pdc_true);
 
-                pdc_logg_cond(pdc, 1, trc_resource,
-                        "\tResource category \"%s\" removed\n", category);
+                if (logg1)
+                    pdc_logg(pdc, "\tResource category \"%s\" removed\n",
+                             category);
 
                 return;
             }
@@ -603,26 +670,27 @@ pdc_add_resource_ext(pdc_core *pdc, const char *category, const char *resname,
         else
             cat->kids = res;
         res->prev = lastres;
-        res->name = resnamutf8;
+        res->name = pdc_strdup(pdc, resnamutf8);
     }
     else
     {
-        pdc_free(pdc, resnamutf8);
+        pdc_free_tmp(pdc, resnamutf8);
     }
 
     /* New value */
     if (res->value)
         pdc_free(pdc, res->value);
-    res->value = resvalutf8;
+    res->value = pdc_strdup(pdc, resvalutf8);
 
-    if (res->value && strlen(res->value))
-        pdc_logg_cond(pdc, 1, trc_resource,
-            "\tNew category.resource: \"%s.%s = %s\"\n",
-            category, res->name, res->value);
-    else
-        pdc_logg_cond(pdc, 1, trc_resource,
-            "\tNew category.resource: \"%s.%s\"\n",
-            category, res->name);
+    if (logg1)
+    {
+        if (res->value && strlen(res->value))
+            pdc_logg(pdc, "\tNew category.resource: \"%s.%s = %s\"\n",
+                     category, res->name, res->value);
+        else
+            pdc_logg(pdc, "\tNew category.resource: \"%s.%s\"\n",
+                     category, res->name);
+    }
 }
 
 void
@@ -737,7 +805,7 @@ pdc_find_resource_nr(pdc_core *pdc, const char *category, int nr)
                         pdc_errprintf(pdc, "%s%s%s", resname, separ, resval);
 
                     if (tobefree)
-                        pdc_free(pdc, resval);
+                        pdc_free_tmp(pdc, resval);
 
                     return retval;
                 }
@@ -798,13 +866,17 @@ pdc__create_pvf(pdc_core *pdc, const char *filename,
     static const char fn[] = "pdc__create_pvf";
     pdc_bool iscopy = pdc_false;
     pdc_virtfile *vfile, *lastvfile = NULL;
+    const char *stemp = NULL;
     pdc_resopt *results;
 
-    if (!data)
-        pdc_error(pdc, PDC_E_ILLARG_EMPTY, "data", 0, 0, 0);
+    if (data == NULL)
+        stemp = "data = NULL";
 
     if (!size)
-        pdc_error(pdc, PDC_E_ILLARG_EMPTY, "size", 0, 0, 0);
+        stemp = "size = 0";
+
+    if (stemp != NULL)
+        pdc_error(pdc, PDC_E_PAR_NODATA, stemp, 0, 0, 0);
 
     /* Parse optlist */
     results = pdc_parse_optionlist(pdc, optlist, pdc_create_pvf_options,
@@ -1009,7 +1081,7 @@ pdc_fsearch_fopen(pdc_core *pdc, const char *filename, char *fullname,
             while (1)
             {
                 /* Test opening */
-                pdc_file_fullname(pathname, filename, fullname);
+                pdc_file_fullname(pdc, pathname, filename, fullname);
 
                 if (pathname != NULL)
                     pdc_logg_cond(pdc, 1, trc_filesearch,
@@ -1255,16 +1327,20 @@ static const pdc_defopt pdc_logg_options[] =
     PDC_OPT_TERMINATE
 };
 
+#define PDC_SEPARSTR_LEN 80
+
 static const char *separstr =
-    "[ --------------------------------------------------------- ]\n";
+    "[---------------------------------------"
+    "---------------------------------------]\n";
 
 void
 pdc_set_logg_options(pdc_core *pdc, const char *optlist)
 {
     pdc_loggdef *logg = pdc_get_logg(pdc);
     pdc_resopt *resopts = NULL;
-    char **strlist, *keyword;
+    char **strlist;
     char filename[PDC_FILENAMELEN+1];
+    const char *keyword;
     pdc_bool sare = pdc_false;
     pdc_bool enable = pdc_true;
     pdc_bool remfile = pdc_false;
@@ -1305,7 +1381,13 @@ pdc_set_logg_options(pdc_core *pdc, const char *optlist)
         pdc_get_optvalues("remove", resopts, &remfile, NULL);
 
         if (!logg->fromenviron)
-            pdc_get_optvalues("filename", resopts, filename, NULL);
+        {
+            const char *fname = pdc_get_opt_filename(pdc, "filename", resopts);
+
+            if (fname != NULL)
+                strcpy(filename, fname);
+
+        }
 
         if (pdc_get_optvalues("stringformat", resopts, &inum, NULL))
             logg->strform = (pdc_strform_kind) inum;
@@ -1412,12 +1494,15 @@ pdc_set_logg_options(pdc_core *pdc, const char *optlist)
         /* open file */
         if (!logg->flush)
         {
+            /* due to honorlang, codeset of LANG: UTF-8 */
+            i = pdc_is_utf8_bytecode(logg->filename) ? 3 : 0;
+
             if (!strcmp(logg->filename, "stdout"))
                 logg->fp = stdout;
             else if (!strcmp(logg->filename, "stderr"))
                 logg->fp = stderr;
             else
-                logg->fp = fopen(logg->filename, APPENDMODE);
+                logg->fp = fopen(&logg->filename[i], APPENDMODE);
             if (logg->fp == NULL)
             {
                 pdc_error(pdc, PDC_E_IO_WROPEN, "log ", logg->filename,
@@ -1434,7 +1519,9 @@ pdc_set_logg_options(pdc_core *pdc, const char *optlist)
         logg->enabled = enable;
         if (logg->enabled && logg->header && pdc->prodname != NULL)
         {
-            char binding[64];
+            char binding[64], buf[256], *bp;
+
+            pdc_logg(pdc, separstr);
 
             pdc_localtime(&ltime);
             binding[0] = 0;
@@ -1443,17 +1530,38 @@ pdc_set_logg_options(pdc_core *pdc, const char *optlist)
                 strcat(binding, pdc->binding);
                 strcat(binding, " binding ");
             }
-            pdc_logg(pdc, separstr);
-            pdc_logg(pdc, "[ %s %s  %son %s (%s) ",
-                      pdc->prodname, pdc->version, binding,
-                      PDF_PLATFORM, PDC_ISBIGENDIAN ? "be" : "le");
-            pdc_logg(pdc, "%04d-%02d-%02d %02d:%02d:%02d ]\n",
-                ltime.year + 1900, ltime.month + 1, ltime.mday,
-                ltime.hour, ltime.minute, ltime.second);
+
+            sprintf(buf, "[ %s %s  %son %s (%s) %04d-%02d-%02d %02d:%02d:%02d",
+                    pdc->prodname, pdc->version, binding,
+                    PDF_PLATFORM, PDC_ISBIGENDIAN ? "be" : "le",
+                    ltime.year + 1900, ltime.month + 1, ltime.mday,
+                    ltime.hour, ltime.minute, ltime.second);
+
+            i = MAX(PDC_SEPARSTR_LEN - (int) strlen(buf) - 1, 1);
+            pdc_logg(pdc, "%s%*s]\n", buf, i, " ");
+
+            bp = buf;
+            bp += sprintf(buf, "[ Classes:");
+            for (pclass = 0; pclass < trc_numclasses; pclass++)
+            {
+                level = logg->classlist[logg->sri][pclass];
+                if (level)
+                {
+                    keyword = pdc_get_keyword(pclass, pdf_protoclass_keylist);
+                    bp += sprintf(bp, " %s=%d", keyword, level);
+                }
+            }
+            i = MAX(PDC_SEPARSTR_LEN - (int) strlen(buf) - 1, 1);
+            pdc_logg(pdc, "%s%*s]\n", buf, i, " ");
 
             if (logg->classapi)
-                pdc_logg(pdc, "[ Use  %%s/\\[[^]]*\\]//g  and  %%s/)$/);"
-                               "/  in vi to compile it ]\n");
+            {
+                strcpy(buf, "[ Use  %%s/\\[[^]]*\\]//g  and  %%s/)$/);"
+                             "/  in vi to compile it");
+                i = MAX(PDC_SEPARSTR_LEN - (int) strlen(buf) - 1, 1);
+                pdc_logg(pdc, "%s%*s]\n", buf, i, " ");
+            }
+
             pdc_logg(pdc, separstr);
         }
     }
@@ -1466,17 +1574,20 @@ pdc_set_logg_options(pdc_core *pdc, const char *optlist)
 const char *
 pdc_print_loggstring(pdc_core *pdc, const char *str, int len)
 {
+    pdc_strform_kind strform = strform_readable0;
+    int maxchar = 0;
+
     if (pdc->logg != NULL && pdc->logg->enabled)
     {
 
-        str = pdc_strprint(pdc, str, len, pdc->logg->maxchar,
-                           pdc->logg->strform);
-
-
-        return str;
+        maxchar = pdc->logg->maxchar;
+        strform = pdc->logg->strform;
     }
-    else
-        return "";
+
+    str = pdc_strprint(pdc, str, len, maxchar, strform);
+
+
+    return str;
 }
 
 /* logging function without any class level check and decorations
@@ -1490,12 +1601,15 @@ pdc_logg_output(pdc_core *pdc, const char *fmt, va_list ap)
     {
         FILE *fp = NULL;
 
+        /* due to honorlang, codeset of LANG: UTF-8 */
+        int i = pdc_is_utf8_bytecode(logg->filename) ? 3 : 0;
+
         if (!strcmp(logg->filename, "stdout"))
             fp = stdout;
         else if (!strcmp(logg->filename, "stderr"))
             fp = stderr;
         else
-            fp = fopen(logg->filename, APPENDMODE);
+            fp = fopen(&logg->filename[i], APPENDMODE);
 
         if (fp == NULL)
         {

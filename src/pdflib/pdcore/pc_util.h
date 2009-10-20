@@ -105,9 +105,22 @@ struct pdc_core_s
 #define PDC_FLOAT_ISNULL(x) \
     (((((x) < 0) ? -1 * (x) : (x)) < PDC_FLOAT_PREC) ? pdc_true : pdc_false)
 
+#define PDC_SIGN(x) \
+    (((x) < 0) ? -1 : 1)
+
+/*
+ * general buffer size and
+ * obligatory size of buffers for formatting function pdc_vsprintf().
+ */
+#define PDC_GEN_BUFSIZE  4096
+
+#define PDC_TIME_SBUF_SIZE      50
+
 /* flags for pdc_split_stringlist */
 #define PDC_SPLIT_ISOPTLIST (1L<<0)
+#define PDC_SPLIT_ISARGLIST (1L<<1)
 
+/* flags for convert functions */
 #define PDC_INT_UNSIGNED  (1L<<0)
 #define PDC_INT_CHAR      (1L<<1)
 #define PDC_INT_SHORT     (1L<<2)
@@ -147,14 +160,16 @@ pdc_branch_error;
 
 typedef struct pdc_branch_s pdc_branch;
 
-#define PDC_TIME_SBUF_SIZE	50
-
 void pdc_set_unsupp_error(pdc_core *pdc, int err_config, int err_lite,
         pdc_bool warning);
+void pdc_ascii_error(pdc_core *pdc, int errnum, int flags, const char *parm1,
+        const char *parm2, const char *parm3, const char *parm4);
 void pdc_check_number(pdc_core *pdc, const char *paramname, double dz);
 void pdc_check_number_limits(pdc_core *pdc, const char *paramname, double dz,
         double dmin, double dmax);
 void pdc_check_number_zero(pdc_core *pdc, const char *paramname, double dz);
+int pdc_check_text_length(pdc_core *pdc, const char **text, int len,
+        int maxlen);
 
 typedef struct
 {
@@ -173,6 +188,7 @@ void    pdc_get_timestr(char *str, pdc_bool ktoascii);
 pdc_bool pdc_check_lang_code(pdc_core *pdc, const char* lang_code);
 
 void     pdc_setbit(char *bitarr, int bit);
+void     pdc_setbit_l2r(char *bitarr, int bit);
 pdc_bool pdc_getbit(const char *bitarr, int bit);
 void     pdc_setbit_text(char *bitarr, const unsigned char *text,
                          int len, int nbits, int size);
@@ -188,13 +204,15 @@ pdc_sint32 pdc_get_be_long(const pdc_byte *data);
 pdc_uint32 pdc_get_be_ulong3(const pdc_byte *data);
 pdc_uint32 pdc_get_be_ulong(const pdc_byte *data);
 
-size_t  pdc_strlen(const char *text);
+size_t  pdc_wstrlen(const char *str);
+size_t  pdc_strlen(const char *str);
 char	*pdc_getenv(const char *name);
 char    *pdc_strdup_ext(pdc_core *pdc, const char *text, int flags,
                 const char *fn);
 char    *pdc_strdup(pdc_core *pdc, const char *text);
 char	*pdc_strdup2(pdc_core *pdc, const char *text, size_t len);
 char    *pdc_strdup_tmp(pdc_core *pdc, const char *text);
+int     pdc_convert_pascal_str(const char *pstr, char *cstr);
 pdc_bool pdc_logg_isprint(int c);
 char    *pdc_strprint(pdc_core *pdc, const char *str, int leni,
                 int maxchar, pdc_strform_kind strform);
@@ -210,15 +228,15 @@ char *  pdc_substitute_variables(pdc_core *pdc, const char *string, char vchar,
 void    pdc_cleanup_stringlist(pdc_core *pdc, char **stringlist);
 int     pdc_strcmp(const char *s1, const char *s2);
 int     pdc_stricmp(const char *s1, const char *s2);
+int     pdc_stricmp_a(const char *s1, const char *s2);
 int     pdc_strincmp(const char *s1, const char *s2, int n);
+int     pdc_wstrcmp(const char *s1, const char *s2);
 char    *pdc_strtrim(char *m_str);
 char    *pdc_str2trim(char *m_str);
 char    *pdc_strtoupper(char *str);
 char    *pdc_strtolower(char *str);
-int     pdc_tolower_ascii(int c);
-int     pdc_toupper_ascii(int c);
-void    pdc_swap_bytes(char *instring, int inlen, char *outstring);
-void    pdc_swap_unicodes(char *instring);
+void    pdc_swap_bytes2(const char *instring, int inlen, char *outstring);
+void    pdc_swap_bytes4(const char *instring, int inlen, char *outstring);
 char   *pdc_strdup_withbom(pdc_core *pdc, const char *text);
 void    pdc_inflate_ascii(const char *instring, int inlen, char *outstring,
                           pdc_text_format textformat);
@@ -230,6 +248,8 @@ int pdc_subst_backslash(pdc_core *pdc, pdc_byte *str, int len,
 
 pdc_bool pdc_str2double(const char *string, double *o_dz);
 pdc_bool pdc_str2integer(const char *string, int flags, void *o_iz);
+pdc_bool pdc_str2integer_ext(pdc_core *pdc, const char *string, int len,
+                             int dupflags, int flags, void *o_iz);
 
 int pdc_vfprintf(pdc_core *pdc, pdc_bool pdfconf, FILE *fp,
                 const char *format, va_list args);
@@ -239,7 +259,7 @@ int pdc_vsprintf(pdc_core *pdc, pdc_bool pdfconf, char *buf,
                 const char *format, va_list args);
 int pdc_sprintf(pdc_core *pdc, pdc_bool pdfconf, char *buf,
                 const char *format, ...);
-int pdc_vsnprintf(char *buf, size_t size,
+int pdc_vsnprintf(pdc_core *pdc, char *buf, size_t size,
                 const char *format, va_list args);
 
 pdc_branch *pdc_init_tree(pdc_core *pdc);
@@ -266,3 +286,4 @@ int	pdc_rand(pdc_core *pdc);
 void	pdc_srand(pdc_core *pdc, pdc_uint seed);
 
 #endif	/* PC_UTIL_H */
+

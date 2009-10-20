@@ -12,14 +12,38 @@
 
 /* $Id$
  *
- * PDFlib output routines
+ * PDFlib output defines and routines
  *
  */
 
 #ifndef PC_OUTPUT_H
 #define PC_OUTPUT_H
 
-/* --------------------------- General --------------------------- */
+/* Define to test special MVS output features */
+#undef MVS_TEST
+
+/* -------------------- some ASCII characters and strings ------------- */
+
+#define PDF_NEWLINE             ((char) 0x0A)           /* ASCII '\n' */
+#define PDF_RETURN              ((char) 0x0D)           /* ASCII '\r' */
+#define PDF_SPACE               ((char) 0x20)           /* ASCII ' '  */
+#define PDF_HASH                ((char) 0x23)           /* ASCII '#'  */
+#define PDF_PARENLEFT           ((char) 0x28)           /* ASCII '('  */
+#define PDF_PARENRIGHT          ((char) 0x29)           /* ASCII ')'  */
+#define PDF_PLUS                ((char) 0x2B)           /* ASCII '+'  */
+#define PDF_SLASH               ((char) 0x2F)           /* ASCII '/'  */
+#define PDF_COLON               ((char) 0x3A)           /* ASCII ':'  */
+#define PDF_BACKSLASH           ((char) 0x5C)           /* ASCII '\\' */
+
+#define PDF_A                   ((char) 0x41)           /* ASCII 'A'  */
+#define PDF_n                   ((char) 0x6E)           /* ASCII 'n'  */
+#define PDF_r                   ((char) 0x72)           /* ASCII 'r'  */
+
+#define PDF_STRING_0123456789ABCDEF     \
+        "\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x41\x42\x43\x44\x45\x46"
+
+
+/* ------------------------ some PDF constant -------------------------- */
 
 /* Acrobat viewers change absolute values < 1/65536 to zero */
 #define PDF_SMALLREAL   (0.000015)
@@ -34,31 +58,54 @@
 /* maximum capacity of an array, in elements */
 #define PDF_MAXARRAYSIZE  (8191)
 
+/* maximum capacity of a text string in content stream for Tj, in bytes
+ * PDF Reference, TABLE C.1: 32767
+ * But an error will occur: "Token type not recognized"
+ */
+#define PDF_MAXTEXTSIZE   (32763)
+
 /* maximum capacity of a string, in bytes */
 #define PDF_MAXSTRINGSIZE  (65535)
 
 /* maximum capacity of indirect objects */
 #define PDF_MAXINDOBJS  (8388607)
 
-/* some ASCII characters and strings, deliberately defined as hex/oct codes */
+/* Acrobat limit for page dimensions */
+#define PDF_ACRO_MINPAGE       (3.0)           /* 1/24 inch = 0.106 cm */
+#define PDF_ACRO_MAXPAGE       (14400.0)       /* 200  inch = 508 cm   */
 
-#define PDF_NEWLINE		((char) 0x0A)		/* ASCII '\n' */
-#define PDF_RETURN		((char) 0x0D)		/* ASCII '\r' */
-#define PDF_SPACE		((char) 0x20)		/* ASCII ' '  */
-#define PDF_HASH                ((char) 0x23)           /* ASCII '#'  */
-#define PDF_PARENLEFT           ((char) 0x28)           /* ASCII '('  */
-#define PDF_PARENRIGHT          ((char) 0x29)           /* ASCII ')'  */
-#define PDF_PLUS                ((char) 0x2B)           /* ASCII '+'  */
-#define PDF_SLASH               ((char) 0x2F)           /* ASCII '/'  */
-#define PDF_COLON               ((char) 0x3A)           /* ASCII ':'  */
-#define PDF_BACKSLASH           ((char) 0x5C)           /* ASCII '\\' */
+/* PDF versions */
+#define PDC_1_1                 11              /* PDF 1.1 = Acrobat 2 */
+#define PDC_1_2                 12              /* PDF 1.2 = Acrobat 3 */
+#define PDC_1_3                 13              /* PDF 1.3 = Acrobat 4 */
+#define PDC_1_4                 14              /* PDF 1.4 = Acrobat 5 */
+#define PDC_1_5                 15              /* PDF 1.5 = Acrobat 6 */
+#define PDC_1_6                 16              /* PDF 1.6 = Acrobat 7 */
+#define PDC_1_7                 17              /* PDF 1.7 = Acrobat 8 */
+#define PDC_X_X_LAST            17
 
-#define PDF_A                   ((char) 0x41)           /* ASCII 'A'  */
-#define PDF_n                   ((char) 0x6E)           /* ASCII 'n'  */
-#define PDF_r                   ((char) 0x72)           /* ASCII 'r'  */
 
-#define PDF_STRING_0123456789ABCDEF	\
-	"\060\061\062\063\064\065\066\067\070\071\101\102\103\104\105\106"
+/* ------------------- some defines for special PDFs ----------------------- */
+
+
+
+
+/* ------------------- some special enumerations -------------------------- */
+
+
+typedef enum
+{
+    pdc_pbox_none,
+    pdc_pbox_art,
+    pdc_pbox_bleed,
+    pdc_pbox_crop,
+    pdc_pbox_media,
+    pdc_pbox_trim
+}
+pdc_pagebox;
+
+
+/* ----------------------- PDF output ---------------------------- */
 
 typedef struct pdc_output_s pdc_output;
 
@@ -93,9 +140,16 @@ typedef struct
 
     pdc_flush_state flush;
 #if defined(MVS) || defined(MVS_TEST)
-    int		blocksize;		/* file record size */
+    const char *fopenparams;            /* additional fopen() parameters */
+    int		recordsize;		/* file record size */
 #endif
 } pdc_outctl;
+
+
+/* ----------- service function to get PDF version string  -------------- */
+
+const char *pdc_get_pdfversion(pdc_core *pdc, int compatibility);
+
 
 /* --------------------------- Setup --------------------------- */
 

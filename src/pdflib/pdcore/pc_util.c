@@ -50,7 +50,7 @@
 #endif
 
 
-/* ------------------- Floating-point number check ----------------------- */
+/* ---------------------- finite() workarounds -------------------------- */
 
 
 
@@ -99,6 +99,29 @@ pdc_check_number_zero(pdc_core *pdc, const char *paramname, double dz)
     }
 }
 
+int
+pdc_check_text_length(pdc_core *pdc, const char **text, int len, int maxlen)
+{
+    if (*text == NULL)
+    {
+        len = 0;
+        *text = "";
+    }
+    else if (len == 0)
+    {
+        len = (int) strlen(*text);
+    }
+
+    if (len < 0 || len > maxlen)
+    {
+        pdc_error(pdc, PDC_E_ILLARG_STRINGLEN,
+                  pdc_errprintf(pdc, "%d", len),
+                  pdc_errprintf(pdc, "%d", maxlen), 0, 0);
+    }
+
+    return len;
+}
+
 
 /* ---------------- "unsupported feature" error message ------------------ */
 
@@ -114,6 +137,36 @@ pdc_set_unsupp_error(pdc_core *pdc, int err_config, int err_lite,
         pdc_warning(pdc, err_lite, 0, 0, 0, 0);
     else
         pdc_error(pdc, err_lite, 0, 0, 0, 0);
+}
+
+
+/* ---------------- error message with ASCII strings -------------------- */
+
+void
+pdc_ascii_error(pdc_core *pdc, int errnum, int flags, const char *parm1,
+                const char *parm2, const char *parm3, const char *parm4)
+{
+    if (flags & (1<<0))
+    {
+        parm1 = pdc_errprintf(pdc, "%a", parm1);
+    }
+
+    if (flags & (1<<1))
+    {
+        parm2 = pdc_errprintf(pdc, "%a", parm2);
+    }
+
+    if (flags & (1<<2))
+    {
+        parm3 = pdc_errprintf(pdc, "%a", parm3);
+    }
+
+    if (flags & (1<<3))
+    {
+        parm4 = pdc_errprintf(pdc, "%a", parm4);
+    }
+
+    pdc_error(pdc, errnum, parm1, parm2, parm3, parm4);
 }
 
 
@@ -340,10 +393,18 @@ pdc_check_lang_code(pdc_core *pdc, const char* lang_code)
 
 /* -------------------------- Bit arryas ------------------------------ */
 
+/* set bit right to left within a byte */
 void
 pdc_setbit(char *bitarr, int bit)
 {
     bitarr[bit/8] |= (char) (1<<(bit%8));
+}
+
+/* set bit left to right within a byte */
+void
+pdc_setbit_l2r(char *bitarr, int bit)
+{
+    bitarr[bit/8] |= (char) (0x80>>(bit%8));
 }
 
 pdc_bool
@@ -439,16 +500,16 @@ pdc_get_be_ulong(const pdc_byte *data)
 
 /* ----------------- String handling for Unicode too ------------------- */
 
-/* strlen() for unicode strings, which are terminated by two zero bytes.
- * wstrlen() returns the number of bytes in the Unicode string,
- * not including the two terminating null bytes.
+/* strlen() for wide character strings, which are double null terminated.
+ * pdc_wstrlen() returns the number of bytes in the Unicode string,
+ * NOT including the two terminating null bytes.
  */
-static size_t
-wstrlen(const char *s)
+size_t
+pdc_wstrlen(const char *str)
 {
     size_t len = 0;
 
-    while(s[len] != 0 || s[len+1] != 0)
+    while(str[len] != 0 || str[len+1] != 0)
     {
         len += 2;
     }
@@ -458,16 +519,14 @@ wstrlen(const char *s)
 
 /*
  * This function returns the length in bytes for C and Unicode strings.
- * Note that unlike strlen() it returns the length _including_ the
- * terminator, which may be one or two null bytes.
  */
 size_t
-pdc_strlen(const char *text)
+pdc_strlen(const char *str)
 {
-    if (pdc_is_utf16be_unicode(text) || pdc_is_utf16le_unicode(text))
-        return wstrlen(text);
+    if (pdc_is_utf16be_unicode(str) || pdc_is_utf16le_unicode(str))
+        return pdc_wstrlen(str);
     else
-        return strlen(text);
+        return strlen(str);
 }
 
 
@@ -478,11 +537,12 @@ pdc_strlen(const char *text)
  * must be terminated by a single null byte.
  * The caller is responsible for freeing the buffer.
  *
- * The special functions pdc_strdup and pdc_strdup_tmp
+ * The special functions pdc_strdup, pdc_strdup_tmp and pdc_strdup_withbom
  * should be replaced by the more sophisticated function pdc_strdup_ext.
  * There: flags (see pc_unicode.h):
  *
- * PDC_CONV_TMPALLOC, PDC_CONV_EBCDIC
+ * PDC_CONV_TMPALLOC, PDC_CONV_EBCDIC, PDC_CONV_ASCII,
+ * PDC_CONV_WITHBOM, PDC_CONV_NOBOM, PDC_CONV_MAXSTRLEN
  *
  */
 char *
@@ -493,19 +553,55 @@ pdc_strdup_ext(pdc_core *pdc, const char *text, int flags, const char *fn)
     if (text != NULL)
     {
         size_t len = pdc_strlen(text) + 1;
+        size_t is = 0, it = 0;
 
+        if ((flags & PDC_CONV_MAXSTRLEN) && len > PDC_ERR_MAXSTRLEN)
+            len = PDC_ERR_MAXSTRLEN;
+
+        if ((flags & PDC_CONV_NOBOM) && pdc_is_utf8_bytecode(text))
+            is = 3;
+
+        if ((flags & PDC_CONV_WITHBOM) && !pdc_is_utf8_bytecode(text))
+            it = 3;
+
+        len += it - is;
         if (flags & PDC_CONV_TMPALLOC)
             buf = (char *) pdc_malloc_tmp(pdc, len + 1, fn, NULL, NULL);
         else
             buf = (char *) pdc_malloc(pdc, len + 1, fn);
-        memcpy(buf, text, len);
+
+        memcpy(&buf[it], &text[is], len - it);
         buf[len] = 0;
+
+
+        if (it == 3)
+            pdc_copy_utf8_bom(buf);
 
     }
 
     return buf;
 }
 
+/* Convenience functions
+*/
+char *
+pdc_strdup_tmp(pdc_core *pdc, const char *text)
+{
+    static const char fn[] = "pdc_strdup_tmp";
+
+    return pdc_strdup_ext(pdc, text, PDC_CONV_TMPALLOC, fn);
+}
+
+char *
+pdc_strdup_withbom(pdc_core *pdc, const char *text)
+{
+    static const char fn[] = "pdc_strdup_withbom";
+
+    return pdc_strdup_ext(pdc, text, PDC_CONV_WITHBOM, fn);
+}
+
+/* Rapid function
+*/
 char *
 pdc_strdup(pdc_core *pdc, const char *text)
 {
@@ -540,53 +636,18 @@ pdc_strdup2(pdc_core *pdc, const char *text, size_t len)
     return buf;
 }
 
-char *
-pdc_strdup_tmp(pdc_core *pdc, const char *text)
-{
-    char *buf = NULL;
-    static const char fn[] = "pdc_strdup_tmp";
-
-    if (text != NULL)
-    {
-        size_t len = pdc_strlen(text) + 1;
-
-        buf = (char *) pdc_malloc_tmp(pdc, len + 1, fn, NULL, NULL);
-        memcpy(buf, text, len);
-        buf[len] = 0;
-    }
-
-    return buf;
-}
-
-/* Allocate a local buffer and copy a locale UTF-8 string
- * provided with an UTF-8 BOM.
- * The caller is responsible for freeing the buffer.
+/* Convert Pascal string to a null terminated C string.
+ * Size of C string: at least 256 bytes
  */
-char *
-pdc_strdup_withbom(pdc_core *pdc, const char *text)
+int
+pdc_convert_pascal_str(const char *pstr, char *cstr)
 {
-    char *buf = NULL;
-    static const char fn[] = "pdc_strdup_withbom";
+    int len = (int) *((pdc_byte *) pstr);
 
-    if (text != NULL)
-    {
-        size_t len;
+    memcpy(cstr, pstr + 1, (size_t) len);
+    cstr[len] = 0;
 
-        if (pdc_is_utf8_bytecode(text))
-        {
-            buf = pdc_strdup(pdc, text);
-        }
-        else
-        {
-            len = strlen(text);
-            buf = (char *) pdc_malloc(pdc, len + 4, fn);
-
-            pdc_copy_utf8_bom(buf);
-            strcpy(&buf[3], text);
-        }
-    }
-
-    return buf;
+    return len;
 }
 
 char *
@@ -649,13 +710,14 @@ pdc_strprint(pdc_core *pdc, const char *str, int leni, int maxchar,
 
         if (len)
         {
-            pdc_strform_kind sf;
+            pdc_strform_kind sf = strform;
             char *ts, *tmpstr;
             pdc_byte c = ' ', cp = '.';
             pdc_ushort *ush = (pdc_ushort *) str;
             int i, im;
 
-            tmpstr = (char *) pdc_calloc_tmp(pdc, (size_t) (4 * (len + 4)), fn,
+            /* because of strform_java: \uxxxx: factor 6 */
+            tmpstr = (char *) pdc_calloc_tmp(pdc, (size_t) (6 * (len + 4)), fn,
                                              NULL, NULL);
             ts = tmpstr;
 
@@ -683,7 +745,7 @@ pdc_strprint(pdc_core *pdc, const char *str, int leni, int maxchar,
                     else
                     {
                         c = (pdc_byte) ush[i];
-                        sf = strform_readable;
+                        sf = strform;
                     }
                 }
                 else
@@ -707,25 +769,34 @@ pdc_strprint(pdc_core *pdc, const char *str, int leni, int maxchar,
                     break;
 
                     default:
-                    if (c == 0x0 && sf == strform_readable0)
+                    if (c == 0x00 && sf == strform_readable0)
+                    {
                         c = 0x20;
 
-                    if (!pdc_logg_isprint((int) c))
-                    {
-                        if (isunicode)
-                            ts += sprintf(ts, "\\u%04X", c);
-                        else
-                            ts += sprintf(ts, "\\%03o", c);
+                        *ts = (char) c;
+                        ts++;
                     }
                     else
                     {
-                        if (c == '"')
+                        if (!pdc_logg_isprint((int) c))
                         {
-                            *ts = '\\';
+                            if (isunicode)
+                                ts += sprintf(ts, "\\u%04X", c);
+                            else
+                                ts += sprintf(ts, "\\%03o", c);
+                        }
+                        else
+                        {
+                            if (c == '"')
+                            {
+                                *ts = '\\';
+                                ts++;
+                            }
+
+                            *ts = (char) c;
                             ts++;
                         }
-                        *ts = (char) c;
-                        ts++;
+
                     }
                 }
             }
@@ -759,11 +830,16 @@ pdc_strprint(pdc_core *pdc, const char *str, int leni, int maxchar,
     return (char *) pdc_calloc_tmp(pdc, 1, fn, NULL, NULL);
 }
 
+/*
+ * Returned string is temporary allocated.
+ */
 const char *
 pdc_utf8strprint(pdc_core *pdc, const char *str)
 {
-    int i = pdc_is_utf8_bytecode(str) ? 3 : 0;
-    return pdc_errprintf(pdc, "%.*s", PDC_ERR_MAXSTRLEN, &str[i]);
+    static const char fn[] = "pdc_utf8strprint";
+
+    return pdc_strdup_ext(pdc, str,
+                  PDC_CONV_TMPALLOC | PDC_CONV_NOBOM | PDC_CONV_MAXSTRLEN, fn);
 }
 
 /*
@@ -791,8 +867,7 @@ pdc_split_stringlist(pdc_core *pdc, const char *text, const char *i_separstr,
     static const char fn[] = "pdc_split_stringlist";
     const char *separstr = " \f\n\r\t\v";
     const char *oldtext;
-    char **strlist = NULL, *newtext;
-    pdc_bool isoptlist = (flags & PDC_SPLIT_ISOPTLIST);
+    char **strlist = NULL, *newtext = NULL;
     int it, len, jt = 0, jtb = 0, maxk = 0, count = 0, inside = 0;
     int ns, nbs = 0, nbss;
 
@@ -808,7 +883,8 @@ pdc_split_stringlist(pdc_core *pdc, const char *text, const char *i_separstr,
     ns = (int) strspn(text, separstr);
     oldtext = &text[ns];
     len = (int) strlen(oldtext);
-    if (!len) return 0;
+    if (!len)
+        return 0;
 
     /* check for UTF-8-BOM */
     if (pdc_is_utf8_bytecode(oldtext))
@@ -818,11 +894,13 @@ pdc_split_stringlist(pdc_core *pdc, const char *text, const char *i_separstr,
         ns = (int) strspn(oldtext, separstr);
         oldtext = &oldtext[ns];
         len -= ns;
-        if (!len) return 0;
+        if (!len)
+            return 0;
     }
 
     /* new string */
-    newtext = (char *) pdc_malloc(pdc, (size_t) (len + 1), fn);
+    if (stringlist != NULL)
+        newtext = (char *) pdc_malloc(pdc, (size_t) (len + 1), fn);
     for (it = 0; it <= len; it++)
     {
         /* check for separators */
@@ -836,16 +914,17 @@ pdc_split_stringlist(pdc_core *pdc, const char *text, const char *i_separstr,
         /* close text part */
         if (ns)
         {
-            newtext[jt] = 0;
-            if (count == maxk)
+            if (stringlist != NULL)
             {
-                maxk += 16;
-                strlist = (strlist == NULL) ?
-                    (char **) pdc_malloc(pdc, maxk * sizeof(char *), fn):
-                    (char **) pdc_realloc(pdc, strlist, maxk *
-                                          sizeof(char *), fn);
+                newtext[jt] = 0;
+                if (count == maxk)
+                {
+                    maxk += 16;
+                    strlist = (char **) pdc_realloc(pdc, strlist,
+                                                    maxk * sizeof(char *), fn);
+                }
+                strlist[count] = &newtext[jtb];
             }
-            strlist[count] = &newtext[jtb];
             count++;
 
             /* Exit */
@@ -858,7 +937,7 @@ pdc_split_stringlist(pdc_core *pdc, const char *text, const char *i_separstr,
         }
 
         /* option list */
-        if (isoptlist)
+        if (flags & PDC_SPLIT_ISOPTLIST)
         {
             /* save backslash counter */
             nbss = nbs;
@@ -904,12 +983,48 @@ pdc_split_stringlist(pdc_core *pdc, const char *text, const char *i_separstr,
             }
         }
 
+        /* argument list */
+        else if (flags & PDC_SPLIT_ISARGLIST)
+        {
+            /* save backslash counter */
+            nbss = nbs;
+
+            /* backslash */
+            if (oldtext[it] == '\\')
+            {
+                nbs++;
+                if (!(nbs % 2))
+                    continue;
+            }
+            else
+            {
+                nbs = 0;
+            }
+
+            /* open and close quotation mark */
+            if (oldtext[it] == '"')
+            {
+                if (!(nbss % 2))
+                {
+                    inside = 1 - inside;
+                    continue;
+                }
+                else
+                {
+                    jt--;
+                }
+            }
+        }
+
         /* save character */
-        newtext[jt] = oldtext[it];
-        jt++;
+        if (stringlist != NULL)
+        {
+            newtext[jt] = oldtext[it];
+            jt++;
+        }
     }
 
-    if (stringlist)
+    if (stringlist != NULL)
         *stringlist = strlist;
 
     return inside ? -count : count;
@@ -1078,6 +1193,47 @@ pdc_stricmp(const char *s1, const char *s2)
     return (pdc_tolower(*s1) - pdc_tolower(*s2));
 }
 
+int
+pdc_stricmp_a(const char *s1, const char *s2)
+{
+    if (s1 == s2) return (0);
+    if (s1 == NULL) return (-1);
+    if (s2 == NULL) return (1);
+
+    for (; *s1; ++s1, ++s2)
+    {
+        if (pdc_tolower_a(*s1) != pdc_tolower_a(*s2))
+            break;
+    }
+
+    return (pdc_tolower_a(*s1) - pdc_tolower_a(*s2));
+}
+
+/*
+ * Same like pdc_strcmp, except that the strings can be
+ * wide character strings with nulls and double null terminated.
+ */
+int
+pdc_wstrcmp(const char *s1, const char *s2)
+{
+    size_t len1, len2, len;
+    int res;
+
+    if (s1 == s2) return (0);
+    if (s1 == NULL) return (-1);
+    if (s2 == NULL) return (1);
+
+    len1 = pdc_strlen(s1);
+    len2 = pdc_strlen(s2);
+    len = MIN(len1, len2);
+
+    res = memcmp(s1, s2, len);
+
+    if (!res && len1 != len2)
+        res = (len1 < len2) ? -1 : 1;
+
+    return res;
+}
 
 /*
  * Compares its arguments and returns an integer less than,
@@ -1172,52 +1328,52 @@ pdc_strtolower(char *str)
     return str;
 }
 
-int
-pdc_tolower_ascii(int c)
-{
-    c = (int) pdc_tolower(c);
-
-    return c;
-}
-
-int
-pdc_toupper_ascii(int c)
-{
-    c = (int) pdc_toupper((int) c);
-
-    return c;
-}
-
 void
-pdc_swap_bytes(char *instring, int inlen, char *outstring)
+pdc_swap_bytes2(const char *instring, int inlen, char *outstring)
 {
-    char c;
-    int i,j;
+    pdc_ushort *inp, *outp;
+    int i;
 
     if (instring == NULL)
         return;
 
     if (outstring == NULL)
-        outstring = instring;
+        outstring = (char *) instring;
 
-    inlen = 2 * inlen / 2;
+    inp = (pdc_ushort *) instring;
+    outp = (pdc_ushort *) outstring;
+
+    inlen /= sizeof(pdc_ushort);
     for (i = 0; i < inlen; i++)
     {
-        j = i;
-        i++;
-        c = instring[j];
-        outstring[j] = instring[i];
-        outstring[i] = c;
+        outp[i] = (pdc_ushort) (((inp[i] & (pdc_ushort)0x00FFu) << 8) |
+                                ((inp[i] & (pdc_ushort)0xFF00u) >> 8));
     }
 }
 
 void
-pdc_swap_unicodes(char *instring)
+pdc_swap_bytes4(const char *instring, int inlen, char *outstring)
 {
-    if (instring &&
-        ((pdc_is_utf16be_unicode(instring) && !PDC_ISBIGENDIAN) ||
-         (pdc_is_utf16le_unicode(instring) &&  PDC_ISBIGENDIAN)))
-        pdc_swap_bytes(&instring[2], (int) (wstrlen(instring) - 2), NULL);
+    pdc_uint32 *inp, *outp;
+    int i;
+
+    if (instring == NULL)
+        return;
+
+    if (outstring == NULL)
+        outstring = (char *) instring;
+
+    inp = (pdc_uint32 *) instring;
+    outp = (pdc_uint32 *) outstring;
+
+    inlen /= sizeof(pdc_uint32);
+    for (i = 0; i < inlen; i++)
+    {
+        outp[i] = (pdc_uint32) (((inp[i] & (pdc_uint32)0x000000FFu) << 24) |
+                                ((inp[i] & (pdc_uint32)0x0000FF00u) <<  8) |
+                                ((inp[i] & (pdc_uint32)0x00FF0000u) >>  8) |
+                                ((inp[i] & (pdc_uint32)0xFF000000u) >> 24));
+    }
 }
 
 void
@@ -1323,6 +1479,8 @@ pdc_get_string_value(pdc_byte *str, int i, int charlen)
     return retval;
 }
 
+/* return value: length of new string. -1: error
+*/
 int
 pdc_subst_backslash(pdc_core *pdc, pdc_byte *str, int len,
                     pdc_encodingvector *ev, pdc_text_format textformat,
@@ -1456,7 +1614,7 @@ pdc_subst_backslash(pdc_core *pdc, pdc_byte *str, int len,
                 if (verbose)
                     pdc_error(pdc, -1, 0, 0, 0, 0);
 
-                return 0;
+                return -1;
             }
         }
 
@@ -1483,7 +1641,7 @@ pdc_subst_backslash(pdc_core *pdc, pdc_byte *str, int len,
     if (verbose)
         pdc_error(pdc, -1, 0, 0, 0, 0);
 
-    return 0;
+    return -1;
 }
 
 
@@ -1754,6 +1912,23 @@ pdc_str2integer(const char *string, int flags, void *o_iz)
     return pdc_true;
 }
 
+
+pdc_bool
+pdc_str2integer_ext(pdc_core *pdc, const char *string, int len,
+                    int dupflags, int flags, void *o_iz)
+{
+    static const char fn[] = "pdc_str2integer_ext";
+    char *dupstr;
+    pdc_bool retval;
+
+    dupstr = pdc_strdup_ext(pdc, string, dupflags, fn);
+    dupstr[len] = 0;
+    retval = pdc_str2integer(dupstr, flags, o_iz);
+    pdc_free(pdc, dupstr);
+    return retval;
+}
+
+
 static const char digits[] = "0123456789ABCDEF";
 
 static char *
@@ -1808,26 +1983,17 @@ pdc_ltoa(char *buf, long n, int width, char pad, int base)
 
 
 static char *
-pdc_off_t2a(char *buf, pdc_off_t n, int width, char pad, int base)
+pdc_uoff_t2a(
+    char *	buf,
+    pdc_uoff_t	n,
+    int		width,
+    char	pad,
+    int		base,
+    pdc_bool	left_justify)
 {
     char        aux[100];
     int         k, i = sizeof aux;
     char *      dest = buf;
-    pdc_bool    sign;
-
-    if (n < 0 && base == 10)
-    {
-        --width;
-        sign = pdc_true;
-        aux[--i] = digits[- (n % base)];
-        n = n / -base;
-    }
-    else
-    {
-        sign = pdc_false;
-        aux[--i] = digits[n % base];
-        n = n / base;
-    }
 
     while (0 < n)
     {
@@ -1836,14 +2002,90 @@ pdc_off_t2a(char *buf, pdc_off_t n, int width, char pad, int base)
     }
 
     width -= (int) (sizeof aux) - i;
-    for (k = 0; k < width; ++k)
-        *(dest++) = pad;
 
-    if (sign)
-        *(dest++) = '-';
+    if (!left_justify)
+    {
+	for (k = 0; k < width; ++k)
+	    *(dest++) = pad;
+    }
 
     memcpy(dest, &aux[i], sizeof aux - i);
-    return dest + sizeof aux - i;
+    dest += sizeof aux - i;
+
+    if (left_justify)
+    {
+	for (k = 0; k < width; ++k)
+	    *(dest++) = pad;
+    }
+
+    return dest;
+} /* pdc_uoff_t2a */
+
+
+static char *
+pdc_off_t2a(
+    char *	buf,
+    pdc_off_t	n,
+    int		width,
+    char	pad,
+    pdc_bool	left_justify,
+    pdc_bool	pos_sign)
+{
+    char        aux[100];
+    int         k, i = sizeof aux;
+    char *      dest = buf;
+    pdc_bool    sign;
+
+    if (n < 0)
+    {
+        --width;
+        sign = pdc_true;
+        aux[--i] = digits[- (n % 10)];
+        n = n / -10;
+    }
+    else
+    {
+	if (pos_sign)
+	    --width;
+
+        sign = pdc_false;
+        aux[--i] = digits[n % 10];
+        n = n / 10;
+    }
+
+    while (0 < n)
+    {
+        aux[--i] = digits[n % 10];
+        n = n / 10;
+    }
+
+    width -= (int) (sizeof aux) - i;
+
+    if (!left_justify)
+    {
+	for (k = 0; k < width; ++k)
+	    *(dest++) = pad;
+    }
+
+    if (sign)
+    {
+        *(dest++) = '-';
+    }
+    else if (pos_sign)
+    {
+        *(dest++) = '+';
+    }
+
+    memcpy(dest, &aux[i], sizeof aux - i);
+    dest += sizeof aux - i;
+
+    if (left_justify)
+    {
+	for (k = 0; k < width; ++k)
+	    *(dest++) = pad;
+    }
+
+    return dest;
 } /* pdc_off_t2a */
 
 
@@ -1936,6 +2178,17 @@ pdc_ftoa_pdfconf(pdc_core *pdc, char *buf, double x)
     ifd = pdc->floatdigits;
     powd = pow10[ifd];
 
+    /* number <= 1/powd will be mappepd to 1/powd */
+    if (x <= 1 / powd)
+    {
+        *(dest++) = '0';
+        *(dest++) = '.';
+        while (--ifd)
+            *(dest++) = '0';
+        *(dest++) = '1';
+        return dest;
+    }
+
     fract = modf(x, &integ);
     f = (long) (fract * powd + 0.5);
 
@@ -1979,75 +2232,170 @@ pdc_ftoa_pdfconf(pdc_core *pdc, char *buf, double x)
     return dest;
 } /* pdc_ftoa_pdfconf */
 
+
+/* flags for formatting function pdc_vxprintf()
+*/
+typedef enum
+{
+    pdc_form_nolimit,   /* no buffer limit supplied, no overflow check */
+    pdc_form_fixlimit,  /* fix buffer limit, buffer overflow causes exception */
+    pdc_form_varlimit   /* buffer overflow causes string truncation */
+}
+pdc_limitkind;
+
+/* write to string or file
+*/
+static char *
+write_sf(
+    pdc_core *pdc,
+    FILE *fp,
+    pdc_limitkind ltd,
+    char *dst,
+    char *limit,
+    const char *src,
+    int n)
+{
+    if (fp != (FILE *) 0)
+    {
+	pdc_fwrite_ascii(pdc, src, (size_t) n, fp);
+    }
+    else
+    {
+        if (ltd != pdc_form_nolimit)
+        {
+            int avail = (int) (limit - dst);
+
+            if (avail < n)
+            {
+                if (ltd == pdc_form_fixlimit)
+                {
+                    pdc_error(pdc, PDC_E_INT_FORMOVERFLOW, 0, 0, 0, 0);
+                }
+                else
+                {
+                    n = MAX(avail, 0);
+                }
+            }
+        }
+
+        if (n > 0)
+        {
+            memcpy(dst, src, (size_t) n);
+            dst += n;
+        }
+    }
+
+    return dst;
+} /* write2buf */
+
 static int
 pdc_vxprintf(
     pdc_core *pdc,
     pdc_bool pdfconf,
+    pdc_limitkind ltd,
     char *cp,
+    size_t size,
     FILE *fp,
     const char *format,
     va_list args)
 {
     static const char fn[] = "pdc_vxprintf";
-    const char *format_p;
-    char aux[1024];
-    char *buf = cp ? cp : aux;
+
+    char buf[1024];
     char *dest = buf;
+    int result = 0;
+    char *limit = (char *) 0;
+
+    if (cp != (char *) 0 && ltd != pdc_form_nolimit)
+	limit = cp + (int) (size - 1);
 
     for (/* */ ; /* */ ; /* */)
     {
-        int             width = 0;
-        int             prec = 0;
+        int             width = 0;	/* = no width specified		*/
+        int             prec = -1;	/* = no precision specified	*/
         char            pad = ' ';
         pdc_bool        left_justify = pdc_false;
+        pdc_bool        pos_sign = pdc_false;
+
+	char		fbuf[100];	/* format buffer for %f and %g	*/
+	char *		fscan = fbuf;
 
         /* as long as there is no '%', just print.
         */
         while (*format != 0 && *format != '%')
             *(dest++) = *(format++);
 
+	if (dest > buf)
+	{
+	    int inbuf = (int) (dest - buf);
+
+	    cp = write_sf(pdc, fp, ltd, cp, limit, buf, inbuf);
+	    result += inbuf;
+	    dest = buf;
+	}
+
         if (*format == 0)
         {
-            if (fp != (FILE *) 0)
-            {
-                if (dest > buf)
-                    pdc_fwrite_ascii(pdc, buf, (size_t) (dest - buf), fp);
-            }
-            else
-                *dest = 0;
+            if (cp != (char *) 0)
+                *cp = 0;
 
-            return (int) (dest - buf);
+            return result;
         }
-        format_p = format;
+
+	*(fscan++) = *(format++);	/* '%' */
 
         /* get the "flags", if any.
         */
-        if (*(++format) == '-')
-        {
-            left_justify = pdc_true;
-            ++format;
-        }
+	while (*format && strchr("+- #0", *format))
+	{
+	    switch (*format)
+	    {
+		case '-':	left_justify = pdc_true;
+				break;
 
-        if (*format == '0')
-        {
-            if (!left_justify)
-                pad = '0';
+		case '+':	pos_sign = pdc_true;
+				break;
 
-            ++format;
-        }
+		case '0':	pad = '0';
+				break;
+
+		default:	break;
+	    }
+
+	    *(fscan++) = *(format++);
+	}
 
         /* get the "width", if present.
         */
         if (*format == '*')
         {
-            width = va_arg(args, int);  /* TODO: sign? */
+            width = va_arg(args, int);
             ++format;
+
+	    if (width < 0)
+	    {
+		width = -width;
+
+		if (!left_justify)
+		{
+		    *(fscan++) = '-';
+		    left_justify = pdc_true;
+		}
+	    }
+
+	    fscan += sprintf(fscan, "%d", width);
         }
         else
         {
             while (pdc_isdigit(*format))
-                width = 10 * width + *(format++) - '0';
+	    {
+                width = 10 * width + *format - '0';
+		*(fscan++) = *(format++);
+	    }
         }
+
+	if (left_justify)
+	    pad = ' ';
 
         /* get the "precision", if present.
         */
@@ -2057,23 +2405,37 @@ pdc_vxprintf(
 
             if (*format == '*')
             {
-                prec = va_arg(args, int);       /* TODO: sign? */
+                prec = va_arg(args, int);
                 ++format;
+
+		if (prec >= 0)		/* ignore negative precision */
+		{
+		    fscan += sprintf(fscan, ".%d", prec);
+		}
             }
-            else
+            else if (pdc_isdigit(*format))
             {
-                while (pdc_isdigit(*format))
-                    prec = 10 * prec + *(format++) - '0';
+		prec = 0;
+		*(fscan++) = '.';
+
+		do
+		{
+                    prec = 10 * prec + *format - '0';
+		    *(fscan++) = *(format++);
+		} while (pdc_isdigit(*format));
             }
         }
+
+	*(fscan++) = *format;
+	*fscan = 0;
 
         switch (*format)
         {
             case 'x':
             case 'X':
-                dest = pdc_off_t2a(
-                        dest, (pdc_off_t) va_arg(args, unsigned int),
-                        width, pad, 16);
+                dest = pdc_uoff_t2a(
+                        dest, (pdc_uoff_t) va_arg(args, pdc_uint),
+                        width, pad, 16, left_justify);
                 break;
 
             case 'c':
@@ -2082,7 +2444,13 @@ pdc_vxprintf(
 
             case 'd':
                 dest = pdc_off_t2a(dest, (pdc_off_t) va_arg(args, int),
-                                   width, pad, 10);
+                                   width, pad, left_justify, pos_sign);
+                break;
+
+            case 'u':
+                dest = pdc_uoff_t2a(
+                        dest, (pdc_uoff_t) va_arg(args, pdc_uint),
+                        width, pad, 10, left_justify);
                 break;
 
             case 'g':
@@ -2093,46 +2461,65 @@ pdc_vxprintf(
                 }
                 else
                 {
-                    char ff[32];
-                    size_t n = (size_t) (format - format_p + 1);
-
-                    strncpy(ff, format_p, n);
-                    ff[n] = 0;
-                    dest = pdc_ftoa(pdc, ff, dest, va_arg(args, double));
+                    dest = pdc_ftoa(pdc, fbuf, dest, va_arg(args, double));
                 }
                 break;
 
             case 'l':
             {
-                pdc_off_t n;
+                pdc_off_t	n = 0;
+                pdc_uoff_t	u = 0;
+		pdc_bool	ll = pdc_false;
 
-                if (format[1] == 'l')
+                if (*(++format) == 'l')
                 {
-                    n = va_arg(args, pdc_off_t);
+		    ll = pdc_true;
                     ++format;
                 }
-                else
-                {
-                    n = va_arg(args, long);
-                }
 
-                switch (*(++format))
+		if (strchr("xXu", *format))
+		{
+		    if (ll)
+			u = va_arg(args, pdc_uoff_t);
+		    else
+			u = va_arg(args, pdc_ulong);
+		}
+		else if (*format == 'd')
+		{
+		    if (ll)
+			n = va_arg(args, pdc_off_t);
+		    else
+			n = va_arg(args, long);
+		}
+		else
+		{
+		    pdc_error(pdc, PDC_E_INT_BADFORMAT,
+			pdc_errprintf(pdc, "l%c",
+			    pdc_isprint((int) *format) ? *format : '?'),
+			pdc_errprintf(pdc, "0x%02X", *format),
+			0, 0);
+		}
+
+                switch (*format)
                 {
                     case 'x':
                     case 'X':
-                        dest = pdc_off_t2a(dest, n, width, pad, 16);
+                        dest = pdc_uoff_t2a(
+				    dest, u, width, pad, 16, left_justify);
                         break;
 
                     case 'd':
-                        dest = pdc_off_t2a(dest, n, width, pad, 10);
+                        dest = pdc_off_t2a(dest, n, width, pad,
+					    left_justify, pos_sign);
+                        break;
+
+                    case 'u':
+                        dest = pdc_uoff_t2a(
+				    dest, u, width, pad, 10, left_justify);
                         break;
 
                     default:
-                        pdc_error(pdc, PDC_E_INT_BADFORMAT,
-                            pdc_errprintf(pdc, "l%c",
-                                pdc_isprint((int) *format) ? *format : '?'),
-                            pdc_errprintf(pdc, "0x%02X", *format),
-                            0, 0);
+			break;
                 }
 
                 break;
@@ -2140,8 +2527,15 @@ pdc_vxprintf(
 
             case 'p':
             {
+	        char tmp[64];
                 void *ptr = va_arg(args, void *);
-                dest += sprintf(dest, "%p", ptr);
+
+		sprintf(tmp, "%p", ptr);
+#if defined(AIX)
+		if (strncmp(tmp, "0x", 2))
+		    dest += sprintf(dest, "0x");
+#endif
+                dest += sprintf(dest, "%s", tmp);
                 break;
             }
 
@@ -2153,51 +2547,65 @@ pdc_vxprintf(
                 const char *cstr = str;
                 pdc_bool tobefree = pdc_false;
                 size_t len;
+                int llen;
 
-                if (str == 0)
-                    cstr = "(NULL)";
-                len = strlen(cstr);
-
-                if (*format == 'T')
+                if (str != 0)
                 {
-                    int l = va_arg(args, int);
-
-                    if (str != 0)
+                    if (*format == 'T')
                     {
-                        cstr = pdc_print_loggstring(pdc, str, l);
-                        len = strlen(cstr);
+                        llen = va_arg(args, int);
+                        cstr = pdc_print_loggstring(pdc, str, llen);
+                    }
+                    else if (*format == 'a')
+                    {
+                        cstr = pdc_strdup_ext(pdc, str, PDC_CONV_EBCDIC, fn);
+                        tobefree = pdc_true;
                     }
                 }
-
-                if (*format == 'a' && str != 0)
+                else
                 {
-                    cstr = pdc_strdup_ext(pdc, str, PDC_CONV_EBCDIC, fn);
-                    tobefree = pdc_true;
+                    cstr = "(NULL)";
+                    if (*format == 'T')
+                        llen = va_arg(args, int);
                 }
+
+		len = strlen(cstr);
+
+                if (prec != -1 && prec < len)
+		{
+		    len = prec;
+		}
 
                 if (!left_justify && len < (size_t) width)
                 {
-                    memset(dest, pad, width - len);
-                    dest += width - len;
+		    int inbuf = (int) (width - len);
+
+                    memset(buf, pad, (size_t) inbuf);
+                    cp = write_sf(pdc, fp, ltd, cp, limit, buf, inbuf);
+		    result += inbuf;
                 }
 
                 if (len != 0)
                 {
+		    result += (int) len;
+
                     if (fp != (FILE *) 0)
                     {
-                        if (dest > buf)
-                        {
-                            pdc_fwrite_ascii(pdc, buf,
-                                             (size_t) (dest - buf), fp);
-                            dest = buf;
-                        }
-
                         pdc_fwrite_ascii(pdc, cstr, len, fp);
                     }
-                    else
+                    else if (ltd == pdc_form_nolimit || result < (int) size)
                     {
-                        memcpy(dest, cstr, len);
-                        dest += len;
+                        memcpy(cp, cstr, len);
+                        cp += (int) len;
+                    }
+                    else if (ltd == pdc_form_fixlimit)
+                    {
+                        pdc_error(pdc, PDC_E_INT_FORMOVERFLOW, 0, 0, 0, 0);
+                    }
+                    else if (cp < limit)
+                    {
+                        memcpy(cp, cstr, (size_t) (limit - cp));
+                        cp = limit;
                     }
 
                     if (tobefree)
@@ -2206,8 +2614,11 @@ pdc_vxprintf(
 
                 if (left_justify && len < (size_t) width)
                 {
-                    memset(dest, pad, width - len);
-                    dest += width - len;
+		    int inbuf = (int) (width - len);
+
+                    memset(buf, pad, (size_t) inbuf);
+                    cp = write_sf(pdc, fp, ltd, cp, limit, buf, inbuf);
+		    result += inbuf;
                 }
 
                 break;
@@ -2239,7 +2650,8 @@ int
 pdc_vfprintf(pdc_core *pdc, pdc_bool pdfconf, FILE *fp,
              const char *format, va_list args)
 {
-    return pdc_vxprintf(pdc, pdfconf, NULL, fp, format, args);
+    return pdc_vxprintf(pdc, pdfconf, pdc_form_nolimit,
+                        NULL, 0, fp, format, args);
 } /* pdc_vfprintf */
 
 int
@@ -2250,7 +2662,8 @@ pdc_fprintf(pdc_core *pdc, pdc_bool pdfconf, FILE *fp,
     va_list ap;
 
     va_start(ap, format);
-    result = pdc_vxprintf(pdc, pdfconf, NULL, fp, format, ap);
+    result = pdc_vxprintf(pdc, pdfconf, pdc_form_nolimit,
+                          NULL, 0, fp, format, ap);
     va_end(ap);
 
     return result;
@@ -2264,7 +2677,8 @@ int
 pdc_vsprintf(pdc_core *pdc, pdc_bool pdfconf, char *buf,
              const char *format, va_list args)
 {
-    return pdc_vxprintf(pdc, pdfconf, buf, NULL, format, args);
+    return pdc_vxprintf(pdc, pdfconf, pdc_form_fixlimit,
+                        buf, PDC_GEN_BUFSIZE, NULL, format, args);
 } /* pdc_vsprintf */
 
 int
@@ -2275,33 +2689,19 @@ pdc_sprintf(pdc_core *pdc, pdc_bool pdfconf, char *buf,
     va_list ap;
 
     va_start(ap, format);
-    result = pdc_vxprintf(pdc, pdfconf, buf, NULL, format, ap);
+    result = pdc_vxprintf(pdc, pdfconf, pdc_form_nolimit,
+                          buf, 0, NULL, format, ap);
     va_end(ap);
 
     return result;
 } /* pdc_sprintf */
 
-/*
- * we cannot use own converter because of missing format
- * specifications like %lu
- */
 int
-pdc_vsnprintf(char *buf, size_t size, const char *format, va_list args)
+pdc_vsnprintf(pdc_core *pdc, char *buf, size_t size,
+              const char *format, va_list args)
 {
-    int result;
-
-#if defined (PDC_NO_VSNPRINTF)
-    (void) size;
-    result = vsprintf(buf, format, args);
-#else
-#if defined(WIN32)
-    result = _vsnprintf(buf, size, format, args);
-#else
-    result = vsnprintf(buf, size, format, args);
-#endif
-#endif
-
-    return result;
+    return pdc_vxprintf(pdc, pdc_false, pdc_form_varlimit,
+                        buf, size, NULL, format, args);
 } /* pdc_vsnprintf */
 
 
@@ -2360,7 +2760,9 @@ pdc_create_treebranch(pdc_core *pdc, pdc_branch *root, const char *pathname,
 
             name = namelist[i];
             if (name_p)
-                *name_p = pdc_errprintf(pdc, "%.*s", PDC_ERR_MAXSTRLEN, name);
+            {
+                *name_p = pdc_utf8strprint(pdc, name);
+            }
 
             nkids = parent->nkids;
             for (j = 0; j < nkids; j++)
@@ -2394,8 +2796,8 @@ pdc_create_treebranch(pdc_core *pdc, pdc_branch *root, const char *pathname,
             if (!strcmp(kid->name, name))
             {
                 if (errcode) *errcode = tree_nameexists;
-                if (name_p) *name_p =
-                    pdc_errprintf(pdc, "%.*s", PDC_ERR_MAXSTRLEN, name);
+                if (name_p) *name_p = pdc_utf8strprint(pdc, name);
+
                 pdc_free(pdc, name);
                 return NULL;
             }
@@ -2562,23 +2964,26 @@ pdc_mp_new(pdc_core *pdc, size_t item_size)
     pdc_mempool *mp = (pdc_mempool *)
         pdc_malloc(pdc, sizeof (pdc_mempool), fn);
 
-    /* round up 'item_size' to a multiple of 'sizeof (mp_item)'
-    ** to ensure proper alignment.
-    */
-    if ((m = (int) (item_size % sizeof (mp_item))) != 0)
-        item_size += sizeof (mp_item) - m;
+    if (mp != (pdc_mempool *) 0)
+    {
+        /* round up 'item_size' to a multiple of 'sizeof (mp_item)'
+        ** to ensure proper alignment.
+        */
+        if ((m = (int) (item_size % sizeof (mp_item))) != 0)
+            item_size += sizeof (mp_item) - m;
 
-    mp->pdc = pdc;
+        mp->pdc = pdc;
 
-    mp->pool_tab = (char **) 0;
-    mp->free_list = (mp_item *) 0;
-    mp->pool_incr = 1000;
+        mp->pool_tab = (char **) 0;
+        mp->free_list = (mp_item *) 0;
+        mp->pool_incr = 1000;
 
-    mp->ptab_cap = 0;
-    mp->ptab_size = 0;
-    mp->ptab_incr = 100;
+        mp->ptab_cap = 0;
+        mp->ptab_size = 0;
+        mp->ptab_incr = 100;
 
-    mp->item_size = item_size;
+        mp->item_size = item_size;
+    }
 
     return mp;
 } /* pdc_mp_new */
@@ -2724,3 +3129,4 @@ pdc_srand(pdc_core *pdc, pdc_uint seed)
 {
     pdc->last_rand = seed;
 } /* pdc_srand */
+
