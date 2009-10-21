@@ -216,15 +216,11 @@
 				Name="base"
 				>
 				<File
-					RelativePath="..\src\freetype2\base\basepic.c"
-					>
-				</File>
-				<File
-					RelativePath="..\src\freetype2\base\ftadvanc.c"
-					>
-				</File>
-				<File
 					RelativePath="..\src\freetype2\base\ftapi.c"
+					>
+				</File>
+				<File
+					RelativePath="..\src\freetype2\base\ftbase.c"
 					>
 				</File>
 				<File
@@ -289,10 +285,6 @@
 				</File>
 				<File
 					RelativePath="..\src\freetype2\base\ftpic.c"
-					>
-				</File>
-				<File
-					RelativePath="..\src\freetype2\base\ftsnames.c"
 					>
 				</File>
 				<File
