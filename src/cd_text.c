@@ -166,6 +166,23 @@ void cdfCanvasText(cdCanvas* canvas, double x, double y, const char *s)
       else  /* CD_CENTER || CD_EAST || CD_WEST */                                      /* it is relative to the full text */
         cdfMovePoint(&x, &y, 0, (num_line-1)*line_height/2.0, sin_theta, cos_theta);
     }
+    else
+    {
+      int align = canvas->text_alignment;
+
+      /* position vertically at the first line */
+      if (align == CD_NORTH || align == CD_NORTH_EAST || align == CD_NORTH_WEST ||     /* it is relative to the full text */
+          align == CD_BASE_LEFT || align == CD_BASE_CENTER || align == CD_BASE_RIGHT)  /* it is relative to the first line already */
+      {
+        /* Already at position */
+      }
+      else if (align == CD_SOUTH || align == CD_SOUTH_EAST || align == CD_SOUTH_WEST)  /* it is relative to the full text */
+      {
+        y += (num_line-1)*line_height;
+      }
+      else  /* CD_CENTER || CD_EAST || CD_WEST */                                      /* it is relative to the full text */
+        y += ((num_line-1)*line_height)/2.0;
+    }
 
     p = s;
     for(i = 0; i < num_line; i++)
