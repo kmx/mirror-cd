@@ -4,13 +4,12 @@ OPT = YES
 
 # Changes to freetype-2.3.11: search for CDLIB (2).
 SRC  := \
-  autofit/afpic.c autofit/autofit.c bdf/bdf.c cff/cff.c \
+  autofit/autofit.c bdf/bdf.c cff/cff.c \
   base/ftbase.c base/ftcid.c base/ftfstype.c cache/ftcache.c \
   gzip/ftgzip.c lzw/ftlzw.c gxvalid/gxvalid.c otvalid/otvalid.c pcf/pcf.c \
   pfr/pfr.c psaux/psaux.c pshinter/pshinter.c psnames/psnames.c raster/raster.c \
   sfnt/sfnt.c smooth/smooth.c truetype/truetype.c type1/type1.c cid/type1cid.c \
-  type42/type42.c winfonts/winfnt.c cff/cffpic.c otvalid/otvmath.c pshinter/pshpic.c \
-  psnames/pspic.c raster/rastpic.c sfnt/sfntpic.c smooth/ftspic.c truetype/ttpic.c \
+  type42/type42.c winfonts/winfnt.c \
   base/ftapi.c base/ftbbox.c base/ftbdf.c base/ftbitmap.c base/ftdebug.c \
   base/ftgasp.c base/ftglyph.c base/ftgxval.c base/ftinit.c base/ftlcdfil.c \
   base/ftmm.c base/ftotval.c base/ftpatent.c base/ftpfr.c base/ftstroke.c \
