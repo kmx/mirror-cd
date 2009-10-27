@@ -17,7 +17,7 @@ canvas:SetForeground(color: lightuserdata) [in Lua]</pre>
       color is used in all primitives (lines, areas, marks and text). Default value: <b>
         <tt>CD_BLACK</tt></b>. Value <tt><b>CD_QUERY</b> </tt>simply returns the 
       current value.</p>
-    <p>Notice that CD_QUERY conflicts with color RGBA=(255,255,255,255) (full 
+    <p>Notice that CD_QUERY conflicts with color RGBA=(255,255,255,0) (full 
     transparent white). Use <strong>SetForeground</strong> to avoid the 
     conflict. See also <a href="color.html">Color Coding</a>.</p>
     <pre class="function"><span class="mainFunction">long int <a name="cdBackground">cdCanvasBackground</a>(cdCanvas* canvas, long int color); [in C]</span>
@@ -31,7 +31,7 @@ canvas:SetBackground(color: lightuserdata) [in Lua]</pre>
       background color only makes sense for <strong>Clear</strong><tt><font> </font></tt>and for 
       primitives affected by the background opacity attribute. Default value: <b><tt>CD_WHITE</tt></b>. 
       Value <tt><b>CD_QUERY</b> </tt>simply returns the current value.</p>
-    <p>Notice that CD_QUERY conflicts with color RGBA=(255,255,255,255) (full 
+    <p>Notice that CD_QUERY conflicts with color RGBA=(255,255,255,0) (full 
     transparent white). Use <strong>SetBackground</strong> to avoid the 
     conflict. See also <a href="color.html">Color Coding</a>.</p>
     <pre class="function"><span class="mainFunction">int <a name="cdWriteMode">cdCanvasWriteMode</a>(cdCanvas* canvas, int mode); [in C]</span>

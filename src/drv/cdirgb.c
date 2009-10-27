@@ -56,13 +56,13 @@ struct _cdCtxCanvas
 #define _sNormX(_ctxcanvas, _x) (_x < 0? 0: _x < _ctxcanvas->canvas->w? _x: _ctxcanvas->canvas->w-1)
 #define _sNormY(_ctxcanvas, _y) (_y < 0? 0: _y < _ctxcanvas->canvas->h? _y: _ctxcanvas->canvas->h-1)
 
-#define RGB_COMPOSE(_SRC, _SRC_ALPHA, _DST, _TMP_MULTI, _TMP_ALPHA) (unsigned char)(((_SRC_ALPHA)*(_SRC) + (_TMP_MULTI)*(_DST)) / (_TMP_ALPHA))
+#define RGB_COMPOSE_OVER(_SRC, _SRC_ALPHA, _DST, _TMP_MULTI, _TMP_ALPHA) (unsigned char)(((_SRC_ALPHA)*(_SRC) + (_TMP_MULTI)*(_DST)) / (_TMP_ALPHA))
 
 #define RGBA_COLOR_COMBINE(_ctxcanvas, _pdst_red, _pdst_green, _pdst_blue, _pdst_alpha, _src_red, _src_green, _src_blue, _src_alpha) \
 {                                                                                                                        \
   unsigned char _tmp_red = 0, _tmp_green = 0, _tmp_blue = 0;                                                                         \
                                                                                                                          \
-  if (_pdst_alpha)   /* (_pdst_alpha != NULL) */                                                                         \
+  if (_pdst_alpha)   /* destiny has alpha */                                                                         \
   {                                                                                                                      \
     if (_src_alpha != 255)   /* some transparency */                                                                     \
     {                                                                                                                    \
@@ -84,12 +84,17 @@ struct _cdCtxCanvas
         }                                                                                                                \
         else /* (0<*_pdst_alpha<255 && 0<_src_alpha<255) destiny and source are semi-transparent */                      \
         {                                                                                                                \
-          /* Closed Compositing Formulas for SRC over DST, Colors Not Premultiplied by Alpha:  */                        \
+          /* Closed Compositing SRC over DST  (see smith95a.pdf)        */                                               \
+          /* Colors NOT Premultiplied by Alpha                          */                                               \
+          /* DST = SRC * SRC_ALPHA + DST * DST_ALPHA * (1 - SRC_ALPHA)  */                                               \
+          /* DST_ALPHA = SRC_ALPHA + DST_ALPHA * (1 - SRC_ALPHA)        */                                               \
+          /* DST /= DST_ALPHA */                                                                                         \
           int _tmp_multi = *_pdst_alpha * (255 - _src_alpha);                                                            \
-          int _tmp_alpha = _src_alpha + _tmp_multi;                                                                      \
-          _tmp_red = RGB_COMPOSE(_src_red, _src_alpha, *_pdst_red, _tmp_multi, _tmp_alpha);                             \
-          _tmp_green = RGB_COMPOSE(_src_green, _src_alpha, *_pdst_green, _tmp_multi, _tmp_alpha);                       \
-          _tmp_blue = RGB_COMPOSE(_src_blue, _src_alpha, *_pdst_blue, _tmp_multi, _tmp_alpha);                          \
+          int _tmp_src_alpha = _src_alpha*255;                                                                           \
+          int _tmp_alpha = _tmp_src_alpha + _tmp_multi;                                                                  \
+          _tmp_red = RGB_COMPOSE_OVER(_src_red, _tmp_src_alpha, *_pdst_red, _tmp_multi, _tmp_alpha);                     \
+          _tmp_green = RGB_COMPOSE_OVER(_src_green, _tmp_src_alpha, *_pdst_green, _tmp_multi, _tmp_alpha);               \
+          _tmp_blue = RGB_COMPOSE_OVER(_src_blue, _tmp_src_alpha, *_pdst_blue, _tmp_multi, _tmp_alpha);                  \
           *_pdst_alpha = (unsigned char)(_tmp_alpha / 255);                                                              \
         }                                                                                                                \
       }                                                                                                                  \
@@ -109,7 +114,7 @@ struct _cdCtxCanvas
       *_pdst_alpha = (unsigned char)255;   /* set destiny as opaque */                                                   \
     }                                                                                                                    \
   }                                                                                                                      \
-  else /* (_pdst_alpha == NULL) */                                                                                       \
+  else /* destiny does NOT have alpha */                                                                                 \
   {                                                                                                                      \
     if (_src_alpha != 255) /* source has some transparency */                                                            \
     {                                                                                                                    \
@@ -147,9 +152,9 @@ struct _cdCtxCanvas
     *_pdst_blue ^= _tmp_blue;                                                                                            \
     break;                                                                                                               \
   case CD_NOT_XOR:                                                                                                       \
-    *_pdst_red = (unsigned char)~(_tmp_red ^ *_pdst_red);                                                                               \
-    *_pdst_green = (unsigned char)~(_tmp_green ^ *_pdst_green);                                                                         \
-    *_pdst_blue = (unsigned char)~(_tmp_blue ^ *_pdst_blue);                                                                            \
+    *_pdst_red = (unsigned char)~(_tmp_red ^ *_pdst_red);                                                                \
+    *_pdst_green = (unsigned char)~(_tmp_green ^ *_pdst_green);                                                          \
+    *_pdst_blue = (unsigned char)~(_tmp_blue ^ *_pdst_blue);                                                             \
     break;                                                                                                               \
   }                                                                                                                      \
 }
@@ -406,7 +411,7 @@ static void cdclear(cdCtxCanvas* ctxcanvas)
   memset(ctxcanvas->red, cdRed(ctxcanvas->canvas->background), size);
   memset(ctxcanvas->green, cdGreen(ctxcanvas->canvas->background), size);
   memset(ctxcanvas->blue, cdBlue(ctxcanvas->canvas->background), size);
-  if (ctxcanvas->alpha) memset(ctxcanvas->alpha, cdAlpha(ctxcanvas->canvas->background), size);
+  if (ctxcanvas->alpha) memset(ctxcanvas->alpha, cdAlpha(ctxcanvas->canvas->background), size);  /* here is the normal alpha coding */
 }
 
 static void irgPostProcessIntersect(unsigned char* clip, int size)
@@ -1525,8 +1530,8 @@ static cdCtxImage* cdcreateimage(cdCtxCanvas* ctxcanvas, int w, int h)
   if (ctxcanvas->alpha)
     ctximage->alpha = ctximage->red + 3*size;
 
-  memset(ctximage->red, 0xFF, 3*size);
-  if (ctximage->alpha) memset(ctximage->alpha, 0, size);  /* transparent */
+  memset(ctximage->red, 0xFF, 3*size);  /* white */
+  if (ctximage->alpha) memset(ctximage->alpha, 0, size);  /* transparent, this is the normal alpha coding */
 
   return ctximage;
 }
@@ -1927,7 +1932,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
       ctxcanvas->alpha = ctxcanvas->red + 3*size;
 
     memset(ctxcanvas->red, 0xFF, 3*size);  /* white */
-    if (ctxcanvas->alpha) memset(ctxcanvas->alpha, 0, size);  /* transparent */
+    if (ctxcanvas->alpha) memset(ctxcanvas->alpha, 0, size);  /* transparent, this is the normal alpha coding */
   }
 
   ctxcanvas->clip = (unsigned char*)malloc(w*h);
