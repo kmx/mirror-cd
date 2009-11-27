@@ -1211,8 +1211,8 @@ void draw_wd(void)
   cdFlush();
 }
 
-void SimpleDrawTest(void)
-//void SimpleDrawTestHardCopy(void)
+//void SimpleDrawTest(void)
+void SimpleDrawTestHardCopy(void)
 {
   int w, h;
   cdGetCanvasSize(&w, &h, 0, 0);
@@ -1239,6 +1239,8 @@ void SimpleDrawTestImageRGB(void)
   cdCanvas* canvas = cdCreateCanvas(CD_IMAGERGB, "2048x2048");
   cdActivate(canvas);
 
+  simple_draw = DRAW_TEST;
+
   red = calloc(size, 1);
   green = calloc(size, 1);
   blue = calloc(size, 1);
@@ -1257,6 +1259,7 @@ void SimpleDrawTestImageRGB(void)
 void SimpleDrawVectorFont(void)
 {
   simple_draw = DRAW_TEST;
+
   cdBackground(CD_WHITE);
   cdClear();
   cdLineStyle(CD_CONTINUOUS);
@@ -1312,4 +1315,25 @@ void SimpleDrawVectorFont(void)
   //  }
   }
   cdFlush();
+}
+
+void SimpleDrawTest(void)
+//void SimpleDrawPoly(void)
+{
+  int w, h;
+  cdGetCanvasSize(&w, &h, 0, 0);
+
+  simple_draw = DRAW_TEST;
+
+  cdBackground(CD_WHITE);
+  cdClear();
+
+  cdInteriorStyle(CD_SOLID);
+  cdBegin(CD_FILL);
+  cdVertex(w/4, h/4); 
+  cdVertex(w/2-w/8, h/4); 
+  cdVertex(w/2, h/2); 
+  cdVertex(w/2-w/8, h/2); 
+
+  cdEnd();
 }

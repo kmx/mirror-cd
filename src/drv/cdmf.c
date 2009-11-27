@@ -354,7 +354,7 @@ static void cdpattern(cdCtxCanvas *ctxcanvas, int w, int h, const long int *patt
   {
     cdDecodeColor(*pattern++, &r, &g, &b);
     fprintf(ctxcanvas->file, "%d %d %d ", (int)r, (int)g, (int)b);
-    if (c % w == 0)
+    if ((c + 1) % w == 0)
       fprintf(ctxcanvas->file, "\n");
   }
 }

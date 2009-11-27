@@ -31,7 +31,8 @@ or
   
   <p>It must include the canvas' dimensions.<font face="Courier"> Width</font> and <font face="Courier">height</font> 
   are provided in pixels (note the lowercase &quot;x&quot; between them). As an option, you can specify the buffers to be used by 
-  the driver, so that you can draw over an existing image. The resolution can be defined with parameter
+  the driver, so that you can draw over an existing image, [r g b] or [r g b a] 
+	are pointers to the component buffer, just like PutImageRectRGB/A. The resolution can be defined with parameter
   <font face="Courier">-r</font>; its default value is &quot;3.78 pixels/mm&quot; (96 DPI).&nbsp;</p>
 <p>When the parameter -a is specified an alpha channel will be added to the 
 canvas underlying image. All primitives will be composed using an over operator 
@@ -45,11 +46,11 @@ They are not initialized when allocated by the application.</p>
   <a href="../func/init.html#cdKillCanvas"><strong>cdKillCanvas</strong></a> is required to 
   release internal allocated memory.</p>
   <p>In Lua, the canvas can be created in two ways: with an already defined image or without it. With an image, an RGB 
-  image must be passed as parameter, created by functions <strong>
+  image must be passed as parameter instead of the string, created by functions <strong>
   <a href="../func/client.html#cdCreateImageRGB">cd.CreateImageRGB</a>,</strong> 
   <strong><a href="../func/client.html#cdCreateImageRGBA">cd.CreateImageRGBA</a></strong> or <strong>
   <a href="../func/client.html#cdCreateBitmap">cd.CreateBitmap</a></strong> 
-  in Lua. The resolution must be passed in an extra parameter after the image.</p>
+  in Lua. The resolution must be passed in a second parameter after the image.</p>
 
 <h3>Exclusive Functions</h3>
 

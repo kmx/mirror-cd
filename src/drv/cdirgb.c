@@ -544,15 +544,16 @@ static int compare_int(const int* xx1, const int* xx2)
 
 static void irgbClipPoly(cdCtxCanvas* ctxcanvas, unsigned char* clip_region, cdPoint* poly, int n, int combine_mode) 
 {
+  /***********IMPORTANT: the reference for this function is simPolyFill in "sim_linepolyfill.c",
+     if a change is made here, must be reflected there, and vice-versa */
   cdCanvas* canvas = ctxcanvas->canvas;
   unsigned char* clip_line;
-  simLineSegment *seg_i;
   cdPoint* t_poly = NULL;
-  int y_max, y_min, i, y, i1, fill_mode, num_lines,
-      inter_count, width, height;
+  int y_max, y_min, i, y, fill_mode, num_lines, 
+      xx_count, width, height, *xx, *hh, max_hh, n_seg;
   
-  int *xx = (int*)malloc((n+1)*sizeof(int));
-  simLineSegment *segment = (simLineSegment *)malloc(n*sizeof(simLineSegment));
+  /* alloc maximum number of segments */
+  simLineSegment *segments = (simLineSegment *)malloc(n*sizeof(simLineSegment));
 
   if (canvas->use_matrix)
   {
@@ -568,112 +569,55 @@ static void irgbClipPoly(cdCtxCanvas* ctxcanvas, unsigned char* clip_region, cdP
   height = canvas->h;
   fill_mode = canvas->fill_mode;
   
-  y_max = poly[0].y;
-  y_min = poly[0].y;
-  for(i = 0; i < n; i++)
+  simPolyMakeSegments(segments, &n_seg, poly, n, &max_hh, &y_max, &y_min);
+  
+  if (y_min > height-1 || y_max < 0)
   {
-    i1 = (i+1)%n; /* next point(i+1), next of last(n-1) is first(0) */
-    simAddSegment(segment+i, poly[i].x, poly[i].y, poly[i1].x, poly[i1].y, &y_max, &y_min);
+    free(segments);
+    return;
   }
   
   if (y_min < 0) 
     y_min = 0;
 
+  /* number of horizontal lines */
   if (y_max > height-1)
     num_lines = height-y_min;
   else
     num_lines = y_max-y_min+1;
 
+  /* buffer to store the current horizontal intervals during the fill of an horizontal line */
+  xx = (int*)malloc((n+1)*sizeof(int));    /* allocated to the maximum number of possible intervals in one line */
+  hh = (int*)malloc((2*max_hh)*sizeof(int));
+
   /* for all horizontal lines between y_max and y_min */
   for(y = y_max; y >= y_min; y--)
   {
-    inter_count = 0;
-
-    /* for all segments, calculates the intervals to be filled. */
-    for(i = 0; i < n; i++)
-    {
-      seg_i = segment + i;
-
-      /* if the minimum Y coordinate of the segment is greater than the current y, then ignore the segment. */
-      /* if it is an horizontal line, then ignore the segment. */
-      if (seg_i->y1 > y ||
-          seg_i->y1 == seg_i->y2)
-        continue;
-
-      if (y == seg_i->y1)  /* intersection at the start point (x1,y1) */
-      {
-        int i_next = (i==n-1)? 0: i+1;
-        int i_prev = (i==0)? n-1: i-1;
-        simLineSegment *seg_i_next = segment + i_next;
-        simLineSegment *seg_i_prev = segment + i_prev;
-
-        /* always save at least one intersection point for (y1) */
-
-        xx[inter_count++] = seg_i->x1;  /* save the intersection point */
-
-        /* check for missing bottom-corner points (|_|), must duplicate the intersection */
-        if ((seg_i_next->y1 == y && seg_i_next->y2 == seg_i_next->y1) ||  /* next is an horizontal line */
-            (seg_i_prev->y1 == y && seg_i_prev->y2 == seg_i_prev->y1))    /* previous is an horizontal line */
-        {
-          xx[inter_count++] = seg_i->x1;     /* save the intersection point */
-        }
-      }
-      else if ((y > seg_i->y1) && (y < seg_i->y2))  /* intersection inside the segment, do not include y2 */
-      {                                             
-        xx[inter_count++] = simSegmentInc(seg_i, canvas, y);  /* save the intersection point */
-      }
-      else if (y == seg_i->y2)  /* intersection at the end point (x2,y2) */
-      {
-        int i_next = (i==n-1)? 0: i+1;
-        int i_prev = (i==0)? n-1: i-1;
-        simLineSegment *seg_i_next = segment + i_next;
-        simLineSegment *seg_i_prev = segment + i_prev;
-
-        /* only save the intersection point for (y2) if not handled by (y1) of another segment */
-
-        /* check for missing top-corner points (^) or (|¯¯|) */
-        if ((seg_i_next->y2 == y && seg_i_next->y2 == seg_i_next->y1) ||  /* next is an horizontal line */
-            (seg_i_prev->y2 == y && seg_i_prev->y2 == seg_i_prev->y1) ||  /* previous is an horizontal line */
-            (seg_i_next->y2 == y && seg_i_next->x2 == seg_i->x2 && seg_i_next->x1 != seg_i->x1) || 
-            (seg_i_prev->y2 == y && seg_i_prev->x2 == seg_i->x2 && seg_i_prev->x1 != seg_i->x1))
-        {
-          xx[inter_count++] = seg_i->x2;     /* save the intersection point */
-        }
-      }
-    }
-    
-    /* if outside the canvas, ignore the intervals and */
-    /* continue since the segments where updated.      */
-    if (y > height-1 || inter_count == 0)
+    xx_count = simPolyFindHorizontalIntervals(segments, n_seg, xx, hh, y, height);
+    if (xx_count < 2)
       continue;
-
-    /* sort the intervals */
-    qsort(xx, inter_count, sizeof(int), (int (*)(const void*,const void*))compare_int);
     
     clip_line = clip_region + y*width;
 
     /* for all intervals, fill the interval */
-    for(i = 0; i < inter_count; i += 2)
+    for(i = 0; i < xx_count; i += 2)  /* process only pairs */
     {
-      if (fill_mode == CD_EVENODD)
+      /* fills only pairs of intervals, */          
+      irgbClipFillLine(clip_line, combine_mode, xx[i], xx[i+1], width);
+
+      if ((fill_mode == CD_WINDING) &&                     /* NOT EVENODD */
+          ((i+2 < xx_count) && (xx[i+1] < xx[i+2])) && /* avoid point intervals */
+           simIsPointInPolyWind(poly, n, (xx[i+1]+xx[i+2])/2, y)) /* the next interval is inside the polygon */
       {
-        /* since it fills only pairs of intervals, */          
-        /* it is the EVENODD fill rule.            */          
-        irgbClipFillLine(clip_line, combine_mode, xx[i], xx[i+1], width);
-      }
-      else
-      {
-        irgbClipFillLine(clip_line, combine_mode, xx[i], xx[i+1], width);
-        if ((i+2 < inter_count) && (xx[i+1] < xx[i+2]))  /* avoid point intervals */
-          if (simIsPointInPolyWind(poly, n, (xx[i+1]+xx[i+2])/2, y)) /* if the next interval is inside the polygon then fill it */
-            irgbClipFillLine(clip_line, combine_mode, xx[i+1], xx[i+2], width);
+        irgbClipFillLine(clip_line, combine_mode, xx[i+1], xx[i+2], width);
       }
     }
   }
 
   if (t_poly) free(t_poly);
   free(xx);
-  free(segment);
+  free(hh);
+  free(segments);
 
   if (combine_mode == CD_INTERSECT)
     irgPostProcessIntersect(ctxcanvas->clip_region, ctxcanvas->canvas->w * ctxcanvas->canvas->h);

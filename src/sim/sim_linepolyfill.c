@@ -76,8 +76,11 @@ static int compare_int(const int* xx1, const int* xx2)
   return *xx1 - *xx2;
 }
 
-void simAddSegment(simLineSegment* segment, int x1, int y1, int x2, int y2, int *y_max, int *y_min)
+int simAddSegment(simLineSegment* segment, int x1, int y1, int x2, int y2, int *y_max, int *y_min)
 {
+  if (x1==x2 && y1==y2)
+    return 0;
+
   /* Make sure p2.y > p1.y */
   if (y1 > y2) 
   {
@@ -108,7 +111,7 @@ void simAddSegment(simLineSegment* segment, int x1, int y1, int x2, int y2, int 
   if (segment->DeltaY > segment->DeltaX) 
   {
     if (segment->DeltaY==0)  /* do not compute for horizontal segments */
-      return;
+      return 1;
 
     /* Y-major line; calculate 16-bit fixed-point fractional part of a
     pixel that X advances each time Y advances 1 pixel, truncating the
@@ -118,7 +121,7 @@ void simAddSegment(simLineSegment* segment, int x1, int y1, int x2, int y2, int 
   else
   {
     if (segment->DeltaX==0)  /* do not compute for vertical segments */
-      return;
+      return 1;
 
     /* It's an X-major line; calculate 16-bit fixed-point fractional part of a
     pixel that Y advances each time X advances 1 pixel, truncating the
@@ -131,9 +134,11 @@ void simAddSegment(simLineSegment* segment, int x1, int y1, int x2, int y2, int 
     *y_max = y2;
   if (y1 < *y_min)
     *y_min = y1;
+
+  return 1;
 }
 
-int simSegmentInc(simLineSegment* segment, cdCanvas* canvas, int y)
+int simSegmentInc(simLineSegment* segment)
 {
   unsigned short ErrorAccTemp, Weighting;
 
@@ -248,7 +253,7 @@ static void simPolyAAPixels(cdCanvas *canvas, simIntervalList* line_int_list, in
 
   /* Line is not horizontal, diagonal, or vertical */
 
-  /* start and end pixels are not necessary 
+  /* highest and lowest pixels are not necessary 
      since they are always drawn in the previous step. */
 
   ErrorAcc = 0;  /* initialize the line error accumulator to 0 */
@@ -357,142 +362,272 @@ static void simLineIntervallAdd(simIntervalList* line_int_list, int x1, int x2)
   line_int_list->n += 2;
 }
 
-void simPolyFill(cdSimulation* simulation, cdPoint* poly, int n) 
+void simPolyMakeSegments(simLineSegment *segments, int *n_seg, cdPoint* poly, int n, int *max_hh, int *y_max, int *y_min)
+{
+  int i, i1;
+  *y_max = poly[0].y;
+  *y_min = poly[0].y;
+  *max_hh=0, *n_seg = n;
+  for(i = 0; i < n; i++)
+  {
+    i1 = (i+1)%n; /* next point(i+1), next of last(n-1) is first(0) */
+    if (simAddSegment(segments, poly[i].x, poly[i].y, poly[i1].x, poly[i1].y, y_max, y_min))
+    {
+      if (poly[i].y == poly[i1].y)
+        (*max_hh)++;  /* increment the number of horizontal segments */
+
+      segments++;
+    }
+    else
+      (*n_seg)--;
+  }
+}
+
+static void simAddHxx(int *hh, int *hh_count, int x1, int x2)
+{
+  /* It will add a closed interval in a list of closed intervals.
+     But if some intersect then they must be merged. */
+
+  int i, count = *hh_count;
+
+  if (x1 > x2)
+  {
+    int t = x2;
+    x2 = x1;
+    x1 = t;
+  }
+
+  for (i=0; i<count; i+=2)  /* here we always have pairs */
+  {
+    /*  x_end >= h_begin AND x_begin <= h_end */
+    if (x2 >= hh[i] && x1 <= hh[i+1])
+    {
+      /* there is some intersection, merge interval and remove point */
+      if (hh[i] < x1)
+        x1 = hh[i];
+      if (hh[i+1] > x2)
+        x2 = hh[i+1];
+
+      memmove(hh+i, hh+i+2, (count-(i+2))*sizeof(int));
+      count -= 2;
+    }
+  }
+
+  /* no intersection, add both points at the end */
+  hh[count] = x1;
+  hh[count+1] = x2;
+  *hh_count = count + 2;
+}
+
+static void simMergeHxx(int *xx, int *xx_count, int *hh, int hh_count)
+{
+  int hh_i;
+
+  if (*xx_count == 0)
+  {
+    memcpy(xx, hh, hh_count*sizeof(int));
+    *xx_count = hh_count;
+    return;
+  }
+
+  /* remember that xx and hh both have an even number of points, 
+     and all pairs are intervals.
+     So infact this call will behave as simAddHxx for each pair of hh. */
+  for (hh_i=0; hh_i<hh_count; hh_i+=2)
+  {
+    simAddHxx(xx, xx_count, hh[hh_i], hh[hh_i+1]);
+  }
+}
+
+int simPolyFindHorizontalIntervals(simLineSegment *segments, int n_seg, int* xx, int *hh, int y, int height)
 {
   simLineSegment *seg_i;
+  int i, hh_count = 0;
+  int xx_count = 0;  /* count the number of points in the horizontal line,
+                       each pair will form an horizontal interval */
+
+  /* for all segments, calculates the intervals to be filled 
+     from the intersection with the horizontal line y. */
+  for(i = 0; i < n_seg; i++)
+  {
+    seg_i = segments + i;
+
+    /* if y is less than the minimum Y coordinate of the segment (y1), 
+       or y is greater than the maximum Y coordinate of the segment (y2), 
+       then ignore the segment. */
+    if (y < seg_i->y1  || y > seg_i->y2)
+      continue;
+
+    /* if it is an horizontal line, then store the segment in a separate buffer. */
+    if (seg_i->y1 == seg_i->y2)  /* because of the previous test, also implies "==y" */
+    {
+      int prev_y, next_y;
+      int i_next = (i==n_seg-1)? 0: i+1;
+      int i_prev = (i==0)? n_seg-1: i-1;
+      simLineSegment *seg_i_next = segments + i_next;
+      simLineSegment *seg_i_prev = segments + i_prev;
+
+      simAddHxx(hh, &hh_count, seg_i->x1, seg_i->x2);
+
+      /* save the previous y, not in the horizontal line */
+      if (seg_i_prev->y1 == y)
+        prev_y = seg_i_prev->y2;
+      else
+        prev_y = seg_i_prev->y1;
+
+      /* include horizontal segments that are in a sequence */
+      while (seg_i_next->y1 == seg_i_next->y2 && i < n_seg)
+      {
+        simAddHxx(hh, &hh_count, seg_i_next->x1, seg_i_next->x2);
+
+        i++;
+        i_next = (i==n_seg-1)? 0: i+1;
+        seg_i_next = segments + i_next;
+      }
+
+      /* save the next y, not in the horizontal line */
+      if (seg_i_next->y1 == y)
+        next_y = seg_i_next->y2;
+      else
+        next_y = seg_i_next->y1;
+
+      /* if the horizontal line is part of a step  |_  then compute a normal intersection in the middle */
+      /*                                             |                                                  */
+      if ((next_y > y && prev_y < y) ||
+          (next_y < y && prev_y > y))
+      {
+        xx[xx_count++] = (seg_i->x1+seg_i->x2)/2;     /* save the intersection point, any value inside the segment will be fine */
+      }
+    }
+    else if (y == seg_i->y1)  /* intersection at the lowest point (x1,y1) */
+    {
+      int i_next = (i==n_seg-1)? 0: i+1;
+      int i_prev = (i==0)? n_seg-1: i-1;
+      simLineSegment *seg_i_next = segments + i_next;
+      simLineSegment *seg_i_prev = segments + i_prev;
+
+      /* but add only if it does not belongs to an horizontal line */
+      if (!((seg_i_next->y1 == y && seg_i_next->y2 == y) ||   /* next is an horizontal line */
+            (seg_i_prev->y1 == y && seg_i_prev->y2 == y)))    /* previous is an horizontal line */
+      {
+        xx[xx_count++] = seg_i->x1;     /* save the intersection point */
+      }
+    }
+    else if (y == seg_i->y2)  /* intersection at the highest point (x2,y2) */
+    {
+      int i_next = (i==n_seg-1)? 0: i+1;
+      int i_prev = (i==0)? n_seg-1: i-1;
+      simLineSegment *seg_i_next = segments + i_next;
+      simLineSegment *seg_i_prev = segments + i_prev;
+
+      /* Normally do nothing, because this point is duplicated in another segment,    
+         i.e only save the intersection point for (y2) if not handled by (y1) of another segment.   
+         The exception is the top-corner points (^). */
+      if ((seg_i_next->y2 == y && seg_i_next->x2 == seg_i->x2 && seg_i_next->y1 != y) || 
+          (seg_i_prev->y2 == y && seg_i_prev->x2 == seg_i->x2 && seg_i_prev->y1 != y))
+      {
+        xx[xx_count++] = seg_i->x2;     /* save the intersection point */
+      }
+    }
+    else /* if ((y > seg_i->y1) && (y < seg_i->y2))  intersection inside the segment  */
+    {                                             
+      xx[xx_count++] = simSegmentInc(seg_i);  /* save the intersection point */
+    }
+  }
+
+  /* if outside the canvas, ignore the intervals and */
+  /* continue since the segments where updated in simSegmentInc. */
+  if (y > height-1)
+    return 0;
+
+  /* sort the intervals */
+  if (xx_count)
+    qsort(xx, xx_count, sizeof(int), (int (*)(const void*,const void*))compare_int);
+
+  /* add the horizontal segments. */
+  if (hh_count)
+  {
+    simMergeHxx(xx, &xx_count, hh, hh_count);
+
+    /* sort again */
+    if (xx_count)
+      qsort(xx, xx_count, sizeof(int), (int (*)(const void*,const void*))compare_int);
+  }
+
+  return xx_count;
+}
+
+void simPolyFill(cdSimulation* simulation, cdPoint* poly, int n) 
+{
+  /***********IMPORTANT: this function is used as a reference for irgbClipPoly in "cdirgb.c",
+     if a change is made here, must be reflected there, and vice-versa */
   simIntervalList* line_int_list, *line_il;
   int y_max, y_min, i, y, i1, fill_mode, num_lines,
-      inter_count, width, height, *xx;
+      xx_count, width, height, *xx, *hh, max_hh, n_seg;
 
-  simLineSegment *segment = (simLineSegment *)malloc(n*sizeof(simLineSegment));
+  /* alloc maximum number of segments */
+  simLineSegment *segments = (simLineSegment *)malloc(n*sizeof(simLineSegment));
 
   width = simulation->canvas->w;
   height = simulation->canvas->h;
   fill_mode = simulation->canvas->fill_mode;
   
-  y_max = poly[0].y;
-  y_min = poly[0].y;
-  for(i = 0; i < n; i++)
-  {
-    i1 = (i+1)%n; /* next point(i+1), next of last(n-1) is first(0) */
-    simAddSegment(segment+i, poly[i].x, poly[i].y, poly[i1].x, poly[i1].y, &y_max, &y_min);
-  }
+  simPolyMakeSegments(segments, &n_seg, poly, n, &max_hh, &y_max, &y_min);
   
   if (y_min > height-1 || y_max < 0)
   {
-    free(segment);
+    free(segments);
     return;
   }
 
   if (y_min < 0) 
     y_min = 0;
 
+  /* number of horizontal lines */
   if (y_max > height-1)
     num_lines = height-y_min;
   else
     num_lines = y_max-y_min+1;
 
+  /* will store all horizontal intervals for each horizontal line,
+     will be used to draw the antialiased and incomplete pixels */
   line_int_list = malloc(sizeof(simIntervalList)*num_lines);
   memset(line_int_list, 0, sizeof(simIntervalList)*num_lines);
 
-  xx = (int*)malloc((n+1)*sizeof(int));
+  /* buffer to store the current horizontal intervals during the fill of an horizontal line */
+  xx = (int*)malloc((n+1)*sizeof(int));    /* allocated to the maximum number of possible intervals in one line */
+  hh = (int*)malloc((2*max_hh)*sizeof(int));
 
   /* for all horizontal lines between y_max and y_min */
   for(y = y_max; y >= y_min; y--)
   {
-    inter_count = 0;
-
-    /* for all segments, calculates the intervals to be filled 
-       from the intersection with the horizontal line y. */
-    for(i = 0; i < n; i++)
-    {
-      seg_i = segment + i;
-
-      /* if the minimum Y coordinate of the segment is greater than the current y, then ignore the segment. */
-      /* if it is an horizontal line, then ignore the segment. */
-      if (seg_i->y1 > y ||
-          seg_i->y1 == seg_i->y2)
-        continue;
-
-      if (y == seg_i->y1)  /* intersection at the start point (x1,y1) */
-      {
-        int i_next = (i==n-1)? 0: i+1;
-        int i_prev = (i==0)? n-1: i-1;
-        simLineSegment *seg_i_next = segment + i_next;
-        simLineSegment *seg_i_prev = segment + i_prev;
-
-        /* always save at least one intersection point for (y1) */
-
-        xx[inter_count++] = seg_i->x1;  /* save the intersection point */
-
-        /* check for missing bottom-corner points (|_|), must duplicate the intersection */
-        if ((seg_i_next->y1 == y && seg_i_next->y2 == seg_i_next->y1) ||  /* next is an horizontal line */
-            (seg_i_prev->y1 == y && seg_i_prev->y2 == seg_i_prev->y1))    /* previous is an horizontal line */
-        {
-          xx[inter_count++] = seg_i->x1;     /* save the intersection point */
-        }
-      }
-      else if ((y > seg_i->y1) && (y < seg_i->y2))  /* intersection inside the segment, do not include y2 */
-      {                                             
-        xx[inter_count++] = simSegmentInc(seg_i, simulation->canvas, y);  /* save the intersection point */
-      }
-      else if (y == seg_i->y2)  /* intersection at the end point (x2,y2) */
-      {
-        int i_next = (i==n-1)? 0: i+1;
-        int i_prev = (i==0)? n-1: i-1;
-        simLineSegment *seg_i_next = segment + i_next;
-        simLineSegment *seg_i_prev = segment + i_prev;
-
-        /* only save the intersection point for (y2) if not handled by (y1) of another segment */
-
-        /* check for missing top-corner points (^) or (|¯¯|) */
-        if ((seg_i_next->y2 == y && seg_i_next->y2 == seg_i_next->y1) ||  /* next is an horizontal line */
-            (seg_i_prev->y2 == y && seg_i_prev->y2 == seg_i_prev->y1) ||  /* previous is an horizontal line */
-            (seg_i_next->y2 == y && seg_i_next->x2 == seg_i->x2 && seg_i_next->x1 != seg_i->x1) || 
-            (seg_i_prev->y2 == y && seg_i_prev->x2 == seg_i->x2 && seg_i_prev->x1 != seg_i->x1))
-        {
-          xx[inter_count++] = seg_i->x2;     /* save the intersection point */
-        }
-      }
-    }
-    
-    /* if outside the canvas, ignore the intervals and */
-    /* continue since the segments where updated.      */
-    if (y > height-1 || inter_count == 0)
+    xx_count = simPolyFindHorizontalIntervals(segments, n_seg, xx, hh, y, height);
+    if (xx_count < 2)
       continue;
 
-    /* sort the intervals */
-    qsort(xx, inter_count, sizeof(int), (int (*)(const void*,const void*))compare_int);
-
     line_il = line_int_list+(y-y_min);
-    simLineIntervallInit(line_il, inter_count*2);
+    simLineIntervallInit(line_il, xx_count*2);
 
     /* for all intervals, fill the interval */
-    for(i = 0; i < inter_count; i += 2)  /* process only pairs */
+    for(i = 0; i < xx_count; i += 2)  /* process only pairs */
     {
-      if (fill_mode == CD_EVENODD)
+      /* fills only pairs of intervals, */          
+      simFillHorizLine(simulation, xx[i], y, xx[i+1]);
+      simLineIntervallAdd(line_il, xx[i], xx[i+1]);
+
+      if ((fill_mode == CD_WINDING) &&                     /* NOT EVENODD */
+          ((i+2 < xx_count) && (xx[i+1] < xx[i+2])) && /* avoid point intervals */
+           simIsPointInPolyWind(poly, n, (xx[i+1]+xx[i+2])/2, y)) /* the next interval is inside the polygon */
       {
-        /* since it fills only pairs of intervals, */          
-        /* it is the EVENODD fill rule.            */          
-        simFillHorizLine(simulation, xx[i], y, xx[i+1]);
-        simLineIntervallAdd(line_il, xx[i], xx[i+1]);
-      }
-      else
-      {
-        simFillHorizLine(simulation, xx[i], y, xx[i+1]);
-        simLineIntervallAdd(line_il, xx[i], xx[i+1]);
-        if ((i+2 < inter_count) && (xx[i+1] < xx[i+2]))  /* avoid point intervals */
-          if (simIsPointInPolyWind(poly, n, (xx[i+1]+xx[i+2])/2, y)) /* if the next interval is inside the polygon then fill it */
-          {
-            simFillHorizLine(simulation, xx[i+1], y, xx[i+2]);
-            simLineIntervallAdd(line_il, xx[i+1], xx[i+2]);
-          }
+        simFillHorizLine(simulation, xx[i+1], y, xx[i+2]);
+        simLineIntervallAdd(line_il, xx[i+1], xx[i+2]);
       }
     }
   }
 
   free(xx);
-  free(segment);
+  free(hh);
+  free(segments);
 
   /* Once the polygon has been filled, now let's draw the
    * antialiased and incomplete pixels at the edges */
@@ -500,7 +635,7 @@ void simPolyFill(cdSimulation* simulation, cdPoint* poly, int n)
   if (y_max > height-1)
     y_max = height-1;
 
-  /* Go through all line segments of the poly */
+  /* Go through all line segments of the polygon */
   for(i = 0; i < n; i++)
   {
     i1 = (i+1)%n;
@@ -709,7 +844,7 @@ void simLineThin(cdCanvas* canvas, int x1, int y1, int x2, int y2)
         weighting for the paired pixel.
         Combine the Weighting with the existing alpha,
         When Weighting is zero alpha must be fully preserved. */
-        aa_alpha = ((255-Weighting) * alpha) / 255;
+        aa_alpha = (unsigned char)(((255-Weighting) * alpha) / 255);
         
         aa_fgcolor = cdEncodeAlpha(fgcolor, aa_alpha);
         _cdLineDrawPixel(canvas, x1, y1, ls, aa_fgcolor, bgcolor);
@@ -760,7 +895,7 @@ void simLineThin(cdCanvas* canvas, int x1, int y1, int x2, int y2)
         weighting for the paired pixel.
         Combine the Weighting with the existing alpha,
         When Weighting is zero alpha must be fully preserved. */
-        aa_alpha = ((255-Weighting) * alpha) / 255;
+        aa_alpha = (unsigned char)(((255-Weighting) * alpha) / 255);
 
         aa_fgcolor = cdEncodeAlpha(fgcolor, aa_alpha);
         _cdLineDrawPixel(canvas, x1, y1, ls, aa_fgcolor, bgcolor);
@@ -824,7 +959,7 @@ void simfLineThin(cdCanvas* canvas, double x1, double y1, double x2, double y2, 
     int y1i = _cdRound(y1), 
         y2i = _cdRound(y2);
     int yi_first = y1i;
-    int yi_last = y2i, xi_last;
+    int yi_last = y2i, xi_last = 0;
 
     if (y1i > y2i)
       _cdSwapInt(y1i, y2i);
@@ -845,7 +980,7 @@ void simfLineThin(cdCanvas* canvas, double x1, double y1, double x2, double y2, 
 
       /* Combine the Weighting with the existing alpha,
       When Weighting is zero alpha must be fully preserved. */
-      aa_alpha = (int)((1.0-(x - xi)) * alpha);
+      aa_alpha = (unsigned char)((1.0-(x - xi)) * alpha);
 
       if (no_antialias)
       {
@@ -915,7 +1050,7 @@ void simfLineThin(cdCanvas* canvas, double x1, double y1, double x2, double y2, 
     int x1i = _cdRound(x1), 
         x2i = _cdRound(x2);
     int xi_first = x1i;
-    int xi_last = x2i, yi_last;
+    int xi_last = x2i, yi_last = 0;
 
     if (x1i > x2i)
       _cdSwapInt(x1i, x2i);
@@ -931,7 +1066,7 @@ void simfLineThin(cdCanvas* canvas, double x1, double y1, double x2, double y2, 
 
       /* Combine the Weighting with the existing alpha,
       When Weighting is zero alpha must be fully preserved. */
-      aa_alpha = (int)((1.0-(y - yi)) * alpha);
+      aa_alpha = (unsigned char)((1.0-(y - yi)) * alpha);
 
       if (no_antialias)
       {

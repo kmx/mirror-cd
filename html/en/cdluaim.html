@@ -38,11 +38,12 @@ and IMLua were initialized. require&quot;cdluaim&quot; can also be used. <br>
 <p>Creates a cdBitmap from an imImage, but reuses image data. When the 
 cdBitmap is destroyed, the data is preserved. </p>
 <pre class="function">image:cdCanvasPutImageRect(canvas: cdCanvas, x: number, y: number, w: number, h: number, xmin: number, xmax: number, ymin: number, ymax: number) [in Lua] </pre>
-<p>&nbsp;&nbsp;&nbsp; Draws the imImage into the given cdCanvas. The imImage must be a 
-bitmap image, see \ref imImageIsBitmap. </p>
+<p>&nbsp;&nbsp;&nbsp; Draws the imImage into the given cdCanvas. The imImage 
+must be a bitmap image, see <strong>imImageIsBitmap</strong> in IM documentation. </p>
 <pre class="function">image:wdCanvasPutImageRect(canvas: cdCanvas, x: number, y: number, w: number, h: number, xmin: number, xmax: number, ymin: number, ymax: number) [in Lua]     </pre>
 <p>Draws the imImage into the given cdCanvas using world coordinates. The 
-imImage must be a bitmap image, see \ref imImageIsBitmap. </p>
+imImage must be a bitmap image, see <strong>imImageIsBitmap</strong> in IM 
+documentation. </p>
 <pre class="function">image:cdCanvasGetImage(canvas: cdCanvas, x: number, y: number) [in Lua]     </pre>
 <p>Retrieve the imImage data from the given cdCanvas. The imImage must be a 
 IM_RGB/IM_BYTE image. </p>

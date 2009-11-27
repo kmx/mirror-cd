@@ -43,8 +43,11 @@ typedef struct _simLineSegment
   unsigned short ErrorInc, ErrorAcc;
 } simLineSegment;
 
-void simAddSegment(simLineSegment* segment, int x1, int y1, int x2, int y2, int *y_max, int *y_min);
-int simSegmentInc(simLineSegment* segment, cdCanvas* canvas, int y);
+int simAddSegment(simLineSegment* segment, int x1, int y1, int x2, int y2, int *y_max, int *y_min);
+int simSegmentInc(simLineSegment* segment);
+
+int simPolyFindHorizontalIntervals(simLineSegment *segments, int n_seg, int* xx, int *hh, int y, int height);
+void simPolyMakeSegments(simLineSegment *segments, int *n_seg, cdPoint* poly, int n, int *max_hh, int *y_max, int *y_min);
 
 void simPolyFill(cdSimulation* simulation, cdPoint* poly, int n);
 void simLineThin(cdCanvas* canvas, int x1, int y1, int x2, int y2);

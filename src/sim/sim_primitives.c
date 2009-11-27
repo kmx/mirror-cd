@@ -142,7 +142,7 @@ void cdarcSIM(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, int height, dou
   cdCanvas* canvas = ((cdCtxCanvasBase*)ctxcanvas)->canvas;
   double c, s, sx, sy, x, y, prev_x, prev_y;
   double da;
-  int i, yc2 = 2*yc, p,
+  int i, yc2 = 2*yc, p = 0,
       last_xi_a = -65535, 
       last_yi_a = -65535, 
       last_xi_b = -65535, 
