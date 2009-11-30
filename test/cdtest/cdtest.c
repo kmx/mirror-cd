@@ -2079,11 +2079,10 @@ int fInteger(Ihandle *self, int c)
   ignore(self);
   if (isdigit(c) || c == '-') 
     return IUP_DEFAULT;
-  else if ((c==K_TAB) || (c==K_CR) || (c==K_LEFT) ||
-           (c==K_RIGHT) || (c==K_DEL) || (c==K_BS) || (c==K_sTAB)) 
-    return IUP_DEFAULT;
-  else 
+  else if (c) 
     return IUP_IGNORE;
+  else 
+    return IUP_DEFAULT;
 }
 
 /*-------------------------------------------------------------------------*/
@@ -2094,13 +2093,12 @@ int fReal(Ihandle *self, int c)
   ignore(self);
   if (isdigit(c)) 
     return IUP_DEFAULT;
-  else if ((c==K_TAB) || (c==K_CR) || (c==K_LEFT) ||
-           (c==K_RIGHT) || (c==K_DEL) || (c==K_BS) || (c==K_sTAB)) 
-    return IUP_DEFAULT;
   else if ((c=='.') || (c=='e') || (c=='E') || (c=='+') || (c=='-')) 
     return IUP_DEFAULT;
-  else 
+  else if (c) 
     return IUP_IGNORE;
+  else 
+    return IUP_DEFAULT;
 }
 
 /*-------------------------------------------------------------------------*/

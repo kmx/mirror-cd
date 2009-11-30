@@ -47,7 +47,7 @@
 
 /* Debugging macros */
 
-#ifdef DEBUG
+#ifdef CDXVERTEX_DEBUG
 #define DEBUG_PRINT1(a) printf (a)
 #define DEBUG_PRINT2(a, b) printf (a, b)
 #define DEBUG_PRINT3(a, b, c) printf (a, b, c)

@@ -370,6 +370,7 @@ mnOpen = MENU
 mnSave = MENU
 (
  ITEM("MF...",  cmdMF),
+ ITEM("DEBUG...",  cmdDebug),
  itPDF = ITEM[ACTIVE=NO]("PDF...",  cmdPDF),
  itPS = ITEM[ACTIVE=NO]("PS...",  cmdPS),
  itEPS = ITEM[ACTIVE=NO]("EPS...",  cmdEPS),

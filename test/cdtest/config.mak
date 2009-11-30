@@ -10,7 +10,7 @@ USE_CD=Yes
 USE_IUP3=Yes
 
 cdtest_led.c: cdtest.led
-	ledc -f cdtest_loadled -o cdtest_led.c cdtest.led
+	$(IUP)/bin/$(TEC_UNAME)/ledc -f cdtest_loadled -o cdtest_led.c cdtest.led
 
 USE_STATIC = Yes
 

@@ -32,6 +32,7 @@ extern tCTC ctgc;
 #define DXF
 #define DGN
 #define PDF
+#define CDDBG
 
 static int LoadCanvas(char* ctx_name, cdContext* ctx, char *filename)
 {
@@ -69,7 +70,7 @@ static int SaveCanvas(char* ctx_name, cdContext* ctx, char *data)
   canvas = cdCreateCanvas(ctx, data);
   if (!canvas)
   {
-    IupMessage("Error!", "Can not create canvas.");
+    IupMessagef("Error!", "Could not create canvas of driver %s.", ctx_name);
     return IUP_DEFAULT;
   }
 
@@ -327,6 +328,26 @@ static int fPlayMF(void)
 }
 #endif
 
+#ifdef CDDBG
+#include <cddebug.h>
+/*-------------------------------------------------------------------------*/
+/* Copia o conteudo do canvas para um arquivo metafile do CD.              */
+/*-------------------------------------------------------------------------*/
+static int fDebug(void)
+{
+  char filename[1024]="*.mf";
+  char data[1000];
+
+  if (IupGetFile(filename)>=0) 
+  { 
+    sprintf(data, "%s %gx%g %g", filename, ((double)ctgc.w)/ctgc.res, ((double)ctgc.h)/ctgc.res, ctgc.res);
+    return SaveCanvas("CD_DEBUG", CD_DEBUG, data);
+  }
+
+  return IUP_DEFAULT;
+}
+#endif
+
 /*-------------------------------------------------------------------------*/
 /* Copia o conteudo do canvas para um arquivo WMF.                         */
 /*-------------------------------------------------------------------------*/
@@ -389,7 +410,6 @@ static int fPrint(void)
 {
   char *data = "CDTEST.PRN -d";
   return SaveCanvas("CD_PRINTER", CD_PRINTER, data);
-  return IUP_DEFAULT;
 }
 #endif
 
@@ -431,6 +451,9 @@ void DriversInit(void)
 #ifdef DGN
   IupSetAttribute(IupGetHandle("itDGN"), IUP_ACTIVE, IUP_YES);
   IupSetFunction("cmdDGN", (Icallback) fDGN);
+#endif
+#ifdef CDDBG
+  IupSetFunction("cmdDebug", (Icallback) fDebug);
 #endif
 #ifdef CGM
   IupSetAttribute(IupGetHandle("itCGMb"), IUP_ACTIVE, IUP_YES);
