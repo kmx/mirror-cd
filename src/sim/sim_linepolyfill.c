@@ -653,12 +653,10 @@ void simPolyFill(cdSimulation* simulation, cdPoint* poly, int n)
 /*************************************************************************************/
 /*************************************************************************************/
 
-#define _cdLineDrawPixel(_canvas, _x1, _y1, _ls, _fgcolor, _bgcolor) \
-{                                                                    \
-  if (_ls & 1)                                                       \
-    _canvas->cxPixel(_canvas->ctxcanvas, _x1, _y1, _fgcolor);        \
-  else if (canvas->back_opacity == CD_OPAQUE)                        \
-    _canvas->cxPixel(_canvas->ctxcanvas, _x1, _y1, _bgcolor);        \
+#define _cdLineDrawPixel(_canvas, _x1, _y1, _ls, _fgcolor)      \
+{                                                               \
+  if (_ls & 1)                                                  \
+    _canvas->cxPixel(_canvas->ctxcanvas, _x1, _y1, _fgcolor);   \
 }
 
 void simLineThick(cdCanvas* canvas, int x1, int y1, int x2, int y2)
@@ -725,7 +723,6 @@ void simLineThin(cdCanvas* canvas, int x1, int y1, int x2, int y2)
   int no_antialias = !(canvas->simulation->antialias);
   unsigned short int ls;
   long fgcolor = canvas->foreground;
-  long bgcolor = canvas->background;
 
   if (simLineStyleNoReset == 2)
     ls = simLineStyleLastBits;
@@ -746,7 +743,7 @@ void simLineThin(cdCanvas* canvas, int x1, int y1, int x2, int y2)
 
   /* Draw the initial pixel, which is always exactly intersected by
       the line and so needs no weighting */
-  _cdLineDrawPixel(canvas, x1, y1, ls, fgcolor, bgcolor);
+  _cdLineDrawPixel(canvas, x1, y1, ls, fgcolor);
   ls = simRotateLineStyle(ls);
 
   DeltaX = x2 - x1;
@@ -768,7 +765,7 @@ void simLineThin(cdCanvas* canvas, int x1, int y1, int x2, int y2)
     while (DeltaX-- != 0) 
     {
       x1 += XDir;
-      _cdLineDrawPixel(canvas, x1, y1, ls, fgcolor, bgcolor);
+      _cdLineDrawPixel(canvas, x1, y1, ls, fgcolor);
       ls = simRotateLineStyle(ls);
     }
     simLineStyleLastBits = ls;
@@ -781,7 +778,7 @@ void simLineThin(cdCanvas* canvas, int x1, int y1, int x2, int y2)
     do 
     {
       y1++;
-      _cdLineDrawPixel(canvas, x1, y1, ls, fgcolor, bgcolor);
+      _cdLineDrawPixel(canvas, x1, y1, ls, fgcolor);
       ls = simRotateLineStyle(ls);
     } while (--DeltaY != 0);
     simLineStyleLastBits = ls;
@@ -795,7 +792,7 @@ void simLineThin(cdCanvas* canvas, int x1, int y1, int x2, int y2)
     {
       x1 += XDir;
       y1++;
-      _cdLineDrawPixel(canvas, x1, y1, ls, fgcolor, bgcolor);
+      _cdLineDrawPixel(canvas, x1, y1, ls, fgcolor);
       ls = simRotateLineStyle(ls);
     } while (--DeltaY != 0);
     simLineStyleLastBits = ls;
@@ -832,9 +829,9 @@ void simLineThin(cdCanvas* canvas, int x1, int y1, int x2, int y2)
       if (no_antialias)
       {
         if (Weighting < 128)
-          _cdLineDrawPixel(canvas, x1, y1, ls, fgcolor, bgcolor)
+          _cdLineDrawPixel(canvas, x1, y1, ls, fgcolor)
         else
-          _cdLineDrawPixel(canvas, x1 + XDir, y1, ls, fgcolor, bgcolor)
+          _cdLineDrawPixel(canvas, x1 + XDir, y1, ls, fgcolor)
         ls = simRotateLineStyle(ls);
       }
       else
@@ -847,15 +844,15 @@ void simLineThin(cdCanvas* canvas, int x1, int y1, int x2, int y2)
         aa_alpha = (unsigned char)(((255-Weighting) * alpha) / 255);
         
         aa_fgcolor = cdEncodeAlpha(fgcolor, aa_alpha);
-        _cdLineDrawPixel(canvas, x1, y1, ls, aa_fgcolor, bgcolor);
+        _cdLineDrawPixel(canvas, x1, y1, ls, aa_fgcolor);
         aa_fgcolor = cdEncodeAlpha(fgcolor, 255-aa_alpha);
-        _cdLineDrawPixel(canvas, x1 + XDir, y1, ls, aa_fgcolor, bgcolor);
+        _cdLineDrawPixel(canvas, x1 + XDir, y1, ls, aa_fgcolor);
         ls = simRotateLineStyle(ls);
       }
     }
     /* Draw the final pixel, which is always exactly intersected by the line
     and so needs no weighting */
-    _cdLineDrawPixel(canvas, x2, y2, ls, fgcolor, bgcolor);
+    _cdLineDrawPixel(canvas, x2, y2, ls, fgcolor);
     ls = simRotateLineStyle(ls);
   }
   else
@@ -883,9 +880,9 @@ void simLineThin(cdCanvas* canvas, int x1, int y1, int x2, int y2)
       if (no_antialias)
       {
         if (Weighting < 128)
-          _cdLineDrawPixel(canvas, x1, y1, ls, fgcolor, bgcolor)
+          _cdLineDrawPixel(canvas, x1, y1, ls, fgcolor)
         else
-          _cdLineDrawPixel(canvas, x1, y1+1, ls, fgcolor, bgcolor)
+          _cdLineDrawPixel(canvas, x1, y1+1, ls, fgcolor)
         ls = simRotateLineStyle(ls);
       }
       else
@@ -898,16 +895,16 @@ void simLineThin(cdCanvas* canvas, int x1, int y1, int x2, int y2)
         aa_alpha = (unsigned char)(((255-Weighting) * alpha) / 255);
 
         aa_fgcolor = cdEncodeAlpha(fgcolor, aa_alpha);
-        _cdLineDrawPixel(canvas, x1, y1, ls, aa_fgcolor, bgcolor);
+        _cdLineDrawPixel(canvas, x1, y1, ls, aa_fgcolor);
         aa_fgcolor = cdEncodeAlpha(fgcolor, 255-aa_alpha);
-        _cdLineDrawPixel(canvas, x1, y1+1, ls, aa_fgcolor, bgcolor);
+        _cdLineDrawPixel(canvas, x1, y1+1, ls, aa_fgcolor);
         ls = simRotateLineStyle(ls);
       }
     }
 
     /* Draw the final pixel, which is always exactly intersected by the line
     and so needs no weighting */
-    _cdLineDrawPixel(canvas, x2, y2, ls, fgcolor, bgcolor);
+    _cdLineDrawPixel(canvas, x2, y2, ls, fgcolor);
     ls = simRotateLineStyle(ls);
   }
 
@@ -923,7 +920,6 @@ void simfLineThin(cdCanvas* canvas, double x1, double y1, double x2, double y2, 
   int yi, xi, update_a = 1, update_b = 1;
   unsigned short int ls;
   long fgcolor = canvas->foreground;
-  long bgcolor = canvas->background;
 
   if (simLineStyleNoReset == 2)
     ls = simLineStyleLastBits;
@@ -985,9 +981,9 @@ void simfLineThin(cdCanvas* canvas, double x1, double y1, double x2, double y2, 
       if (no_antialias)
       {
         if (aa_alpha > 128)
-          _cdLineDrawPixel(canvas, xi, yi, ls, fgcolor, bgcolor)
+          _cdLineDrawPixel(canvas, xi, yi, ls, fgcolor)
         else
-          _cdLineDrawPixel(canvas, xi+1, yi, ls, fgcolor, bgcolor)
+          _cdLineDrawPixel(canvas, xi+1, yi, ls, fgcolor)
       }
       else
       {
@@ -1005,7 +1001,7 @@ void simfLineThin(cdCanvas* canvas, double x1, double y1, double x2, double y2, 
               (xi != *last_xi_b || yi != *last_yi_b))
           {
             aa_fgcolor = cdEncodeAlpha(fgcolor, aa_alpha);
-            _cdLineDrawPixel(canvas, xi, yi, ls, aa_fgcolor, bgcolor);
+            _cdLineDrawPixel(canvas, xi, yi, ls, aa_fgcolor);
 
             if (yi == yi_last)  /* one pixel only */
               update_a = 1;
@@ -1015,7 +1011,7 @@ void simfLineThin(cdCanvas* canvas, double x1, double y1, double x2, double y2, 
               (xi+1 != *last_xi_b || yi != *last_yi_b))
           {
             aa_fgcolor = cdEncodeAlpha(fgcolor, 255-aa_alpha);
-            _cdLineDrawPixel(canvas, xi+1, yi, ls, aa_fgcolor, bgcolor);
+            _cdLineDrawPixel(canvas, xi+1, yi, ls, aa_fgcolor);
 
             if (yi == yi_last)  /* one pixel only */
               update_b = 1;
@@ -1024,9 +1020,9 @@ void simfLineThin(cdCanvas* canvas, double x1, double y1, double x2, double y2, 
         else
         {
           aa_fgcolor = cdEncodeAlpha(fgcolor, aa_alpha);
-          _cdLineDrawPixel(canvas, xi, yi, ls, aa_fgcolor, bgcolor);
+          _cdLineDrawPixel(canvas, xi, yi, ls, aa_fgcolor);
           aa_fgcolor = cdEncodeAlpha(fgcolor, 255-aa_alpha);
-          _cdLineDrawPixel(canvas, xi+1, yi, ls, aa_fgcolor, bgcolor);
+          _cdLineDrawPixel(canvas, xi+1, yi, ls, aa_fgcolor);
         }
       }
 
@@ -1071,9 +1067,9 @@ void simfLineThin(cdCanvas* canvas, double x1, double y1, double x2, double y2, 
       if (no_antialias)
       {
         if (aa_alpha > 128)
-          _cdLineDrawPixel(canvas, xi, yi, ls, fgcolor, bgcolor)
+          _cdLineDrawPixel(canvas, xi, yi, ls, fgcolor)
         else
-          _cdLineDrawPixel(canvas, xi, yi+1, ls, fgcolor, bgcolor)
+          _cdLineDrawPixel(canvas, xi, yi+1, ls, fgcolor)
       }
       else
       {
@@ -1091,7 +1087,7 @@ void simfLineThin(cdCanvas* canvas, double x1, double y1, double x2, double y2, 
               (xi != *last_xi_b || yi != *last_yi_b))
           {
             aa_fgcolor = cdEncodeAlpha(fgcolor, aa_alpha);
-            _cdLineDrawPixel(canvas, xi, yi, ls, aa_fgcolor, bgcolor);
+            _cdLineDrawPixel(canvas, xi, yi, ls, aa_fgcolor);
 
             if (xi == xi_last) /* one pixel only */
               update_a = 1;
@@ -1101,7 +1097,7 @@ void simfLineThin(cdCanvas* canvas, double x1, double y1, double x2, double y2, 
               (xi != *last_xi_b || yi+1 != *last_yi_b))
           {
             aa_fgcolor = cdEncodeAlpha(fgcolor, 255-aa_alpha);
-            _cdLineDrawPixel(canvas, xi, yi+1, ls, aa_fgcolor, bgcolor);
+            _cdLineDrawPixel(canvas, xi, yi+1, ls, aa_fgcolor);
 
             if (xi == xi_last) /* one pixel only */
               update_b = 1;
@@ -1110,9 +1106,9 @@ void simfLineThin(cdCanvas* canvas, double x1, double y1, double x2, double y2, 
         else
         {
           aa_fgcolor = cdEncodeAlpha(fgcolor, aa_alpha);
-          _cdLineDrawPixel(canvas, xi, yi, ls, aa_fgcolor, bgcolor);
+          _cdLineDrawPixel(canvas, xi, yi, ls, aa_fgcolor);
           aa_fgcolor = cdEncodeAlpha(fgcolor, 255-aa_alpha);
-          _cdLineDrawPixel(canvas, xi, yi+1, ls, aa_fgcolor, bgcolor);
+          _cdLineDrawPixel(canvas, xi, yi+1, ls, aa_fgcolor);
         }
       }
 
