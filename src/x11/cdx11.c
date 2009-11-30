@@ -1107,13 +1107,17 @@ static void cdxCheckSolidStyle(cdCtxCanvas *ctxcanvas, int set)
     cdinteriorstyle(ctxcanvas, ctxcanvas->canvas->interior_style);
 }
 
+static int cdwritemode(cdCtxCanvas *ctxcanvas, int write_mode);
+
 static void cdclear(cdCtxCanvas* ctxcanvas)
 {
+  if (ctxcanvas->canvas->write_mode!= CD_REPLACE) cdwritemode(ctxcanvas, CD_REPLACE);
   cdxCheckSolidStyle(ctxcanvas, 1);
   XSetForeground(ctxcanvas->dpy, ctxcanvas->gc, cdxGetPixel(ctxcanvas, ctxcanvas->canvas->background));
   XFillRectangle(ctxcanvas->dpy, ctxcanvas->wnd, ctxcanvas->gc, 0, 0, ctxcanvas->canvas->w, ctxcanvas->canvas->h);
   XSetForeground(ctxcanvas->dpy, ctxcanvas->gc, cdxGetPixel(ctxcanvas, ctxcanvas->canvas->foreground));
   cdxCheckSolidStyle(ctxcanvas, 0);
+  if (ctxcanvas->canvas->write_mode!= CD_REPLACE) cdwritemode(ctxcanvas, ctxcanvas->canvas->write_mode);
 }
 
 static void cdline(cdCtxCanvas *ctxcanvas, int x1, int y1, int x2, int y2)
