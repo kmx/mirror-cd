@@ -360,6 +360,15 @@ void primUpdateAttrib_Text(tPrimNode *prim, cdCanvas *canvas)
     cdCanvasFont(canvas, prim->attrib.text.font_type_face, prim->attrib.text.font_style, prim->attrib.text.font_size);
 }
 
+static int cdfont(cdCtxCanvas *ctxcanvas, const char *type_face, int style, int size)
+{
+  (void)ctxcanvas;
+  (void)type_face;
+  (void)style;
+  (void)size;
+  return 1;
+}
+
 static void cdclear(cdCtxCanvas *ctxcanvas)
 {
   tPrimNode *prim;
@@ -1092,6 +1101,7 @@ static void cdcreatecanvas(cdCanvas *canvas, void *data)
 
 static void cdinittable(cdCanvas* canvas)
 {
+  canvas->cxFont = cdfont;
   canvas->cxClear = cdclear;
   canvas->cxPixel = cdpixel;
   canvas->cxLine = cdline;
