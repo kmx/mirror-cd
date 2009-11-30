@@ -767,15 +767,15 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
       wdCanvasChord(canvas, dparam1, dparam2, dparam3, dparam4, dparam5, dparam6);
       break;
     case CDMF_TEXT:
-      fscanf(file, "%d %d %[^\n]", &iparam1, &iparam2, TextBuffer);
+      fscanf(file, "%d %d %[^\n\r]", &iparam1, &iparam2, TextBuffer);
       cdCanvasText(canvas, sScaleX(iparam1), sScaleY(iparam2), TextBuffer);
       break;
     case CDMF_FTEXT:
-      fscanf(file, "%lg %lg %[^\n]", &dparam1, &dparam2, TextBuffer);
+      fscanf(file, "%lg %lg %[^\n\r]", &dparam1, &dparam2, TextBuffer);
       cdfCanvasText(canvas, sfScaleX(dparam1), sfScaleY(dparam2), TextBuffer);
       break;
     case CDMF_WTEXT:
-      fscanf(file, "%lg %lg %[^\n]", &dparam1, &dparam2, TextBuffer);
+      fscanf(file, "%lg %lg %[^\n\r]", &dparam1, &dparam2, TextBuffer);
       wdCanvasText(canvas, dparam1, dparam2, TextBuffer);
       break;
     case CDMF_BEGIN:
@@ -891,7 +891,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
       cdCanvasFont(canvas, font_family[iparam1], iparam2, iparam3);
       break;
     case CDMF_FONT:
-      fscanf(file, "%d %d %[^\n]", &iparam2, &iparam3, TextBuffer);
+      fscanf(file, "%d %d %[^\n\r]", &iparam2, &iparam3, TextBuffer);
       if (iparam3 < 0)
       {
         iparam3 = -sScaleH(abs(iparam3));
@@ -905,7 +905,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
       cdCanvasFont(canvas, TextBuffer, iparam2, iparam3);
       break;
     case CDMF_NATIVEFONT:
-      fscanf(file, "%[^\n]", TextBuffer);
+      fscanf(file, "%[^\n\r]", TextBuffer);
       cdCanvasNativeFont(canvas, TextBuffer);
       break;
     case CDMF_TEXTALIGNMENT:
@@ -1013,19 +1013,19 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
       cdCanvasScrollArea(canvas, sScaleX(iparam1), sScaleX(iparam2), sScaleY(iparam3), sScaleY(iparam4), sScaleX(iparam5), sScaleY(iparam6));
       break;
     case CDMF_WVECTORTEXT:
-      fscanf(file, "%lg %lg %[^\n]", &dparam1, &dparam2, TextBuffer);
+      fscanf(file, "%lg %lg %[^\n\r]", &dparam1, &dparam2, TextBuffer);
       wdCanvasVectorText(canvas, dparam1, dparam2, TextBuffer);
       break;
     case CDMF_WMULTILINEVECTORTEXT:
-      fscanf(file, "%lg %lg %[^\n]", &dparam1, &dparam2, TextBuffer);
+      fscanf(file, "%lg %lg %[^\n\r]", &dparam1, &dparam2, TextBuffer);
       wdCanvasVectorText(canvas, dparam1, dparam2, TextBuffer);
       break;
     case CDMF_VECTORTEXT:
-      fscanf(file, "%d %d %[^\n]", &iparam1, &iparam2, TextBuffer);
+      fscanf(file, "%d %d %[^\n\r]", &iparam1, &iparam2, TextBuffer);
       cdCanvasVectorText(canvas, iparam1, iparam2, TextBuffer);
       break;
     case CDMF_MULTILINEVECTORTEXT:
-      fscanf(file, "%d %d %[^\n]", &iparam1, &iparam2, TextBuffer);
+      fscanf(file, "%d %d %[^\n\r]", &iparam1, &iparam2, TextBuffer);
       cdCanvasVectorText(canvas, iparam1, iparam2, TextBuffer);
       break;
     case CDMF_WVECTORCHARSIZE:
@@ -1033,7 +1033,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
       wdCanvasVectorCharSize(canvas, dparam1);
       break;
     case CDMF_WVECTORTEXTSIZE:
-      fscanf(file, "%lg %lg %[^\n]", &dparam1, &dparam2, TextBuffer);
+      fscanf(file, "%lg %lg %[^\n\r]", &dparam1, &dparam2, TextBuffer);
       wdCanvasVectorTextSize(canvas, dparam1, dparam2, TextBuffer);
       break;
     case CDMF_WVECTORTEXTDIRECTION:
@@ -1045,7 +1045,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
       cdCanvasVectorCharSize(canvas, iparam1);
       break;
     case CDMF_VECTORTEXTSIZE:
-      fscanf(file, "%d %d %[^\n]", &iparam1, &iparam2, TextBuffer);
+      fscanf(file, "%d %d %[^\n\r]", &iparam1, &iparam2, TextBuffer);
       cdCanvasVectorTextSize(canvas, iparam1, iparam2, TextBuffer);
       break;
     case CDMF_VECTORTEXTDIRECTION:
@@ -1053,7 +1053,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
       cdCanvasVectorTextDirection(canvas, iparam1, iparam2, iparam3, iparam4);
       break;
     case CDMF_VECTORFONT:
-      fscanf(file, "%[^\n]", TextBuffer);
+      fscanf(file, "%[^\n\r]", TextBuffer);
       cdCanvasVectorFont(canvas, TextBuffer);
       break;
     case CDMF_VECTORTEXTTRANSFORM:
