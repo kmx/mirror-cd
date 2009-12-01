@@ -24,7 +24,6 @@
 #include <cdpicture.h>
 #include <cddbuf.h>
 #include <cdirgb.h>
-#include <cdgdiplus.h>
 #include <iupkey.h>
 
 #include "cdtest.h"
@@ -232,7 +231,7 @@ void CDTestInit(void)
   if (use_gdiplus) 
   {
 #ifdef USE_GDIPLUS
-    cdInitGdiPlus();
+    cdInitContextPlus();
 #endif
   }
 

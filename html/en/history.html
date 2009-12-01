@@ -32,6 +32,12 @@
   	added missing support for alpha channel in image:<strong>cdCreateCanvas</strong>,
 	<strong>cd:imImageCreate</strong>, image<strong>:cdCreateBitmap</strong> and
 	image<strong>:cdInitBitmap</strong> in cdluaim binding.</li>
+	<li><span style="color: #008000">Changed:</span>
+  	ANTIALIAS attribute is now respected also by <strong>CanvasText</strong> in 
+	the IMAGERGB driver.</li>
+	<li><span style="color: #008000">Changed:</span>
+  	WriteMode=XOR is ignored if alpha transparency is used in the IMAGERGB 
+	driver.</li>
 	<li><span style="color: #FF0000">Fixed:</span> indexing of <strong>
 	cdImageRGB</strong>, <strong>cdImageRGBA</strong> and <strong>cdBitmap</strong>
 	objects in Lua.</li>
