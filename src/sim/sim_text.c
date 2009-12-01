@@ -231,10 +231,20 @@ static void simDrawTextBitmap(cdSimulation* simulation, FT_Bitmap* bitmap, int x
     {
       for (j = 0; j < width; j++)
       {
-        if (fg_alpha == 255)
-          calpha = bitmap_data[j];
+        if (simulation->antialias)
+        {
+          if (fg_alpha == 255)
+            calpha = bitmap_data[j];
+          else
+            calpha = (fg_alpha*bitmap_data[j])/255;
+        }
         else
-          calpha = (fg_alpha*bitmap_data[j])/255;
+        {
+          if (bitmap_data[j] > 128)  /* behave as 255 */
+            calpha = fg_alpha;
+          else
+            calpha = 0;
+        }
 
         *red++ = CD_ALPHA_BLEND(fg_red, bg_red, calpha);
         *green++ = CD_ALPHA_BLEND(fg_green, bg_green, calpha);
@@ -261,32 +271,39 @@ static void simDrawTextBitmap(cdSimulation* simulation, FT_Bitmap* bitmap, int x
     memset(green, cdGreen(fg), size);
     memset(blue,  cdBlue(fg), size);
 
-    if (fg_alpha == 255)
+    /* alpha is the bitmap_data itself 
+       if the foreground color does not contains alpha.
+       Also must invert since it is top-down. */
+
+    for (i = 0; i < height; i++)
     {
-      /* alpha is the bitmap_data itself 
-         if the foreground color does not contains alpha.
-         Also must invert since it is top-down. */
-      for (i = 0; i < height; i++)
+      if (simulation->antialias)
       {
-        memcpy(alpha,  bitmap_data, width);
-        alpha += width;
-        bitmap_data -= width;
+        if (fg_alpha == 255)
+        {
+          memcpy(alpha,  bitmap_data, width);
+          alpha += width;
+        }
+        else
+        {
+          for (j = 0; j < width; j++)
+          {
+            *alpha++ = (fg_alpha*bitmap_data[j])/255;
+          }
+        }
       }
-    }
-    else
-    {
-      /* alpha is the bitmap_data itself 
-         if the foreground color does not contains alpha.
-         Also must invert since it is top-down. */
-      for (i = 0; i < height; i++)
+      else
       {
         for (j = 0; j < width; j++)
         {
-          *alpha++ = (fg_alpha*bitmap_data[j])/255;
+          if (bitmap_data[j] > 128)  /* behave as 255 */
+            *alpha++ = fg_alpha;
+          else
+            *alpha++ = 0;
         }
-
-        bitmap_data -= width;
       }
+
+      bitmap_data -= width;
     }
 
     /* reset alpha pointer */
