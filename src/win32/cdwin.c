@@ -997,8 +997,6 @@ static void sTextOutBlt(cdCtxCanvas* ctxcanvas, int px, int py, const char* s, i
   /* calcula o alinhamento da imagem no canvas */
   if (ctxcanvas->canvas->text_orientation != 0)
   {
-    double d = sqrt(wt*wt + ht*ht);
-
     switch (ctxcanvas->canvas->text_alignment)
     {
     case CD_CENTER:
@@ -1034,20 +1032,20 @@ static void sTextOutBlt(cdCtxCanvas* ctxcanvas, int px, int py, const char* s, i
       px_off =   (int)(wt/2 * cos_teta);         
       break;
     case CD_NORTH_EAST:
-      py_off =   (int)(h/2);
-      px_off = - (int)(sqrt(d*d - h*h)/2);
-      break;
-    case CD_NORTH_WEST:
-      py_off =   (int)(sqrt(d*d - w*w)/2);
-      px_off = - (int)(w/2);
+      py_off = (int)(ht/2 * cos_teta + wt/2 * sin_teta);
+      px_off = (int)(ht/2 * sin_teta - wt/2 * cos_teta);  
       break;
     case CD_SOUTH_WEST:
-      py_off = - (int)(h/2);
-      px_off =   (int)(sqrt(d*d - h*h)/2);
+      py_off = - (int)(ht/2 * cos_teta + wt/2 * sin_teta);
+      px_off = - (int)(ht/2 * sin_teta - wt/2 * cos_teta);  
+      break;
+    case CD_NORTH_WEST:
+      py_off = (int)(ht/2 * cos_teta - wt/2 * sin_teta);
+      px_off = (int)(ht/2 * sin_teta + wt/2 * cos_teta);  
       break;
     case CD_SOUTH_EAST:
-      py_off = - (int)(sqrt(d*d - w*w)/2);
-      px_off =   (int)(w/2);
+      py_off = - (int)(ht/2 * cos_teta - wt/2 * sin_teta);
+      px_off = - (int)(ht/2 * sin_teta + wt/2 * cos_teta);  
       break;
     }
   }
@@ -1095,7 +1093,7 @@ static void sTextOutBlt(cdCtxCanvas* ctxcanvas, int px, int py, const char* s, i
     case CD_CENTER:
     case CD_EAST:
     case CD_WEST:
-      py_off = py;
+      py_off = 0;
       break;
     }
   }
