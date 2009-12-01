@@ -586,6 +586,20 @@ void cdCanvasClear(cdCanvas* canvas)
   canvas->cxClear(canvas->ctxcanvas);
 }
 
+int cdCanvasYAxisMode(cdCanvas* canvas, int invert)
+{
+  int old_invert_yaxis;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return CD_ERROR;
+
+  if (invert == CD_QUERY)
+    return canvas->invert_yaxis;
+
+  old_invert_yaxis = canvas->invert_yaxis;
+  canvas->invert_yaxis = invert;
+  return old_invert_yaxis;
+}
+
 int cdCanvasUpdateYAxis(cdCanvas* canvas, int* y)
 {
   assert(canvas);
@@ -609,7 +623,7 @@ double cdfCanvasUpdateYAxis(cdCanvas* canvas, double* y)
   assert(y);
   if (!_cdCheckCanvas(canvas)) return CD_ERROR;
 
-  if(canvas->invert_yaxis)
+  if (canvas->invert_yaxis)
   {
     *y = _cdInvertYAxis(canvas, *y);
 

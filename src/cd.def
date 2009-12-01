@@ -297,6 +297,7 @@ EXPORTS
   cdCanvasInvertYAxis
   cdfCanvasUpdateYAxis
   cdfCanvasInvertYAxis
+  cdCanvasYAxisMode
   cdContextRegisterCallback
   cdCanvasBackground
   cdCanvasForeground

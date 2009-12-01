@@ -18,6 +18,18 @@ canvas:GetSize() -&gt; (width, height, mm_width, mm_height: number) [in Lua]</pr
   <p>Returns the canvas size in pixels and in millimeters. You can provide only 
   the desired values and <font>NULL</font> for the others.</p>
 
+<pre class="function"><span class="mainFunction">int&nbsp;<a name="cdYAxisMode">cdCanvasYAxisMode</a>(cdCanvas* canvas, int invert); [in C]</span>
+
+canvas:YAxisMode(invert: number) -&gt; (old_invert: number) [in Lua]</pre>
+
+  <p>Controls the orientation of the Y axis. Internally in some drivers the 
+	native axis orientation is top-bottom, so the CD primitives must invert the 
+	Y axis since the CD orientation is bottom-top. Using CD_QUERY will return 
+	the current Y axis mode, if needs to be invert or not. Using 1 or 0 you can 
+	control if the Y axis should be inverted or not independent from the native 
+	orientation, with that you can in fact invert the orientation of the CD 
+	primitives.</p>
+
 <pre class="function"><span class="mainFunction">int&nbsp;<a name="cdUpdateYAxis">cdCanvasUpdateYAxis</a>(cdCanvas* canvas, int *y); [in C]</span>
 double&nbsp;cdfCanvasUpdateYAxis(cdCanvas* canvas, double&nbsp;*y); [in C]
 int&nbsp;cdCanvasInvertYAxis(cdCanvas* canvas, int y); [in C]
@@ -26,11 +38,9 @@ double&nbsp;cdfCanvasInvertYAxis(cdCanvas* canvas, double&nbsp;y); [in C]
 canvas:UpdateYAxis(yc: number) -&gt; (yr: number) [in Lua]
 canvas:InvertYAxis(yc: number) -&gt; (yr: number) [in Lua]</pre>
 
-  <p>In some graph systems, the origin is at the upper left corner of the 
-  canvas, with the direction of the Y axis pointing down. In this case, the 
-  function converts the coordinate system of the CD library into the internal 
-  system of the active canvas' driver, and the other way round. If this is not 
-  the case, nothing happens. This is just <font>&quot;y = height-1 - 
+  <p>Converts the coordinate system of the CD library into the internal 
+  system of the active canvas' driver, and the other way round, if they are 
+	invert, or else do nothing. This is just <font>&quot;y = height-1 - 
   y&quot;</font>. It returns the changed value. The &quot;Invert&quot; will always invert 
   the given value, the &quot;Update&quot; function will invert only if the canvas has the 
   Y axis inverted.</p>

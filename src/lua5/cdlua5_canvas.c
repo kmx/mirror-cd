@@ -273,6 +273,12 @@ static int cdlua5_updateyaxis(lua_State *L)
   return 1;
 }
 
+static int cdlua5_yaxismode(lua_State *L)
+{
+  lua_pushnumber(L, cdCanvasYAxisMode(cdlua_checkcanvas(L, 1), luaL_checkint(L, 2)));
+  return 1;
+}
+
 static int cdlua5_invertyaxis(lua_State *L)
 {
   lua_pushnumber(L, cdfCanvasInvertYAxis(cdlua_checkcanvas(L, 1), luaL_checknumber(L, 2)));
@@ -2192,6 +2198,7 @@ static const struct luaL_reg cdlib_canvas_meta[] = {
   /* Coordinate System */
   {"GetSize"       , cdlua5_getcanvassize},
   {"UpdateYAxis"   , cdlua5_updateyaxis},
+  {"YAxisMode"     , cdlua5_yaxismode},
   {"InvertYAxis"   , cdlua5_invertyaxis},
   {"MM2Pixel"      , cdlua5_mm2pixel},
   {"Pixel2MM"      , cdlua5_pixel2mm},

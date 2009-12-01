@@ -76,6 +76,7 @@ int  cdCanvasPlay(cdCanvas* canvas, cdContext *context, int xmin, int xmax, int 
 void cdCanvasGetSize(cdCanvas* canvas, int *width, int *height, double *width_mm, double *height_mm);
 int cdCanvasUpdateYAxis(cdCanvas* canvas, int* y);
 double cdfCanvasUpdateYAxis(cdCanvas* canvas, double* y);
+int cdCanvasYAxisMode(cdCanvas* canvas, int invert);
 int cdCanvasInvertYAxis(cdCanvas* canvas, int y);
 double cdfCanvasInvertYAxis(cdCanvas* canvas, double y);
 void cdCanvasMM2Pixel(cdCanvas* canvas, double mm_dx, double mm_dy, int *dx, int *dy);
