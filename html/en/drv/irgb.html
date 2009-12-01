@@ -14,7 +14,7 @@
 
   <p>This driver allows access to a Client Image, an imaged based in RGB colors with 24 
   or 32 bits per pixel (8 per channel). 
-  It is used to implement high-quality offscreen drawings, but is slower than the Server Image version. In fact, it is a 
+  It is used to implement high-quality off-screen drawings, but is slower than the Server Image version. In fact, it is a 
   rasterizer, that is, it converts vector primitives into a raster representation. All primitives are implemented by the 
   library and are not system-dependent (the primitives of the Server Image version are system-dependent).</p>
 
@@ -77,6 +77,13 @@ cd.ImageRGBBitmap(canvas: cdCanvas) -&gt; (bitmap: cdBitmap) [in Lua]</font></h4
   <li><a href="../func/coordinates.html#cdUpdateYAxis"><font face="Courier">
   <strong>UpdateYAxis</strong></font></a>: does nothing. The axis orientation is the same as the CD library's.</li>
 </ul>
+<h4>Attributes </h4>
+<ul>
+  <li><a href="../func/attributes.html#cdWriteMode"><font face="Courier">
+  <strong>
+  WriteMode</strong></font></a>: if alpha transparency is used in colors or 
+	images, then XOR or NOT_XOR behave as REPLACE.</li>
+</ul>
 <h4>Colors </h4>
 <ul>
   <li><a href="../func/color.html#cdGetColorPlanes"><font face="Courier">
@@ -99,9 +106,9 @@ cd.ImageRGBBitmap(canvas: cdCanvas) -&gt; (bitmap: cdBitmap) [in Lua]</font></h4
 </ul>
 
 <ul>
-  <li>&quot;<b><font face="Courier">ANTIALIAS</font></b>&quot;: controls the use of anti-aliasing 
-  for line primitives. Assumes values &quot;1&quot; (active) and &quot;0&quot; (inactive). Default value: &quot;1&quot;. 
-  Notice that text is always antialiased.</li>
+  <li>&quot;<b><font face="Courier">ANTIALIAS</font></b>&quot;: controls the use of 
+	anti-aliasing for line primitives. Assumes values &quot;1&quot; (active) and &quot;0&quot; 
+	(inactive). Default value: &quot;1&quot;.</li>
 </ul>
 
 <ul>
