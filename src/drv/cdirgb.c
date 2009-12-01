@@ -58,11 +58,33 @@ struct _cdCtxCanvas
 
 #define RGB_COMPOSE_OVER(_SRC, _SRC_ALPHA, _DST, _TMP_MULTI, _TMP_ALPHA) (unsigned char)(((_SRC_ALPHA)*(_SRC) + (_TMP_MULTI)*(_DST)) / (_TMP_ALPHA))
 
+#define RGBA_WRITE_MODE(_write_mode, _pdst_red, _pdst_green, _pdst_blue, _tmp_red, _tmp_green, _tmp_blue) \
+{                                                                                                         \
+  switch (_write_mode)                                                                                    \
+  {                                                                                                       \
+  case CD_REPLACE:                                                                                        \
+    *_pdst_red = _tmp_red;                                                                                \
+    *_pdst_green = _tmp_green;                                                                            \
+    *_pdst_blue = _tmp_blue;                                                                              \
+    break;                                                                                                \
+  case CD_XOR:                                                                                            \
+    *_pdst_red ^= _tmp_red;                                                                               \
+    *_pdst_green ^= _tmp_green;                                                                           \
+    *_pdst_blue ^= _tmp_blue;                                                                             \
+    break;                                                                                                \
+  case CD_NOT_XOR:                                                                                        \
+    *_pdst_red = (unsigned char)~(_tmp_red ^ *_pdst_red);                                                 \
+    *_pdst_green = (unsigned char)~(_tmp_green ^ *_pdst_green);                                           \
+    *_pdst_blue = (unsigned char)~(_tmp_blue ^ *_pdst_blue);                                              \
+    break;                                                                                                \
+  }                                                                                                       \
+}
+
 #define RGBA_COLOR_COMBINE(_ctxcanvas, _pdst_red, _pdst_green, _pdst_blue, _pdst_alpha, _src_red, _src_green, _src_blue, _src_alpha) \
 {                                                                                                                        \
-  unsigned char _tmp_red = 0, _tmp_green = 0, _tmp_blue = 0;                                                                         \
+  unsigned char _tmp_red = 0, _tmp_green = 0, _tmp_blue = 0;                                                             \
                                                                                                                          \
-  if (_pdst_alpha)   /* destiny has alpha */                                                                         \
+  if (_pdst_alpha)   /* destiny has alpha */                                                                             \
   {                                                                                                                      \
     if (_src_alpha != 255)   /* some transparency */                                                                     \
     {                                                                                                                    \
@@ -74,6 +96,8 @@ struct _cdCtxCanvas
           _tmp_green = _src_green;                                                                                       \
           _tmp_blue = _src_blue;                                                                                         \
           *_pdst_alpha = _src_alpha;                                                                                     \
+          RGBA_WRITE_MODE(CD_REPLACE, _pdst_red, _pdst_green, _pdst_blue,                                                \
+                                      _tmp_red, _tmp_green, _tmp_blue);                                                  \
         }                                                                                                                \
         else if (*_pdst_alpha == 255) /* destiny opaque */                                                               \
         {                                                                                                                \
@@ -81,6 +105,8 @@ struct _cdCtxCanvas
           _tmp_green = CD_ALPHA_BLEND(_src_green, *_pdst_green, _src_alpha);                                             \
           _tmp_blue = CD_ALPHA_BLEND(_src_blue, *_pdst_blue, _src_alpha);                                                \
           /* *_pdst_alpha is not changed */                                                                              \
+          RGBA_WRITE_MODE(CD_REPLACE, _pdst_red, _pdst_green, _pdst_blue,                                                \
+                                      _tmp_red, _tmp_green, _tmp_blue);                                                  \
         }                                                                                                                \
         else /* (0<*_pdst_alpha<255 && 0<_src_alpha<255) destiny and source are semi-transparent */                      \
         {                                                                                                                \
@@ -96,6 +122,8 @@ struct _cdCtxCanvas
           _tmp_green = RGB_COMPOSE_OVER(_src_green, _tmp_src_alpha, *_pdst_green, _tmp_multi, _tmp_alpha);               \
           _tmp_blue = RGB_COMPOSE_OVER(_src_blue, _tmp_src_alpha, *_pdst_blue, _tmp_multi, _tmp_alpha);                  \
           *_pdst_alpha = (unsigned char)(_tmp_alpha / 255);                                                              \
+          RGBA_WRITE_MODE(CD_REPLACE, _pdst_red, _pdst_green, _pdst_blue,                                                \
+                                      _tmp_red, _tmp_green, _tmp_blue);                                                  \
         }                                                                                                                \
       }                                                                                                                  \
       else  /* (_src_alpha == 0) source full transparent */                                                              \
@@ -103,6 +131,8 @@ struct _cdCtxCanvas
         _tmp_red = *_pdst_red;                                                                                           \
         _tmp_green = *_pdst_green;                                                                                       \
         _tmp_blue = *_pdst_blue;                                                                                         \
+        RGBA_WRITE_MODE(CD_REPLACE, _pdst_red, _pdst_green, _pdst_blue,                                                  \
+                                    _tmp_red, _tmp_green, _tmp_blue);                                                    \
         /* *_pdst_alpha is not changed */                                                                                \
       }                                                                                                                  \
     }                                                                                                                    \
@@ -112,6 +142,8 @@ struct _cdCtxCanvas
       _tmp_green = _src_green;                                                                                           \
       _tmp_blue = _src_blue;                                                                                             \
       *_pdst_alpha = (unsigned char)255;   /* set destiny as opaque */                                                   \
+      RGBA_WRITE_MODE(_ctxcanvas->canvas->write_mode, _pdst_red, _pdst_green, _pdst_blue,                                \
+                                                      _tmp_red, _tmp_green, _tmp_blue);                                  \
     }                                                                                                                    \
   }                                                                                                                      \
   else /* destiny does NOT have alpha */                                                                                 \
@@ -123,12 +155,16 @@ struct _cdCtxCanvas
         _tmp_red = CD_ALPHA_BLEND(_src_red, *_pdst_red, _src_alpha);                                                     \
         _tmp_green = CD_ALPHA_BLEND(_src_green, *_pdst_green, _src_alpha);                                               \
         _tmp_blue = CD_ALPHA_BLEND(_src_blue, *_pdst_blue, _src_alpha);                                                  \
+        RGBA_WRITE_MODE(CD_REPLACE, _pdst_red, _pdst_green, _pdst_blue,                                                  \
+                                    _tmp_red, _tmp_green, _tmp_blue);                                                    \
       }                                                                                                                  \
       else  /* (_src_alpha == 0) source full transparent */                                                              \
       {                                                                                                                  \
         _tmp_red = *_pdst_red;                                                                                           \
         _tmp_green = *_pdst_green;                                                                                       \
         _tmp_blue = *_pdst_blue;                                                                                         \
+        RGBA_WRITE_MODE(CD_REPLACE, _pdst_red, _pdst_green, _pdst_blue,                                                  \
+                                    _tmp_red, _tmp_green, _tmp_blue);                                                    \
       }                                                                                                                  \
     }                                                                                                                    \
     else  /* (_src_alpha == 255) source has no alpha = opaque */                                                         \
@@ -136,26 +172,9 @@ struct _cdCtxCanvas
       _tmp_red = _src_red;                                                                                               \
       _tmp_green = _src_green;                                                                                           \
       _tmp_blue = _src_blue;                                                                                             \
+      RGBA_WRITE_MODE(_ctxcanvas->canvas->write_mode, _pdst_red, _pdst_green, _pdst_blue,                                \
+                                                      _tmp_red, _tmp_green, _tmp_blue);                                  \
     }                                                                                                                    \
-  }                                                                                                                      \
-                                                                                                                         \
-  switch (_ctxcanvas->canvas->write_mode)                                                                                \
-  {                                                                                                                      \
-  case CD_REPLACE:                                                                                                       \
-    *_pdst_red = _tmp_red;                                                                                               \
-    *_pdst_green = _tmp_green;                                                                                           \
-    *_pdst_blue = _tmp_blue;                                                                                             \
-    break;                                                                                                               \
-  case CD_XOR:                                                                                                           \
-    *_pdst_red ^= _tmp_red;                                                                                              \
-    *_pdst_green ^= _tmp_green;                                                                                          \
-    *_pdst_blue ^= _tmp_blue;                                                                                            \
-    break;                                                                                                               \
-  case CD_NOT_XOR:                                                                                                       \
-    *_pdst_red = (unsigned char)~(_tmp_red ^ *_pdst_red);                                                                \
-    *_pdst_green = (unsigned char)~(_tmp_green ^ *_pdst_green);                                                          \
-    *_pdst_blue = (unsigned char)~(_tmp_blue ^ *_pdst_blue);                                                             \
-    break;                                                                                                               \
   }                                                                                                                      \
 }
 
