@@ -25,6 +25,7 @@ int SimpleDrawMetafile(void);
 int SimpleDrawPDF(void);
 int SimpleDrawPS(void);
 int SimpleDrawEPS(void);
+int SimpleDrawSVG(void);
 int SimpleDrawWMF(void);
 int SimpleDrawPrint(void);
 int SimpleDrawPrintDialog(void);

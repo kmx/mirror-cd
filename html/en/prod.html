@@ -10,16 +10,13 @@
 
 <h3><a name="Overview">Overview</a></h3>
 
-  <p>CD is a platform-independent graphics library. It is implemented in several 
-  platforms using native graphics libraries: Microsoft Windows (GDI and GDI+) 
+  <p>CD is a platform-independent graphics library. Its drivers are implemented in several 
+  platforms, some use portable code, others use native graphics libraries, such 
+	as Microsoft Windows (GDI and GDI+) 
   and X-Windows (XLIB). </p>
   <p>The library contains functions to support both vector and image 
   applications, and the visualization surface can be either a canvas or a more 
   abstract surface, such as Clipboard, Metafile, PS, and so on.</p>
-  <p>To make the Application Programmers Interface (API) simple, all data are 
-  standard C types (int, double or char). Thus the application program does not 
-  have to maintain parallel data structures to deal with the graphic library.
-  </p>
   <p>Furthermore, the list of parameters of the CD primitive functions contains 
   only the geometrical descriptions of the objects (line, circle, text, etc.). 
   Where these objects should appear and what is the their color, thickness, etc. 
@@ -110,7 +107,8 @@ http://canvasdraw.cvs.sourceforge.net/canvasdraw/</a>.</p>
   <a href="http://www.ssec.wisc.edu/~brianp/Mesa.html" target="_blank">Mesa</a> 
   libraries, for making the source code available, which helped us improve our 
   implementation of the Simulation driver and of the X-Windows driver. Thanks to 
-  Alan Richardson for the XVertex rotines. Thanks to 
+  Alan Richardson for the XVertex rotines. Thanks to Lode Vandevenne for the 
+	LodePNG rotines used in the SVG driver. Thanks to 
   Jason Perkins for the <a href="http://premake.sourceforge.net/">Premake</a> 
   tool.</p>
   <p>The CD distribution includes the FreeType library, this is a third party 

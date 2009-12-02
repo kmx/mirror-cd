@@ -369,6 +369,10 @@
 				</FileConfiguration>
 			</File>
 			<File
+				RelativePath="..\src\svg\cdsvg.c"
+				>
+			</File>
+			<File
 				RelativePath="..\src\drv\cgm.c"
 				>
 				<FileConfiguration
@@ -384,6 +388,26 @@
 				RelativePath="..\src\drv\cgm.h"
 				>
 			</File>
+			<Filter
+				Name="SVG"
+				>
+				<File
+					RelativePath="..\src\svg\base64.c"
+					>
+				</File>
+				<File
+					RelativePath="..\src\svg\base64.h"
+					>
+				</File>
+				<File
+					RelativePath="..\src\svg\lodepng.c"
+					>
+				</File>
+				<File
+					RelativePath="..\src\svg\lodepng.h"
+					>
+				</File>
+			</Filter>
 		</Filter>
 		<Filter
 			Name="include"

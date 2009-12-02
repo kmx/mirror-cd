@@ -374,6 +374,7 @@ mnSave = MENU
  itPDF = ITEM[ACTIVE=NO]("PDF...",  cmdPDF),
  itPS = ITEM[ACTIVE=NO]("PS...",  cmdPS),
  itEPS = ITEM[ACTIVE=NO]("EPS...",  cmdEPS),
+ itSVG = ITEM[ACTIVE=NO]("SVG...",  cmdSVG),
  itCGMt = ITEM[ACTIVE=NO]("CGMt...", cmdCGMt),
  itCGMb = ITEM[ACTIVE=NO]("CGMb...", cmdCGMb),
  itDGN = ITEM[ACTIVE=NO]("DGN...", cmdDGN),

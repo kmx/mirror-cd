@@ -4,7 +4,7 @@
 #include <stdarg.h>
 #include <iup.h>
 
-static Ihandle* named[    172 ];
+static Ihandle* named[    173 ];
 
 static void image_imgLine (void)
 {
@@ -415,20 +415,22 @@ void cdtest_loadled (void)
       "ACTIVE", "NO", NULL ),
     named[7] = IupSetAtt( "itEPS", IupItem( "EPS...", "cmdEPS" ), 
       "ACTIVE", "NO", NULL ),
-    named[8] = IupSetAtt( "itCGMt", IupItem( "CGMt...", "cmdCGMt" ), 
+    named[8] = IupSetAtt( "itSVG", IupItem( "SVG...", "cmdSVG" ), 
       "ACTIVE", "NO", NULL ),
-    named[9] = IupSetAtt( "itCGMb", IupItem( "CGMb...", "cmdCGMb" ), 
+    named[9] = IupSetAtt( "itCGMt", IupItem( "CGMt...", "cmdCGMt" ), 
       "ACTIVE", "NO", NULL ),
-    named[10] = IupSetAtt( "itDGN", IupItem( "DGN...", "cmdDGN" ), 
+    named[10] = IupSetAtt( "itCGMb", IupItem( "CGMb...", "cmdCGMb" ), 
       "ACTIVE", "NO", NULL ),
-    named[11] = IupSetAtt( "itDXF", IupItem( "DXF...", "cmdDXF" ), 
+    named[11] = IupSetAtt( "itDGN", IupItem( "DGN...", "cmdDGN" ), 
       "ACTIVE", "NO", NULL ),
-    named[12] = IupSetAtt( "itEMF", IupItem( "EMF...", "cmdEMF" ), 
+    named[12] = IupSetAtt( "itDXF", IupItem( "DXF...", "cmdDXF" ), 
       "ACTIVE", "NO", NULL ),
-    named[13] = IupSetAtt( "itWMF", IupItem( "WMF...", "cmdWMF" ), 
+    named[13] = IupSetAtt( "itEMF", IupItem( "EMF...", "cmdEMF" ), 
+      "ACTIVE", "NO", NULL ),
+    named[14] = IupSetAtt( "itWMF", IupItem( "WMF...", "cmdWMF" ), 
       "ACTIVE", "NO", NULL ),
   NULL), NULL );
-  named[14] = IupSetAtt( "mnFile", IupMenu(
+  named[15] = IupSetAtt( "mnFile", IupMenu(
     IupSetAtt( NULL, IupSubmenu( "Open",
       named[0] /* mnOpen */
     ), 
@@ -439,29 +441,29 @@ void cdtest_loadled (void)
     ), 
       "KEY", "K_S", NULL ),
     IupSeparator(),
-    named[15] = IupSetAtt( "itPrint", IupItem( "Print...", "cmdPrint" ), 
+    named[16] = IupSetAtt( "itPrint", IupItem( "Print...", "cmdPrint" ), 
       "KEY", "K_P", NULL ),
     IupSeparator(),
     IupSetAtt( NULL, IupItem( "Exit", "cmdFileExit" ), 
       "KEY", "K_x", NULL ),
   NULL), NULL );
-  named[16] = IupSetAtt( "mnEdit", IupMenu(
-    named[17] = IupSetAtt( "itEditUndo", IupItem( "Undo", "cmdEditUndo" ), NULL ),
+  named[17] = IupSetAtt( "mnEdit", IupMenu(
+    named[18] = IupSetAtt( "itEditUndo", IupItem( "Undo", "cmdEditUndo" ), NULL ),
     IupSeparator(),
-    named[18] = IupSetAtt( "itClipBoard", IupItem( "Copy as EMF/WMF", "cmdClipBoard" ), 
+    named[19] = IupSetAtt( "itClipBoard", IupItem( "Copy as EMF/WMF", "cmdClipBoard" ), 
       "ACTIVE", "NO", NULL ),
-    named[19] = IupSetAtt( "itClipBoardBitmap", IupItem( "Copy as Bitmap", "cmdClipBoardBitmap" ), 
+    named[20] = IupSetAtt( "itClipBoardBitmap", IupItem( "Copy as Bitmap", "cmdClipBoardBitmap" ), 
       "ACTIVE", "NO", NULL ),
-    named[20] = IupSetAtt( "itClipBoardMetafile", IupItem( "Copy as CD Metafile", "cmdClipBoardMetafile" ), 
+    named[21] = IupSetAtt( "itClipBoardMetafile", IupItem( "Copy as CD Metafile", "cmdClipBoardMetafile" ), 
       "ACTIVE", "NO", NULL ),
-    named[21] = IupSetAtt( "itClipBoardPaste", IupItem( "Paste", "cmdClipBoardPaste" ), 
+    named[22] = IupSetAtt( "itClipBoardPaste", IupItem( "Paste", "cmdClipBoardPaste" ), 
       "ACTIVE", "NO", NULL ),
     IupSeparator(),
     IupItem( "Clear", "cmdEditClear" ),
     IupSeparator(),
     IupItem( "Options...", "cmdOptions" ),
   NULL), NULL );
-  named[22] = IupSetAtt( "mnPrimitives", IupMenu(
+  named[23] = IupSetAtt( "mnPrimitives", IupMenu(
     IupItem( "Pixel...", "cmdPixel" ),
     IupItem( "Mark...", "cmdMark" ),
     IupItem( "Line...", "cmdLine" ),
@@ -476,143 +478,143 @@ void cdtest_loadled (void)
     IupItem( "Server Image...", "cmdImage" ),
     IupItem( "RGB Image...", "cmdImageRGB" ),
   NULL), NULL );
-  named[23] = IupSetAtt( "mnDraw", IupMenu(
+  named[24] = IupSetAtt( "mnDraw", IupMenu(
     IupSetAtt( NULL, IupSubmenu( "Primitives",
-      named[22] /* mnPrimitives */
+      named[23] /* mnPrimitives */
     ), 
       "KEY", "K_P", NULL ),
     IupSeparator(),
     IupItem( "Clipping...", "cmdClip" ),
     IupItem( "Attributes...", "cmdAttributes" ),
     IupSeparator(),
-    named[24] = IupSetAtt( "itWDCanvas", IupItem( "Show WD Canvas", "cmdWDCanvas" ), NULL ),
-    named[25] = IupSetAtt( "itPICCanvas", IupItem( "Show Picture Canvas", "cmdPICCanvas" ), NULL ),
+    named[25] = IupSetAtt( "itWDCanvas", IupItem( "Show WD Canvas", "cmdWDCanvas" ), NULL ),
+    named[26] = IupSetAtt( "itPICCanvas", IupItem( "Show Picture Canvas", "cmdPICCanvas" ), NULL ),
   NULL), 
     "ISMENU", "YES", NULL );
-  named[26] = IupSetAtt( "mnHelp", IupMenu(
+  named[27] = IupSetAtt( "mnHelp", IupMenu(
     IupItem( "About...", "cmdHelpAbout" ),
   NULL), NULL );
-  named[27] = IupSetAtt( "mnMain", IupMenu(
+  named[28] = IupSetAtt( "mnMain", IupMenu(
     IupSetAtt( NULL, IupSubmenu( "File",
-      named[14] /* mnFile */
+      named[15] /* mnFile */
     ), 
       "KEY", "K_mF", NULL ),
     IupSetAtt( NULL, IupSubmenu( "Edit",
-      named[16] /* mnEdit */
+      named[17] /* mnEdit */
     ), 
       "KEY", "K_mE", NULL ),
     IupSetAtt( NULL, IupSubmenu( "Draw",
-      named[23] /* mnDraw */
+      named[24] /* mnDraw */
     ), 
       "KEY", "K_mD", NULL ),
     IupSetAtt( NULL, IupSubmenu( "Help",
-      named[26] /* mnHelp */
+      named[27] /* mnHelp */
     ), 
       "KEY", "K_mH", NULL ),
   NULL), NULL );
-  named[28] = IupSetAtt( "lbStatusLine", IupLabel( "Esta eh a barra de status do CDTest." ), 
+  named[29] = IupSetAtt( "lbStatusLine", IupLabel( "Esta eh a barra de status do CDTest." ), 
     "EXPAND", "HORIZONTAL", NULL );
-  named[29] = IupSetAtt( "btLine", IupButton( "", "cmdLine" ), 
+  named[30] = IupSetAtt( "btLine", IupButton( "", "cmdLine" ), 
     "IMAGE", "imgLine", 
     "TIP", "Line", NULL );
-  named[30] = IupSetAtt( "btBox", IupButton( "", "cmdBox" ), 
+  named[31] = IupSetAtt( "btBox", IupButton( "", "cmdBox" ), 
     "IMAGE", "imgBox", 
     "TIP", "Box", NULL );
-  named[31] = IupSetAtt( "btRect", IupButton( "", "cmdRect" ), 
+  named[32] = IupSetAtt( "btRect", IupButton( "", "cmdRect" ), 
     "IMAGE", "imgRect", 
     "TIP", "Rect", NULL );
-  named[32] = IupSetAtt( "btArc", IupButton( "", "cmdArc" ), 
+  named[33] = IupSetAtt( "btArc", IupButton( "", "cmdArc" ), 
     "IMAGE", "imgArc", 
     "TIP", "Arc", NULL );
-  named[33] = IupSetAtt( "btSector", IupButton( "", "cmdSector" ), 
+  named[34] = IupSetAtt( "btSector", IupButton( "", "cmdSector" ), 
     "IMAGE", "imgSector", 
     "TIP", "Sector", NULL );
-  named[34] = IupSetAtt( "btChord", IupButton( "", "cmdChord" ), 
+  named[35] = IupSetAtt( "btChord", IupButton( "", "cmdChord" ), 
     "IMAGE", "imgChord", 
     "TIP", "Chord", NULL );
-  named[35] = IupSetAtt( "btPixel", IupButton( "", "cmdPixel" ), 
+  named[36] = IupSetAtt( "btPixel", IupButton( "", "cmdPixel" ), 
     "IMAGE", "imgPixel", 
     "TIP", "Pixel", NULL );
-  named[36] = IupSetAtt( "btMark", IupButton( "", "cmdMark" ), 
+  named[37] = IupSetAtt( "btMark", IupButton( "", "cmdMark" ), 
     "IMAGE", "imgMark", 
     "TIP", "Mark", NULL );
-  named[37] = IupSetAtt( "btText", IupButton( "", "cmdText" ), 
+  named[38] = IupSetAtt( "btText", IupButton( "", "cmdText" ), 
     "IMAGE", "imgText", 
     "TIP", "Text", NULL );
-  named[38] = IupSetAtt( "btPoly", IupButton( "", "cmdPoly" ), 
+  named[39] = IupSetAtt( "btPoly", IupButton( "", "cmdPoly" ), 
     "IMAGE", "imgPoly", 
     "TIP", "Polygon", NULL );
-  named[39] = IupSetAtt( "btImageRGB", IupButton( "", "cmdImageRGB" ), 
+  named[40] = IupSetAtt( "btImageRGB", IupButton( "", "cmdImageRGB" ), 
     "IMAGE", "imgImageRGB", 
     "TIP", "RGB Image", NULL );
-  named[40] = IupSetAtt( "btImage", IupButton( "", "cmdImage" ), 
+  named[41] = IupSetAtt( "btImage", IupButton( "", "cmdImage" ), 
     "IMAGE", "imgImage", 
     "TIP", "Server Image", NULL );
-  named[41] = IupSetAtt( "btClip", IupButton( "", "cmdClip" ), 
+  named[42] = IupSetAtt( "btClip", IupButton( "", "cmdClip" ), 
     "IMAGE", "imgClip", 
     "TIP", "Clipping Area", NULL );
-  named[42] = IupSetAtt( "btCurPrim", IupButton( "", "cmdShowDialog" ), 
+  named[43] = IupSetAtt( "btCurPrim", IupButton( "", "cmdShowDialog" ), 
     "IMAGE", "imgLine", 
     "TIP", "Show primitive dialog", NULL );
-  named[43] = IupSetAtt( "lbMousePos", IupLabel( "(    ,    )" ), 
+  named[44] = IupSetAtt( "lbMousePos", IupLabel( "(    ,    )" ), 
     "SIZE", "90", NULL );
-  named[44] = IupSetAtt( "PrimBar", IupVbox(
-    named[42] /* btCurPrim */,
+  named[45] = IupSetAtt( "PrimBar", IupVbox(
+    named[43] /* btCurPrim */,
     IupSetAtt( NULL, IupFill(), 
       "SIZE", "20", NULL ),
-    named[35] /* btPixel */,
-    named[36] /* btMark */,
-    named[29] /* btLine */,
-    named[38] /* btPoly */,
-    named[31] /* btRect */,
-    named[30] /* btBox */,
-    named[32] /* btArc */,
-    named[33] /* btSector */,
-    named[34] /* btChord */,
-    named[37] /* btText */,
+    named[36] /* btPixel */,
+    named[37] /* btMark */,
+    named[30] /* btLine */,
+    named[39] /* btPoly */,
+    named[32] /* btRect */,
+    named[31] /* btBox */,
+    named[33] /* btArc */,
+    named[34] /* btSector */,
+    named[35] /* btChord */,
+    named[38] /* btText */,
     IupSetAtt( NULL, IupFill(), 
       "SIZE", "5", NULL ),
-    named[40] /* btImage */,
-    named[39] /* btImageRGB */,
+    named[41] /* btImage */,
+    named[40] /* btImageRGB */,
     IupSetAtt( NULL, IupFill(), 
       "SIZE", "5", NULL ),
-    named[41] /* btClip */,
+    named[42] /* btClip */,
     IupSetAtt( NULL, IupFill(), 
       "SIZE", "30", NULL ),
   NULL), 
     "GAP", "2", NULL );
-  named[45] = IupSetAtt( "cnvColorBar", IupCanvas( "cmdColorBarRepaint" ), 
+  named[46] = IupSetAtt( "cnvColorBar", IupCanvas( "cmdColorBarRepaint" ), 
     "BUTTON_CB", "cmdColorBarButtonCB", 
     "RESIZE_CB", "cmdColorBarResizeCB", 
     "SIZE", "220x12", 
     "BORDER", "NO", 
     "EXPAND", "NO", NULL );
-  named[46] = IupSetAtt( "cnvMain", IupCanvas( "cmdRepaint" ), 
+  named[47] = IupSetAtt( "cnvMain", IupCanvas( "cmdRepaint" ), 
     "MOTION_CB", "cmdMotionCB", 
     "BUTTON_CB", "cmdButtonCB", 
     "RESIZE_CB", "cmdResizeCB", NULL );
-  named[47] = IupSetAtt( "DeskTop", IupVbox(
+  named[48] = IupSetAtt( "DeskTop", IupVbox(
     IupSetAtt( NULL, IupFill(), 
       "SIZE", "5", NULL ),
     IupHbox(
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
-      named[44] /* PrimBar */,
+      named[45] /* PrimBar */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "2", NULL ),
       IupVbox(
         IupSetAtt( NULL, IupFill(), 
           "SIZE", "2", NULL ),
-        named[43] /* lbMousePos */,
+        named[44] /* lbMousePos */,
         IupSetAtt( NULL, IupFill(), 
           "SIZE", "5", NULL ),
-        named[46] /* cnvMain */,
+        named[47] /* cnvMain */,
         IupSetAtt( NULL, IupFill(), 
           "SIZE", "2", NULL ),
-        named[45] /* cnvColorBar */,
+        named[46] /* cnvColorBar */,
         IupSetAtt( NULL, IupFill(), 
           "SIZE", "5", NULL ),
-        named[28] /* lbStatusLine */,
+        named[29] /* lbStatusLine */,
       NULL),
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
@@ -620,8 +622,8 @@ void cdtest_loadled (void)
     IupSetAtt( NULL, IupFill(), 
       "SIZE", "5", NULL ),
   NULL), NULL );
-  named[48] = IupSetAtt( "dlgMain", IupDialog(
-    named[47] /* DeskTop */
+  named[49] = IupSetAtt( "dlgMain", IupDialog(
+    named[48] /* DeskTop */
   ), 
     "TITLE", "CD Test 5.3", 
     "MENU", "mnMain", 
@@ -630,67 +632,67 @@ void cdtest_loadled (void)
     "GETFOCUS_CB", "cmdGetFocusCB", 
     "KILLFOCUS_CB", "cmdKillFocusCB", 
     "CLOSE_CB", "cmdFileExit", NULL );
-  named[49] = IupSetAtt( "cnvWDCanvas", IupCanvas( "cmdWDRepaint" ), 
+  named[50] = IupSetAtt( "cnvWDCanvas", IupCanvas( "cmdWDRepaint" ), 
     "BORDER", "NO", NULL );
-  named[50] = IupSetAtt( "dlgWDCanvas", IupDialog(
-    named[49] /* cnvWDCanvas */
+  named[51] = IupSetAtt( "dlgWDCanvas", IupDialog(
+    named[50] /* cnvWDCanvas */
   ), 
     "TITLE", "WD Canvas", 
     "CLISE_CB", "cmdCloseWD", 
     "SIZE", "200x200", 
     "PARENTDIALOG", "dlgMain", 
     "GAP", "5x5", NULL );
-  named[51] = IupSetAtt( "cnvPICCanvas", IupCanvas( "cmdPICRepaint" ), 
+  named[52] = IupSetAtt( "cnvPICCanvas", IupCanvas( "cmdPICRepaint" ), 
     "BORDER", "NO", NULL );
-  named[52] = IupSetAtt( "dlgPICCanvas", IupDialog(
-    named[51] /* cnvPICCanvas */
+  named[53] = IupSetAtt( "dlgPICCanvas", IupDialog(
+    named[52] /* cnvPICCanvas */
   ), 
     "TITLE", "PIC Canvas", 
     "CLISE_CB", "cmdClosePIC", 
     "SIZE", "200x200", 
     "PARENTDIALOG", "dlgMain", 
     "GAP", "5x5", NULL );
-  named[53] = IupSetAtt( "btOptionsHide", IupButton( "Hide", "cmdOptionsHide" ), 
+  named[54] = IupSetAtt( "btOptionsHide", IupButton( "Hide", "cmdOptionsHide" ), 
     "SIZE", "30", NULL );
-  named[54] = IupSetAtt( "tgSimulate", IupToggle( "Simulate", "cmdSimulate" ), 
+  named[55] = IupSetAtt( "tgSimulate", IupToggle( "Simulate", "cmdSimulate" ), 
     "VALUE", "OFF", 
     "SIZE", "55", NULL );
-  named[55] = IupSetAtt( "tgStretchPlay", IupToggle( "Stretch Play", "cmdStretchPlay" ), 
+  named[56] = IupSetAtt( "tgStretchPlay", IupToggle( "Stretch Play", "cmdStretchPlay" ), 
     "VALUE", "OFF", 
     "SIZE", "70", NULL );
-  named[56] = IupSetAtt( "tgNoBuffering", IupToggle( "No buffering", "cmdNoBuffering" ), 
+  named[57] = IupSetAtt( "tgNoBuffering", IupToggle( "No buffering", "cmdNoBuffering" ), 
     "VALUE", "ON", NULL );
-  named[57] = IupSetAtt( "tgImageBuffer", IupToggle( "CD_DBUFFER", "cmdImageBuffer" ), NULL );
-  named[58] = IupSetAtt( "tgRGBBuffer", IupToggle( "CD_DBUFFERRGB", "cmdRGBBuffer" ), NULL );
-  named[59] = IupSetAtt( "rdBuffering", IupRadio(
+  named[58] = IupSetAtt( "tgImageBuffer", IupToggle( "CD_DBUFFER", "cmdImageBuffer" ), NULL );
+  named[59] = IupSetAtt( "tgRGBBuffer", IupToggle( "CD_DBUFFERRGB", "cmdRGBBuffer" ), NULL );
+  named[60] = IupSetAtt( "rdBuffering", IupRadio(
     IupVbox(
-      named[56] /* tgNoBuffering */,
-      named[57] /* tgImageBuffer */,
-      named[58] /* tgRGBBuffer */,
+      named[57] /* tgNoBuffering */,
+      named[58] /* tgImageBuffer */,
+      named[59] /* tgRGBBuffer */,
     NULL)
   ), NULL );
-  named[60] = IupSetAtt( "OptionsDesktop", IupVbox(
+  named[61] = IupSetAtt( "OptionsDesktop", IupVbox(
     IupSetAtt( NULL, IupVbox(
       IupSetAtt( NULL, IupFrame(
-        named[59] /* rdBuffering */
+        named[60] /* rdBuffering */
       ), 
         "TITLE", "Buffering:", 
         "MARGIN", "5x5", 
         "SIZE", "80", NULL ),
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "10", NULL ),
-      named[54] /* tgSimulate */,
-      named[55] /* tgStretchPlay */,
+      named[55] /* tgSimulate */,
+      named[56] /* tgStretchPlay */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "10", NULL ),
-      named[53] /* btOptionsHide */,
+      named[54] /* btOptionsHide */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "2", NULL ),
     NULL), 
       "GAP", "2", NULL ),
   NULL), NULL );
-  named[61] = IupSetAtt( "dlgOptions", IupDialog(
-    named[60] /* OptionsDesktop */
+  named[62] = IupSetAtt( "dlgOptions", IupDialog(
+    named[61] /* OptionsDesktop */
   ), 
     "TITLE", "Options", 
     "PARENTDIALOG", "dlgMain", 
@@ -698,7 +700,7 @@ void cdtest_loadled (void)
     "MINBOX", "NO", 
     "RESIZE", "NO", 
     "MARGIN", "5x2", NULL );
-  named[62] = IupSetAtt( "lstTextAlignment", IupList( "cmdTextAlignment" ), 
+  named[63] = IupSetAtt( "lstTextAlignment", IupList( "cmdTextAlignment" ), 
     "1", "CD_NORTH", 
     "2", "CD_SOUTH", 
     "3", "CD_EAST", 
@@ -714,11 +716,11 @@ void cdtest_loadled (void)
     "DROPDOWN", "YES", 
     "VALUE", "10", 
     "SIZE", "89", NULL );
-  named[63] = IupSetAtt( "txtMarkSize", IupText( "cmdInteger" ), 
+  named[64] = IupSetAtt( "txtMarkSize", IupText( "cmdInteger" ), 
     "NC", "4", 
     "SIZE", "20x12", 
     "VALUE", "10", NULL );
-  named[64] = IupSetAtt( "lstMarkType", IupList( "cmdMarkType" ), 
+  named[65] = IupSetAtt( "lstMarkType", IupList( "cmdMarkType" ), 
     "1", "CD_PLUS", 
     "2", "CD_STAR", 
     "3", "CD_CIRCLE", 
@@ -731,14 +733,14 @@ void cdtest_loadled (void)
     "DROPDOWN", "YES", 
     "VALUE", "2", 
     "SIZE", "80", NULL );
-  named[65] = IupSetAtt( "lstWriteMode", IupList( "cmdWriteMode" ), 
+  named[66] = IupSetAtt( "lstWriteMode", IupList( "cmdWriteMode" ), 
     "1", "CD_REPLACE", 
     "2", "CD_XOR", 
     "3", "CD_NOT_XOR", 
     "VALUE", "1", 
     "DROPDOWN", "YES", 
     "SIZE", "80", NULL );
-  named[66] = IupSetAtt( "lstFontTypeFace", IupList( "cmdFontTypeFace" ), 
+  named[67] = IupSetAtt( "lstFontTypeFace", IupList( "cmdFontTypeFace" ), 
     "1", "CD_SYSTEM", 
     "2", "CD_COURIER", 
     "3", "CD_TIMES_ROMAN", 
@@ -746,27 +748,27 @@ void cdtest_loadled (void)
     "VALUE", "1", 
     "DROPDOWN", "YES", 
     "SIZE", "80", NULL );
-  named[67] = IupSetAtt( "lstLineCap", IupList( "cmdLineCap" ), 
+  named[68] = IupSetAtt( "lstLineCap", IupList( "cmdLineCap" ), 
     "1", "CD_CAPFLAT", 
     "2", "CD_CAPSQUARE", 
     "3", "CD_CAPROUND", 
     "VALUE", "1", 
     "DROPDOWN", "YES", 
     "SIZE", "80", NULL );
-  named[68] = IupSetAtt( "lstLineJoin", IupList( "cmdLineJoin" ), 
+  named[69] = IupSetAtt( "lstLineJoin", IupList( "cmdLineJoin" ), 
     "1", "CD_BEVEL", 
     "2", "CD_MITER", 
     "3", "CD_ROUND", 
     "VALUE", "1", 
     "DROPDOWN", "YES", 
     "SIZE", "80", NULL );
-  named[69] = IupSetAtt( "lstFillMode", IupList( "cmdFillMode" ), 
+  named[70] = IupSetAtt( "lstFillMode", IupList( "cmdFillMode" ), 
     "1", "CD_EVENODD", 
     "2", "CD_WINDING", 
     "VALUE", "1", 
     "DROPDOWN", "YES", 
     "SIZE", "80", NULL );
-  named[70] = IupSetAtt( "lstFontStyle", IupList( "cmdFontStyle" ), 
+  named[71] = IupSetAtt( "lstFontStyle", IupList( "cmdFontStyle" ), 
     "1", "CD_PLAIN", 
     "2", "CD_BOLD", 
     "3", "CD_ITALIC", 
@@ -774,19 +776,19 @@ void cdtest_loadled (void)
     "VALUE", "1", 
     "DROPDOWN", "YES", 
     "SIZE", "80", NULL );
-  named[71] = IupSetAtt( "txtLineWidth", IupText( "cmdInteger" ), 
+  named[72] = IupSetAtt( "txtLineWidth", IupText( "cmdInteger" ), 
     "SIZE", "30", 
     "NC", "3", 
     "VALUE", "1", NULL );
-  named[72] = IupSetAtt( "txtFontSize", IupText( "cmdInteger" ), 
+  named[73] = IupSetAtt( "txtFontSize", IupText( "cmdInteger" ), 
     "SIZE", "30", 
     "NC", "3", 
     "VALUE", "12", NULL );
-  named[73] = IupSetAtt( "txtTextOrientation", IupText( "cmdInteger" ), 
+  named[74] = IupSetAtt( "txtTextOrientation", IupText( "cmdInteger" ), 
     "SIZE", "30", 
     "NC", "3", 
     "VALUE", "0", NULL );
-  named[74] = IupSetAtt( "lstLineStyle", IupList( "cmdLineStyle" ), 
+  named[75] = IupSetAtt( "lstLineStyle", IupList( "cmdLineStyle" ), 
     "1", "CD_CONTINUOUS", 
     "2", "CD_DASHED", 
     "3", "CD_DOTTED", 
@@ -796,19 +798,19 @@ void cdtest_loadled (void)
     "VALUE", "1", 
     "DROPDOWN", "YES", 
     "SIZE", "80", NULL );
-  named[75] = IupSetAtt( "tgSolid", IupToggle( "CD_SOLID", "cmdSolid" ), 
+  named[76] = IupSetAtt( "tgSolid", IupToggle( "CD_SOLID", "cmdSolid" ), 
     "VALUE", "ON", NULL );
-  named[76] = IupSetAtt( "tgHatch", IupToggle( "CD_HATCH", "cmdHatch" ), NULL );
-  named[77] = IupSetAtt( "tgStipple", IupToggle( "CD_STIPPLE", "cmdStipple" ), NULL );
-  named[78] = IupSetAtt( "tgPattern", IupToggle( "CD_PATTERN", "cmdPattern" ), NULL );
-  named[79] = IupSetAtt( "lstOpacity", IupList( "cmdOpacity" ), 
+  named[77] = IupSetAtt( "tgHatch", IupToggle( "CD_HATCH", "cmdHatch" ), NULL );
+  named[78] = IupSetAtt( "tgStipple", IupToggle( "CD_STIPPLE", "cmdStipple" ), NULL );
+  named[79] = IupSetAtt( "tgPattern", IupToggle( "CD_PATTERN", "cmdPattern" ), NULL );
+  named[80] = IupSetAtt( "lstOpacity", IupList( "cmdOpacity" ), 
     "1", "CD_OPAQUE", 
     "2", "CD_TRANSPARENT", 
     "VALUE", "2", 
     "DROPDOWN", "YES", 
     "SIZE", "80", 
     "ACTIVE", "YES", NULL );
-  named[80] = IupSetAtt( "lstHatchStyle", IupList( "cmdHatchStyle" ), 
+  named[81] = IupSetAtt( "lstHatchStyle", IupList( "cmdHatchStyle" ), 
     "1", "CD_HORIZONTAL", 
     "2", "CD_VERTICAL", 
     "3", "CD_FDIAGONAL", 
@@ -819,35 +821,35 @@ void cdtest_loadled (void)
     "DROPDOWN", "YES", 
     "SIZE", "80", 
     "ACTIVE", "YES", NULL );
-  named[81] = IupSetAtt( "btAttributesHide", IupButton( "Hide", "cmdAttributesHide" ), 
+  named[82] = IupSetAtt( "btAttributesHide", IupButton( "Hide", "cmdAttributesHide" ), 
     "SIZE", "30", NULL );
-  named[82] = IupSetAtt( "rdInteriorStyle", IupRadio(
+  named[83] = IupSetAtt( "rdInteriorStyle", IupRadio(
     IupVbox(
-      named[75] /* tgSolid */,
-      named[76] /* tgHatch */,
-      named[77] /* tgStipple */,
-      named[78] /* tgPattern */,
+      named[76] /* tgSolid */,
+      named[77] /* tgHatch */,
+      named[78] /* tgStipple */,
+      named[79] /* tgPattern */,
     NULL)
   ), NULL );
-  named[83] = IupSetAtt( "AttributesDesktop", IupVbox(
+  named[84] = IupSetAtt( "AttributesDesktop", IupVbox(
     IupHbox(
       IupSetAtt( NULL, IupVbox(
         IupLabel( "Write Mode:" ),
-        named[65] /* lstWriteMode */,
+        named[66] /* lstWriteMode */,
         IupSetAtt( NULL, IupFill(), 
           "SIZE", "4", NULL ),
         IupSetAtt( NULL, IupFrame(
           IupVbox(
             IupLabel( "Back Opacity:" ),
-            named[79] /* lstOpacity */,
+            named[80] /* lstOpacity */,
             IupSetAtt( NULL, IupFill(), 
               "SIZE", "2", NULL ),
             IupLabel( "Fill Mode:" ),
-            named[69] /* lstFillMode */,
+            named[70] /* lstFillMode */,
             IupSetAtt( NULL, IupFill(), 
               "SIZE", "2", NULL ),
             IupSetAtt( NULL, IupFrame(
-              named[82] /* rdInteriorStyle */
+              named[83] /* rdInteriorStyle */
             ), 
               "TITLE", "Interior Style:", 
               "MARGIN", "5x5", 
@@ -855,7 +857,7 @@ void cdtest_loadled (void)
             IupSetAtt( NULL, IupFill(), 
               "SIZE", "2", NULL ),
             IupLabel( "Hatch Style:" ),
-            named[80] /* lstHatchStyle */,
+            named[81] /* lstHatchStyle */,
           NULL)
         ), 
           "TITLE", "Fill Attributes", 
@@ -865,43 +867,43 @@ void cdtest_loadled (void)
         IupSetAtt( NULL, IupFrame(
           IupVbox(
             IupLabel( "Mark Type:" ),
-            named[64] /* lstMarkType */,
+            named[65] /* lstMarkType */,
             IupSetAtt( NULL, IupFill(), 
               "SIZE", "2", NULL ),
             IupLabel( "Mark Size:" ),
-            named[63] /* txtMarkSize */,
+            named[64] /* txtMarkSize */,
           NULL)
         ), 
           "TITLE", "Mark Attributes", 
           "MARGIN", "5x5", NULL ),
         IupSetAtt( NULL, IupFill(), 
           "SIZE", "10", NULL ),
-        named[81] /* btAttributesHide */,
+        named[82] /* btAttributesHide */,
       NULL), 
         "GAP", "2", NULL ),
       IupSetAtt( NULL, IupVbox(
         IupSetAtt( NULL, IupFrame(
           IupVbox(
             IupLabel( "Font Typeface:" ),
-            named[66] /* lstFontTypeFace */,
+            named[67] /* lstFontTypeFace */,
             IupSetAtt( NULL, IupFill(), 
               "SIZE", "2", NULL ),
             IupLabel( "Font Style:" ),
-            named[70] /* lstFontStyle */,
+            named[71] /* lstFontStyle */,
             IupSetAtt( NULL, IupFill(), 
               "SIZE", "2", NULL ),
             IupLabel( "Font Size:" ),
-            named[72] /* txtFontSize */,
+            named[73] /* txtFontSize */,
             IupSetAtt( NULL, IupFill(), 
               "SIZE", "2", NULL ),
             IupSetAtt( NULL, IupLabel( "Text Alignment:" ), 
               "SIZE", "x9", NULL ),
-            named[62] /* lstTextAlignment */,
+            named[63] /* lstTextAlignment */,
             IupSetAtt( NULL, IupFill(), 
               "SIZE", "2", NULL ),
             IupSetAtt( NULL, IupLabel( "Text Orientation:" ), 
               "SIZE", "x9", NULL ),
-            named[73] /* txtTextOrientation */,
+            named[74] /* txtTextOrientation */,
           NULL)
         ), 
           "TITLE", "Text Attributes", 
@@ -911,19 +913,19 @@ void cdtest_loadled (void)
         IupSetAtt( NULL, IupFrame(
           IupVbox(
             IupLabel( "Line Style:" ),
-            named[74] /* lstLineStyle */,
+            named[75] /* lstLineStyle */,
             IupSetAtt( NULL, IupFill(), 
               "SIZE", "2", NULL ),
             IupLabel( "Line Width:" ),
-            named[71] /* txtLineWidth */,
+            named[72] /* txtLineWidth */,
             IupSetAtt( NULL, IupFill(), 
               "SIZE", "2", NULL ),
             IupLabel( "Line Cap:" ),
-            named[67] /* lstLineCap */,
+            named[68] /* lstLineCap */,
             IupSetAtt( NULL, IupFill(), 
               "SIZE", "2", NULL ),
             IupLabel( "Line Join:" ),
-            named[68] /* lstLineJoin */,
+            named[69] /* lstLineJoin */,
           NULL)
         ), 
           "TITLE", "Line Attributes", 
@@ -932,8 +934,8 @@ void cdtest_loadled (void)
         "GAP", "2", NULL ),
     NULL),
   NULL), NULL );
-  named[84] = IupSetAtt( "dlgAttributes", IupDialog(
-    named[83] /* AttributesDesktop */
+  named[85] = IupSetAtt( "dlgAttributes", IupDialog(
+    named[84] /* AttributesDesktop */
   ), 
     "TITLE", "Attributes", 
     "PARENTDIALOG", "dlgMain", 
@@ -942,67 +944,67 @@ void cdtest_loadled (void)
     "RESIZE", "NO", 
     "CLOSE_CB", "cmdAttributesHide", 
     "MARGIN", "5x2", NULL );
-  named[85] = IupSetAtt( "txtLBX1", IupText( "cmdInteger" ), 
+  named[86] = IupSetAtt( "txtLBX1", IupText( "cmdInteger" ), 
     "NC", "8", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[86] = IupSetAtt( "txtLBX2", IupText( "cmdInteger" ), 
+  named[87] = IupSetAtt( "txtLBX2", IupText( "cmdInteger" ), 
     "NC", "8", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[87] = IupSetAtt( "txtLBY1", IupText( "cmdInteger" ), 
+  named[88] = IupSetAtt( "txtLBY1", IupText( "cmdInteger" ), 
     "NC", "8", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[88] = IupSetAtt( "txtLBY2", IupText( "cmdInteger" ), 
+  named[89] = IupSetAtt( "txtLBY2", IupText( "cmdInteger" ), 
     "NC", "8", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[89] = IupSetAtt( "btLBDraw", IupButton( "Draw", "cmdDraw" ), 
+  named[90] = IupSetAtt( "btLBDraw", IupButton( "Draw", "cmdDraw" ), 
     "SIZE", "30", NULL );
-  named[90] = IupSetAtt( "btLBHide", IupButton( "Hide", "cmdMsgHide" ), 
+  named[91] = IupSetAtt( "btLBHide", IupButton( "Hide", "cmdMsgHide" ), 
     "SIZE", "30", NULL );
-  named[91] = IupSetAtt( "LBData", IupVbox(
+  named[92] = IupSetAtt( "LBData", IupVbox(
     IupSetAtt( NULL, IupHbox(
       IupSetAtt( NULL, IupLabel( "X1:" ), 
         "SIZE", "15x9", NULL ),
-      named[85] /* txtLBX1 */,
+      named[86] /* txtLBX1 */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
       IupSetAtt( NULL, IupLabel( "Y1:" ), 
         "SIZE", "15x9", NULL ),
-      named[87] /* txtLBY1 */,
+      named[88] /* txtLBY1 */,
     NULL), 
       "ALIGNMENT", "ACENTER", NULL ),
     IupSetAtt( NULL, IupHbox(
       IupSetAtt( NULL, IupLabel( "X2:" ), 
         "SIZE", "15x9", NULL ),
-      named[86] /* txtLBX2 */,
+      named[87] /* txtLBX2 */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
       IupSetAtt( NULL, IupLabel( "Y2:" ), 
         "SIZE", "15x9", NULL ),
-      named[88] /* txtLBY2 */,
+      named[89] /* txtLBY2 */,
     NULL), 
       "ALIGNMENT", "ACENTER", NULL ),
   NULL), NULL );
-  named[92] = IupSetAtt( "LBDeskTop", IupVbox(
+  named[93] = IupSetAtt( "LBDeskTop", IupVbox(
     IupHbox(
       IupFill(),
-      named[91] /* LBData */,
+      named[92] /* LBData */,
       IupFill(),
     NULL),
     IupHbox(
       IupFill(),
-      named[89] /* btLBDraw */,
+      named[90] /* btLBDraw */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
-      named[90] /* btLBHide */,
+      named[91] /* btLBHide */,
       IupFill(),
     NULL),
   NULL), NULL );
-  named[93] = IupSetAtt( "dlgLB", IupDialog(
-    named[92] /* LBDeskTop */
+  named[94] = IupSetAtt( "dlgLB", IupDialog(
+    named[93] /* LBDeskTop */
   ), 
     "TITLE", "Line Parameters", 
     "PARENTDIALOG", "dlgMain", 
@@ -1011,86 +1013,86 @@ void cdtest_loadled (void)
     "RESIZE", "NO", 
     "CLOSE_CB", "cmdMsgHide", 
     "MARGIN", "5x5", NULL );
-  named[94] = IupSetAtt( "txtASXC", IupText( "cmdInteger" ), 
+  named[95] = IupSetAtt( "txtASXC", IupText( "cmdInteger" ), 
     "NC", "4", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[95] = IupSetAtt( "txtASYC", IupText( "cmdInteger" ), 
+  named[96] = IupSetAtt( "txtASYC", IupText( "cmdInteger" ), 
     "NC", "4", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[96] = IupSetAtt( "txtASW", IupText( "cmdInteger" ), 
+  named[97] = IupSetAtt( "txtASW", IupText( "cmdInteger" ), 
     "NC", "4", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[97] = IupSetAtt( "txtASH", IupText( "cmdInteger" ), 
+  named[98] = IupSetAtt( "txtASH", IupText( "cmdInteger" ), 
     "NC", "4", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[98] = IupSetAtt( "txtASAngle1", IupText( "cmdReal" ), 
+  named[99] = IupSetAtt( "txtASAngle1", IupText( "cmdReal" ), 
     "NC", "10", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[99] = IupSetAtt( "txtASAngle2", IupText( "cmdReal" ), 
+  named[100] = IupSetAtt( "txtASAngle2", IupText( "cmdReal" ), 
     "NC", "10", 
     "SIZE", "30x12", 
     "VALUE", "360", NULL );
-  named[100] = IupSetAtt( "btASDraw", IupButton( "Draw", "cmdDraw" ), 
+  named[101] = IupSetAtt( "btASDraw", IupButton( "Draw", "cmdDraw" ), 
     "SIZE", "30", NULL );
-  named[101] = IupSetAtt( "btASHide", IupButton( "Hide", "cmdMsgHide" ), 
+  named[102] = IupSetAtt( "btASHide", IupButton( "Hide", "cmdMsgHide" ), 
     "SIZE", "30", NULL );
-  named[102] = IupSetAtt( "ASData", IupVbox(
+  named[103] = IupSetAtt( "ASData", IupVbox(
     IupSetAtt( NULL, IupHbox(
       IupSetAtt( NULL, IupLabel( "Xc:" ), 
         "SIZE", "30x9", NULL ),
-      named[94] /* txtASXC */,
+      named[95] /* txtASXC */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
       IupSetAtt( NULL, IupLabel( "Yc:" ), 
         "SIZE", "30x9", NULL ),
-      named[95] /* txtASYC */,
+      named[96] /* txtASYC */,
     NULL), 
       "ALIGNMENT", "ACENTER", NULL ),
     IupSetAtt( NULL, IupHbox(
       IupSetAtt( NULL, IupLabel( "W:" ), 
         "SIZE", "30x9", NULL ),
-      named[96] /* txtASW */,
+      named[97] /* txtASW */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
       IupSetAtt( NULL, IupLabel( "H:" ), 
         "SIZE", "30x9", NULL ),
-      named[97] /* txtASH */,
+      named[98] /* txtASH */,
     NULL), 
       "ALIGNMENT", "ACENTER", NULL ),
     IupSetAtt( NULL, IupHbox(
       IupSetAtt( NULL, IupLabel( "Angle1:" ), 
         "SIZE", "30x9", NULL ),
-      named[98] /* txtASAngle1 */,
+      named[99] /* txtASAngle1 */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
       IupSetAtt( NULL, IupLabel( "Angle2:" ), 
         "SIZE", "30x9", NULL ),
-      named[99] /* txtASAngle2 */,
+      named[100] /* txtASAngle2 */,
     NULL), 
       "ALIGNMENT", "ACENTER", NULL ),
   NULL), NULL );
-  named[103] = IupSetAtt( "ASDeskTop", IupVbox(
+  named[104] = IupSetAtt( "ASDeskTop", IupVbox(
     IupHbox(
       IupFill(),
-      named[102] /* ASData */,
+      named[103] /* ASData */,
       IupFill(),
     NULL),
     IupHbox(
       IupFill(),
-      named[100] /* btASDraw */,
+      named[101] /* btASDraw */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
-      named[101] /* btASHide */,
+      named[102] /* btASHide */,
       IupFill(),
     NULL),
   NULL), NULL );
-  named[104] = IupSetAtt( "dlgAS", IupDialog(
-    named[103] /* ASDeskTop */
+  named[105] = IupSetAtt( "dlgAS", IupDialog(
+    named[104] /* ASDeskTop */
   ), 
     "PARENTDIALOG", "dlgMain", 
     "TITLE", "Arc Parameters", 
@@ -1099,48 +1101,48 @@ void cdtest_loadled (void)
     "RESIZE", "NO", 
     "CLOSE_CB", "cmdMsgHide", 
     "MARGIN", "5x5", NULL );
-  named[105] = IupSetAtt( "txtPixelX", IupText( "cmdInteger" ), 
+  named[106] = IupSetAtt( "txtPixelX", IupText( "cmdInteger" ), 
     "NC", "5", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[106] = IupSetAtt( "txtPixelY", IupText( "cmdInteger" ), 
+  named[107] = IupSetAtt( "txtPixelY", IupText( "cmdInteger" ), 
     "NC", "5", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[107] = IupSetAtt( "btPixelDraw", IupButton( "Draw", "cmdDraw" ), 
+  named[108] = IupSetAtt( "btPixelDraw", IupButton( "Draw", "cmdDraw" ), 
     "SIZE", "30", NULL );
-  named[108] = IupSetAtt( "btPixelHide", IupButton( "Hide", "cmdMsgHide" ), 
+  named[109] = IupSetAtt( "btPixelHide", IupButton( "Hide", "cmdMsgHide" ), 
     "SIZE", "30", NULL );
-  named[109] = IupSetAtt( "PixelData", IupVbox(
+  named[110] = IupSetAtt( "PixelData", IupVbox(
     IupSetAtt( NULL, IupHbox(
       IupSetAtt( NULL, IupLabel( "X:" ), 
         "SIZE", "10x9", NULL ),
-      named[105] /* txtPixelX */,
+      named[106] /* txtPixelX */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
       IupSetAtt( NULL, IupLabel( "Y:" ), 
         "SIZE", "10x9", NULL ),
-      named[106] /* txtPixelY */,
+      named[107] /* txtPixelY */,
     NULL), 
       "ALIGNMENT", "ACENTER", NULL ),
   NULL), NULL );
-  named[110] = IupSetAtt( "PixelDeskTop", IupVbox(
+  named[111] = IupSetAtt( "PixelDeskTop", IupVbox(
     IupHbox(
       IupFill(),
-      named[109] /* PixelData */,
+      named[110] /* PixelData */,
       IupFill(),
     NULL),
     IupHbox(
       IupFill(),
-      named[107] /* btPixelDraw */,
+      named[108] /* btPixelDraw */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
-      named[108] /* btPixelHide */,
+      named[109] /* btPixelHide */,
       IupFill(),
     NULL),
   NULL), NULL );
-  named[111] = IupSetAtt( "dlgPixel", IupDialog(
-    named[110] /* PixelDeskTop */
+  named[112] = IupSetAtt( "dlgPixel", IupDialog(
+    named[111] /* PixelDeskTop */
   ), 
     "PARENTDIALOG", "dlgMain", 
     "TITLE", "Pixel Parameters", 
@@ -1149,50 +1151,50 @@ void cdtest_loadled (void)
     "RESIZE", "NO", 
     "CLOSE_CB", "cmdMsgHide", 
     "MARGIN", "5x5", NULL );
-  named[112] = IupSetAtt( "txtMarkX", IupText( "cmdInteger" ), 
+  named[113] = IupSetAtt( "txtMarkX", IupText( "cmdInteger" ), 
     "NC", "5", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[113] = IupSetAtt( "txtMarkY", IupText( "cmdInteger" ), 
+  named[114] = IupSetAtt( "txtMarkY", IupText( "cmdInteger" ), 
     "NC", "5", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[114] = IupSetAtt( "btMarkDraw", IupButton( "Draw", "cmdDraw" ), 
+  named[115] = IupSetAtt( "btMarkDraw", IupButton( "Draw", "cmdDraw" ), 
     "SIZE", "30", NULL );
-  named[115] = IupSetAtt( "btMarkHide", IupButton( "Hide", "cmdMsgHide" ), 
+  named[116] = IupSetAtt( "btMarkHide", IupButton( "Hide", "cmdMsgHide" ), 
     "SIZE", "30", NULL );
-  named[116] = IupSetAtt( "MarkData", IupVbox(
+  named[117] = IupSetAtt( "MarkData", IupVbox(
     IupSetAtt( NULL, IupHbox(
       IupFill(),
       IupSetAtt( NULL, IupLabel( "X:" ), 
         "SIZE", "10x9", NULL ),
-      named[112] /* txtMarkX */,
+      named[113] /* txtMarkX */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
       IupSetAtt( NULL, IupLabel( "Y:" ), 
         "SIZE", "10x9", NULL ),
-      named[113] /* txtMarkY */,
+      named[114] /* txtMarkY */,
       IupFill(),
     NULL), 
       "ALIGNMENT", "ACENTER", NULL ),
   NULL), NULL );
-  named[117] = IupSetAtt( "MarkDeskTop", IupVbox(
+  named[118] = IupSetAtt( "MarkDeskTop", IupVbox(
     IupHbox(
       IupFill(),
-      named[116] /* MarkData */,
+      named[117] /* MarkData */,
       IupFill(),
     NULL),
     IupHbox(
       IupFill(),
-      named[114] /* btMarkDraw */,
+      named[115] /* btMarkDraw */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
-      named[115] /* btMarkHide */,
+      named[116] /* btMarkHide */,
       IupFill(),
     NULL),
   NULL), NULL );
-  named[118] = IupSetAtt( "dlgMark", IupDialog(
-    named[117] /* MarkDeskTop */
+  named[119] = IupSetAtt( "dlgMark", IupDialog(
+    named[118] /* MarkDeskTop */
   ), 
     "PARENTDIALOG", "dlgMain", 
     "TITLE", "Mark Parameters", 
@@ -1201,59 +1203,59 @@ void cdtest_loadled (void)
     "RESIZE", "NO", 
     "CLOSE_CB", "cmdMsgHide", 
     "MARGIN", "5x5", NULL );
-  named[119] = IupSetAtt( "txtTextX", IupText( "cmdInteger" ), 
+  named[120] = IupSetAtt( "txtTextX", IupText( "cmdInteger" ), 
     "NC", "5", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[120] = IupSetAtt( "txtTextY", IupText( "cmdInteger" ), 
+  named[121] = IupSetAtt( "txtTextY", IupText( "cmdInteger" ), 
     "NC", "5", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[121] = IupSetAtt( "txtTextS", IupText( "cmdString" ), 
+  named[122] = IupSetAtt( "txtTextS", IupText( "cmdString" ), 
     "NC", "100", 
     "SIZE", "89x12", 
     "VALUE", "Text", NULL );
-  named[122] = IupSetAtt( "btTextDraw", IupButton( "Draw", "cmdDraw" ), 
+  named[123] = IupSetAtt( "btTextDraw", IupButton( "Draw", "cmdDraw" ), 
     "SIZE", "30", NULL );
-  named[123] = IupSetAtt( "btTextHide", IupButton( "Hide", "cmdMsgHide" ), 
+  named[124] = IupSetAtt( "btTextHide", IupButton( "Hide", "cmdMsgHide" ), 
     "SIZE", "30", NULL );
-  named[124] = IupSetAtt( "TextData", IupVbox(
+  named[125] = IupSetAtt( "TextData", IupVbox(
     IupSetAtt( NULL, IupHbox(
       IupSetAtt( NULL, IupLabel( "X:" ), 
         "SIZE", "10x9", NULL ),
-      named[119] /* txtTextX */,
+      named[120] /* txtTextX */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
       IupSetAtt( NULL, IupLabel( "Y:" ), 
         "SIZE", "10x9", NULL ),
-      named[120] /* txtTextY */,
+      named[121] /* txtTextY */,
     NULL), 
       "ALIGNMENT", "ACENTER", NULL ),
     IupHbox(
       IupVbox(
         IupSetAtt( NULL, IupLabel( "Text:" ), 
           "SIZE", "25x9", NULL ),
-        named[121] /* txtTextS */,
+        named[122] /* txtTextS */,
       NULL),
     NULL),
   NULL), NULL );
-  named[125] = IupSetAtt( "TextDeskTop", IupVbox(
+  named[126] = IupSetAtt( "TextDeskTop", IupVbox(
     IupHbox(
       IupFill(),
-      named[124] /* TextData */,
+      named[125] /* TextData */,
       IupFill(),
     NULL),
     IupHbox(
       IupFill(),
-      named[122] /* btTextDraw */,
+      named[123] /* btTextDraw */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
-      named[123] /* btTextHide */,
+      named[124] /* btTextHide */,
       IupFill(),
     NULL),
   NULL), NULL );
-  named[126] = IupSetAtt( "dlgText", IupDialog(
-    named[125] /* TextDeskTop */
+  named[127] = IupSetAtt( "dlgText", IupDialog(
+    named[126] /* TextDeskTop */
   ), 
     "PARENTDIALOG", "dlgMain", 
     "TITLE", "Text Parameters", 
@@ -1262,24 +1264,24 @@ void cdtest_loadled (void)
     "CLOSE_CB", "cmdMsgHide", 
     "RESIZE", "NO", 
     "MARGIN", "5x5", NULL );
-  named[127] = IupSetAtt( "tgOpenLines", IupToggle( "CD_OPEN_LINES", "cmdOpenLines" ), 
+  named[128] = IupSetAtt( "tgOpenLines", IupToggle( "CD_OPEN_LINES", "cmdOpenLines" ), 
     "VALUE", "ON", NULL );
-  named[128] = IupSetAtt( "tgClosedLines", IupToggle( "CD_CLOSED_LINES", "cmdClosedLines" ), NULL );
-  named[129] = IupSetAtt( "tgFilled", IupToggle( "CD_FILL", "cmdFill" ), NULL );
-  named[130] = IupSetAtt( "tgClip", IupToggle( "CD_CLIP", "cmdPolyClip" ), NULL );
-  named[131] = IupSetAtt( "tgBezier", IupToggle( "CD_BEZIER", "cmdPolyBezier" ), NULL );
-  named[132] = IupSetAtt( "btPolyHide", IupButton( "Hide", "cmdMsgHide" ), 
+  named[129] = IupSetAtt( "tgClosedLines", IupToggle( "CD_CLOSED_LINES", "cmdClosedLines" ), NULL );
+  named[130] = IupSetAtt( "tgFilled", IupToggle( "CD_FILL", "cmdFill" ), NULL );
+  named[131] = IupSetAtt( "tgClip", IupToggle( "CD_CLIP", "cmdPolyClip" ), NULL );
+  named[132] = IupSetAtt( "tgBezier", IupToggle( "CD_BEZIER", "cmdPolyBezier" ), NULL );
+  named[133] = IupSetAtt( "btPolyHide", IupButton( "Hide", "cmdMsgHide" ), 
     "SIZE", "30", NULL );
-  named[133] = IupSetAtt( "rdMode", IupRadio(
+  named[134] = IupSetAtt( "rdMode", IupRadio(
     IupVbox(
-      named[127] /* tgOpenLines */,
-      named[128] /* tgClosedLines */,
-      named[129] /* tgFilled */,
-      named[130] /* tgClip */,
-      named[131] /* tgBezier */,
+      named[128] /* tgOpenLines */,
+      named[129] /* tgClosedLines */,
+      named[130] /* tgFilled */,
+      named[131] /* tgClip */,
+      named[132] /* tgBezier */,
     NULL)
   ), NULL );
-  named[134] = IupSetAtt( "PolyDesktop", IupVbox(
+  named[135] = IupSetAtt( "PolyDesktop", IupVbox(
     IupSetAtt( NULL, IupFill(), 
       "SIZE", "5", NULL ),
     IupHbox(
@@ -1288,7 +1290,7 @@ void cdtest_loadled (void)
         IupHbox(
           IupSetAtt( NULL, IupFill(), 
             "SIZE", "5", NULL ),
-          named[133] /* rdMode */,
+          named[134] /* rdMode */,
         NULL)
       ), 
         "TITLE", "Polygon Mode:", NULL ),
@@ -1298,14 +1300,14 @@ void cdtest_loadled (void)
       "SIZE", "10", NULL ),
     IupHbox(
       IupFill(),
-      named[132] /* btPolyHide */,
+      named[133] /* btPolyHide */,
       IupFill(),
     NULL),
     IupSetAtt( NULL, IupFill(), 
       "SIZE", "5", NULL ),
   NULL), NULL );
-  named[135] = IupSetAtt( "dlgPoly", IupDialog(
-    named[134] /* PolyDesktop */
+  named[136] = IupSetAtt( "dlgPoly", IupDialog(
+    named[135] /* PolyDesktop */
   ), 
     "PARENTDIALOG", "dlgMain", 
     "TITLE", "Polygon Parameters", 
@@ -1313,77 +1315,77 @@ void cdtest_loadled (void)
     "MINBOX", "NO", 
     "RESIZE", "NO", 
     "CLOSE_CB", "cmdMsgHide", NULL );
-  named[136] = IupSetAtt( "txtClipXmin", IupText( "cmdInteger" ), 
+  named[137] = IupSetAtt( "txtClipXmin", IupText( "cmdInteger" ), 
     "NC", "5", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[137] = IupSetAtt( "txtClipXmax", IupText( "cmdInteger" ), 
+  named[138] = IupSetAtt( "txtClipXmax", IupText( "cmdInteger" ), 
     "NC", "5", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[138] = IupSetAtt( "txtClipYmin", IupText( "cmdInteger" ), 
+  named[139] = IupSetAtt( "txtClipYmin", IupText( "cmdInteger" ), 
     "NC", "5", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[139] = IupSetAtt( "txtClipYmax", IupText( "cmdInteger" ), 
+  named[140] = IupSetAtt( "txtClipYmax", IupText( "cmdInteger" ), 
     "NC", "5", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[140] = IupSetAtt( "btClipOff", IupButton( "Off", "cmdClipOff" ), 
+  named[141] = IupSetAtt( "btClipOff", IupButton( "Off", "cmdClipOff" ), 
     "SIZE", "30", NULL );
-  named[141] = IupSetAtt( "btClipArea", IupButton( "Area", "cmdClipArea" ), 
+  named[142] = IupSetAtt( "btClipArea", IupButton( "Area", "cmdClipArea" ), 
     "SIZE", "30", NULL );
-  named[142] = IupSetAtt( "btClipPoly", IupButton( "Polygon", "cmdClipPoly" ), 
+  named[143] = IupSetAtt( "btClipPoly", IupButton( "Polygon", "cmdClipPoly" ), 
     "SIZE", "50", NULL );
-  named[143] = IupSetAtt( "btClipHide", IupButton( "Hide", "cmdMsgHide" ), 
+  named[144] = IupSetAtt( "btClipHide", IupButton( "Hide", "cmdMsgHide" ), 
     "SIZE", "30", NULL );
-  named[144] = IupSetAtt( "ClipData", IupVbox(
+  named[145] = IupSetAtt( "ClipData", IupVbox(
     IupSetAtt( NULL, IupHbox(
       IupSetAtt( NULL, IupLabel( "Xmin:" ), 
         "SIZE", "25x9", NULL ),
-      named[136] /* txtClipXmin */,
+      named[137] /* txtClipXmin */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
       IupSetAtt( NULL, IupLabel( "Ymin:" ), 
         "SIZE", "25x9", NULL ),
-      named[138] /* txtClipYmin */,
+      named[139] /* txtClipYmin */,
     NULL), 
       "ALIGNMENT", "ACENTER", NULL ),
     IupSetAtt( NULL, IupHbox(
       IupSetAtt( NULL, IupLabel( "Xmax:" ), 
         "SIZE", "25x9", NULL ),
-      named[137] /* txtClipXmax */,
+      named[138] /* txtClipXmax */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
       IupSetAtt( NULL, IupLabel( "Ymax:" ), 
         "SIZE", "25x9", NULL ),
-      named[139] /* txtClipYmax */,
+      named[140] /* txtClipYmax */,
     NULL), 
       "ALIGNMENT", "ACENTER", NULL ),
   NULL), NULL );
-  named[145] = IupSetAtt( "ClipDeskTop", IupVbox(
+  named[146] = IupSetAtt( "ClipDeskTop", IupVbox(
     IupHbox(
       IupFill(),
-      named[144] /* ClipData */,
+      named[145] /* ClipData */,
       IupFill(),
     NULL),
     IupHbox(
       IupFill(),
-      named[140] /* btClipOff */,
+      named[141] /* btClipOff */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
-      named[141] /* btClipArea */,
+      named[142] /* btClipArea */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
-      named[142] /* btClipPoly */,
+      named[143] /* btClipPoly */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
-      named[143] /* btClipHide */,
+      named[144] /* btClipHide */,
       IupFill(),
     NULL),
   NULL), NULL );
-  named[146] = IupSetAtt( "dlgClip", IupDialog(
-    named[145] /* ClipDeskTop */
+  named[147] = IupSetAtt( "dlgClip", IupDialog(
+    named[146] /* ClipDeskTop */
   ), 
     "PARENTDIALOG", "dlgMain", 
     "TITLE", "Clipping", 
@@ -1392,72 +1394,72 @@ void cdtest_loadled (void)
     "MINBOX", "NO", 
     "RESIZE", "NO", 
     "MARGIN", "5x5", NULL );
-  named[147] = IupSetAtt( "txtImageX", IupText( "cmdInteger" ), 
+  named[148] = IupSetAtt( "txtImageX", IupText( "cmdInteger" ), 
     "NC", "5", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[148] = IupSetAtt( "txtImageY", IupText( "cmdInteger" ), 
+  named[149] = IupSetAtt( "txtImageY", IupText( "cmdInteger" ), 
     "NC", "5", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[149] = IupSetAtt( "txtImageW", IupText( "cmdInteger" ), 
+  named[150] = IupSetAtt( "txtImageW", IupText( "cmdInteger" ), 
     "NC", "5", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[150] = IupSetAtt( "txtImageH", IupText( "cmdInteger" ), 
+  named[151] = IupSetAtt( "txtImageH", IupText( "cmdInteger" ), 
     "NC", "5", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[151] = IupSetAtt( "btImagePut", IupButton( "Put", "cmdImagePut" ), 
+  named[152] = IupSetAtt( "btImagePut", IupButton( "Put", "cmdImagePut" ), 
     "SIZE", "30", NULL );
-  named[152] = IupSetAtt( "btImageGet", IupButton( "Get", "cmdImageGet" ), 
+  named[153] = IupSetAtt( "btImageGet", IupButton( "Get", "cmdImageGet" ), 
     "SIZE", "30", NULL );
-  named[153] = IupSetAtt( "btImageHide", IupButton( "Hide", "cmdMsgHide" ), 
+  named[154] = IupSetAtt( "btImageHide", IupButton( "Hide", "cmdMsgHide" ), 
     "SIZE", "30", NULL );
-  named[154] = IupSetAtt( "ImageData", IupVbox(
+  named[155] = IupSetAtt( "ImageData", IupVbox(
     IupSetAtt( NULL, IupHbox(
       IupSetAtt( NULL, IupLabel( "X:" ), 
         "SIZE", "30x9", NULL ),
-      named[147] /* txtImageX */,
+      named[148] /* txtImageX */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
       IupSetAtt( NULL, IupLabel( "Y:" ), 
         "SIZE", "30x9", NULL ),
-      named[148] /* txtImageY */,
+      named[149] /* txtImageY */,
     NULL), 
       "ALIGNMENT", "ACENTER", NULL ),
     IupSetAtt( NULL, IupHbox(
       IupSetAtt( NULL, IupLabel( "Width:" ), 
         "SIZE", "30x9", NULL ),
-      named[149] /* txtImageW */,
+      named[150] /* txtImageW */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
       IupSetAtt( NULL, IupLabel( "Height:" ), 
         "SIZE", "30x9", NULL ),
-      named[150] /* txtImageH */,
+      named[151] /* txtImageH */,
     NULL), 
       "ALIGNMENT", "ACENTER", NULL ),
   NULL), NULL );
-  named[155] = IupSetAtt( "ImageDeskTop", IupVbox(
+  named[156] = IupSetAtt( "ImageDeskTop", IupVbox(
     IupHbox(
       IupFill(),
-      named[154] /* ImageData */,
+      named[155] /* ImageData */,
       IupFill(),
     NULL),
     IupHbox(
       IupFill(),
-      named[152] /* btImageGet */,
+      named[153] /* btImageGet */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
-      named[151] /* btImagePut */,
+      named[152] /* btImagePut */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
-      named[153] /* btImageHide */,
+      named[154] /* btImageHide */,
       IupFill(),
     NULL),
   NULL), NULL );
-  named[156] = IupSetAtt( "dlgImage", IupDialog(
-    named[155] /* ImageDeskTop */
+  named[157] = IupSetAtt( "dlgImage", IupDialog(
+    named[156] /* ImageDeskTop */
   ), 
     "PARENTDIALOG", "dlgMain", 
     "TITLE", "Server Image", 
@@ -1466,72 +1468,72 @@ void cdtest_loadled (void)
     "CLOSE_CB", "cmdMsgHide", 
     "RESIZE", "NO", 
     "MARGIN", "5x5", NULL );
-  named[157] = IupSetAtt( "txtImageRGBX", IupText( "cmdInteger" ), 
+  named[158] = IupSetAtt( "txtImageRGBX", IupText( "cmdInteger" ), 
     "NC", "5", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[158] = IupSetAtt( "txtImageRGBY", IupText( "cmdInteger" ), 
+  named[159] = IupSetAtt( "txtImageRGBY", IupText( "cmdInteger" ), 
     "NC", "5", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[159] = IupSetAtt( "txtImageRGBW", IupText( "cmdInteger" ), 
+  named[160] = IupSetAtt( "txtImageRGBW", IupText( "cmdInteger" ), 
     "NC", "5", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[160] = IupSetAtt( "txtImageRGBH", IupText( "cmdInteger" ), 
+  named[161] = IupSetAtt( "txtImageRGBH", IupText( "cmdInteger" ), 
     "NC", "5", 
     "SIZE", "30x12", 
     "VALUE", "0", NULL );
-  named[161] = IupSetAtt( "btImageRGBPut", IupButton( "Put", "cmdImageRGBPut" ), 
+  named[162] = IupSetAtt( "btImageRGBPut", IupButton( "Put", "cmdImageRGBPut" ), 
     "SIZE", "30", NULL );
-  named[162] = IupSetAtt( "btImageRGBGet", IupButton( "Get", "cmdImageRGBGet" ), 
+  named[163] = IupSetAtt( "btImageRGBGet", IupButton( "Get", "cmdImageRGBGet" ), 
     "SIZE", "30", NULL );
-  named[163] = IupSetAtt( "btImageRGBHide", IupButton( "Hide", "cmdMsgHide" ), 
+  named[164] = IupSetAtt( "btImageRGBHide", IupButton( "Hide", "cmdMsgHide" ), 
     "SIZE", "30", NULL );
-  named[164] = IupSetAtt( "ImageRGBData", IupVbox(
+  named[165] = IupSetAtt( "ImageRGBData", IupVbox(
     IupSetAtt( NULL, IupHbox(
       IupSetAtt( NULL, IupLabel( "X:" ), 
         "SIZE", "30x9", NULL ),
-      named[157] /* txtImageRGBX */,
+      named[158] /* txtImageRGBX */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
       IupSetAtt( NULL, IupLabel( "Y:" ), 
         "SIZE", "30x9", NULL ),
-      named[158] /* txtImageRGBY */,
+      named[159] /* txtImageRGBY */,
     NULL), 
       "ALIGNMENT", "ACENTER", NULL ),
     IupSetAtt( NULL, IupHbox(
       IupSetAtt( NULL, IupLabel( "Width:" ), 
         "SIZE", "30x9", NULL ),
-      named[159] /* txtImageRGBW */,
+      named[160] /* txtImageRGBW */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
       IupSetAtt( NULL, IupLabel( "Height:" ), 
         "SIZE", "30x9", NULL ),
-      named[160] /* txtImageRGBH */,
+      named[161] /* txtImageRGBH */,
     NULL), 
       "ALIGNMENT", "ACENTER", NULL ),
   NULL), NULL );
-  named[165] = IupSetAtt( "ImageRGBDeskTop", IupVbox(
+  named[166] = IupSetAtt( "ImageRGBDeskTop", IupVbox(
     IupHbox(
       IupFill(),
-      named[164] /* ImageRGBData */,
+      named[165] /* ImageRGBData */,
       IupFill(),
     NULL),
     IupHbox(
       IupFill(),
-      named[162] /* btImageRGBGet */,
+      named[163] /* btImageRGBGet */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
-      named[161] /* btImageRGBPut */,
+      named[162] /* btImageRGBPut */,
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
-      named[163] /* btImageRGBHide */,
+      named[164] /* btImageRGBHide */,
       IupFill(),
     NULL),
   NULL), NULL );
-  named[166] = IupSetAtt( "dlgImageRGB", IupDialog(
-    named[165] /* ImageRGBDeskTop */
+  named[167] = IupSetAtt( "dlgImageRGB", IupDialog(
+    named[166] /* ImageRGBDeskTop */
   ), 
     "PARENTDIALOG", "dlgMain", 
     "TITLE", "RGB Image", 
@@ -1540,8 +1542,8 @@ void cdtest_loadled (void)
     "CLOSE_CB", "cmdMsgHide", 
     "RESIZE", "NO", 
     "MARGIN", "5x5", NULL );
-  named[167] = IupSetAtt( "btCDTest", IupButton( "Close", "cmdCloseAbout" ), NULL );
-  named[168] = IupSetAtt( "AboutDeskTop", IupHbox(
+  named[168] = IupSetAtt( "btCDTest", IupButton( "Close", "cmdCloseAbout" ), NULL );
+  named[169] = IupSetAtt( "AboutDeskTop", IupHbox(
     IupFill(),
     IupSetAtt( NULL, IupVbox(
       IupLabel( "CD Test 5.3" ),
@@ -1555,16 +1557,16 @@ void cdtest_loadled (void)
       IupSetAtt( NULL, IupFill(), 
         "SIZE", "5", NULL ),
       IupLabel( "CD Library Version" ),
-      named[169] = IupSetAtt( "lblVersion", IupLabel( "" ), NULL ),
-      named[167] /* btCDTest */,
+      named[170] = IupSetAtt( "lblVersion", IupLabel( "" ), NULL ),
+      named[168] /* btCDTest */,
     NULL), 
       "ALIGNMENT", "ACENTER", NULL ),
     IupFill(),
   NULL), 
     "MARGIN", "5x5", 
     "GAP", "2", NULL );
-  named[170] = IupSetAtt( "dlgHelpAbout", IupDialog(
-    named[168] /* AboutDeskTop */
+  named[171] = IupSetAtt( "dlgHelpAbout", IupDialog(
+    named[169] /* AboutDeskTop */
   ), 
     "PARENTDIALOG", "dlgMain", 
     "TITLE", "About", 

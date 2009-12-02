@@ -33,6 +33,7 @@ extern tCTC ctgc;
 #define DGN
 #define PDF
 #define CDDBG
+#define SVG
 
 static int LoadCanvas(char* ctx_name, cdContext* ctx, char *filename)
 {
@@ -191,6 +192,27 @@ static int fEPS(void)
   { 
     sprintf(data, "%s -s%d -e -l0 -r0 -t0 -b0", filename, (int)(ctgc.res * 25.4));
     return SaveCanvas("CD_PS", CD_PS, data);
+  }
+
+  return IUP_DEFAULT;
+}
+#endif
+
+/*-------------------------------------------------------------------------*/
+/* Copia o conteudo do canvas para um arquivo SVG.                  */
+/*-------------------------------------------------------------------------*/
+#ifdef SVG
+#include <cdsvg.h>
+
+static int fSVG(void)
+{
+  char filename[1024]="*.svg";
+  char data[1024];
+
+  if (IupGetFile(filename)>=0) 
+  { 
+    sprintf(data, "%s -s%d", filename, (int)(ctgc.res * 25.4));
+    return SaveCanvas("CD_SVG", CD_SVG, data);
   }
 
   return IUP_DEFAULT;
@@ -427,6 +449,10 @@ void DriversInit(void)
   IupSetAttribute(IupGetHandle("itEPS"), IUP_ACTIVE, IUP_YES);
   IupSetFunction("cmdPS", (Icallback) fPS);
   IupSetFunction("cmdEPS", (Icallback) fEPS);
+#endif
+#ifdef SVG
+  IupSetAttribute(IupGetHandle("itSVG"), IUP_ACTIVE, IUP_YES);
+  IupSetFunction("cmdSVG", (Icallback) fSVG);
 #endif
 #ifdef PDF
   IupSetAttribute(IupGetHandle("itPDF"), IUP_ACTIVE, IUP_YES);

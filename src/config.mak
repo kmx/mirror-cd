@@ -4,6 +4,9 @@ OPT = YES
 
 DEFINES = CD_NO_OLD_INTERFACE
 
+SRCSVG = base64.c lodpng.c cdsvg.c
+SRCSVG  := $(addprefix svg/, $(SRCSVG))
+
 SRCINTCGM = circle.c ellipse.c intcgm1.c \
   intcgm2.c intcgm4.c intcgm6.c list.c \
   sism.c tparse.c bparse.c 
@@ -27,7 +30,7 @@ SRCNULL  := $(addprefix drv/, $(SRCNULL))
 SRCCOMM = cd.c wd.c wdhdcpy.c rgb2map.c cd_vectortext.c cd_active.c \
           cd_attributes.c cd_bitmap.c cd_image.c cd_primitives.c cd_text.c cd_util.c
       
-SRC = $(SRCCOMM) $(SRCINTCGM) $(SRCDRV) $(SRCSIM)
+SRC = $(SRCCOMM) $(SRCSVG) $(SRCINTCGM) $(SRCDRV) $(SRCSIM)
 
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )
   SRC += $(SRCWIN32)

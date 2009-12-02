@@ -1,0 +1,113 @@
+<!doctype HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+
+<head>
+<meta http-equiv="Content-Language" content="en-us">
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<title>GDK</title>
+<link rel="stylesheet" type="text/css" href="../../style.css">
+</head>
+
+<body>
+
+<h2>GDK Base Driver</h2>
+
+  <p>This driver represents a basic driver for all system-dependent drivers 
+  implemented in the X-Windows system. The implementation uses the
+  <a href="http://library.gnome.org/devel/gdk/">GDK</a> and
+  <a href="http://library.gnome.org/devel/cairo/">Cairo</a> API 
+  functions. This driver was designed for the GTK+ version 2, and can be 
+  compiled and used in Microsoft Windows system.</p>
+
+<h3>Behavior of Functions</h3>
+<h4>Control&nbsp; </h4>
+<ul>
+  <li><a href="../func/other.html#cdPlay">
+  <font face="Courier"><strong>Play</strong></font></a>: does nothing, returns
+  <font face="Courier">CD_ERROR</font>. </li>
+</ul>
+<h4>Coordinate System and Clipping </h4>
+<ul>
+  <li>
+  <a href="../func/coordinates.html#cdUpdateYAxis">
+  <font face="Courier"><strong>UpdateYAxis</strong></font></a>: the 
+  orientation of axis Y is the opposite to its orientation in the CD library.</li>
+</ul>
+<h4>Attributes </h4>
+<ul>
+  <li>
+  <a href="../func/lines.html#cdLineWidth">
+  <font face="Courier"><strong>LineWidth</strong></font></a>: if
+  <font face="Courier">width</font> is 1, the driver will use 0 for a better 
+  performance.</li>
+  <li>
+  <a href="../func/lines.html#cdLineStyle">
+  <font face="Courier"><strong>LineStyle</strong></font></a>: thick lines have 
+  style only in the line's direction. For example, you will see small rectangles 
+  in a thick dotted line.</li>
+  <li>
+  <a href="../func/text.html#cdNativeFont">
+  <font face="Courier"><strong>NativeFont</strong></font></a>: also accepts the 
+  X-Windows font string format. A scaled font is generated using the font size 
+  and the font face.</li>
+  <li><a href="../func/text.html#cdFont">
+  <font face="Courier"><strong>Font</strong></font></a>: the old name &quot;System&quot; 
+  is mapped to &quot;fixed&quot;. A scaled font is generated using the font size 
+  and the font face.</li>
+</ul>
+<h4>Colors </h4>
+<ul>
+  <li>
+  <a href="../func/color.html#cdPalette">
+  <font face="Courier"><strong>Palette</strong></font></a>: When the number of 
+  bits per pixel is smaller than or equal to 8, the driver will use the system 
+  palette to solve colors passed as parameters to the canvas. The driver 
+  allocates colors as they are requested - if a color cannot be allocated, the 
+  closest color is used in the palette. For such, the driver sees all available 
+  colors, in the current application and others. If one of the applications is 
+  terminated, a color in the palette may become invalid and will only be updated 
+  by the driver when it is requested again. For this reason, a call to <strong>
+  cdForeground </strong>or <strong>cdBackground</strong> or <strong>cdPalette</strong> 
+  is recommended before drawing.<br>
+  When CD_FORCE is used, the driver forces color allocation. 
+  This may imply changing colors in other applications when a cursor moves in 
+  and out of the canvas. However, if the number of requested colors is smaller 
+  than the maximum number of possible colors in the palette, then the first 
+  colors in the default system palette will be preserved, minimizing this 
+  problem.<br>
+  When CD_POLITE is used, all colors allocated by the driver are liberated, and 
+  the requested colors are allocated. This is useful for the application to 
+  prioritize the colors that will be allocated, causing other colors to be 
+  mapped to their closest colors.<br>
+  Note that canvases in the same application interfere with one another, but 
+  when a canvas is terminated it liberates all allocated colors.</li>
+</ul>
+<h4>Exclusive Attributes</h4>
+<ul>
+  <li>&quot;<b><font face="Courier">GC</font></b>&quot;:&nbsp; returns the GDK graphics 
+  context (get only). In Lua is returned as a user data.</li>
+</ul>
+
+<ul>
+  <li>&quot;<b><font face="Courier">ROTATE</font></b>&quot;:&nbsp; allows the usage of 1 
+  angle and 1 coordinate (x, y), that define a global rotation transformation 
+  centered in the specified coordinate. Use 1 real and 2 integer values inside a 
+  string (&quot;%g %d %d&quot; = angle x y). In this driver will change the 
+  current transformation matrix, if removed will reset the current 
+  transformation matrix.</li>
+</ul>
+
+<ul>
+  <li>&quot;<b><font face="Courier">ANTIALIAS</font></b>&quot;: controls the use of 
+  anti-aliasing for the text, image zoom and line drawing primitives. Assumes 
+  values &quot;1&quot; (active) and &quot;0&quot; (inactive). Default value: &quot;1&quot;.</li>
+</ul>
+
+<ul>
+  <li><b><font face="Courier">&quot;CAIROVERSION&quot;: </font></b>returns a string with 
+  the Cairo version number. It is empty if the Cairo is not available.</li>
+</ul>
+
+</body>
+
+</html>

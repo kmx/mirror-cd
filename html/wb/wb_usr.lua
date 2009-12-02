@@ -1000,6 +1000,10 @@ wb_usr.tree =
               link= "drv/ps.html"
             },
             {
+              name= {nl= "SVG"},
+              link= "drv/svg.html"
+            },
+            {
               name= {nl= "MF"},
               link= "drv/mf.html"
             },
@@ -1038,6 +1042,10 @@ wb_usr.tree =
             {
               name= {en= "Simulation"},
               link= "drv/sim.html"
+            },
+            {
+              name= {en= "GDK/Cairo"},
+              link= "drv/gdk.html"
             },
             {
               name= {nl= "Win32"},

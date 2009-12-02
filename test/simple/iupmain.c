@@ -49,6 +49,7 @@ int main(int argc, char** argv)
   IupSetFunction("SimpleDrawPDF", (Icallback) SimpleDrawPDF);
   IupSetFunction("SimpleDrawPS", (Icallback) SimpleDrawPS);
   IupSetFunction("SimpleDrawEPS", (Icallback) SimpleDrawEPS);
+  IupSetFunction("SimpleDrawSVG", (Icallback) SimpleDrawSVG);
   IupSetFunction("SimpleDrawWMF", (Icallback) SimpleDrawWMF);
   IupSetFunction("SimpleDrawPrint", (Icallback) SimpleDrawPrint);
   IupSetFunction("SimpleDrawPrintDialog", (Icallback) SimpleDrawPrintDialog);

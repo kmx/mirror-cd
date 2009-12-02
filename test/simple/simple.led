@@ -19,6 +19,7 @@ mnSaveAs = MENU
  ITEM("PDF", SimpleDrawPDF),
  ITEM("PS", SimpleDrawPS),
  ITEM("EPS", SimpleDrawEPS),
+ ITEM("SVG", SimpleDrawSVG),
  ITEM("WMF", SimpleDrawWMF)
 )
 

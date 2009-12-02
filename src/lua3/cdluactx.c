@@ -24,6 +24,7 @@
 #include "cdclipbd.h"
 #include "cdmf.h"
 #include "cdps.h"
+#include "cdsvg.h"
 #include "cddbuf.h"
 #include "cdgdiplus.h"
 
@@ -779,6 +780,28 @@ static cdContextLUA cdluapsctx =
 };
 
 /***************************************************************************\
+* CD_SVG.                                                                    *
+\***************************************************************************/
+static void *cdsvg_checkdata(int param)
+{
+  lua_Object data = lua_getparam(param);
+  if (!lua_isstring(data))
+    lua_error("cdCreateCanvas CD_SVG: data should be of type string!");
+
+  return lua_getstring(data);
+}
+
+static cdContextLUA cdluasvgctx = 
+{
+  0,
+  "CD_SVG",
+  cdContextSVG,
+  cdsvg_checkdata,
+  NULL,
+  0
+};
+
+/***************************************************************************\
 * CD_PRINTER.                                                               *
 \***************************************************************************/
 static void *cdprinter_checkdata(int param)
@@ -940,6 +963,7 @@ void cdlua_initdrivers(void)
   cdlua_addcontext(&cdluacgmctx);
   cdlua_addcontext(&cdluamfctx);
   cdlua_addcontext(&cdluapsctx);
+  cdlua_addcontext(&cdluasvgctx);
   cdlua_addcontext(&cdluaclipboardctx);
   cdlua_addcontext(&cdluanativewindowctx);
   cdlua_addcontext(&cdluaprinterctx);

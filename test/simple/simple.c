@@ -22,6 +22,7 @@
 #include "cdprint.h"
 #include "cdps.h"
 #include "cdpdf.h"
+#include "cdsvg.h"
 #include "cdwmf.h"
 #include "cdiup.h"
 #include "cddbuf.h"
@@ -300,6 +301,12 @@ int SimpleDrawMetafile(void)
 int SimpleDrawPS(void)
 {
   DrawCanvasDriver(CD_PS, "simple.ps");
+  return 0;
+}
+
+int SimpleDrawSVG(void)
+{
+  DrawCanvasDriver(CD_SVG, "simple.svg");
   return 0;
 }
 

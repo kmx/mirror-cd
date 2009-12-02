@@ -4,13 +4,16 @@ SRC = cdtest.c cdtest_led.c colorbar.c drivers.c list.c rubber.c
 
 ifeq "$(TEC_SYSNAME)" "Win32"
   SRC += cdtest.rc
+  LEDC = $(IUP)/bin/$(TEC_SYSNAME)/ledc
+else  
+  LEDC = $(IUP)/bin/$(TEC_UNAME)/ledc
 endif
 
 USE_CD=Yes
 USE_IUP3=Yes
 
 cdtest_led.c: cdtest.led
-	$(IUP)/bin/$(TEC_UNAME)/ledc -f cdtest_loadled -o cdtest_led.c cdtest.led
+	$(LEDC) -f cdtest_loadled -o cdtest_led.c cdtest.led
 
 USE_STATIC = Yes
 
