@@ -12,7 +12,7 @@
 
 static void cdkillcanvas(cdCtxCanvas* ctxcanvas)
 {
-  cdxKillCanvas(ctxcanvas);
+  cdgdkKillCanvas(ctxcanvas);
 }
 
 static void cdcreatecanvas(cdCanvas* canvas, void *data)
@@ -23,7 +23,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 
 static void cdinittable(cdCanvas* canvas)
 {
-  cdxInitTable(canvas);
+  cdgdkInitTable(canvas);
 
   canvas->cxKillCanvas = cdkillcanvas;
 }

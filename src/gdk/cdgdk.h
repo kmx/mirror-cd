@@ -22,15 +22,17 @@ struct _cdCtxImage {
 
 struct _cdCtxCanvas {
   cdCanvas* canvas;
-  GdkVisual* vis;           /* visual usado pela aplicacao */
+  GdkVisual* vis;            /* visual of the application */
   GdkScreen *scr;
   GdkGC* gc;                 /* graphic context */
   GdkDrawable* wnd;          /* drawable */
-  GdkColor fg;
+  GdkColor fg, bg;
 
-  GdkPixmap* last_hatch;     /* ultimo hatch setado pelo usuario */
-  GdkPixmap* last_stipple;   /* ultimo stipple setado pelo usuario */
-  GdkPixmap* last_pattern;   /* ultimo pattern setado pelo usuario */
+  GdkGCValues gcval;
+
+  GdkPixmap* last_hatch;     /* last hatch   set by user */
+  GdkPixmap* last_stipple;   /* last stipple set by user */
+  GdkPixmap* last_pattern;   /* last pattern set by user */
   GdkGC* last_stipple_gc;
   int last_stipple_w;
   int last_stipple_h;
@@ -39,28 +41,28 @@ struct _cdCtxCanvas {
   int last_pattern_w;
   int last_pattern_h;
 
-  unsigned int depth;    /* depth do canvas */
-  GdkPixmap* clip_polygon;   /* poligono de clipping */
+  unsigned int depth;        /* canvas depth */
+  GdkPixmap* clip_polygon;   /* clipping polygon */
   GdkPixmap* new_region;
   GdkPixmap* region_aux;
   GdkGC* region_aux_gc;
-  void *data;            /* informacoes especificas do driver */
-  long int *xidata;      /* ximage cache */
+  void *data;                /* specific information about the driver */
+  long int *xidata;          /* Image cache */
   int xisize;
-  GdkColormap* colormap;      /* colormap para todos os canvas */
-  GdkColor* color_table;      /* tabela de cores do colormap */
-  int num_colors;             /* tamanho maximo da tabela de cores  */
-  int rshift;                 /* constante red para calculo truecolor */
-  int gshift;                 /* constante green para calculo truecolor */
-  int bshift;                 /* constante blue para calculo truecolor */
-  double xmatrix[6];          /* transformation matrix that includes axis inversion */
+  GdkColormap* colormap;     /* Color map default */
+  GdkColor* color_table;     /* Color table of the color map */
+  int num_colors;            /* Size of the color table  */
+  int rshift;                /* Red constant to calculate the true color */
+  int gshift;                /* Green constant to calculate the true color */
+  int bshift;                /* Blue constant to calculate the true color */
+  double xmatrix[6];         /* Transformation matrix that includes axis inversion */
   float  rotate_angle;
   int    rotate_center_x,
          rotate_center_y;
 
-  cairo_font_face_t* font;     /* fonte de caracteres no X */
+  cairo_scaled_font_t* font;    /* Scaled font (character font + size font */
 
-  cdImage* image_dbuffer; /* utilizado pelo driver de Double buffer */
+  cdImage* image_dbuffer;       /* Used by double buffer driver */
   cdCanvas* canvas_dbuffer;
 };
 
@@ -74,8 +76,8 @@ extern void (*cdxGetRGB)(cdCtxCanvas *ctxcanvas, unsigned long pixel,
                                                  unsigned char* blue);
 
 cdCtxCanvas *cdgdkCreateCanvas(cdCanvas* canvas, GdkDrawable* wnd, GdkScreen* scr, GdkVisual* vis);
-void cdxInitTable(cdCanvas* canvas);
-void cdxKillCanvas(cdCtxCanvas *ctxcanvas);
+void cdgdkInitTable(cdCanvas* canvas);
+void cdgdkKillCanvas(cdCtxCanvas *ctxcanvas);
 int cdgdkClip(cdCtxCanvas *ctxcanvas, int clip_mode);
 void cdgdkPoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n);
 

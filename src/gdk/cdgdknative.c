@@ -58,8 +58,7 @@ void cdGetScreenSize(int *width, int *height, double *width_mm, double *height_m
 
 static void cdkillcanvas(cdCtxCanvas *ctxcanvas)
 {
-  cdxKillCanvas(ctxcanvas);
-  printf("cdkillcanvas\n");
+  cdgdkKillCanvas(ctxcanvas);
 }
 
 static int cdactivate(cdCtxCanvas *ctxcanvas)
@@ -72,7 +71,6 @@ static int cdactivate(cdCtxCanvas *ctxcanvas)
   if (ctxcanvas->canvas->use_matrix)
     ctxcanvas->canvas->cxTransform(ctxcanvas, ctxcanvas->canvas->matrix);
 
-  printf("cdactivate\n");
   return CD_OK;
 }
 
@@ -87,7 +85,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 
 static void cdinittable(cdCanvas* canvas)
 {
-  cdxInitTable(canvas);
+  cdgdkInitTable(canvas);
 
   canvas->cxKillCanvas = cdkillcanvas;
   canvas->cxActivate = cdactivate;

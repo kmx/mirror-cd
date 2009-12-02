@@ -13,7 +13,7 @@
 static void cdkillcanvas (cdCtxCanvas* ctxcanvas)
 {
   cdKillImage(ctxcanvas->image_dbuffer);
-  cdxKillCanvas(ctxcanvas);
+  cdgdkKillCanvas(ctxcanvas);
 }
 
 static void cddeactivate(cdCtxCanvas* ctxcanvas)
@@ -104,7 +104,7 @@ static int cdactivate(cdCtxCanvas* ctxcanvas)
 
     /* remove the old image and canvas */
     cdKillImage(old_image_dbuffer);
-    cdxKillCanvas(old_ctxcanvas);
+    cdgdkKillCanvas(old_ctxcanvas);
 
     ctxcanvas = canvas->ctxcanvas;
 
@@ -137,7 +137,7 @@ static int cdactivate(cdCtxCanvas* ctxcanvas)
 
 static void cdinittable(cdCanvas* canvas)
 {
-  cdxInitTable(canvas);
+  cdgdkInitTable(canvas);
 
   canvas->cxActivate = cdactivate;
   canvas->cxDeactivate = cddeactivate;
