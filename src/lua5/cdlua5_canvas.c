@@ -471,6 +471,56 @@ static int cdlua5_ftransformpoint(lua_State *L)
 \***************************************************************************/
 
 /***************************************************************************\
+* wd.GetTransform() -> (sx, sy, tx, ty: number)                        *
+\***************************************************************************/
+static int wdlua5_gettransform(lua_State *L)
+{
+  double sx, sy, tx, ty;
+
+  wdCanvasGetTransform(cdlua_checkcanvas(L, 1), &sx, &sy, &tx, &ty);
+  lua_pushnumber(L, sx);
+  lua_pushnumber(L, sy);
+  lua_pushnumber(L, tx);
+  lua_pushnumber(L, ty);
+  return 4;
+}
+
+/***************************************************************************\
+* wd.SetTransform(sx, sy, tx, ty: number)                                 *
+\***************************************************************************/
+static int wdlua5_settransform(lua_State *L)
+{
+  double sx = luaL_checknumber(L, 2);
+  double sy = luaL_checknumber(L, 3);
+  double tx = luaL_checknumber(L, 4);
+  double ty = luaL_checknumber(L, 5);
+  wdCanvasSetTransform(cdlua_checkcanvas(L, 1), sx, sy, tx, ty);
+  return 0;
+}
+
+/***************************************************************************\
+* wd.Translate(tx, ty: number)                                 *
+\***************************************************************************/
+static int wdlua5_translate(lua_State *L)
+{
+  double tx = luaL_checknumber(L, 2);
+  double ty = luaL_checknumber(L, 3);
+  wdCanvasTranslate(cdlua_checkcanvas(L, 1), tx, ty);
+  return 0;
+}
+
+/***************************************************************************\
+* wd.Scale(sx, sy: number)                                 *
+\***************************************************************************/
+static int wdlua5_scale(lua_State *L)
+{
+  double sx = luaL_checknumber(L, 2);
+  double sy = luaL_checknumber(L, 3);
+  wdCanvasScale(cdlua_checkcanvas(L, 1), sx, sy);
+  return 0;
+}
+
+/***************************************************************************\
 * wd.Window(xmin, xmax, ymin, ymax: number)                                 *
 \***************************************************************************/
 static int wdlua5_window(lua_State *L)
@@ -2224,6 +2274,10 @@ static const struct luaL_reg cdlib_canvas_meta[] = {
   {"wGetViewport"   , wdlua5_getviewport},  
   {"wWorld2Canvas"  , wdlua5_world2canvas},
   {"wCanvas2World"  , wdlua5_canvas2world},
+  {"wGetTransform"  , wdlua5_gettransform},
+  {"wSetTransform"  , wdlua5_settransform},
+  {"wScale"         , wdlua5_scale},
+  {"wTranslate"     , wdlua5_translate},
 
   {"wHardcopy"      , wdlua5_hardcopy},
 

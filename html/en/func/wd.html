@@ -67,6 +67,34 @@ canvas:wCanvas2World(xv, yv: number) -&gt; (xw, yw: number) [in Lua]</pre>
     <p>Converts canvas coordinates into world coordinates. It is not necessary to 
       provide all return pointers, you can provide only the desired values and <font>NULL</font>
       for the others.</p>
+      
+    <pre class="function"><span class="mainFunction">void <a name="wdSetTransform">wdCanvasSetTransform</a>(cdCanvas* canvas, double sx, double sy, double tx, double ty); [in C]</span>
+    
+canvas:wSetTransform(sx, sy, tx, ty: number) [in Lua]</pre>
+    <p>Configures the world coordinate system transformation to be used to 
+	convert world coordinates (with values in real numbers) into canvas 
+	coordinates (with values in integers). The transformation is automatically 
+	set by <strong>wdCanvasWindow</strong> and <strong>wdCanvasViewport</strong>.</p>
+    <pre class="function"><span class="mainFunction">void <a name="wdGetTransform">wdCanvasGetTransform</a>(cdCanvas* canvas, double *sx, double *sy, double *tx, double *ty); [in C]</span>
+
+canvas:wGetTransform() -&gt; (sx, sy, tx, ty: number) [in Lua]</pre>
+    <p>Queries the current transformation being used to 
+      convert world coordinates into canvas coordinates (and the other way round). It 
+      is not necessary to provide all return pointers, you can provide only the 
+      desired values.</p>
+      
+    <pre class="function"><span class="mainFunction">void <a name="wdTranslate">wdCanvasTranslate</a>(cdCanvas* canvas, double dtx, double dty); [in C]</span>
+    
+canvas:wTranslate(dtx, dty: number) [in Lua]</pre>
+    <p>Translates the transformation by a delta, by adding the given values to 
+	the current tx and ty values.</p>
+
+    <pre class="function"><span class="mainFunction">void <a name="wdScale">wdCanvasScale</a>(cdCanvas* canvas, double dsx, double dsy); [in C]</span>
+    
+canvas:wScale(dsx, dsy: number) [in Lua]</pre>
+    <p>Scales the transformation by a delta, by multiplying the given values by 
+	the current sx and sy values.</p>
+      
     <h3>Extra</h3>
     <pre class="function"><span class="mainFunction">void <a name="wdHardcopy">wdCanvasHardcopy</a>(cdCanvas *canvas, cdContext* ctx, void *data, void(*draw_func)(cdCanvas *canvas_copy)); [in C]</span>
 
@@ -77,5 +105,6 @@ canvas:wCanvasHardcopy(ctx: number, data: string or userdata, draw_func: functio
       must use routines in WC) and, finally, removes the new canvas.</p>
     <p>It is usually used for "hard copies" of drawings (print equivalent copy). The 
       most common used contexts are Printer, PS and PDF.</p>
+      
   </body>
 </html>

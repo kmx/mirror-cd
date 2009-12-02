@@ -145,6 +145,9 @@ EXPORTS
   wdGetViewport
   wdWorld2Canvas
   wdCanvas2World
+  wdCanvasSetTransform
+  wdCanvasTranslate
+  wdCanvasScale
 
   wdClipArea
   wdGetClipArea

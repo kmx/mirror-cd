@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#include <assert.h>
 #include <memory.h>
 
 #include "cd.h"
@@ -33,6 +34,47 @@ static void wdUpdateTransformation(cdCanvas* canvas)
   canvas->s = sqrt(canvas->sx * canvas->sx + canvas->sy * canvas->sy);
 }
 
+void wdCanvasSetTransform(cdCanvas* canvas, double sx, double sy, double tx, double ty)
+{
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
+  canvas->sx = sx;
+  canvas->tx = tx;
+  canvas->sy = sy;
+  canvas->ty = ty;
+  canvas->s = sqrt(canvas->sx * canvas->sx + canvas->sy * canvas->sy);
+}
+
+void wdCanvasGetTransform(cdCanvas* canvas, double *sx, double *sy, double *tx, double *ty)
+{
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
+  if (sx) *sx = canvas->sx;
+  if (tx) *tx = canvas->tx;
+  if (sy) *sy = canvas->sy;
+  if (ty) *ty = canvas->ty;
+}
+
+void wdCanvasTranslate(cdCanvas* canvas, double dtx, double dty)
+{
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
+  canvas->tx += dtx;
+  canvas->ty += dty;
+}
+
+void wdCanvasScale(cdCanvas* canvas, double dsx, double dsy)
+{
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
+  canvas->sx *= dsx;
+  canvas->sy *= dsy;
+}
+
 void wdSetDefaults(cdCanvas* canvas)
 {
   canvas->window.xmin = 0;
@@ -50,6 +92,9 @@ void wdSetDefaults(cdCanvas* canvas)
 
 void wdCanvasWindow(cdCanvas* canvas, double xmin, double xmax, double  ymin, double ymax)
 {
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   canvas->window.xmin = xmin;
   canvas->window.xmax = xmax;
   canvas->window.ymin = ymin;
@@ -60,6 +105,9 @@ void wdCanvasWindow(cdCanvas* canvas, double xmin, double xmax, double  ymin, do
 
 void wdCanvasGetWindow (cdCanvas* canvas, double *xmin, double  *xmax,  double  *ymin, double *ymax)
 {
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   if (xmin) *xmin = canvas->window.xmin;
   if (xmax) *xmax = canvas->window.xmax;
   if (ymin) *ymin = canvas->window.ymin;
@@ -68,6 +116,9 @@ void wdCanvasGetWindow (cdCanvas* canvas, double *xmin, double  *xmax,  double  
 
 void wdCanvasViewport(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax)
 {
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   canvas->viewport.xmin = xmin;
   canvas->viewport.xmax = xmax;
   canvas->viewport.ymin = ymin;
@@ -78,6 +129,9 @@ void wdCanvasViewport(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax)
 
 void wdCanvasGetViewport(cdCanvas* canvas, int *xmin, int *xmax, int *ymin, int *ymax)
 {
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   if (xmin) *xmin = canvas->viewport.xmin;
   if (xmax) *xmax = canvas->viewport.xmax;
   if (ymin) *ymin = canvas->viewport.ymin;
@@ -135,6 +189,8 @@ void wdCanvasCanvas2World(cdCanvas* canvas, int xv, int yv, double *xw, double *
 void wdCanvasClipArea(cdCanvas* canvas, double xmin, double xmax, double ymin, double ymax)
 {
   int xminr, xmaxr, yminr, ymaxr;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
 
   _wWorld2Canvas(canvas, xmin, ymin, xminr, yminr);
   _wWorld2Canvas(canvas, xmax, ymax, xmaxr, ymaxr);
@@ -145,6 +201,9 @@ void wdCanvasClipArea(cdCanvas* canvas, double xmin, double xmax, double ymin, d
 int wdCanvasIsPointInRegion(cdCanvas* canvas, double x, double y)
 {
   int xr, yr;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return CD_ERROR;
+
   _wWorld2Canvas(canvas, x, y, xr, yr);
   return cdCanvasIsPointInRegion(canvas, xr, yr);
 }
@@ -152,6 +211,9 @@ int wdCanvasIsPointInRegion(cdCanvas* canvas, double x, double y)
 void wdCanvasOffsetRegion(cdCanvas* canvas, double x, double y)
 {
   int xr, yr;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   _wWorld2Canvas(canvas, x, y, xr, yr);
   cdCanvasOffsetRegion(canvas, xr, yr);
 }
@@ -159,6 +221,9 @@ void wdCanvasOffsetRegion(cdCanvas* canvas, double x, double y)
 void wdCanvasGetRegionBox(cdCanvas* canvas, double *xmin, double *xmax, double *ymin, double *ymax)
 {
   int xminr, xmaxr, yminr, ymaxr;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   cdCanvasGetRegionBox(canvas, &xminr, &xmaxr, &yminr, &ymaxr);
   _wCanvas2World(canvas, xminr, yminr, *xmin, *ymin);
   _wCanvas2World(canvas, xmaxr, ymaxr, *xmax, *ymax);
@@ -166,8 +231,11 @@ void wdCanvasGetRegionBox(cdCanvas* canvas, double *xmin, double *xmax, double *
 
 int wdCanvasGetClipArea(cdCanvas* canvas, double *xmin, double *xmax, double *ymin, double *ymax)
 {
-  int xminr, xmaxr, yminr, ymaxr;
-  int clip = cdCanvasGetClipArea(canvas, &xminr, &xmaxr, &yminr, &ymaxr);
+  int xminr, xmaxr, yminr, ymaxr, clip;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return CD_ERROR;
+
+  clip = cdCanvasGetClipArea(canvas, &xminr, &xmaxr, &yminr, &ymaxr);
   _wCanvas2World(canvas, xminr, yminr, *xmin, *ymin);
   _wCanvas2World(canvas, xmaxr, ymaxr, *xmax, *ymax);
   return clip;
@@ -176,6 +244,9 @@ int wdCanvasGetClipArea(cdCanvas* canvas, double *xmin, double *xmax, double *ym
 void wdCanvasLine(cdCanvas* canvas, double x1, double y1, double x2, double y2)
 {
   double xr1, xr2, yr1, yr2;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   _wfWorld2Canvas(canvas, x1, y1, xr1, yr1);
   _wfWorld2Canvas(canvas, x2, y2, xr2, yr2);
   cdfCanvasLine(canvas, xr1, yr1, xr2, yr2);
@@ -184,6 +255,9 @@ void wdCanvasLine(cdCanvas* canvas, double x1, double y1, double x2, double y2)
 void wdCanvasBox(cdCanvas* canvas, double xmin, double xmax, double ymin, double ymax)
 {
   double xminr, xmaxr, yminr, ymaxr;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   _wfWorld2Canvas(canvas, xmin, ymin, xminr, yminr);
   _wfWorld2Canvas(canvas, xmax, ymax, xmaxr, ymaxr);
   cdfCanvasBox(canvas, xminr, xmaxr, yminr, ymaxr);
@@ -192,6 +266,9 @@ void wdCanvasBox(cdCanvas* canvas, double xmin, double xmax, double ymin, double
 void wdCanvasRect(cdCanvas* canvas, double xmin, double xmax, double ymin, double ymax)
 {
   double xminr, xmaxr, yminr, ymaxr;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   _wfWorld2Canvas(canvas, xmin, ymin, xminr, yminr);
   _wfWorld2Canvas(canvas, xmax, ymax, xmaxr, ymaxr);
   cdfCanvasRect(canvas, xminr, xmaxr, yminr, ymaxr);
@@ -200,6 +277,9 @@ void wdCanvasRect(cdCanvas* canvas, double xmin, double xmax, double ymin, doubl
 void wdCanvasArc(cdCanvas* canvas, double xc, double yc, double w, double h, double angle1, double angle2)
 {
   double xcr, ycr, wr, hr;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   _wfWorld2Canvas(canvas, xc, yc, xcr, ycr);
   _wfWorld2CanvasSize(canvas, w, h, wr, hr);
   cdfCanvasArc(canvas, xcr, ycr, wr, hr, angle1, angle2);
@@ -208,6 +288,9 @@ void wdCanvasArc(cdCanvas* canvas, double xc, double yc, double w, double h, dou
 void wdCanvasSector(cdCanvas* canvas, double xc, double yc, double w, double h, double angle1, double angle2)
 {
   double xcr, ycr, wr, hr;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   _wfWorld2Canvas(canvas, xc, yc, xcr, ycr);
   _wfWorld2CanvasSize(canvas, w, h, wr, hr);
   cdfCanvasSector(canvas, xcr, ycr, wr, hr, angle1, angle2);
@@ -216,6 +299,9 @@ void wdCanvasSector(cdCanvas* canvas, double xc, double yc, double w, double h, 
 void wdCanvasChord(cdCanvas* canvas, double xc, double yc, double w, double h, double angle1, double angle2)
 {
   double xcr, ycr, wr, hr;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   _wfWorld2Canvas(canvas, xc, yc, xcr, ycr);
   _wfWorld2CanvasSize(canvas, w, h, wr, hr);
   cdfCanvasChord(canvas, xcr, ycr, wr, hr, angle1, angle2);
@@ -224,6 +310,9 @@ void wdCanvasChord(cdCanvas* canvas, double xc, double yc, double w, double h, d
 void wdCanvasText(cdCanvas* canvas, double x, double y, const char *s)
 {
   double xr, yr;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   _wfWorld2Canvas(canvas, x, y, xr, yr);
   cdfCanvasText(canvas, xr, yr, s);
 }
@@ -231,6 +320,9 @@ void wdCanvasText(cdCanvas* canvas, double x, double y, const char *s)
 void wdCanvasVertex(cdCanvas* canvas, double x, double y)
 {
   double xr, yr;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   _wfWorld2Canvas(canvas, x, y, xr, yr);
   cdfCanvasVertex(canvas, xr, yr);
 }
@@ -238,6 +330,9 @@ void wdCanvasVertex(cdCanvas* canvas, double x, double y)
 void wdCanvasMark(cdCanvas* canvas, double x, double y)
 {
   int xr, yr;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   _wWorld2Canvas(canvas, x, y, xr, yr);
   cdCanvasMark(canvas, xr, yr);
 }
@@ -245,6 +340,9 @@ void wdCanvasMark(cdCanvas* canvas, double x, double y)
 void wdCanvasPixel(cdCanvas* canvas, double x, double y, long color)
 {
   int xr, yr;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   _wWorld2Canvas(canvas, x, y, xr, yr);
   cdCanvasPixel(canvas, xr, yr, color);
 }
@@ -252,6 +350,9 @@ void wdCanvasPixel(cdCanvas* canvas, double x, double y, long color)
 void wdCanvasPutImageRect(cdCanvas* canvas, cdImage* image, double x, double y, int xmin, int xmax, int ymin, int ymax)
 {
   int xr, yr;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   _wWorld2Canvas(canvas, x, y, xr, yr);
   cdCanvasPutImageRect(canvas, image, xr, yr, xmin, xmax, ymin, ymax);
 }
@@ -259,6 +360,9 @@ void wdCanvasPutImageRect(cdCanvas* canvas, cdImage* image, double x, double y, 
 void wdCanvasPutImageRectRGB(cdCanvas* canvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, double x, double y, double w, double h, int xmin, int xmax, int ymin, int ymax)
 {
   int xr, yr, wr, hr;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   _wWorld2Canvas(canvas, x, y, xr, yr);
   _wWorld2CanvasSize(canvas, w, h, wr, hr);
   cdCanvasPutImageRectRGB(canvas, iw, ih, r, g, b, xr, yr, wr, hr, xmin, xmax, ymin, ymax);
@@ -267,6 +371,9 @@ void wdCanvasPutImageRectRGB(cdCanvas* canvas, int iw, int ih, const unsigned ch
 void wdCanvasPutImageRectRGBA(cdCanvas* canvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, double x, double y, double w, double h, int xmin, int xmax, int ymin, int ymax)
 {
   int xr, yr, wr, hr;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   _wWorld2Canvas(canvas, x, y, xr, yr);
   _wWorld2CanvasSize(canvas, w, h, wr, hr);
   cdCanvasPutImageRectRGBA(canvas, iw, ih, r, g, b, a, xr, yr, wr, hr, xmin, xmax, ymin, ymax);
@@ -275,6 +382,9 @@ void wdCanvasPutImageRectRGBA(cdCanvas* canvas, int iw, int ih, const unsigned c
 void wdCanvasPutImageRectMap(cdCanvas* canvas, int iw, int ih, const unsigned char *index, const long *colors, double x, double y, double w, double h, int xmin, int xmax, int ymin, int ymax)
 {
   int xr, yr, wr, hr;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   _wWorld2Canvas(canvas, x, y, xr, yr);
   _wWorld2CanvasSize(canvas, w, h, wr, hr);
   cdCanvasPutImageRectMap(canvas, iw, ih, index, colors, xr, yr, wr, hr, xmin, xmax, ymin, ymax);
@@ -283,6 +393,9 @@ void wdCanvasPutImageRectMap(cdCanvas* canvas, int iw, int ih, const unsigned ch
 void wdCanvasPutBitmap(cdCanvas* canvas, cdBitmap* image, double x, double y, double w, double h)
 {
   int xr, yr, wr, hr;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   _wWorld2Canvas(canvas, x, y, xr, yr);
   _wWorld2CanvasSize(canvas, w, h, wr, hr);
   cdCanvasPutBitmap(canvas, image, xr, yr, wr, hr);
@@ -291,8 +404,11 @@ void wdCanvasPutBitmap(cdCanvas* canvas, cdBitmap* image, double x, double y, do
 double wdCanvasLineWidth(cdCanvas* canvas, double width_mm)
 {
   int width;
-  double line_width_mm = canvas->line_width/canvas->xres;
+  double line_width_mm;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return CD_ERROR;
 
+  line_width_mm = canvas->line_width/canvas->xres;
   if (width_mm == CD_QUERY)
     return line_width_mm;
 
@@ -326,8 +442,11 @@ void wdCanvasGetFont(cdCanvas* canvas, char *type_face, int *style, double *size
 double wdCanvasMarkSize(cdCanvas* canvas, double size_mm)
 {
   int size;
-  double mark_size_mm = canvas->mark_size/canvas->xres;
+  double mark_size_mm;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return CD_ERROR;
 
+  mark_size_mm = canvas->mark_size/canvas->xres;
   if (size_mm == CD_QUERY)
     return mark_size_mm;
 
@@ -344,6 +463,9 @@ void wdCanvasGetFontDim(cdCanvas* canvas, double *max_width, double *height, dou
   double origin_x, origin_y, tmp = 0;
   double distance_x, distance_y;
   int font_max_width, font_height, font_ascent, font_descent;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   cdCanvasGetFontDim(canvas, &font_max_width, &font_height, &font_ascent, &font_descent);
   _wCanvas2World(canvas, 0, 0, origin_x, origin_y);
   _wCanvas2World(canvas, font_max_width, font_height, distance_x, distance_y);
@@ -360,6 +482,9 @@ void wdCanvasGetTextSize(cdCanvas* canvas, const char *s, double *width, double 
   int text_width, text_height;
   double origin_x, origin_y;
   double text_x, text_y;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
   _wCanvas2World(canvas, 0, 0, origin_x, origin_y);
   cdCanvasGetTextSize(canvas, s, &text_width, &text_height);
   _wCanvas2World(canvas, text_width, text_height, text_x, text_y);
@@ -370,6 +495,8 @@ void wdCanvasGetTextSize(cdCanvas* canvas, const char *s, double *width, double 
 void wdCanvasGetTextBox(cdCanvas* canvas, double x, double y, const char *s, double *xmin, double *xmax, double *ymin, double *ymax)
 {
   int rx, ry, rxmin, rxmax, rymin, rymax;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
 
   _wWorld2Canvas(canvas, x, y, rx, ry);
   cdCanvasGetTextBox(canvas, rx, ry, s, &rxmin, &rxmax, &rymin, &rymax);
@@ -381,6 +508,8 @@ void wdCanvasGetTextBox(cdCanvas* canvas, double x, double y, const char *s, dou
 void wdCanvasGetTextBounds(cdCanvas* canvas, double x, double y, const char *s, double *rect)
 {
   int rx, ry, rrect[8];
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
 
   _wWorld2Canvas(canvas, x, y, rx, ry);
   cdCanvasGetTextBounds(canvas, rx, ry, s, rrect);
@@ -397,6 +526,8 @@ void wdCanvasPattern(cdCanvas* canvas, int w, int h, const long *color, double w
   int w_pxl, h_pxl, x, y, cx, cy;
   int wratio, hratio;
   int *XTab, *YTab;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
 
   cdCanvasMM2Pixel(canvas, w_mm, h_mm, &w_pxl, &h_pxl);
 
@@ -437,6 +568,8 @@ void wdCanvasStipple(cdCanvas* canvas, int w, int h, const unsigned char *fgbg, 
   int w_pxl, h_pxl, x, y, cx, cy;
   int wratio, hratio;
   int *XTab, *YTab;
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
 
   cdCanvasMM2Pixel(canvas, w_mm, h_mm, &w_pxl, &h_pxl);
 

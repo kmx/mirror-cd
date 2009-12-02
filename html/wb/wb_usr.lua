@@ -320,6 +320,22 @@ wb_usr.tree =
               link= "func/wd.html#wdCanvas2World"
             },
             {
+              name= {nl= "SetTransform"},
+              link= "func/wd.html#wdSetTransform"
+            },
+            {
+              name= {nl= "GetTransform"},
+              link= "func/wd.html#wdGetTransform"
+            },
+            {
+              name= {nl= "Translate"},
+              link= "func/wd.html#wdTranslate"
+            },
+            {
+              name= {nl= "Scale"},
+              link= "func/wd.html#wdScale"
+            },
+            {
               name= {en= "Extra"},
               folder=
               {

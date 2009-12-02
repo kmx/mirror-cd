@@ -19,6 +19,10 @@ void wdCanvasGetViewport(cdCanvas* canvas, int *xmin, int  *xmax,  int  *ymin, i
 void wdCanvasWorld2Canvas(cdCanvas* canvas, double xw, double yw, int *xv, int *yv);
 void wdCanvasWorld2CanvasSize(cdCanvas* canvas, double hw, double vw, int *hv, int *vv);
 void wdCanvasCanvas2World(cdCanvas* canvas, int xv, int yv, double *xw, double *yw);
+void wdCanvasSetTransform(cdCanvas* canvas, double sx, double sy, double tx, double ty);
+void wdCanvasGetTransform(cdCanvas* canvas, double *sx, double *sy, double *tx, double *ty);
+void wdCanvasTranslate(cdCanvas* canvas, double dtx, double dty);
+void wdCanvasScale(cdCanvas* canvas, double dsx, double dsy);
 
 void wdCanvasClipArea(cdCanvas* canvas, double xmin, double xmax, double  ymin, double ymax);
 int  wdCanvasGetClipArea(cdCanvas* canvas, double *xmin, double *xmax, double *ymin, double *ymax);
