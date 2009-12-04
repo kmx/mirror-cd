@@ -1543,7 +1543,7 @@ static cdContext cdPDFContext =
   CD_CAP_ALL & ~(CD_CAP_CLEAR | CD_CAP_PLAY | CD_CAP_PALETTE | 
                  CD_CAP_REGION | CD_CAP_IMAGESRV | CD_CAP_TEXTSIZE | 
                  CD_CAP_BACKGROUND | CD_CAP_BACKOPACITY | CD_CAP_WRITEMODE | 
-                 CD_CAP_IMAGERGBA | CD_CAP_GETIMAGERGB),
+                 CD_CAP_GETIMAGERGB),
   0,
   cdcreatecanvas,
   cdinittable,

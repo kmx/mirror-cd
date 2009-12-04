@@ -466,6 +466,8 @@ static void cdflush(cdCtxCanvas *ctxcanvas)
 {
   if (ctxcanvas->debug) fprintf(ctxcanvas->file, "\n%%cdFlush Begin\n");
 
+  fflush(ctxcanvas->file);
+
   if (!ctxcanvas->eps)
   {
     fprintf(ctxcanvas->file, "gsave\n");

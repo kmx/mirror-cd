@@ -882,6 +882,16 @@ static void cdpixel(cdCtxCanvas *ctxcanvas, int x, int y, long int color)
     x, y, r, g, b, r, g, b, ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->backopacity);
 }
 
+static void cddeactivate (cdCtxCanvas* ctxcanvas)
+{
+  fflush(ctxcanvas->file);
+}
+
+static void cdflush (cdCtxCanvas* ctxcanvas)
+{
+  fflush(ctxcanvas->file);
+}
+
 static void cdcreatecanvas(cdCanvas *canvas, void *data)
 {
   char filename[10240] = "";
@@ -984,15 +994,17 @@ static void cdinittable(cdCanvas* canvas)
 
   canvas->cxTransform = cdtransform;
 
+  canvas->cxFlush = cdflush;
+  canvas->cxDeactivate = cddeactivate;
   canvas->cxKillCanvas = (void (*)(cdCtxCanvas*))cdkillcanvas;
 }
 
 static cdContext cdSVGContext =
 {
-  CD_CAP_ALL & ~(CD_CAP_CLEAR | CD_CAP_FLUSH | CD_CAP_PLAY | CD_CAP_PALETTE | 
+  CD_CAP_ALL & ~(CD_CAP_CLEAR | CD_CAP_PLAY | CD_CAP_PALETTE | 
                  CD_CAP_REGION | CD_CAP_IMAGESRV | CD_CAP_WRITEMODE | 
                  CD_CAP_FONTDIM | CD_CAP_TEXTSIZE | 
-                 CD_CAP_IMAGERGBA | CD_CAP_GETIMAGERGB),
+                 CD_CAP_GETIMAGERGB),
   0,
   cdcreatecanvas,
   cdinittable,

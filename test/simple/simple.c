@@ -306,7 +306,7 @@ int SimpleDrawPS(void)
 
 int SimpleDrawSVG(void)
 {
-  DrawCanvasDriver(CD_SVG, "simple.svg");
+  DrawCanvasDriverSize(CD_SVG, "simple.svg", 0);
   return 0;
 }
 

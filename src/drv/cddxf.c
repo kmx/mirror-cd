@@ -314,6 +314,7 @@ static void cdkillcanvas(cdCtxCanvas *ctxcanvas)
 
 static void cdflush (cdCtxCanvas *ctxcanvas)
 {
+  fflush (ctxcanvas->file);               /* flush file */
   ctxcanvas->layer++;
 }
 

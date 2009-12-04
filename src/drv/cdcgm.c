@@ -183,6 +183,8 @@ static void cddeactivate(cdCtxCanvas *ctxcanvas)
 static void cdflush(cdCtxCanvas *ctxcanvas)
 {
   long pt;
+
+  fflush(ctxcanvas->cgm->file);
   
   pt = ftell ( ctxcanvas->cgm->file );
   fseek ( ctxcanvas->cgm->file, ctxcanvas->point, SEEK_SET );
