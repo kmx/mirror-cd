@@ -1278,6 +1278,71 @@ static cdAttribute pattern_attrib =
   NULL
 }; 
 
+static void set_subject_attrib(cdCtxCanvas *ctxcanvas, char* data)
+{
+  if (data)
+    PDF_set_info(ctxcanvas->pdf, "Subject", data);
+}
+
+static cdAttribute subject_attrib =
+{
+  "SUBJECT",
+  set_subject_attrib,
+  NULL
+}; 
+
+static void set_title_attrib(cdCtxCanvas *ctxcanvas, char* data)
+{
+  if (data)
+    PDF_set_info(ctxcanvas->pdf, "Title", data);
+}
+
+static cdAttribute title_attrib =
+{
+  "TITLE",
+  set_title_attrib,
+  NULL
+}; 
+
+static void set_creator_attrib(cdCtxCanvas *ctxcanvas, char* data)
+{
+  if (data)
+    PDF_set_info(ctxcanvas->pdf, "Creator", data);
+}
+
+static cdAttribute creator_attrib =
+{
+  "CREATOR",
+  set_creator_attrib,
+  NULL
+}; 
+
+static void set_author_attrib(cdCtxCanvas *ctxcanvas, char* data)
+{
+  if (data)
+    PDF_set_info(ctxcanvas->pdf, "Author", data);
+}
+
+static cdAttribute author_attrib =
+{
+  "AUTHOR",
+  set_author_attrib,
+  NULL
+}; 
+
+static void set_keywords_attrib(cdCtxCanvas *ctxcanvas, char* data)
+{
+  if (data)
+    PDF_set_info(ctxcanvas->pdf, "Keywords", data);
+}
+
+static cdAttribute keywords_attrib =
+{
+  "KEYWORDS",
+  set_keywords_attrib,
+  NULL
+}; 
+
 static void set_opacity_attrib(cdCtxCanvas *ctxcanvas, char* data)
 {
   int state;
@@ -1367,6 +1432,11 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   cdRegisterAttribute(canvas, &opacity_attrib);
   cdRegisterAttribute(canvas, &pattern_attrib);
   cdRegisterAttribute(canvas, &pdf_attrib);
+  cdRegisterAttribute(canvas, &subject_attrib);
+  cdRegisterAttribute(canvas, &title_attrib);
+  cdRegisterAttribute(canvas, &creator_attrib);
+  cdRegisterAttribute(canvas, &author_attrib);
+  cdRegisterAttribute(canvas, &keywords_attrib);
 
   setpdfdefaultvalues(ctxcanvas);
 
@@ -1485,7 +1555,3 @@ cdContext* cdContextPDF(void)
 {
   return &cdPDFContext;
 }
-
-/*
-p.set_info("Creator", "PDFlib Cookbook")
-*/
