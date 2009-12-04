@@ -19,7 +19,7 @@
 #include "lodepng.h"
 #include "base64.h"
 
-typedef struct _cdCtxCanvas 
+struct _cdCtxCanvas 
 {
   cdCanvas* canvas;
   char* filename;       
@@ -55,7 +55,7 @@ typedef struct _cdCtxCanvas
   int transform_control;
 
   FILE* file;
-} cdCtxCanvas;
+};
 
 static void cdkillcanvas(cdCtxCanvas* ctxcanvas)
 {
@@ -726,8 +726,9 @@ static long cdforeground(cdCtxCanvas *ctxcanvas, long int color)
 
 static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
-  int i, j, d, rw, rh, rgb_size, buffer_size, target_size;
+  int i, j, d, rw, rh, rgb_size, target_size;
   unsigned char* rgb_data, *rgb_buffer;
+  size_t buffer_size;
   LodePNG_Encoder encoder;
   char* rgb_target;
 
@@ -753,7 +754,7 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   }
 
   LodePNG_Encoder_init(&encoder);
-  LodePNG_encode(&encoder, &rgb_buffer, &(size_t)buffer_size, rgb_data, rw, rh);
+  LodePNG_encode(&encoder, &rgb_buffer, &buffer_size, rgb_data, rw, rh);
 
   target_size = (buffer_size+2)/3*4+1;
   rgb_target = (char*)malloc(target_size);
@@ -774,7 +775,8 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 
 static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
-  int i, j, d, rw, rh, rgb_size, buffer_size, target_size;
+  int i, j, d, rw, rh, rgb_size, target_size;
+  size_t buffer_size;
   unsigned char* rgb_data, *rgb_buffer;
   LodePNG_Encoder encoder;
   char* rgb_target;
@@ -801,7 +803,7 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
   }
 
   LodePNG_Encoder_init(&encoder);
-  LodePNG_encode(&encoder, &rgb_buffer, &(size_t)buffer_size, rgb_data, rw, rh);
+  LodePNG_encode(&encoder, &rgb_buffer, &buffer_size, rgb_data, rw, rh);
 
   target_size = (buffer_size+2)/3*4+1;
   rgb_target = (char*)malloc(target_size);
@@ -822,8 +824,9 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
 
 static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *index, const long int *colors, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
-  int i, j, d, rw, rh, rgb_size, buffer_size, target_size;
+  int i, j, d, rw, rh, rgb_size, target_size;
   unsigned char* rgb_data, *rgb_buffer;
+  size_t buffer_size;
   LodePNG_Encoder encoder;
   char* rgb_target;
 
@@ -851,7 +854,7 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   }
 
   LodePNG_Encoder_init(&encoder);
-  LodePNG_encode(&encoder, &rgb_buffer, &(size_t)buffer_size, rgb_data, rw, rh);
+  LodePNG_encode(&encoder, &rgb_buffer, &buffer_size, rgb_data, rw, rh);
 
   target_size = (buffer_size+2)/3*4+1;
   rgb_target = (char*)malloc(target_size);

@@ -56,10 +56,10 @@ static int cdxErrorHandler(Display* dpy, XErrorEvent *err)
   if (err->request_code==X_FreeColors && err->error_code==BadAccess)
     return 0;
 
-  XGetErrorText(dpy, err->error_code, msg, 80 );
-  fprintf(stderr,"CanvasDraw: Xlib request %d: %s\n", err->request_code, msg);
+  XGetErrorText(dpy, err->error_code, msg, 80);
+  fprintf(stderr,"X Error of failed request %d: %s\n", err->request_code, msg);
 
-  return 0;
+  return 0; /* ignore always */
 }
                                 
 static void update_colors(cdCtxCanvas *ctxcanvas)
@@ -2383,7 +2383,7 @@ cdCtxCanvas *cdxCreateCanvas(cdCanvas* canvas, Display *dpy, int scr, Drawable w
 
   if (first)
   {
-    if(!getenv("CD_XERROR"))
+    if (!getenv("CD_XERROR"))
       XSetErrorHandler(cdxErrorHandler);
   }
 

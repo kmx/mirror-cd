@@ -4,7 +4,7 @@ OPT = YES
 
 DEFINES = CD_NO_OLD_INTERFACE
 
-SRCSVG = base64.c lodpng.c cdsvg.c
+SRCSVG = base64.c lodepng.c cdsvg.c
 SRCSVG  := $(addprefix svg/, $(SRCSVG))
 
 SRCINTCGM = circle.c ellipse.c intcgm1.c \
