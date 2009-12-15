@@ -69,12 +69,30 @@ static cdAttribute addfontmap_attrib =
   NULL
 }; 
 
+static char* get_version_attrib(cdCtxCanvas* ctxcanvas)
+{
+  static char version[50];
+  FT_Int major, minor, patch;
+  cdCanvas* canvas = ((cdCtxCanvasBase*)ctxcanvas)->canvas;
+  FT_Library_Version(canvas->simulation->tt_text->library, &major, &minor, &patch);
+  sprintf(version, "FreeType %d.%d.%d", major, minor, patch);
+  return version;
+}
+
+static cdAttribute version_attrib =
+{
+  "FREETYPEVERSION",
+  NULL,
+  get_version_attrib
+}; 
+
 void cdSimInitText(cdSimulation* simulation)
 {
   if (!simulation->tt_text)
     simulation->tt_text = cdTT_create();
 
   cdRegisterAttribute(simulation->canvas, &addfontmap_attrib);
+  cdRegisterAttribute(simulation->canvas, &version_attrib);
 }
 
 static const char* find_font_filename(cdSimulation* simulation, const char* name)
