@@ -69,12 +69,6 @@ struct _cdCtxCanvas {
 #define cdCOLOR8TO16(_x) (_x*257)  /* 65535/255 = 257 */
 #define cdCOLOR16TO8(_x) ((unsigned char)(_x/257))
 
-extern GdkColor (*cdgdkGetPixel)(cdCtxCanvas *ctxcanvas, unsigned long rgb);
-extern void (*cdxGetRGB)(cdCtxCanvas *ctxcanvas, unsigned long pixel, 
-                                                 unsigned char* red, 
-                                                 unsigned char* green, 
-                                                 unsigned char* blue);
-
 cdCtxCanvas *cdgdkCreateCanvas(cdCanvas* canvas, GdkDrawable* wnd, GdkScreen* scr, GdkVisual* vis);
 void cdgdkInitTable(cdCanvas* canvas);
 void cdgdkKillCanvas(cdCtxCanvas *ctxcanvas);

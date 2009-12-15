@@ -15,8 +15,8 @@
 #include <gdk/gdk.h>
 
 
-GdkColor (*cdgdkGetPixel)(cdCtxCanvas *ctxcanvas, unsigned long rgb); /* access to the color table */
-void (*cdgdkGetRGB)(cdCtxCanvas *ctxcanvas, unsigned long pixel, 
+static GdkColor (*cdgdkGetPixel)(cdCtxCanvas *ctxcanvas, unsigned long rgb); /* access to the color table */
+static void (*cdgdkGetRGB)(cdCtxCanvas *ctxcanvas, unsigned long pixel, 
                                           unsigned char* red, 
                                           unsigned char* green, 
                                           unsigned char* blue); /* access to the color table */

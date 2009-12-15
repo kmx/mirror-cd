@@ -1396,6 +1396,19 @@ static cdAttribute pdf_attrib =
   get_pdf_attrib
 }; 
 
+static char* get_version_attrib(cdCtxCanvas* ctxcanvas)
+{
+  (void)ctxcanvas;
+  return (char*)PDF_get_parameter(ctxcanvas->pdf, "version", 0);
+}
+
+static cdAttribute version_attrib =
+{
+  "PDFLIBVERSION",
+  NULL,
+  get_version_attrib
+}; 
+
 static void cdcreatecanvas(cdCanvas* canvas, void *data)
 {
   char *line = (char *)data;
@@ -1437,6 +1450,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   cdRegisterAttribute(canvas, &creator_attrib);
   cdRegisterAttribute(canvas, &author_attrib);
   cdRegisterAttribute(canvas, &keywords_attrib);
+  cdRegisterAttribute(canvas, &version_attrib);
 
   setpdfdefaultvalues(ctxcanvas);
 

@@ -89,10 +89,18 @@
 	<References>
 	</References>
 	<Files>
-		<File
-			RelativePath="..\include\cdgdiplus.h"
+		<Filter
+			Name="inc"
 			>
-		</File>
+			<File
+				RelativePath="..\include\cdgdiplus.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\gdiplus\cdwinp.h"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath="..\src\gdiplus\cdwclpp.cpp"
 			>
@@ -115,10 +123,6 @@
 		</File>
 		<File
 			RelativePath="..\src\gdiplus\cdwinp.cpp"
-			>
-		</File>
-		<File
-			RelativePath="..\src\gdiplus\cdwinp.h"
 			>
 		</File>
 		<File

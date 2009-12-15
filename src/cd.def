@@ -147,6 +147,7 @@ EXPORTS
   wdWorld2Canvas
   wdCanvas2World
   wdCanvasSetTransform
+  wdCanvasGetTransform
   wdCanvasTranslate
   wdCanvasScale
 

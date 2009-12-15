@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cd", "cd.vcproj", "{01818D2C-65AF-4D5C-9452-4DFF401C6461}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdwin", "cd.vcproj", "{01818D2C-65AF-4D5C-9452-4DFF401C6461}"
 	ProjectSection(ProjectDependencies) = postProject
 		{01818D2C-65AF-AFDC-4356-1234401C6461} = {01818D2C-65AF-AFDC-4356-1234401C6461}
 	EndProjectSection
@@ -22,10 +22,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdlua5", "cdlua5.vcproj", "
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdpdf", "cdpdf.vcproj", "{8441F69D-7135-43B2-974F-45C6123C8467}"
 	ProjectSection(ProjectDependencies) = postProject
+		{01818D2C-1234-4D5C-ABCD-4DFF401C6461} = {01818D2C-1234-4D5C-ABCD-4DFF401C6461}
 		{8441F69D-7135-ABCD-1234-45C6123C8467} = {8441F69D-7135-ABCD-1234-45C6123C8467}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdx11", "cdx11.vcproj", "{01818D2C-7689-4D5C-1234-4DFF401C6461}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01818D2C-1234-4D5C-ABCD-4DFF401C6461} = {01818D2C-1234-4D5C-ABCD-4DFF401C6461}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdluapdf3", "cdluapdf3.vcproj", "{B4823266-DF8C-AAAA-9999-C7E78C234EAC}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -40,6 +44,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdluapdf5", "cdluapdf5.vcpr
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdxrender", "cdxrender.vcproj", "{160DEDA5-C1AA-48C7-8B07-490C6A8DE2EE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01818D2C-7689-4D5C-1234-4DFF401C6461} = {01818D2C-7689-4D5C-1234-4DFF401C6461}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdluaim5", "cdluaim5.vcproj", "{CB863607-6B6C-0000-0000-123400001234}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -51,6 +58,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "freetype6", "cd_freetype.vcproj", "{01818D2C-65AF-AFDC-4356-1234401C6461}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdluacontextplus5", "cdluacontextplus5.vcproj", "{B4823266-DF8C-ABCD-1234-C7688C234EAC}"
+	ProjectSection(ProjectDependencies) = postProject
+		{53FC9752-81C1-4AA6-B366-A7890A2B81F6} = {53FC9752-81C1-4AA6-B366-A7890A2B81F6}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Lua5", "Lua5", "{EFB1BE3C-2981-456B-8E32-928CBDFF7822}"
 EndProject
@@ -73,12 +83,17 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdsimple", "cdsimple.vcproj
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdgdk", "cdgdk.vcproj", "{01818D2C-AAAA-4D5C-ABCD-1234401C6461}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01818D2C-1234-4D5C-ABCD-4DFF401C6461} = {01818D2C-1234-4D5C-ABCD-4DFF401C6461}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdsimplegdk", "cdsimplegdk.vcproj", "{82BC36B1-DDDD-41D4-ABCD-A12312378CE6}"
 	ProjectSection(ProjectDependencies) = postProject
 		{01818D2C-AAAA-4D5C-ABCD-1234401C6461} = {01818D2C-AAAA-4D5C-ABCD-1234401C6461}
 		{8441F69D-7135-43B2-974F-45C6123C8467} = {8441F69D-7135-43B2-974F-45C6123C8467}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdcore", "cdcore.vcproj", "{01818D2C-1234-4D5C-ABCD-4DFF401C6461}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -117,6 +132,8 @@ Global
 		{01818D2C-AAAA-4D5C-ABCD-1234401C6461}.Debug|Win32.Build.0 = Debug|Win32
 		{82BC36B1-DDDD-41D4-ABCD-A12312378CE6}.Debug|Win32.ActiveCfg = Debug|Win32
 		{82BC36B1-DDDD-41D4-ABCD-A12312378CE6}.Debug|Win32.Build.0 = Debug|Win32
+		{01818D2C-1234-4D5C-ABCD-4DFF401C6461}.Debug|Win32.ActiveCfg = Debug|Win32
+		{01818D2C-1234-4D5C-ABCD-4DFF401C6461}.Debug|Win32.Build.0 = Debug|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

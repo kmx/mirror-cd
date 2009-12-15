@@ -21,12 +21,14 @@ int main(int argc, char** argv)
 
   simple_loadled();
 
+#ifdef USE_GDK
+  IupSetAttribute(IupGetHandle("SimpleCanvas"), "CD_GDK", "YES");
+#endif
+
   IupSetAttribute(IupGetHandle("SimpleDialog"), "PLACEMENT", "MAXIMIZED");
   IupShow(IupGetHandle("SimpleDialog"));
 
-#ifdef USE_GDK
-  IupSetAttribute(IupGetHandle("SimpleCanvas"), "CD_GDK", "Yes");
-#endif
+
   SimpleCreateCanvas((char*)IupGetHandle("SimpleCanvas"));
 
   IupSetFunction("cmdExit", (Icallback) cmdExit);
