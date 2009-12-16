@@ -15,19 +15,14 @@ int main(int argc, char** argv)
 {
   IupOpen(&argc, &argv);                        
 
-#ifndef USE_GDK
+#ifdef USE_CONTEXTPLUS
   cdInitContextPlus();
 #endif
 
   simple_loadled();
 
-#ifdef USE_GDK
-  IupSetAttribute(IupGetHandle("SimpleCanvas"), "CD_GDK", "YES");
-#endif
-
   IupSetAttribute(IupGetHandle("SimpleDialog"), "PLACEMENT", "MAXIMIZED");
   IupShow(IupGetHandle("SimpleDialog"));
-
 
   SimpleCreateCanvas((char*)IupGetHandle("SimpleCanvas"));
 

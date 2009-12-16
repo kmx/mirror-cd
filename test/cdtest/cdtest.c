@@ -38,12 +38,11 @@ tPixelPos pixel_pos;
 tMarkPos mark_pos;
 tArcPos arc_pos;
 
-//#define USE_GDIPLUS
 
-#ifdef USE_GDIPLUS
-static const int use_gdiplus = 1;
+#ifdef USE_CONTEXTPLUS
+static const int use_contextplus = 1;
 #else
-static const int use_gdiplus = 0;
+static const int use_contextplus = 0;
 #endif
 
 static const int antialias = 1;
@@ -228,7 +227,7 @@ void CDTestInit(void)
 {
   memset(&ctgc, 0, sizeof(ctgc));
 
-  if (use_gdiplus) 
+  if (use_contextplus) 
   {
 #ifdef USE_GDIPLUS
     cdInitContextPlus();
@@ -245,11 +244,11 @@ void CDTestInit(void)
   ColorBarInit(IupGetHandle("dlgMain"), IupGetHandle("cnvColorBar"), &ctgc.foreground, &ctgc.background);
     
   /* cria o canvas do CD associado ao canvas do IUP */
-  if (use_gdiplus) cdUseContextPlus(1); 
+  if (use_contextplus) cdUseContextPlus(1); 
   ctgc.iup_canvas = cdCreateCanvas(CD_IUP, IupGetHandle("cnvMain"));
   if (!antialias) cdCanvasSetAttribute(ctgc.iup_canvas, "ANTIALIAS", "0");
   cdActivate(ctgc.iup_canvas);
-  if (use_gdiplus) cdUseContextPlus(0); 
+  if (use_contextplus) cdUseContextPlus(0); 
 
   /* associa os call-backs */
   setcallbacks();
@@ -352,11 +351,11 @@ void CDTestInit(void)
   IupMap(IupGetHandle("dlgPICCanvas"));
 
   /* cria o canvas WD */
-  if (use_gdiplus) cdUseContextPlus(1); 
+  if (use_contextplus) cdUseContextPlus(1); 
   ctgc.wd_canvas = cdCreateCanvas(CD_IUP, IupGetHandle("cnvWDCanvas"));
   ctgc.pic_canvas = cdCreateCanvas(CD_IUP, IupGetHandle("cnvPICCanvas"));
   ctgc.picture = cdCreateCanvas(CD_PICTURE, "");
-  if (use_gdiplus) cdUseContextPlus(0); 
+  if (use_contextplus) cdUseContextPlus(0); 
 
   /* CDTEST default values */
   cdActivate(ctgc.picture);
@@ -989,10 +988,10 @@ int fImageBuffer(Ihandle *self, int v)
       /* prosegue como se nao houvesse o buffer anterior */
     case NO_BUFFER:
       /* cria o canvas do buffer */
-      if (use_gdiplus) cdUseContextPlus(1); 
+      if (use_contextplus) cdUseContextPlus(1); 
       ctgc.buffer_canvas = cdCreateCanvas(CD_DBUFFER, ctgc.iup_canvas);
       if (!antialias) cdCanvasSetAttribute(ctgc.buffer_canvas, "ANTIALIAS", "0");
-      if (use_gdiplus) cdUseContextPlus(0); 
+      if (use_contextplus) cdUseContextPlus(0); 
       /* se nao consegui criar o canvas... */
       if (!ctgc.buffer_canvas) {
         /* desabilita o double-buffering */

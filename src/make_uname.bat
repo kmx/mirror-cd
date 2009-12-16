@@ -6,6 +6,7 @@ if "%1"=="vc-all" goto all-vc
 
 call tecmake %1 "MF=cd_freetype" %2 %3 %4 %5 %6 %7 %8
 call tecmake %1 %2 %3 %4 %5 %6 %7 %8
+call tecmake %1 "USE_GDK=Yes" %1 %2 %3 %4 %5 %6 %7 %8
 call tecmake %1 "MF=cd_pdflib" %2 %3 %4 %5 %6 %7 %8
 call tecmake %1 "MF=cdpdf" %2 %3 %4 %5 %6 %7 %8
 REM call tecmake %1 "MF=cdlua3" %2 %3 %4 %5 %6 %7 %8

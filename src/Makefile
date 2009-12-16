@@ -1,12 +1,14 @@
 
-.PHONY: do_all cd_freetype cd cd_pdflib cdpdf cdcontextplus cdlua3 cdluapdf3 cdlua5 cdluapdf5 cdluacontextplus5 cdluaim5
-#do_all: cd_freetype cd cd_pdflib cdpdf cdcontextplus cdlua3 cdluapdf3 cdlua5 cdluapdf5 cdluacontextplus5 cdluaim5
-do_all: cd_freetype cd cd_pdflib cdpdf cdcontextplus cdlua5 cdluapdf5 cdluacontextplus5 cdluaim5
+.PHONY: do_all cd_freetype cd cdgdk cd_pdflib cdpdf cdcontextplus cdlua3 cdluapdf3 cdlua5 cdluapdf5 cdluacontextplus5 cdluaim5
+#do_all: cd_freetype cd cdgdk cd_pdflib cdpdf cdcontextplus cdlua3 cdluapdf3 cdlua5 cdluapdf5 cdluacontextplus5 cdluaim5
+do_all: cd_freetype cd cdgdk cd_pdflib cdpdf cdcontextplus cdlua5 cdluapdf5 cdluacontextplus5 cdluaim5
 
 cd_freetype:
 	@$(MAKE) --no-print-directory -f tecmake_compact.mak MF=cd_freetype
 cd:
 	@$(MAKE) --no-print-directory -f tecmake_compact.mak 
+cdgdk:
+	@$(MAKE) --no-print-directory -f tecmake_compact.mak USE_GDK=Yes
 cd_pdflib:
 	@$(MAKE) --no-print-directory -f tecmake_compact.mak MF=cd_pdflib
 cdpdf:

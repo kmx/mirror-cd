@@ -1,5 +1,13 @@
 APPNAME = cdtest
 
+ifdef USE_GDK
+  APPNAME = cdtestgdk
+endif
+ifdef USE_CONTEXTPLUS
+  APPNAME = cdtestplus
+  DEFINES = USE_CONTEXTPLUS
+endif
+
 SRC = cdtest.c cdtest_led.c colorbar.c drivers.c list.c rubber.c
 
 ifeq "$(TEC_SYSNAME)" "Win32"

@@ -1,5 +1,11 @@
 APPNAME = simple
 
+ifdef USE_GDK
+  APPNAME = simplegdk
+else
+  DEFINES = USE_CONTEXTPLUS
+endif
+
 SRC = simple.c simple_led.c iupmain.c
             
 #DBG = Yes
