@@ -70,7 +70,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="gtk-win32-2.0.lib gdk-win32-2.0.lib gdk_pixbuf-2.0.lib cairo.lib pango-1.0.lib pangowin32-1.0.lib gobject-2.0.lib gmodule-2.0.lib glib-2.0.lib freetype6.lib cd.lib iupcd.lib iupgtk.lib comctl32.lib cdcontextplus.lib gdiplus.lib cdpdf.lib pdflib.lib iupcontrols.lib"
+				AdditionalDependencies="gtk-win32-2.0.lib gdk-win32-2.0.lib gdk_pixbuf-2.0.lib cairo.lib pango-1.0.lib pangowin32-1.0.lib gobject-2.0.lib gmodule-2.0.lib glib-2.0.lib freetype6.lib cdgdk.lib iupcd.lib iupgtk.lib comctl32.lib cdpdf.lib pdflib.lib iupcontrols.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"

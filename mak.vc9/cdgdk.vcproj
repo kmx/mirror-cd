@@ -99,6 +99,22 @@
 				>
 			</File>
 		</Filter>
+		<Filter
+			Name="null"
+			>
+			<File
+				RelativePath="..\src\drv\cd0emf.c"
+				>
+			</File>
+			<File
+				RelativePath="..\src\drv\cd0prn.c"
+				>
+			</File>
+			<File
+				RelativePath="..\src\drv\cd0wmf.c"
+				>
+			</File>
+		</Filter>
 		<File
 			RelativePath="..\src\gdk\cdgdk.c"
 			>

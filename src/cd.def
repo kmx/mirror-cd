@@ -24,6 +24,7 @@ EXPORTS
   cdGetScreenColorPlanes
   cdGetScreenSize
   cdUseContextPlus
+  cdBaseDriver
   
   cdinittableMF
   cdkillcanvasMF

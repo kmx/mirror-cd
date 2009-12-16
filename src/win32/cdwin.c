@@ -2364,3 +2364,9 @@ void cdwInitTable(cdCanvas* canvas)
   if (ctxcanvas->wtype == CDW_EMF)
     canvas->cxPutImageRectRGBA = cdputimagerectrgba; 
 }
+
+int cdBaseDriver(void)
+{
+  return CD_BASE_WIN;
+}
+

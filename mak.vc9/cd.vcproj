@@ -68,7 +68,7 @@
 			<Tool
 				Name="VCLibrarianTool"
 				AdditionalDependencies="cdcore.lib"
-				OutputFile="$(OutDir)/$(ProjectName).lib"
+				OutputFile="$(OutDir)/cd.lib"
 				AdditionalLibraryDirectories="$(OutDir)"
 				SuppressStartupBanner="true"
 			/>

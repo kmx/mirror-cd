@@ -2448,3 +2448,8 @@ void cdxInitTable(cdCanvas* canvas)
   if (canvas->bpp > 8)
     canvas->cxPutImageRectRGBA = cdputimagerectrgba;
 }
+
+int cdBaseDriver(void)
+{
+  return CD_BASE_X;
+}
