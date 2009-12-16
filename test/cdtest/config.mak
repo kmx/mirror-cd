@@ -2,6 +2,7 @@ APPNAME = cdtest
 
 ifdef USE_GDK
   APPNAME = cdtestgdk
+  USE_GTK = Yes
 endif
 ifdef USE_CONTEXTPLUS
   APPNAME = cdtestplus

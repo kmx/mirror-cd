@@ -39,6 +39,7 @@ ifneq ($(findstring Win, $(TEC_SYSNAME)), )
   ifdef USE_GDK
     SRC += $(SRCGDK)
     LIBNAME = cdgdk
+    USE_GTK = Yes
   else
     SRC += $(SRCWIN32)
   endif
@@ -47,6 +48,7 @@ else
   ifdef USE_GDK
     SRC += $(SRCGDK)
     LIBNAME = cdgdk
+    USE_GTK = Yes
   else
     SRC += $(SRCX11)
     USE_X11 = Yes

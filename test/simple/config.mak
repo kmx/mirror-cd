@@ -2,6 +2,7 @@ APPNAME = simple
 
 ifdef USE_GDK
   APPNAME = simplegdk
+  USE_GTK = Yes
 else
   DEFINES = USE_CONTEXTPLUS
 endif
