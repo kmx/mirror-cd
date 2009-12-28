@@ -575,6 +575,12 @@ static void cdstipple(cdCtxCanvas* ctxcanvas, int w, int h, const unsigned char 
   DeleteObject(hBitmap);
 }
 
+static void set_dib_res(cdwDIB* dib, cdCtxCanvas* ctxcanvas)
+{
+  dib->bmih->biXPelsPerMeter = (LONG)(ctxcanvas->canvas->xres*1000);
+  dib->bmih->biYPelsPerMeter = (LONG)(ctxcanvas->canvas->yres*1000);
+}
+
 static void cdpattern(cdCtxCanvas* ctxcanvas, int w, int h, const long int *colors)
 {
   cdwDIB dib;
@@ -588,6 +594,9 @@ static void cdpattern(cdCtxCanvas* ctxcanvas, int w, int h, const long int *colo
   dib.type = 0; 
   if (!cdwCreateDIB(&dib))
     return;
+
+  /* important to preserve pattern size during printing */
+  set_dib_res(&dib, ctxcanvas);
 
   cdwDIBEncodePattern(&dib, colors);
   hBrush = CreateDIBPatternBrushPt(dib.dib, DIB_RGB_COLORS);
