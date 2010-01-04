@@ -1,5 +1,5 @@
 /** \file
- * \brief Gdk/Cairo Clipboard Driver
+ * \brief Gdk Clipboard Driver
  *
  * See Copyright Notice in cd.h
  */

@@ -1,5 +1,5 @@
 /** \file
- * \brief Gdk/Cairo Native Window Driver
+ * \brief Gdk Native Window Driver
  *
  * See Copyright Notice in cd.h
  */

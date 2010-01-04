@@ -1,5 +1,5 @@
 /** \file
- * \brief Gdk/Cairo Double Buffer Driver
+ * \brief Gdk Double Buffer Driver
  *
  * See Copyright Notice in cd.h
  */

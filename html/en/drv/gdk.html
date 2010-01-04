@@ -15,7 +15,7 @@
   <p>This driver represents a basic driver for all system-dependent drivers 
   implemented in the X-Windows system. The implementation uses the
   <a href="http://library.gnome.org/devel/gdk/">GDK</a> and
-  <a href="http://library.gnome.org/devel/cairo/">Cairo</a> API 
+  <a href="http://library.gnome.org/devel/pango/">Pango</a> API 
   functions. This driver was designed for the GTK+ version 2, and can be 
   compiled and used in all systems GDK is supported.</p>
 
@@ -48,12 +48,11 @@
   <li>
   <a href="../func/text.html#cdNativeFont">
   <font face="Courier"><strong>NativeFont</strong></font></a>: also accepts the 
-  X-Windows font string format. A scaled font is generated using the font size 
-  and the font face.</li>
-  <li><a href="../func/text.html#cdFont">
-  <font face="Courier"><strong>Font</strong></font></a>: the old name &quot;System&quot; 
-  is mapped to &quot;fixed&quot;. A scaled font is generated using the font size 
-  and the font face.</li>
+  X-Windows font string format.</li>
+    <li><a href="../func/text.html#cdFont">
+  <font face="Courier"><strong>Font</strong></font></a>: &quot;Courier&quot; is mapped to 
+	&quot;Monospace&quot;, &quot;Helvetica&quot; is mapped to &quot;Sans&quot;, and &quot;Times&quot; is mapped to 
+	&quot;Serif&quot;. Underline and Strikeout are supported.</li>
 </ul>
 <h4>Colors </h4>
 <ul>
@@ -98,14 +97,8 @@
 </ul>
 
 <ul>
-  <li>&quot;<b><font face="Courier">ANTIALIAS</font></b>&quot;: controls the use of 
-  anti-aliasing for the text, image zoom and line drawing primitives. Assumes 
-  values &quot;1&quot; (active) and &quot;0&quot; (inactive). Default value: &quot;1&quot;.</li>
-</ul>
-
-<ul>
-  <li><b><font face="Courier">&quot;CAIROVERSION&quot;: </font></b>returns a string with 
-  the Cairo version number. It is empty if the Cairo is not available.</li>
+    <li><b><font face="Courier">&quot;PANGOVERSION&quot;: </font></b>returns a string with 
+  the Pango version number. It is empty if the Pango is not available.</li>
 </ul>
 
 </body>

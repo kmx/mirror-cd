@@ -1,5 +1,5 @@
 /** \file
- * \brief Gdk Cairo Base Driver
+ * \brief Gdk Base Driver
  *
  * See Copyright Notice in cd.h
  */
@@ -56,11 +56,14 @@ struct _cdCtxCanvas {
   int gshift;                /* Green constant to calculate the true color */
   int bshift;                /* Blue constant to calculate the true color */
   double xmatrix[6];         /* Transformation matrix that includes axis inversion */
-  float  rotate_angle;
-  int    rotate_center_x,
-         rotate_center_y;
+  float rotate_angle;
+  int rotate_center_x;
+  int rotate_center_y;
 
-  cairo_scaled_font_t* font;    /* Scaled font (character font + size font */
+  PangoContext *fontcontext;
+  PangoFontDescription *fontdesc;
+  PangoLayout *fontlayout;
+  PangoMatrix fontmatrix;
 
   cdImage* image_dbuffer;       /* Used by double buffer driver */
   cdCanvas* canvas_dbuffer;
