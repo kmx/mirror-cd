@@ -1191,10 +1191,13 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
   int w, h, desc, dir = -1;
   int ox = x, oy = y;
 
-  utf8_text = g_locale_to_utf8(s, len, NULL, 0, NULL);
-  pango_layout_set_text(ctxcanvas->fontlayout, utf8_text, -1);
+  utf8_text = g_locale_to_utf8(s, len, NULL, NULL, NULL);	
+	if(!utf8_text)
+		utf8_text = g_convert (s, len, "UTF-8", "ISO-8859-1", NULL, NULL, NULL);
 
-  pango_layout_get_pixel_size(ctxcanvas->fontlayout, &w, &h);
+  pango_layout_set_text(ctxcanvas->fontlayout, utf8_text, -1);
+  
+	pango_layout_get_pixel_size(ctxcanvas->fontlayout, &w, &h);
   metrics = pango_context_get_metrics(ctxcanvas->fontcontext, ctxcanvas->fontdesc, pango_context_get_language(ctxcanvas->fontcontext));
   desc = (((pango_font_metrics_get_descent(metrics)) + PANGO_SCALE/2) / PANGO_SCALE);
 
@@ -1303,11 +1306,16 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
 
 static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *s, int len, int *width, int *height)
 {
+  const char *utf8_text;
+
   if (!ctxcanvas->fontlayout)
     return;
 
-  pango_layout_set_text(ctxcanvas->fontlayout, g_locale_to_utf8(s, len, NULL, 0, NULL), -1);
+  utf8_text = g_locale_to_utf8(s, len, NULL, NULL, NULL);
+	if(!utf8_text)
+		utf8_text = g_convert (s, len, "UTF-8", "ISO-8859-1", NULL, NULL, NULL);
 
+  pango_layout_set_text(ctxcanvas->fontlayout, utf8_text, -1);
   pango_layout_get_pixel_size(ctxcanvas->fontlayout, width, height);
 }
 
