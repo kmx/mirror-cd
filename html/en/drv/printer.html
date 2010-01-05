@@ -84,6 +84,28 @@ before creating the canvas.</p>
 	the name of the selected printer.</li>
 </ul>
 
+<h3>Notes</h3>
+
+<h4>Patterns</h4>
+<p>Usually when printing regions filled with patterns you have to compensate for 
+the printer high resolution or the pattern will come out very small. If you 
+don't want to create a high resolution version of your pattern, then the 
+simplest way is to use <strong>wdCanvasPattern</strong> to resize the pattern to 
+an expected millimeter size. This will increase the pattern raster size so it 
+will be more visible in the printer.</p>
+<p>But on some printers the result were not what we expect:</p>
+<ul>
+  <li>
+  Laser printers automatically increase the real size of the pattern, so it 
+	seems that <strong>wdCanvasPattern</strong> is not necessary on those 
+	printers.</li>
+	<li>
+  PDF and Postscript based printer drivers (like Adobe PDF Creator and CutePDF 
+	Writer) need that the pattern has a width multiple of 8, if not they will 
+	appear distorted with an increasing horizontal shift on every line. This 
+	does NOT applies to the CD_PDF or CD_PS drivers.</li>
+</ul>
+
 </body>
 
 </html>

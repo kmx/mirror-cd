@@ -522,7 +522,7 @@ void wdCanvasGetTextBounds(cdCanvas* canvas, double x, double y, const char *s, 
 
 void wdCanvasPattern(cdCanvas* canvas, int w, int h, const long *color, double w_mm, double h_mm)
 {
-  long *pattern = 0;
+  long *pattern = NULL;
   int w_pxl, h_pxl, x, y, cx, cy;
   int wratio, hratio;
   int *XTab, *YTab;
@@ -531,6 +531,7 @@ void wdCanvasPattern(cdCanvas* canvas, int w, int h, const long *color, double w
 
   cdCanvasMM2Pixel(canvas, w_mm, h_mm, &w_pxl, &h_pxl);
 
+  /* to preserve the pattern characteristics must be an integer number */
   wratio = cdRound((double)w_pxl/(double)w);
   hratio = cdRound((double)h_pxl/(double)h);
 
@@ -564,7 +565,7 @@ void wdCanvasPattern(cdCanvas* canvas, int w, int h, const long *color, double w
 
 void wdCanvasStipple(cdCanvas* canvas, int w, int h, const unsigned char *fgbg, double w_mm, double h_mm)
 {
-  unsigned char *stipple = 0;
+  unsigned char *stipple = NULL;
   int w_pxl, h_pxl, x, y, cx, cy;
   int wratio, hratio;
   int *XTab, *YTab;
@@ -573,6 +574,7 @@ void wdCanvasStipple(cdCanvas* canvas, int w, int h, const unsigned char *fgbg, 
 
   cdCanvasMM2Pixel(canvas, w_mm, h_mm, &w_pxl, &h_pxl);
 
+  /* to preserve the pattern characteristics must be an integer number */
   wratio = cdRound((double)w_pxl/(double)w);
   hratio = cdRound((double)h_pxl/(double)h);
 

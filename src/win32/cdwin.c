@@ -595,7 +595,7 @@ static void cdpattern(cdCtxCanvas* ctxcanvas, int w, int h, const long int *colo
   if (!cdwCreateDIB(&dib))
     return;
 
-  /* important to preserve pattern size during printing */
+  /* trying to preserve pattern size during printing */
   set_dib_res(&dib, ctxcanvas);
 
   cdwDIBEncodePattern(&dib, colors);
