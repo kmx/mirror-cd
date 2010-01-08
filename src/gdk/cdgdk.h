@@ -46,7 +46,6 @@ struct _cdCtxCanvas {
   GdkPixmap* new_region;
   GdkPixmap* region_aux;
   GdkGC* region_aux_gc;
-  void *data;                /* specific information about the driver */
   long int *xidata;          /* Image cache */
   int xisize;
   GdkColormap* colormap;     /* Color map default */
@@ -64,6 +63,7 @@ struct _cdCtxCanvas {
   PangoFontDescription *fontdesc;
   PangoLayout *fontlayout;
   PangoMatrix fontmatrix;
+  char* gdkLastConvertUTF8;
 
   cdImage* image_dbuffer;       /* Used by double buffer driver */
   cdCanvas* canvas_dbuffer;

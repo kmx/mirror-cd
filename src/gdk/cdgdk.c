@@ -42,6 +42,65 @@ static char hatches[NUM_HATCHES][8] = {
 
 /******************************************************/
 
+static int gdkStrIsAscii(const char* str)
+{
+  while(*str)
+  {
+    int c = *str;
+    if (c < 0)
+      return 0;
+    str++;
+  }
+  return 1;
+}
+
+static char* gdkStrToUTF8(const char *str, const char* charset, int length)
+{
+  return g_convert(str, length, "UTF-8", charset, NULL, NULL, NULL);
+}
+
+char* cdgdkStrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, int length)  /* From CD to GTK/GDK */
+{
+  const char *charset = NULL;
+
+  if (!str || *str == 0)
+    return (char*)str;
+
+  if (g_get_charset(&charset) == TRUE)  /* current locale is already UTF-8 */
+  {
+    if (g_utf8_validate(str, -1, NULL))
+    {
+      return (char*)str;
+    }
+    else
+    {
+      ctxcanvas->gdkLastConvertUTF8 = gdkStrToUTF8(str, "ISO8859-1", length);   /* if string is not UTF-8, assume ISO8859-1 */
+      
+      if (!ctxcanvas->gdkLastConvertUTF8)
+        return (char*)str;
+      
+      return ctxcanvas->gdkLastConvertUTF8;
+    }
+  }
+  else
+  {
+    if (gdkStrIsAscii(str) || !charset)
+    {
+      return (char*)str;
+    }
+    else if (charset)
+    {    
+      ctxcanvas->gdkLastConvertUTF8 = gdkStrToUTF8(str, charset, length);
+
+      if (!ctxcanvas->gdkLastConvertUTF8)
+        return (char*)str;
+
+      return ctxcanvas->gdkLastConvertUTF8;
+    }
+  }
+  return (char*)str;
+}
+
 static void update_colors(cdCtxCanvas *ctxcanvas)
 {
   gboolean success;
@@ -293,7 +352,7 @@ void cdgdkKillCanvas(cdCtxCanvas *ctxcanvas)
   if (ctxcanvas->clip_polygon) g_object_unref(ctxcanvas->clip_polygon);
 
   if (ctxcanvas->fontdesc) pango_font_description_free(ctxcanvas->fontdesc);
-  if (ctxcanvas->fontlayout) g_object_unref(ctxcanvas->fontlayout);
+  if (ctxcanvas->fontlayout)  g_object_unref(ctxcanvas->fontlayout);
   if (ctxcanvas->fontcontext) g_object_unref(ctxcanvas->fontcontext);
 
   if (ctxcanvas->new_region) 
@@ -325,7 +384,10 @@ void cdgdkKillCanvas(cdCtxCanvas *ctxcanvas)
 static void cdflush(cdCtxCanvas *ctxcanvas)
 {
   (void)ctxcanvas;
-  gdk_flush();
+
+  gdk_error_trap_push ();
+  gdk_flush ();
+  gdk_error_trap_pop ();
 }
 
 /******************************************************/
@@ -389,7 +451,7 @@ int cdgdkClip(cdCtxCanvas *ctxcanvas, int clip_mode)
     break;
   case CD_CLIPREGION:
     if (ctxcanvas->new_region)
-      gdk_gc_set_clip_mask(ctxcanvas->gc, (GdkBitmap*)ctxcanvas->new_region);
+       gdk_gc_set_clip_mask(ctxcanvas->gc, (GdkBitmap*)ctxcanvas->new_region);
     break;
   }
   return clip_mode;
@@ -417,9 +479,8 @@ static void cdnewregion(cdCtxCanvas *ctxcanvas)
     g_object_unref(ctxcanvas->region_aux);
     g_object_unref(ctxcanvas->new_region);
   }
-   
-  ctxcanvas->new_region = gdk_pixmap_new(ctxcanvas->wnd, ctxcanvas->canvas->w, ctxcanvas->canvas->h, 1);
 
+  ctxcanvas->new_region = gdk_pixmap_new(ctxcanvas->wnd, ctxcanvas->canvas->w, ctxcanvas->canvas->h, 1);
   {
     GdkGC* gc = gdk_gc_new((GdkDrawable*)ctxcanvas->new_region);
 
@@ -517,7 +578,7 @@ static void sPrepareRegion(cdCtxCanvas *ctxcanvas)
   GdkColor clr;
 
   if (!ctxcanvas->new_region)
-    return;
+     return;
 
   gdk_gc_set_function(ctxcanvas->region_aux_gc, GDK_COPY);
 
@@ -535,16 +596,16 @@ static void sCombineRegion(cdCtxCanvas *ctxcanvas)
   switch(ctxcanvas->canvas->combine_mode)
   {                          
   case CD_UNION:
-    gdk_gc_set_function(ctxcanvas->region_aux_gc, GDK_OR);
+   gdk_gc_set_function(ctxcanvas->region_aux_gc, GDK_OR);
     break;
   case CD_INTERSECT:   
-    gdk_gc_set_function(ctxcanvas->region_aux_gc, GDK_AND);
+   gdk_gc_set_function(ctxcanvas->region_aux_gc, GDK_AND);
     break;
   case CD_DIFFERENCE:           
-    gdk_gc_set_function(ctxcanvas->region_aux_gc, GDK_AND_INVERT);
+   gdk_gc_set_function(ctxcanvas->region_aux_gc, GDK_AND_INVERT);
     break;
   case CD_NOTINTERSECT:
-    gdk_gc_set_function(ctxcanvas->region_aux_gc, GDK_XOR);
+   gdk_gc_set_function(ctxcanvas->region_aux_gc, GDK_XOR);
     break;
   }
 
@@ -1177,7 +1238,7 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
   if (ctxcanvas->canvas->new_region)
   {
     sPrepareRegion(ctxcanvas);
-    gdk_draw_rectangle(ctxcanvas->region_aux, ctxcanvas->region_aux_gc, TRUE, xmin, ymin, xmax-xmin+1, ymax-ymin+1);
+    gdk_draw_rectangle(ctxcanvas->wnd, ctxcanvas->gc, TRUE, xmin, ymin, xmax-xmin+1, ymax-ymin+1);
     sCombineRegion(ctxcanvas);
   }
   else
@@ -1186,16 +1247,12 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
 
 static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
 {
-  const char *utf8_text;
   PangoFontMetrics* metrics;
   int w, h, desc, dir = -1;
   int ox = x, oy = y;
 
-  utf8_text = g_locale_to_utf8(s, len, NULL, NULL, NULL);	
-	if(!utf8_text)
-		utf8_text = g_convert (s, len, "UTF-8", "ISO-8859-1", NULL, NULL, NULL);
-
-  pango_layout_set_text(ctxcanvas->fontlayout, utf8_text, -1);
+  ctxcanvas->gdkLastConvertUTF8 = cdgdkStrConvertToUTF8(ctxcanvas, s, len);
+  pango_layout_set_text(ctxcanvas->fontlayout, ctxcanvas->gdkLastConvertUTF8, -1);
   
 	pango_layout_get_pixel_size(ctxcanvas->fontlayout, &w, &h);
   metrics = pango_context_get_metrics(ctxcanvas->fontcontext, ctxcanvas->fontdesc, pango_context_get_language(ctxcanvas->fontcontext));
@@ -1288,8 +1345,8 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
 
   if (ctxcanvas->canvas->new_region)
   {
-    sPrepareRegion(ctxcanvas);
-    gdk_draw_layout_with_colors((GdkDrawable*)ctxcanvas->region_aux, (GdkGC*)ctxcanvas->region_aux_gc, x, y, ctxcanvas->fontlayout, &ctxcanvas->bg, &ctxcanvas->fg);
+		sPrepareRegion(ctxcanvas);
+	  gdk_draw_layout((GdkDrawable*)ctxcanvas->region_aux, (GdkGC*)ctxcanvas->region_aux_gc, x, y, ctxcanvas->fontlayout);
     sCombineRegion(ctxcanvas);
   }
   else
@@ -1306,16 +1363,11 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
 
 static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *s, int len, int *width, int *height)
 {
-  const char *utf8_text;
-
   if (!ctxcanvas->fontlayout)
     return;
 
-  utf8_text = g_locale_to_utf8(s, len, NULL, NULL, NULL);
-	if(!utf8_text)
-		utf8_text = g_convert (s, len, "UTF-8", "ISO-8859-1", NULL, NULL, NULL);
-
-  pango_layout_set_text(ctxcanvas->fontlayout, utf8_text, -1);
+  ctxcanvas->gdkLastConvertUTF8 = cdgdkStrConvertToUTF8(ctxcanvas, s, len);
+  pango_layout_set_text(ctxcanvas->fontlayout, ctxcanvas->gdkLastConvertUTF8, -1);
   pango_layout_get_pixel_size(ctxcanvas->fontlayout, width, height);
 }
 
@@ -2382,7 +2434,8 @@ cdCtxCanvas *cdgdkCreateCanvas(cdCanvas* canvas, GdkDrawable* wnd, GdkScreen* sc
 
   ctxcanvas->fontcontext = gdk_pango_context_get();
   pango_context_set_language(ctxcanvas->fontcontext, pango_language_get_default());
-  
+  ctxcanvas->gdkLastConvertUTF8 = NULL;
+
   ctxcanvas->canvas = canvas;
   canvas->ctxcanvas = ctxcanvas;
   
