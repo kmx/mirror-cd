@@ -10,11 +10,14 @@
 .style1 {
 	font-family: Tahoma;
 }
+.style2 {
+	border-style: solid;
+}
 </style>
 </head>
 <body>
 
-<h2>Tecgraf/PUC-Rio Library Download Tips</h2>
+<h1>Tecgraf/PUC-Rio Library Download Tips</h1>
 <p>All the libraries were build using <b>Tecmake</b>. Please use it if you intend to recompile the sources. 
 <b>Tecmake</b> 
   can be found at 
@@ -35,8 +38,8 @@ http://sourceforge.net/project/showfiles.php?group_id=241310</a>.<br>
   &quot;config.mak&quot; files for <b>Tecmake</b> are also available.</p>
 <p>The DLLs were built using the <b>cdecl</b> calling convention. This should be 
 a problem for Visual Basic users.</p>
-<p>In Visual C++ we use the single thread C Run Time Library for static libraries and the multi thread C RTL for DLLs. 
-  Because this is the default in Visual Studio for new projects. Since Visual C++ 8, both use the multi thread C RTL.</p>
+<p>In Visual C++ 6 and 7 we use the single thread C Run Time Library for static libraries and the multi thread C RTL for DLLs. 
+  Because this were the default in Visual Studio for new projects. Since Visual C++ 8, both use the multithread C RTL.</p>
 <h3><a name="pack">Packaging</a></h3>
 <p>The package files available for download are named according to the platform where they were build.</p>
 <p>In UNIX all strings are based in the result of the command &quot;uname -a&quot;. The package name is a concatenation of the 
@@ -62,7 +65,7 @@ Linux&nbsp; with Kernel version 2.6 built with gcc 4.<br>
 <b>iup2_4_Win32_vc8_lib.tar.gz</b> = IUP 2.4 32-bits Static Libraries and Includes for Windows to use with Visual C++ 
 8 (2005).<br>
 <b>iup2_4_Win32_dll9_lib.tar.gz</b> = IUP 2.4 32-bits Dynamic Libraries (DLLs), 
-stub libraries and Includes for Windows to use with Visual C++ 
+import libraries and Includes for Windows to use with Visual C++ 
 9 (2008).<br>
 <b>iup2_4_Docs_html.tar.gz</b> = IUP 2.4 documentation files in HTML format (the web site files can be browsed 
     locally).<br>
@@ -115,203 +118,214 @@ http://www.tecgraf.puc-rio.br/iup/en/ide_guide/eclipse.html</a>
       <p>The following platforms can be available:</p>
 <table border="0" cellpadding="3" style="border-collapse: collapse" bordercolor="#111111" align="center">
   <tr>
+    <th bgcolor="#DDDDDD" align="right" class="style2">Package Name</th>
+    <th bgcolor="#DDDDDD" class="style2">Description</th>
+  </tr>
+  <tr>
     <td bgcolor="#DDDDDD" align="right"><b>AIX43</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp;IBM AIX 4.3 (ppc) / gcc 2.95 / Motif 2.1 
+    <td bgcolor="#DDDDDD">&nbsp;IBM AIX 4.3 (ppc) / gcc 2.95 / Motif 2.1 
     </td>
   </tr>
   <tr>
     <td bgcolor="#C0C0C0" align="right"><b>IRIX65</b></td>
-    <td bgcolor="#C0C0C0" style="width: 580px">&nbsp;SGI IRIX 6.5 (mips) / gcc 3.0 / Motif 2.1 
+    <td bgcolor="#C0C0C0">&nbsp;SGI IRIX 6.5 (mips) / gcc 3.0 / Motif 2.1 
     </td>
   </tr>
   <tr>
     <td bgcolor="#C0C0C0" align="right"><b>IRIX6465</b></td>
-    <td bgcolor="#C0C0C0" style="width: 580px">&nbsp;SGI IRIX 6.5 (mips) / gcc 3.3 / Motif 1.2</td>
+    <td bgcolor="#C0C0C0">&nbsp;SGI IRIX 6.5 (mips) / gcc 3.3 / Motif 1.2</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><b>Linux24</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp;Red Hat 7.3 (x86) / Kernel 2.4 / gcc 2.95 / Open Motif 2.1 
+    <td bgcolor="#DDDDDD">&nbsp;Red Hat 7.3 (x86) / Kernel 2.4 / gcc 2.95 / Open Motif 2.1 
     / GTK 2.0</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><b>Linux24g3</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp;CentOS 3.9 (x86) / Kernel 2.4 / gcc 3.2 / Open Motif 2.2
+    <td bgcolor="#DDDDDD">&nbsp;CentOS 3.9 (x86) / Kernel 2.4 / gcc 3.2 / Open Motif 2.2
 	<sup><span class="style1">3</span></sup> / GTK 2.2</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right" style="height: 27px"><b>Linux24g3_64&nbsp; </b></td>
-    <td bgcolor="#DDDDDD" style="height: 27px; width: 580px;">&nbsp;Red Hat E.L. WS 3 (x64)&nbsp;/ Kernel 2.4 / gcc 3.2 / Open Motif 
+    <td bgcolor="#DDDDDD">&nbsp;Red Hat E.L. WS 3 (x64)&nbsp;/ Kernel 2.4 / gcc 3.2 / Open Motif 
       2.2 <sup><span class="style1">3</span></sup> / GTK 2.2</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><b>Linux26</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp;CentOS 4.6 (x86) / Kernel 2.6 / gcc 3.4 / Open Motif 2.2
+    <td bgcolor="#DDDDDD">&nbsp;CentOS 4.6 (x86) / Kernel 2.6 / gcc 3.4 / Open Motif 2.2
 	<sup><span class="style1">3</span></sup> / GTK 2.4</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><b>Linux26_64</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp;CentOS 4.6 (x64) / Kernel 2.6 / gcc 3.4 / Open Motif 2.2
+    <td bgcolor="#DDDDDD">&nbsp;CentOS 4.6 (x64) / Kernel 2.6 / gcc 3.4 / Open Motif 2.2
 	<sup><span class="style1">3</span></sup> / GTK 2.4</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><b>Linux26g4</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp;CentOS 5.3 (x86) / Kernel 2.6 / gcc 4.1 / Open Motif 
+    <td bgcolor="#DDDDDD">&nbsp;CentOS 5.3 (x86) / Kernel 2.6 / gcc 4.1 / Open Motif 
 	2.2 <sup><span class="style1">3</span></sup> / GTK 2.12</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><strong>Linux26g4_64</strong></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp;CentOS 5.2 (x64) / Kernel 2.6 / gcc 4.1 / 
+    <td bgcolor="#DDDDDD">&nbsp;CentOS 5.2 (x64) / Kernel 2.6 / gcc 4.1 / 
     OpenMotif 2.2 <sup><span class="style1">3</span></sup> / GTK 2.10</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><b>Linux26g4ppc</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp;Ubuntu 7.10 (ppc) / Kernel 2.6 / gcc 4.1 / Open Motif 2.2
+    <td bgcolor="#DDDDDD">&nbsp;Ubuntu 7.10 (ppc) / Kernel 2.6 / gcc 4.1 / Open Motif 2.2
 	<sup><span class="style1">3</span></sup> / GTK 2.?</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><strong>Linux26_ia64</strong></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp;Red Hat E.L. AS 4 (ia64) / Kernel 2.6 / gcc 3.4 / 
+    <td bgcolor="#DDDDDD">&nbsp;Red Hat E.L. AS 4 (ia64) / Kernel 2.6 / gcc 3.4 / 
     Open Motif 2.2 <sup><span class="style1">3</span></sup> / GTK 2.4</td>
   </tr>
   <tr>
     <td bgcolor="#C0C0C0" align="right"><b>SunOS57</b></td>
-    <td bgcolor="#C0C0C0" style="width: 580px">&nbsp;Sun Solaris 7 (sparc) / gcc 2.95 / Motif 2.1 
+    <td bgcolor="#C0C0C0">&nbsp;Sun Solaris 7 (sparc) / gcc 2.95 / Motif 2.1 
     </td>
   </tr>
   <tr>
     <td bgcolor="#C0C0C0" align="right"><b>SunOS58</b></td>
-    <td bgcolor="#C0C0C0" style="width: 580px">&nbsp;Sun Solaris 8 (sparc) / gcc 3.4 / Motif 2.1 
+    <td bgcolor="#C0C0C0">&nbsp;Sun Solaris 8 (sparc) / gcc 3.4 / Motif 2.1 
     </td>
   </tr>
   <tr>
     <td bgcolor="#C0C0C0" align="right"><strong>SunOS510x86</strong></td>
-    <td bgcolor="#C0C0C0" style="width: 580px">&nbsp;Sun Solaris 10 (x86) / gcc 3.3 / Motif 2.1 
+    <td bgcolor="#C0C0C0">&nbsp;Sun Solaris 10 (x86) / gcc 3.3 / Motif 2.1 
     </td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><b>FreeBSD54</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp;Free BSD 5.4 (x86) / gcc 3.4 / Open Motif 2.2 
+    <td bgcolor="#DDDDDD">&nbsp;Free BSD 5.4 (x86) / gcc 3.4 / Open Motif 2.2 
     <sup><span class="style1">3</span></sup></td>
   </tr>
   <tr>
     <td bgcolor="#C0C0C0" align="right"><b>Darwin811</b></td>
-    <td bgcolor="#C0C0C0" style="width: 580px">&nbsp;Mac OS X 10.4.11 (ppc) 
+    <td bgcolor="#C0C0C0">&nbsp;Mac OS X 10.4.11 (ppc) 
 	[Tiger] / Darwin Kernel 8.11 / gcc 4.0 / 
     <a href="http://www.ist-inc.com/DOWNLOADS/motif_download.html">Open Motif 2.1</a></td>
   </tr>
   <tr>
     <td bgcolor="#C0C0C0" align="right"><b>Darwin811x86</b></td>
-    <td bgcolor="#C0C0C0" style="width: 580px">&nbsp;Mac OS X 10.4.11 (x86) 
-	[Tiger] / Darwin Kernel 8.11 / gcc 4.0 / 
-    <a href="http://www.ist-inc.com/DOWNLOADS/motif_download.html">Open Motif 2.1</a></td>
+    <td bgcolor="#C0C0C0">&nbsp;Mac OS X 10.4.11 (x86) 
+	[Tiger] / Darwin Kernel 8.11 / gcc 4.0 / Open Motif 2.1</td>
   </tr>
   <tr>
     <td bgcolor="#C0C0C0" align="right"><b>Darwin94x86</b></td>
-    <td bgcolor="#C0C0C0" style="width: 580px">&nbsp;Mac OS X 10.5.4 (x86) 
-	[Leopard] / Darwin Kernel 9.4 / gcc 4.0 / 
-    <a href="http://www.ist-inc.com/DOWNLOADS/motif_download.html">Open Motif 2.1</a></td>
+    <td bgcolor="#C0C0C0">&nbsp;Mac OS X 10.5.4 (x86) 
+	[Leopard] / Darwin Kernel 9.4 / gcc 4.0 / Open Motif 2.1</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><b>Win32_vc6</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp;Microsoft Visual C++ 6 (static RTL/single thread)</td>
+    <td bgcolor="#DDDDDD">&nbsp;Static library built with Microsoft Visual C++ 6 (static RTL/single thread)</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><b>Win32_vc7</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp;Microsoft Visual C++ 7.1 (.NET 2003) (static RTL/single thread)<br>
-      &nbsp;Also compatible with Microsoft Visual C++ Toolkit 2003 -<br>
-      &nbsp;<a href="http://msdn.microsoft.com/visualc/vctoolkit2003/" style="text-decoration: none">http://msdn.microsoft.com/visualc/vctoolkit2003/</a>
-    ¹</td>
+    <td bgcolor="#DDDDDD">&nbsp;Static library built with Microsoft Visual C++ 7.1 (.NET 2003) (static RTL/single thread)<br>
+      	&nbsp;Also compatible with Microsoft Visual C++ Toolkit 2003</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><b>Win32_vc8</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp;Microsoft Visual C++ 8.0 (2005) (static RTL/multithread)<br>
-      &nbsp;Also compatible with Microsoft Visual C++ 2005 Express Edition -<br>
-      &nbsp;<a style="text-decoration: none" href="http://msdn.microsoft.com/vstudio/express/visualc/">http://msdn.microsoft.com/vstudio/express/visualc/</a>
-    ¹</td>
+    <td bgcolor="#DDDDDD">&nbsp;Static library built with Microsoft Visual C++ 8.0 (2005) (static RTL/multithread)<br>
+      	&nbsp;Also compatible with Microsoft Visual C++ 2005 Express Edition</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><b>Win32_vc9</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp;Microsoft Visual C++ 9.0 (2008) (static RTL/multithread)<br>
+    <td bgcolor="#DDDDDD">&nbsp;Static library built with Microsoft Visual C++ 9.0 (2008) (static RTL/multithread)<br>
       &nbsp;Also compatible with Microsoft Visual C++ 2008 Express Edition -<br>
-      &nbsp;<a style="text-decoration: none" href="http://msdn.microsoft.com/vstudio/express/visualc/">http://msdn.microsoft.com/vstudio/express/visualc/</a>
+      &nbsp;<a href="http://www.microsoft.com/express/vc/">http://www.microsoft.com/express/vc/</a>
     ¹</td>
   </tr>
   <tr>
     <td bgcolor="#C0C0C0" align="right"><b>Win32_dll6</b></td>
-    <td bgcolor="#C0C0C0" style="width: 580px">&nbsp;built using vc6, creates dependency with MSVCRT.DLL<br>
-      &nbsp;(either other libraries or new applications).</td>
+    <td bgcolor="#C0C0C0">&nbsp;DLL and import library built 
+	with vc6, creates dependency with MSVCRT.DLL</td>
   </tr>
   <tr>
     <td bgcolor="#C0C0C0" align="right"><b>Win32_dll7</b></td>
-    <td bgcolor="#C0C0C0" style="width: 580px">&nbsp;built using vc7, creates dependency with MSVCR71.DLL<br>
-      &nbsp;(either other libraries or new applications).</td>
+    <td bgcolor="#C0C0C0">&nbsp;DLL and import library built 
+	with vc7, creates dependency with MSVCR71.DLL</td>
   </tr>
   <tr>
     <td bgcolor="#C0C0C0" align="right"><b>Win32_dll8</b></td>
-    <td bgcolor="#C0C0C0" style="width: 580px">&nbsp;built using vc8, creates dependency with MSVCR80.DLL<br>
-      &nbsp;(either other libraries or new applications).</td>
+    <td bgcolor="#C0C0C0">&nbsp;DLL and import library built 
+	with vc8, creates dependency with MSVCR80.DLL</td>
   </tr>
   <tr>
     <td bgcolor="#C0C0C0" align="right"><b>Win32_dll9</b></td>
-    <td bgcolor="#C0C0C0" style="width: 580px">&nbsp;built using vc9, creates dependency with MSVCR90.DLL<br>
-      &nbsp;(either other libraries or new applications).</td>
+    <td bgcolor="#C0C0C0">&nbsp;DLL and import library built 
+	with vc9, creates dependency with MSVCR90.DLL</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><b>Win64_vc8</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp; Same as <b>Win32_vc8</b> but for 64-bits 
-    systems using x64 standard.</td>
+    <td bgcolor="#DDDDDD">&nbsp;Same as <b>Win32_vc8</b> but for 64-bits 
+    systems using the x64 standard.</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><b>Win64_vc9</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp; Same as <b>Win32_vc9</b> but for 64-bits 
-    systems using x64 standard.</td>
+    <td bgcolor="#DDDDDD">&nbsp;Same as <b>Win32_vc9</b> but for 64-bits 
+    systems using the x64 standard.</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><b>Win64_dll8</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp; Same as <b>Win32_dll8</b> but for 64-bits 
-    systems using x64 standard.</td>
+    <td bgcolor="#DDDDDD">&nbsp;Same as <b>Win32_dll8</b> but for 64-bits 
+    systems using the x64 standard.</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><b>Win64_dll9</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp; Same as <b>Win32_dll9</b> but for 64-bits 
-    systems using x64 standard.</td>
+    <td bgcolor="#DDDDDD">&nbsp;Same as <b>Win32_dll9</b> but for 64-bits 
+    systems using the x64 standard.</td>
   </tr>
   <tr>
     <td bgcolor="#C0C0C0" align="right"><b>Win32_gcc3</b></td>
-    <td bgcolor="#C0C0C0" style="width: 580px">&nbsp;Cygwin gcc 3.4&nbsp; (Depends on Cygwin DLL 1.5) -
+    <td bgcolor="#C0C0C0">&nbsp;Static library built with Cygwin gcc 3.4&nbsp; (Depends on Cygwin 
+	DLL 1.5)</td>
+  </tr>
+  <tr>
+    <td bgcolor="#C0C0C0" align="right"><b>Win32_gcc4</b></td>
+    <td bgcolor="#C0C0C0">&nbsp;Static library built with Cygwin gcc 4.3&nbsp; (Depends on Cygwin DLL 1.7) -
       <a href="http://www.cygwin.com/" style="text-decoration: none">http://www.cygwin.com/</a>
     ¹</td>
   </tr>
   <tr>
     <td bgcolor="#C0C0C0" align="right"><b>Win32_cygw15</b></td>
-    <td bgcolor="#C0C0C0" style="width: 580px">&nbsp;Same as <b>Win32_gcc3</b>, but using the Cygwin Posix 
+    <td bgcolor="#C0C0C0">&nbsp;Same as <b>Win32_gcc3</b>, but using the Cygwin Posix 
+    system</td>
+  </tr>
+  <tr>
+    <td bgcolor="#C0C0C0" align="right"><b>Win32_cygw17</b></td>
+    <td bgcolor="#C0C0C0">&nbsp;Same as <b>Win32_gcc4</b>, but using the Cygwin Posix 
     system</td>
   </tr>
   <tr>
     <td bgcolor="#C0C0C0" align="right"><b>Win32_mingw3</b></td>
-    <td bgcolor="#C0C0C0" style="width: 580px">&nbsp;MingW gcc 3.4 - 
+    <td bgcolor="#C0C0C0">&nbsp;Static library built with MingW gcc 3.4</td>
+  </tr>
+  <tr>
+    <td bgcolor="#C0C0C0" align="right"><b>Win32_mingw4</b></td>
+    <td bgcolor="#C0C0C0">&nbsp;Static library built with MingW gcc 4.3 - 
     <a href="http://www.mingw.org/" style="text-decoration: none">http://www.mingw.org/</a>
     ¹<br>
-      &nbsp;Also compatible with Dev-C++ - 
+	&nbsp;Also compatible with Dev-C++ - 
     <a href="http://www.bloodshed.net/devcpp.html" style="text-decoration: none">http://www.bloodshed.net/devcpp.html</a><br>
 &nbsp;and with Code Blocks - <a href="http://www.codeblocks.org/">
 	http://www.codeblocks.org/</a>
     ¹</td>
   </tr>
   <tr>
-    <td bgcolor="#C0C0C0" align="right"><b>Win32_mingw4</b></td>
-    <td bgcolor="#C0C0C0" style="width: 580px">&nbsp;MingW gcc 4.4 - 
-    <a href="http://www.mingw.org/" style="text-decoration: none">http://www.mingw.org/</a>
-    ¹</td>
+    <td bgcolor="#C0C0C0" align="right"><b>Win32_dllw4</b></td>
+    <td bgcolor="#C0C0C0">&nbsp;DLL and import library built 
+	with MingW gcc 4.3</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><b>Win32_owc1</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp;Open Watcom 1.5 - 
+    <td bgcolor="#DDDDDD">&nbsp;Static library built with Open Watcom 1.5 - 
     <a href="http://www.openwatcom.org/" style="text-decoration: none">http://www.openwatcom.org/</a></td>
   </tr>
   <tr>
     <td bgcolor="#C0C0C0" align="right"><b>Win32_bc56</b></td>
-    <td bgcolor="#C0C0C0" style="width: 580px">&nbsp;Borland C++ BuilderX 1.0 / Borland C++ 5.6 Compiler - 
+    <td bgcolor="#C0C0C0">&nbsp;Static library built with Borland C++ BuilderX 1.0 / Borland C++ 5.6 Compiler - 
     <br />
       &nbsp;<a href="http://www.borland.com/products/downloads/download_cbuilderx.html" style="text-decoration: none">http://www.borland.com/products/downloads/download_cbuilderx.html</a>
       <font face="Times New Roman">¹,²</font><br>
@@ -320,16 +334,22 @@ http://www.tecgraf.puc-rio.br/iup/en/ide_guide/eclipse.html</a>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><b>Win32_bin</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp;Executables only for Windows NT/2000/XP</td>
+    <td bgcolor="#DDDDDD">&nbsp;Executables only for Windows NT/2000/XP (can be 
+	generated by any of the above compilers)</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><b>Win64_bin</b></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp;Same as <b>Win32_bin</b> but for 64-bits systems 
+    <td bgcolor="#DDDDDD">&nbsp;Same as <b>Win32_bin</b> but for 64-bits systems 
     using the x64 standard</td>
   </tr>
   <tr>
     <td bgcolor="#DDDDDD" align="right"><strong>Win32_cygw15_bin</strong></td>
-    <td bgcolor="#DDDDDD" style="width: 580px">&nbsp;Executables only for Windows NT/2000/XP, but 
+    <td bgcolor="#DDDDDD">&nbsp;Executables only for Windows NT/2000/XP, but 
+    using the Cygwin Posix system</td>
+  </tr>
+  <tr>
+    <td bgcolor="#DDDDDD" align="right"><strong>Win32_cygw17_bin</strong></td>
+    <td bgcolor="#DDDDDD">&nbsp;Executables only for Windows NT/2000/XP, but 
     using the Cygwin Posix system</td>
   </tr>
 </table>
