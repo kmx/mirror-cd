@@ -14,17 +14,10 @@
 
 #include <gdk/gdk.h>
 
-
-static GdkColor (*cdgdkGetPixel)(cdCtxCanvas *ctxcanvas, unsigned long rgb); /* access to the color table */
-static void (*cdgdkGetRGB)(cdCtxCanvas *ctxcanvas, unsigned long pixel, 
-                                          unsigned char* red, 
-                                          unsigned char* green, 
-                                          unsigned char* blue); /* access to the color table */
-static int cdgdkDirectColorTable[256];    /* used with directColor visuals */
-
 #define NUM_HATCHES  6
 #define HATCH_WIDTH  8
 #define HATCH_HEIGHT 8
+
 /* 
 ** 6 predefined patterns to be accessed through cdHatch(
    CD_HORIZONTAL | CD_VERTICAL | CD_FDIAGONAL | CD_BDIAGONAL |
@@ -101,138 +94,7 @@ char* cdgdkStrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, int length)
   return (char*)str;
 }
 
-static void update_colors(cdCtxCanvas *ctxcanvas)
-{
-  gboolean success;
-  gdk_colormap_alloc_colors(ctxcanvas->colormap, ctxcanvas->color_table, ctxcanvas->num_colors, FALSE, TRUE, &success);
-}
-
-static int find_color(cdCtxCanvas *ctxcanvas, GdkColor xc1)
-{
-  int pos = 0, i;
-  unsigned long min_dist = ULONG_MAX, this_dist;
-  int dr, dg, db;
-  GdkColor xc2;
-
-  for (i = 0; i < ctxcanvas->num_colors; i++)
-  {
-    xc2 = ctxcanvas->color_table[i];
-
-    dr =   (xc1.red   - xc2.red) /  850;    /* 0.30 / 255 */
-    dg = (xc1.green - xc2.green) /  432;    /* 0.59 / 255 */
-    db =  (xc1.blue  - xc2.blue) / 2318;    /* 0.11 / 255 */
-
-    this_dist = dr*dr + dg*dg + db*db;
-
-    if (this_dist < min_dist)
-    {
-      min_dist = this_dist;            
-      pos = i;                          
-    }
-  }
-
-  return pos;
-}
-
-/* Search the nearest RGB in the color table */
-static unsigned long nearest_rgb(cdCtxCanvas *ctxcanvas, GdkColor clr)
-{
-  static int nearest_try = 0;
-
-  int pos = find_color(ctxcanvas, clr);
-
-  /* Is the color allocated? */
-  if (!gdk_colormap_alloc_color(ctxcanvas->colormap, &(ctxcanvas->color_table[pos]), FALSE, TRUE))
-  {
-    /* Not allocated = update the table and search again */
-    /* Because the color can be found in an application that no longer exists */
-    /* Once updated, the problem doesn't occur during a new search */
-    /* or the cell is read write */
-
-    if (nearest_try == 1)
-    {
-      nearest_try = 0;
-      return ctxcanvas->color_table[pos].pixel;
-    }
-
-    /* What is slower?
-       Make a query colors across the nearest (probably, this should be slower)
-       or execute the previous search, firstly, and risking a repeat? */
-
-    update_colors(ctxcanvas);
-
-    nearest_try = 1;  /* ensures that this will be done only once */
-    return nearest_rgb(ctxcanvas, clr);
-  }
-
-  return ctxcanvas->color_table[pos].pixel;
-}
-
-/* GetPixel using the conversion table. Used when the system is not True color. */
-static GdkColor not_truecolor_get_pixel(cdCtxCanvas *ctxcanvas, unsigned long rgb)
-{
-  GdkColor clr;
-
-  clr.red   = cdCOLOR8TO16(cdRed(rgb));
-  clr.green = cdCOLOR8TO16(cdGreen(rgb));
-  clr.blue  = cdCOLOR8TO16(cdBlue(rgb));
-
-  /* 	Is there a new color available? */
-  if (!gdk_colormap_alloc_color(ctxcanvas->colormap, &clr, FALSE, TRUE))
-  {
-    /* Not available: search the nearest rgb in color table */
-    clr.pixel = nearest_rgb(ctxcanvas, clr); 
-  }
-  else
-  {
-    /* Available: update the color table */
-    ctxcanvas->color_table[clr.pixel] = clr;
-  }
-
-  return clr;
-}
-
-/* GetRGB using the conversion table. Used when the system is not True color. */
-static void not_truecolor_get_rgb(cdCtxCanvas *ctxcanvas, unsigned long pixel, unsigned char* red, unsigned char* green, unsigned char* blue)
-{
-  GdkColor clr;
-
-  gdk_colormap_query_color(ctxcanvas->colormap, pixel, &clr);
-
-  *red = cdCOLOR16TO8(clr.red);
-  *green = cdCOLOR16TO8(clr.green);
-  *blue = cdCOLOR16TO8(clr.blue);
-}
-
-/* GetRGB function used in True color system. */
-static void truecolor_get_rgb(cdCtxCanvas *ctxcanvas, unsigned long pixel, unsigned char* red, unsigned char* green, unsigned char* blue)
-{
-  unsigned long r = pixel & ctxcanvas->vis->red_mask;
-  unsigned long g = pixel & ctxcanvas->vis->green_mask;
-  unsigned long b = pixel & ctxcanvas->vis->blue_mask;
-
-  if (ctxcanvas->rshift < 0)
-    r = r >> (-ctxcanvas->rshift);
-  else
-    r = r << ctxcanvas->rshift;
-
-  if (ctxcanvas->gshift < 0)
-    g = g >> (-ctxcanvas->gshift);
-  else
-    g = g << ctxcanvas->gshift;
-
-  if (ctxcanvas->bshift < 0)
-    b = b >> (-ctxcanvas->bshift);
-  else
-    b = b << ctxcanvas->bshift;
-
-  *red   = cdCOLOR16TO8(r);
-  *green = cdCOLOR16TO8(g);
-  *blue  = cdCOLOR16TO8(b);
-}
-
-/* GetPixel function used in TrueColor mode. */
-static GdkColor truecolor_get_pixel(cdCtxCanvas *ctxcanvas, unsigned long rgb)
+static GdkColor cdColorToGdk(unsigned long rgb)
 {
   GdkColor clrRGB;
 
@@ -240,98 +102,7 @@ static GdkColor truecolor_get_pixel(cdCtxCanvas *ctxcanvas, unsigned long rgb)
   clrRGB.green = cdCOLOR8TO16(cdGreen(rgb));
   clrRGB.blue  = cdCOLOR8TO16(cdBlue(rgb));
 
-  (void)ctxcanvas;
-
   return clrRGB;
-}
-
-/* Returns position of highest set bit in 'ul' as an integer (0-31), or -1 if none */
-static int highbit(unsigned long ul)
-{
-  int i;
-  unsigned long hb;
-  
-  hb = 0x80;
-  hb = hb << 24;   /* hb = 0x80000000UL */
-  
-  for(i = 31; ((ul & hb) == 0) && i >= 0;  i--, ul <<= 1);
-  return i;
-}
-
-static void makeDirectCmap(cdCtxCanvas *ctxcanvas, GdkColormap* cmap)
-{
-  int    i, cmaplen, numgot;
-  unsigned char   origgot[256];
-  GdkColor c;
-  unsigned long rmask, gmask, bmask;
-  int    rshift, gshift, bshift;
-  
-  rmask = ctxcanvas->vis->red_mask;
-  gmask = ctxcanvas->vis->green_mask;
-  bmask = ctxcanvas->vis->blue_mask;
-  
-  rshift = highbit(rmask) - 15;
-  gshift = highbit(gmask) - 15;
-  bshift = highbit(bmask) - 15;
-  
-  if (rshift < 0) rmask = rmask << (-rshift);
-  else rmask = rmask >> rshift;
-  
-  if (gshift < 0) gmask = gmask << (-gshift);
-  else gmask = gmask >> gshift;
-  
-  if (bshift < 0) bmask = bmask << (-bshift);
-  else bmask = bmask >> bshift;
-  
-  cmaplen = ctxcanvas->vis->colormap_size;
-
-  if (cmaplen > 256)
-    cmaplen = 256;
-  
-  /* try to alloc a 'cmaplen' long grayscale colormap.  May not get all
-  entries for whatever reason.  Build table 'cdgdkDirectColorTable[]' that
-  maps range [0..(cmaplen-1)] into set of colors we did get */
-  
-  for (i = 0; i < 256; i++)
-  {
-    origgot[i] = 0;
-    cdgdkDirectColorTable[i] = i;
-  }
-  
-  for (i = numgot = 0; i < cmaplen; i++) 
-  {
-    c.red = c.green = c.blue = (unsigned short)((i * 0xffff) / (cmaplen - 1));
-    c.red   = (unsigned short)(c.red   & rmask);
-    c.green = (unsigned short)(c.green & gmask);
-    c.blue  = (unsigned short)(c.blue  & bmask);
-    
-    if (gdk_colormap_alloc_color(cmap, &c, FALSE, TRUE)) 
-    {
-      origgot[i] = 1;
-      numgot++;
-    }
-  }
-  
-  if (numgot == 0) 
-    return;
-  
-  /* cdgdkDirectColorTable may or may not have holes in it. */
-  for (i = 0; i < cmaplen; i++) 
-  {
-    if (!origgot[i]) 
-    {
-      int numbak, numfwd;
-      numbak = numfwd = 0;
-      while ((i - numbak) >= 0       && !origgot[i-numbak]) numbak++;
-      while ((i + numfwd) <  cmaplen && !origgot[i+numfwd]) numfwd++;
-      
-      if (i-numbak < 0        || !origgot[i-numbak]) numbak = 999;
-      if (i+numfwd >= cmaplen || !origgot[i+numfwd]) numfwd = 999;
-      
-      if      (numbak < numfwd) cdgdkDirectColorTable[i] = cdgdkDirectColorTable[i-numbak];
-      else if (numfwd < 999)    cdgdkDirectColorTable[i] = cdgdkDirectColorTable[i+numfwd];
-    }
-  }
 }
 
 /******************************************************/
@@ -340,27 +111,18 @@ void cdgdkKillCanvas(cdCtxCanvas *ctxcanvas)
 {
   if (ctxcanvas->canvas->bpp <= 8)
   {
-    /* release all colors used in palette */
-    g_object_unref(ctxcanvas->color_table);
-
-    if (ctxcanvas->colormap != gdk_colormap_get_system())
+    if (ctxcanvas->colormap != gdk_gc_get_colormap(ctxcanvas->gc))
       g_object_unref(ctxcanvas->colormap);
   }
  
-  if (ctxcanvas->xidata) free(ctxcanvas->xidata);
   if (ctxcanvas->last_hatch) g_object_unref(ctxcanvas->last_hatch);
-  if (ctxcanvas->clip_polygon) g_object_unref(ctxcanvas->clip_polygon);
 
   if (ctxcanvas->fontdesc) pango_font_description_free(ctxcanvas->fontdesc);
   if (ctxcanvas->fontlayout)  g_object_unref(ctxcanvas->fontlayout);
   if (ctxcanvas->fontcontext) g_object_unref(ctxcanvas->fontcontext);
 
-  if (ctxcanvas->new_region) 
-  {
-    g_object_unref(ctxcanvas->region_aux_gc); 
-    g_object_unref(ctxcanvas->region_aux);
-    g_object_unref(ctxcanvas->new_region);
-  }
+  if (ctxcanvas->new_rgn) gdk_region_destroy(ctxcanvas->new_rgn);
+  if (ctxcanvas->clip_rgn) gdk_region_destroy(ctxcanvas->clip_rgn);
 
   if (ctxcanvas->last_pattern)
   {
@@ -384,58 +146,30 @@ void cdgdkKillCanvas(cdCtxCanvas *ctxcanvas)
 static void cdflush(cdCtxCanvas *ctxcanvas)
 {
   (void)ctxcanvas;
-
-  gdk_error_trap_push ();
-  gdk_flush ();
-  gdk_error_trap_pop ();
+  gdk_error_trap_push();
+  gdk_flush();
+  gdk_error_trap_pop();
 }
 
 /******************************************************/
 
-static GdkPixmap* build_clip_polygon(cdCtxCanvas *ctxcanvas, GdkPoint* pnt, int n)
+static void gdkClipArea(cdCtxCanvas *ctxcanvas)
 {
-  GdkPixmap *pix = gdk_pixmap_new(ctxcanvas->wnd, ctxcanvas->canvas->w, ctxcanvas->canvas->h, 1);
-  GdkGC *gc = gdk_gc_new((GdkDrawable*)pix);
-  GdkColor clr;
+  GdkRectangle rect;
 
-  clr.pixel = 0;
-  gdk_gc_set_foreground(gc, &clr);
-  gdk_draw_rectangle(pix, gc, TRUE, 0, 0, ctxcanvas->canvas->w, ctxcanvas->canvas->h);
+  rect.x      = ctxcanvas->canvas->clip_rect.xmin;
+  rect.y      = ctxcanvas->canvas->clip_rect.ymin;
+  rect.width  = ctxcanvas->canvas->clip_rect.xmax - ctxcanvas->canvas->clip_rect.xmin;
+  rect.height = ctxcanvas->canvas->clip_rect.ymax - ctxcanvas->canvas->clip_rect.ymin;
 
-  clr.pixel = 1;
-  gdk_gc_set_foreground(gc, &clr);
-  gdk_region_polygon(pnt, n, ctxcanvas->canvas->fill_mode == CD_EVENODD ? GDK_EVEN_ODD_RULE : GDK_WINDING_RULE);
-  gdk_draw_polygon(pix, gc, TRUE, pnt, n);
+  gdk_gc_set_clip_rectangle(ctxcanvas->gc, &rect);
 
-  g_object_unref(gc);
-
-  return pix;
+  if (ctxcanvas->clip_rgn)
+    gdk_region_destroy(ctxcanvas->clip_rgn);
+  ctxcanvas->clip_rgn = NULL;
 }
 
-static void gdksetclip_area(cdCtxCanvas *ctxcanvas)
-{
-  cdRect* clip_rect = &ctxcanvas->canvas->clip_rect;
-  if (ctxcanvas->canvas->use_matrix)
-  {
-    cdPoint poly[4];
-    poly[0].x = clip_rect->xmin; poly[0].y = clip_rect->ymin;
-    poly[1].x = clip_rect->xmin; poly[1].y = clip_rect->ymax;
-    poly[2].x = clip_rect->xmax; poly[2].y = clip_rect->ymax;
-    poly[3].x = clip_rect->xmax; poly[3].y = clip_rect->ymin;
-    ctxcanvas->canvas->cxPoly(ctxcanvas, CD_CLIP, poly, 4);
-  }
-  else
-  {
-    GdkRectangle rect;
-    rect.x      = (short)clip_rect->xmin;
-    rect.y      = (short)clip_rect->ymin;
-    rect.width  = (unsigned short)(clip_rect->xmax - clip_rect->xmin + 1);
-    rect.height = (unsigned short)(clip_rect->ymax - clip_rect->ymin + 1);
-    gdk_gc_set_clip_rectangle(ctxcanvas->gc, &rect);
-  }
-}
-
-int cdgdkClip(cdCtxCanvas *ctxcanvas, int clip_mode)
+static int cdclip(cdCtxCanvas *ctxcanvas, int clip_mode)
 {
   switch (clip_mode)
   {
@@ -443,17 +177,21 @@ int cdgdkClip(cdCtxCanvas *ctxcanvas, int clip_mode)
     gdk_gc_set_clip_mask(ctxcanvas->gc, NULL);
     break;
   case CD_CLIPAREA:
-    gdksetclip_area(ctxcanvas);
+    gdkClipArea(ctxcanvas);
     break;
   case CD_CLIPPOLYGON:
-    if (ctxcanvas->clip_polygon)
-      gdk_gc_set_clip_mask(ctxcanvas->gc, (GdkBitmap*)ctxcanvas->clip_polygon);
+    if (ctxcanvas->clip_rgn)
+      gdk_gc_set_clip_region(ctxcanvas->gc, ctxcanvas->clip_rgn);
     break;
   case CD_CLIPREGION:
-    if (ctxcanvas->new_region)
-       gdk_gc_set_clip_mask(ctxcanvas->gc, (GdkBitmap*)ctxcanvas->new_region);
+    if (ctxcanvas->new_rgn)
+    {
+      //ctxcanvas->clip_rgn = gdk_region_copy(ctxcanvas->new_rgn);
+      gdk_gc_set_clip_region(ctxcanvas->gc, ctxcanvas->new_rgn);
+    }
     break;
   }
+
   return clip_mode;
 }
 
@@ -465,169 +203,69 @@ static void cdcliparea(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int
     ctxcanvas->canvas->clip_rect.ymin = ymin;
     ctxcanvas->canvas->clip_rect.xmax = xmax;
     ctxcanvas->canvas->clip_rect.ymax = ymax;
-    cdgdkClip(ctxcanvas, CD_CLIPAREA);
+    cdclip(ctxcanvas, CD_CLIPAREA);
   }
 }
 
 static void cdnewregion(cdCtxCanvas *ctxcanvas)
 {
-  GdkColor clr;
+  if (ctxcanvas->new_rgn)
+    gdk_region_destroy(ctxcanvas->new_rgn);
 
-  if (ctxcanvas->new_region) 
-  {
-    g_object_unref(ctxcanvas->region_aux_gc);
-    g_object_unref(ctxcanvas->region_aux);
-    g_object_unref(ctxcanvas->new_region);
-  }
-
-  ctxcanvas->new_region = gdk_pixmap_new(ctxcanvas->wnd, ctxcanvas->canvas->w, ctxcanvas->canvas->h, 1);
-  {
-    GdkGC* gc = gdk_gc_new((GdkDrawable*)ctxcanvas->new_region);
-
-    clr.pixel = 0;
-    gdk_gc_set_foreground(gc, &clr);
-
-    gdk_draw_rectangle(ctxcanvas->new_region, gc, TRUE, 0, 0, ctxcanvas->canvas->w, ctxcanvas->canvas->h);
-
-    g_object_unref(gc);
-  }
-
-  ctxcanvas->region_aux = gdk_pixmap_new(ctxcanvas->wnd, ctxcanvas->canvas->w, ctxcanvas->canvas->h, 1);
-  ctxcanvas->region_aux_gc = gdk_gc_new((GdkDrawable*)ctxcanvas->region_aux);
-  gdk_gc_set_colormap(ctxcanvas->region_aux_gc, gdk_screen_get_default_colormap(ctxcanvas->scr));
-
-  clr.pixel = 0;
-  gdk_gc_set_background(ctxcanvas->region_aux_gc, &clr);
+  ctxcanvas->new_rgn = gdk_region_new(); 
 }
 
 static int cdispointinregion(cdCtxCanvas *ctxcanvas, int x, int y)
 {
-  if (!ctxcanvas->new_region)
+  if (!ctxcanvas->new_rgn)
     return 0;
 
-  if (x >= 0  && y >= 0 && x < ctxcanvas->canvas->w && y < ctxcanvas->canvas->h)
-  {
-    long p;
-    GdkImage* img = gdk_drawable_get_image((GdkDrawable*)ctxcanvas->new_region, 0, 0, ctxcanvas->canvas->w, ctxcanvas->canvas->h);
-
-    p = gdk_image_get_pixel(img, x, y);
-    g_object_unref(img);
-    
-    if (p)
-      return 1;
-  }
+  if (gdk_region_point_in(ctxcanvas->new_rgn, x, y))
+    return 1;
 
   return 0;
 }
 
+static void cdoffsetregion(cdCtxCanvas *ctxcanvas, int x, int y)
+{
+  if (!ctxcanvas->new_rgn)
+    return;
+  
+  gdk_region_offset(ctxcanvas->new_rgn, x, y);
+}
+
 static void cdgetregionbox(cdCtxCanvas *ctxcanvas, int *xmin, int *xmax, int *ymin, int *ymax)
 {
-  if (!ctxcanvas->new_region)
+  GdkRectangle rect;
+
+  if (!ctxcanvas->new_rgn)
     return;
-    
-  *xmin = ctxcanvas->canvas->w-1;
-  *xmax = 0;
-  *ymin = ctxcanvas->canvas->h-1;
-  *ymax = 0;
 
-  {
-    int x, y;
-    long p;
-    GdkImage* img = gdk_drawable_get_image((GdkDrawable*)ctxcanvas->new_region, 0, 0, ctxcanvas->canvas->w, ctxcanvas->canvas->h);
+  gdk_region_get_clipbox(ctxcanvas->new_rgn, &rect);
 
-    for (y = 0; y < ctxcanvas->canvas->h; y++)
-    {
-      for (x = 0; x < ctxcanvas->canvas->w; x++)
-      {
-        p = gdk_image_get_pixel(img, x, y);
-        
-        if (p)
-        {
-          if (x < *xmin) *xmin = x; 
-          if (x > *xmax) *xmax = x; 
-          if (y < *ymin) *ymin = y; 
-          if (y > *ymax) *ymax = y; 
-          break;
-        }
-      }
-      
-      if (x != ctxcanvas->canvas->w-1)
-      {
-        for (x = ctxcanvas->canvas->w-1; x >= 0; x--)
-        {
-          p = gdk_image_get_pixel(img, x, y);
-        
-          if (p)
-          {
-            if (x < *xmin) *xmin = x; 
-            if (x > *xmax) *xmax = x; 
-            if (y < *ymin) *ymin = y; 
-            if (y > *ymax) *ymax = y; 
-            break;
-          }
-        }
-      }
-    }
-
-    g_object_unref(img);
-  }
+  *xmin = rect.x;
+  *xmax = rect.x + rect.width;
+  *ymin = rect.y;
+  *ymax = rect.y + rect.height;
 }
 
-static void sPrepareRegion(cdCtxCanvas *ctxcanvas)
-{
-  GdkColor clr;
-
-  if (!ctxcanvas->new_region)
-     return;
-
-  gdk_gc_set_function(ctxcanvas->region_aux_gc, GDK_COPY);
-
-  clr.pixel = 0;
-  gdk_gc_set_foreground(ctxcanvas->region_aux_gc, &clr);
-
-  gdk_draw_rectangle(ctxcanvas->region_aux, ctxcanvas->region_aux_gc, TRUE, 0, 0, ctxcanvas->canvas->w, ctxcanvas->canvas->h);
-
-  clr.pixel = 1;
-  gdk_gc_set_foreground(ctxcanvas->region_aux_gc, &clr);
-}
-
-static void sCombineRegion(cdCtxCanvas *ctxcanvas)
+static void sCombineRegion(cdCtxCanvas *ctxcanvas, GdkRegion* rgn)
 {
   switch(ctxcanvas->canvas->combine_mode)
   {                          
   case CD_UNION:
-   gdk_gc_set_function(ctxcanvas->region_aux_gc, GDK_OR);
+    gdk_region_union(ctxcanvas->new_rgn, rgn);
     break;
   case CD_INTERSECT:   
-   gdk_gc_set_function(ctxcanvas->region_aux_gc, GDK_AND);
+    gdk_region_intersect(ctxcanvas->new_rgn, rgn);
     break;
   case CD_DIFFERENCE:           
-   gdk_gc_set_function(ctxcanvas->region_aux_gc, GDK_AND_INVERT);
+    gdk_region_subtract(ctxcanvas->new_rgn, rgn);
     break;
   case CD_NOTINTERSECT:
-   gdk_gc_set_function(ctxcanvas->region_aux_gc, GDK_XOR);
+    gdk_region_xor(ctxcanvas->new_rgn, rgn);
     break;
   }
-
-  gdk_draw_drawable((GdkDrawable*)ctxcanvas->new_region, ctxcanvas->region_aux_gc,
-                    (GdkDrawable*)ctxcanvas->region_aux, 0, 0, 0, 0,
-                    ctxcanvas->canvas->w, ctxcanvas->canvas->h);
-}
-
-static void cdoffsetregion(cdCtxCanvas *ctxcanvas, int x, int y)
-{
-  if (!ctxcanvas->new_region)
-    return;
-    
-  sPrepareRegion(ctxcanvas);    
-
-  gdk_draw_drawable((GdkDrawable*)ctxcanvas->new_region, ctxcanvas->region_aux_gc,
-                    (GdkDrawable*)ctxcanvas->region_aux, 0, 0, x, y,
-                    ctxcanvas->canvas->w-x, ctxcanvas->canvas->h-y);
-
-  gdk_draw_drawable((GdkDrawable*)ctxcanvas->region_aux, ctxcanvas->region_aux_gc,
-                    (GdkDrawable*)ctxcanvas->new_region, 0, 0, 0, 0,
-                    ctxcanvas->canvas->w, ctxcanvas->canvas->h);
 }
 
 /******************************************************/
@@ -750,27 +388,10 @@ static void cdstipple(cdCtxCanvas *ctxcanvas, int w, int h, const unsigned char 
   cdinteriorstyle(ctxcanvas, CD_STIPPLE);
 }
 
-static int find_match(unsigned long* palette, int pal_size, unsigned long color, unsigned char *match)
-{
-  int i;
-
-  for (i = 0; i < pal_size; i++)
-  {
-    if (palette[i] == color)
-    {
-      *match = (unsigned char)i;
-      return 1;
-    }
-  }
-
-  return 0;
-}
-
 static void cdpattern(cdCtxCanvas *ctxcanvas, int w, int h, const long int *colors)
 {
-  int x, y, i;
-  int size = w*h;
-  GdkColor *pixels = g_new (GdkColor, size);
+  int x, y;
+  GdkColor color;
 
   if (ctxcanvas->last_pattern == 0 || (ctxcanvas->last_pattern_w != w || ctxcanvas->last_pattern_h != h))
   {
@@ -789,59 +410,17 @@ static void cdpattern(cdCtxCanvas *ctxcanvas, int w, int h, const long int *colo
     ctxcanvas->last_pattern_h = h;
   }
 
-  if (ctxcanvas->canvas->bpp <= 8)
-  {
-    GdkColor* match_table;        /* GDK colors */
-    unsigned long palette[256];   /* CD  colors */
-    unsigned char *index = (unsigned char*)malloc(size), match;
-    int pal_size = 1;
-    palette[0] = colors[0];
-
-    /* find the "n" first different colors of the image (to 256) */
-    for(i = 0; i < size; i++)
-    {
-      if (!find_match(palette, pal_size, colors[i], &match))
-      {
-         palette[pal_size] = colors[i];
-         index[i] = (unsigned char)pal_size;
-         pal_size++;
-
-         if (pal_size == 256)
-           break;
-      }
-      else
-        index[i] = match;
-    }
-
-    /* CD colors to GDK colors */
-    match_table = g_new (GdkColor, pal_size);
-    for (i = 0; i < pal_size; i++)
-      match_table[i] = cdgdkGetPixel(ctxcanvas, palette[i]);
-
-    /* CD image to GDK image */
-    for (i = 0; i < size; i++)
-      pixels[i] = match_table[index[i]];
-
-    g_free(match_table);
-    free(index);
-  }
-  else
-  {
-    for(i=0;i<size;i++)
-      pixels[i] = cdgdkGetPixel(ctxcanvas, colors[i]);
-  }
-
   for (y = 0; y < h; y++)
   {
     for (x = 0; x < w; x++)
     {
-      gdk_gc_set_rgb_fg_color(ctxcanvas->last_pattern_gc, &pixels[y*w+x]);
+      color = cdColorToGdk(colors[y*w+x]);
+      gdk_gc_set_rgb_fg_color(ctxcanvas->last_pattern_gc, &color);
       gdk_draw_point(ctxcanvas->last_pattern, ctxcanvas->last_pattern_gc, x, h-y-1);
     }
   }
 
   cdinteriorstyle(ctxcanvas, CD_PATTERN);
-  g_free(pixels);
 }
 
 static int cdlinestyle(cdCtxCanvas *ctxcanvas, int style)
@@ -1039,14 +618,14 @@ static void cdgetfontdim(cdCtxCanvas *ctxcanvas, int *max_width, int *height, in
 
 static long int cdbackground(cdCtxCanvas *ctxcanvas, long int color)
 {
-  ctxcanvas->bg = cdgdkGetPixel(ctxcanvas, color);
+  ctxcanvas->bg = cdColorToGdk(color);
   gdk_gc_set_rgb_bg_color(ctxcanvas->gc, &ctxcanvas->bg);
   return color;
 }
 
 static long int cdforeground(cdCtxCanvas *ctxcanvas, long int color)
 {          
-  ctxcanvas->fg = cdgdkGetPixel(ctxcanvas, color);
+  ctxcanvas->fg = cdColorToGdk(color);
   gdk_gc_set_rgb_fg_color(ctxcanvas->gc, &ctxcanvas->fg);
   return color;
 }
@@ -1054,72 +633,40 @@ static long int cdforeground(cdCtxCanvas *ctxcanvas, long int color)
 static void cdpalette(cdCtxCanvas *ctxcanvas, int n, const long int *palette, int mode)
 {
   int i;
-  GdkColor *pixels = g_new (GdkColor, 256);
-
-  for(i = 0; i < ctxcanvas->num_colors; i++)
-    pixels[i] = ctxcanvas->color_table[i];
-
-  gdk_colormap_free_colors(ctxcanvas->colormap, ctxcanvas->color_table, ctxcanvas->num_colors);
+  GdkColor clr;
 
   if (mode == CD_FORCE)
   {
-    GdkColor clr;
-    int tokeep;
-
-    /* if POLITE then allocates own palette */
-    if (ctxcanvas->colormap == gdk_colormap_get_system())
+    /* if was POLITE then allocates own palette */
+    if (ctxcanvas->colormap == gdk_gc_get_colormap(ctxcanvas->gc))
       ctxcanvas->colormap = gdk_colormap_new(ctxcanvas->vis, FALSE);
-
-    /* if FORCE then it will allocate all colors...
-       but if the number of colors is less than the maximum
-       then the difference is used to preserve the first allocated colors in the default colormap. */
-    tokeep = ctxcanvas->num_colors - n;
-    if (tokeep)
-    {
-      gboolean success;
-
-      for (i=0; i<tokeep; i++) 
-        ctxcanvas->color_table[i].pixel = i;
-
-      gdk_colormap_alloc_colors(gdk_colormap_get_system(), ctxcanvas->color_table, tokeep, FALSE, TRUE, &success);
-
-      /* reserve these colors to use in CD */
-      for (i=0; i<tokeep; i++)
-        gdk_colormap_alloc_color(ctxcanvas->colormap, &(ctxcanvas->color_table[i]), FALSE, TRUE);
-    }
 
     /* allocate all the palette colors to the CD */
     for (i = 0; i < n; i++)
     {
-      clr.red   = cdCOLOR8TO16(cdRed(palette[i]));
-      clr.green = cdCOLOR8TO16(cdGreen(palette[i]));
-      clr.blue  = cdCOLOR8TO16(cdBlue(palette[i]));
-      gdk_colormap_alloc_color(ctxcanvas->colormap, &clr, FALSE, TRUE);
+      clr = cdColorToGdk(palette[i]);
+      gdk_colormap_alloc_color(ctxcanvas->colormap, &clr, FALSE, FALSE);
     }
 
-    /* update the entire color table */
+    /* set directly on the drawable */
     gdk_drawable_set_colormap(ctxcanvas->wnd, ctxcanvas->colormap);
-    update_colors(ctxcanvas);
   }
   else
   {
     /* if was FORCE, remove the own palette */
-    if (ctxcanvas->colormap != gdk_colormap_get_system())
+    if (ctxcanvas->colormap != gdk_gc_get_colormap(ctxcanvas->gc))
     {
       g_object_unref(ctxcanvas->colormap);
-      ctxcanvas->colormap = gdk_colormap_get_system();
+      ctxcanvas->colormap = gdk_gc_get_colormap(ctxcanvas->gc);
     }
-
-    /* Update the color table before adding new colors.
-       After all, all released before that we could. */
-    update_colors(ctxcanvas);
 
     /* if POLITE then just try to allocate all the colors of the palette */
     for (i = 0; i < n; i++)
-      cdgdkGetPixel(ctxcanvas, palette[i]);
+    {
+      clr = cdColorToGdk(palette[i]);
+      gdk_colormap_alloc_color(ctxcanvas->colormap, &clr, FALSE, TRUE);
+    }
   }
-
-  g_free(pixels);
 }
 
 /******************************************************/
@@ -1140,14 +687,20 @@ static void cdclear(cdCtxCanvas* ctxcanvas)
   GdkColor clr;
 
   cdgdkCheckSolidStyle(ctxcanvas, 1);
-  
-  clr = cdgdkGetPixel(ctxcanvas, ctxcanvas->canvas->background);
+
+  if (ctxcanvas->canvas->clip_mode != CD_CLIPOFF) 
+    gdk_gc_set_clip_mask(ctxcanvas->gc, NULL);
+
+  clr = cdColorToGdk(ctxcanvas->canvas->background);
   gdk_gc_set_rgb_fg_color(ctxcanvas->gc, &clr);
 
   gdk_draw_rectangle(ctxcanvas->wnd, ctxcanvas->gc, TRUE, 0, 0, ctxcanvas->canvas->w, ctxcanvas->canvas->h);
 
-  clr = cdgdkGetPixel(ctxcanvas, ctxcanvas->canvas->foreground);
+  clr = cdColorToGdk(ctxcanvas->canvas->foreground);
   gdk_gc_set_rgb_fg_color(ctxcanvas->gc, &clr);
+
+  if (ctxcanvas->canvas->clip_mode != CD_CLIPOFF) 
+    cdclip(ctxcanvas, ctxcanvas->canvas->clip_mode);
 
   cdgdkCheckSolidStyle(ctxcanvas, 0);
 }
@@ -1188,29 +741,12 @@ static void cdsector(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, doubl
 
   if (ctxcanvas->canvas->new_region)
   {
-    sPrepareRegion(ctxcanvas);
-    /* "filled parameter = TRUE" produces an 'pie slice' */
-    gdk_draw_arc(ctxcanvas->region_aux, ctxcanvas->region_aux_gc, TRUE, xc-w/2, yc-h/2, w, h, cdRound(a1*64), cdRound((a2 - a1)*64));
-    sCombineRegion(ctxcanvas);
+    cdsectorSIM(ctxcanvas, xc, yc, w, h, a1, a2);
   }
   else
   {
     /* "filled parameter = TRUE" produces an 'pie slice' */
     gdk_draw_arc(ctxcanvas->wnd, ctxcanvas->gc, TRUE, xc-w/2, yc-h/2, w, h, cdRound(a1*64), cdRound((a2 - a1)*64));
-  }
-}
-
-static void cdchord(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
-{
-  if (ctxcanvas->canvas->new_region)
-  {
-    sPrepareRegion(ctxcanvas);
-    cdchordSIM(ctxcanvas, xc, yc, w, h, a1, a2);
-    sCombineRegion(ctxcanvas);
-  }
-  else
-  {
-    cdchordSIM(ctxcanvas, xc, yc, w, h, a1, a2);
   }
 }
 
@@ -1237,12 +773,20 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
 
   if (ctxcanvas->canvas->new_region)
   {
-    sPrepareRegion(ctxcanvas);
-    gdk_draw_rectangle(ctxcanvas->wnd, ctxcanvas->gc, TRUE, xmin, ymin, xmax-xmin+1, ymax-ymin+1);
-    sCombineRegion(ctxcanvas);
+    GdkRegion *rgn;
+    GdkRectangle rect;
+
+    rect.x = xmin;  rect.width  = xmax-xmin;
+    rect.y = ymin;  rect.height = ymax-ymin;
+    rgn = gdk_region_rectangle(&rect);
+
+    sCombineRegion(ctxcanvas, rgn);
+    gdk_region_destroy(rgn);
   }
   else
+  {
     gdk_draw_rectangle(ctxcanvas->wnd, ctxcanvas->gc, TRUE, xmin, ymin, xmax-xmin+1, ymax-ymin+1);
+  }
 }
 
 static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
@@ -1345,9 +889,15 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
 
   if (ctxcanvas->canvas->new_region)
   {
-		sPrepareRegion(ctxcanvas);
-	  gdk_draw_layout((GdkDrawable*)ctxcanvas->region_aux, (GdkGC*)ctxcanvas->region_aux_gc, x, y, ctxcanvas->fontlayout);
-    sCombineRegion(ctxcanvas);
+    GdkRegion *rgn;
+    gint *idx;
+    gint range;
+
+    pango_layout_line_get_x_ranges(pango_layout_get_line(ctxcanvas->fontlayout, 0), 0, len, &idx, &range);
+    rgn = gdk_pango_layout_get_clip_region(ctxcanvas->fontlayout, x, y, idx, range);
+    gdk_draw_layout(ctxcanvas->wnd, ctxcanvas->gc, x, y, ctxcanvas->fontlayout);
+
+    sCombineRegion(ctxcanvas, rgn);
   }
   else
   {
@@ -1371,28 +921,16 @@ static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *s, int len, int *w
   pango_layout_get_pixel_size(ctxcanvas->fontlayout, width, height);
 }
 
-void cdgdkPoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
+static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
 {
    int i;
-   GdkPoint* pnt;
-
-   pnt = g_new (GdkPoint, n);
-
-   if(!pnt)
-     return;
 
    if (mode != CD_BEZIER)
    {
      for (i = 0; i < n; i++)
      {
-       int x = poly[i].x, 
-           y = poly[i].y;
- 
        if (ctxcanvas->canvas->use_matrix)
-         cdMatrixTransformPoint(ctxcanvas->xmatrix, x, y, &x, &y);
- 
-       pnt[i].x = (short)x;
-       pnt[i].y = (short)y;
+         cdMatrixTransformPoint(ctxcanvas->xmatrix, poly[i].x, poly[i].y, &(poly[i].x), &(poly[i].y));
      }
    }
  
@@ -1401,520 +939,162 @@ void cdgdkPoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
      case CD_FILL:
        if (ctxcanvas->canvas->new_region)
        {
-         sPrepareRegion(ctxcanvas);
-         gdk_region_polygon(pnt, n, ctxcanvas->canvas->fill_mode == CD_EVENODD ? GDK_EVEN_ODD_RULE : GDK_WINDING_RULE);
-         gdk_draw_polygon(ctxcanvas->region_aux, ctxcanvas->region_aux_gc, TRUE, pnt, n);
-         sCombineRegion(ctxcanvas);
+         GdkRegion* rgn = gdk_region_polygon((GdkPoint*)poly, n, ctxcanvas->canvas->fill_mode == CD_EVENODD ? GDK_EVEN_ODD_RULE : GDK_WINDING_RULE);
+         sCombineRegion(ctxcanvas, rgn);
        }
        else
-       {
-         gdk_region_polygon(pnt, n, ctxcanvas->canvas->fill_mode == CD_EVENODD ? GDK_EVEN_ODD_RULE : GDK_WINDING_RULE);
-         gdk_draw_polygon(ctxcanvas->wnd, ctxcanvas->gc, TRUE, pnt, n);
-       }
+         gdk_draw_polygon(ctxcanvas->wnd, ctxcanvas->gc, TRUE, (GdkPoint*)poly, n);
        break;
      
      case CD_CLOSED_LINES:
        cdgdkCheckSolidStyle(ctxcanvas, 1);
-       gdk_draw_polygon(ctxcanvas->wnd, ctxcanvas->gc, FALSE, pnt, n);
+       gdk_draw_polygon(ctxcanvas->wnd, ctxcanvas->gc, FALSE, (GdkPoint*)poly, n);
        cdgdkCheckSolidStyle(ctxcanvas, 0);
        break;
    
      case CD_OPEN_LINES:
        cdgdkCheckSolidStyle(ctxcanvas, 1);
-       gdk_draw_lines(ctxcanvas->wnd, ctxcanvas->gc, pnt, n);
+       gdk_draw_lines(ctxcanvas->wnd, ctxcanvas->gc, (GdkPoint*)poly, n);
        cdgdkCheckSolidStyle(ctxcanvas, 0);
        break;
           
      case CD_CLIP:
-       if (ctxcanvas->clip_polygon)
-         g_object_unref(ctxcanvas->clip_polygon);
-       
-       ctxcanvas->clip_polygon = build_clip_polygon(ctxcanvas, pnt, n);
-       
+       ctxcanvas->clip_rgn = gdk_region_polygon((GdkPoint*)poly, n, ctxcanvas->canvas->fill_mode == CD_EVENODD ? GDK_EVEN_ODD_RULE : GDK_WINDING_RULE);     
        if (ctxcanvas->canvas->clip_mode == CD_CLIPPOLYGON)
-         cdgdkClip(ctxcanvas, CD_CLIPPOLYGON);
-       
+         cdclip(ctxcanvas, CD_CLIPPOLYGON);
        break;
      
      case CD_BEZIER:
        cdSimPolyBezier(ctxcanvas->canvas, poly, n);
        break;
    }
- 
-  g_free(pnt);
 }
 
 /******************************************************/
 
+static void cdgdkGetPixbufData(GdkPixbuf* pixbuf, unsigned char *r, unsigned char *g, unsigned char *b)
+{
+  int w, h, y, x, bpp;
+  guchar *pixdata, *pixline_data;
+  int rowstride, channels;
+
+  w = gdk_pixbuf_get_width(pixbuf);
+  h = gdk_pixbuf_get_height(pixbuf);
+  bpp = gdk_pixbuf_get_bits_per_sample(pixbuf)*gdk_pixbuf_get_n_channels(pixbuf);
+
+  if (bpp!=24 && bpp!=32)
+    return;
+
+  pixdata = gdk_pixbuf_get_pixels(pixbuf);
+  rowstride = gdk_pixbuf_get_rowstride(pixbuf);
+  channels = gdk_pixbuf_get_n_channels(pixbuf);
+
+  /* planes are separated in imgdata */
+  for (y=0; y<h; y++)
+  {
+    int lineoffset = (h-1 - y)*w;  /* imgdata is bottom up */
+    pixline_data = pixdata + y * rowstride;
+    for(x=0;x<w;x++)
+    {
+      int pos = x*channels;
+      r[lineoffset+x] = pixline_data[pos];
+      g[lineoffset+x] = pixline_data[pos+1];
+      b[lineoffset+x] = pixline_data[pos+2];
+    }
+  }
+}
+
+static GdkPixbuf* cdgdkCreatePixbufRGBA(int width, int height, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, int ix, int iy, int image_width)
+{
+  GdkPixbuf* pixbuf;
+  guchar *pixdata, *pixline_data;
+  int rowstride, channels;
+  int x, y;
+
+  pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, a?TRUE:FALSE, 8, width, height);
+  if (!pixbuf)
+    return NULL;
+
+  pixdata = gdk_pixbuf_get_pixels(pixbuf);
+  rowstride = gdk_pixbuf_get_rowstride(pixbuf);
+  channels = gdk_pixbuf_get_n_channels(pixbuf);
+
+  /* GdkPixbuf is top-bottom */
+  /* imgdata is bottom up */
+
+  /* planes are separated in imgdata */
+  for (y=0; y<height; y++)
+  {
+    int lineoffset = (height-1 - y + iy)*image_width;  /* imgdata is bottom up */
+    pixline_data = pixdata + y * rowstride;
+    for(x=0;x<width;x++)
+    {
+      int pos = x*channels;
+      pixline_data[pos] = r[lineoffset+x+ix];
+      pixline_data[pos+1] = g[lineoffset+x+ix];
+      pixline_data[pos+2] = b[lineoffset+x+ix];
+
+      if (a)
+        pixline_data[pos+3] = a[lineoffset+x+ix];
+    }
+  }
+
+  return pixbuf;
+}
+
+static GdkPixbuf* cdgdkCreatePixbufMap(int width, int height, const long* colors, const unsigned char *map, int ix, int iy, int image_width)
+{
+  GdkPixbuf* pixbuf;
+  guchar *pixdata, *pixline_data;
+  int rowstride, channels;
+  const unsigned char *line_data;
+  int x, y;
+
+  pixbuf = gdk_pixbuf_new(GDK_COLORSPACE_RGB, FALSE, 8, width, height);
+  if (!pixbuf)
+    return NULL;
+
+  pixdata = gdk_pixbuf_get_pixels(pixbuf);
+  rowstride = gdk_pixbuf_get_rowstride(pixbuf);
+  channels = gdk_pixbuf_get_n_channels(pixbuf);
+
+  /* GdkPixbuf is top-bottom */
+  /* map is bottom up */
+
+  for (y=0; y<height; y++)
+  {
+    pixline_data = pixdata + y * rowstride;
+    line_data = map + (height-1 - y + iy) * image_width;  /* map is bottom up */
+
+    for (x=0; x<width; x++)
+    {
+      unsigned char index = line_data[x+ix];
+      long c = colors[index];
+      guchar *r = &pixline_data[channels*x],
+             *g = r+1,
+             *b = g+1;
+
+      *r = cdRed(c);
+      *g = cdGreen(c);
+      *b = cdBlue(c);
+    }
+  }
+
+  return pixbuf;
+}
+
 static void cdgetimagergb(cdCtxCanvas *ctxcanvas, unsigned char *r, unsigned char *g, unsigned char *b, int x, int y, int w, int h)
 {
-  int col, lin, pos;
-  GdkImage* xi = gdk_drawable_get_image(ctxcanvas->wnd, x, y-h+1, w, h);
-  if (!xi)
+  GdkPixbuf* pixbuf = gdk_pixbuf_get_from_drawable(NULL, ctxcanvas->wnd, ctxcanvas->colormap, 
+                                                   x, y-h+1, 
+                                                   0, 0, w, h);
+  if (!pixbuf)
   {
     fprintf(stderr, "CanvasDraw: error getting image\n");
     return;
   }
-  
-  for (lin = 0; lin < h; lin++)
-  {
-    for (col = 0; col < w; col++)
-    {
-      pos = (h-lin-1) * w + col;
-      cdgdkGetRGB(ctxcanvas, gdk_image_get_pixel(xi, col, lin), r+pos, g+pos, b+pos);
-    }
-  }
 
-  g_object_unref(xi);
-}
-
-static long int* get_data_buffer(cdCtxCanvas *ctxcanvas, int size)
-{
-  if (!ctxcanvas->xidata)
-  {
-    ctxcanvas->xisize = size;
-    ctxcanvas->xidata = (long int *)malloc(ctxcanvas->xisize);
-  }
-  else if (ctxcanvas->xisize < size)
-  {
-    ctxcanvas->xisize = size;
-    ctxcanvas->xidata = (long int *)realloc(ctxcanvas->xidata, ctxcanvas->xisize);
-  }
-
-  if (!ctxcanvas->xidata)
-    ctxcanvas->xisize = 0;
-
-  return ctxcanvas->xidata;
-}
-  
-static GdkImage *map2gdkImage(cdCtxCanvas *ctxcanvas, int ew, int eh, const unsigned char *index, const long int * colors, int by, int bx, int bw, int bh, int iw)
-{
-  GdkColor** match_table = NULL;
-  int i, j, pal_size;
-  unsigned long xcol;
-  GdkImage *xim;
-  int *fx, *fy, src, dst;
-  unsigned char idx;
-  GdkColor tmpClr;
-  
-  xim = (GdkImage*) NULL;
-  
-  /* The size of the palette is unknown, a priori...
-     So, it is necessary to find the highest index used in image */
-  pal_size = 0;
-  
-  for (i = 0; i < bh; i++) 
-  {
-    for (j = 0; j < bw; j++) 
-    {
-      src = (i+by)*iw + j+bx;
-      idx = index[src];
-      if (idx > pal_size)
-        pal_size = idx;
-    }
-  }
-  
-  pal_size++;
-
-  for (i = 0; i < pal_size; i++)
-  {
-    tmpClr = cdgdkGetPixel(ctxcanvas, colors[i]);
-    match_table[i] = &tmpClr;
-  }
-
-  fx = cdGetZoomTable(ew, bw, bx);
-  fy = cdGetZoomTable(eh, bh, by);
-
-  switch (ctxcanvas->depth) 
-  {
-  case 8: 
-    {
-      unsigned char  *imagedata, *ip;
-      int imew, nullCount;
-    
-      nullCount = (4 - (ew % 4)) & 0x03;  /* # of padding bytes per line */
-      imew = ew + nullCount;
-    
-      /* Now get the image data - pad each scan line as necessary */
-      imagedata = (unsigned char*)get_data_buffer(ctxcanvas, eh * imew);
-      if (!imagedata) 
-      {
-        fprintf(stderr, "CanvasDraw: not enough memory putting image\n");
-        return NULL;
-      }
-    
-      for (i = 0; i < eh; i++) 
-      {
-        ip = imagedata + (eh-1-i)*imew;
-
-        for (j = 0; j < ew; j++, ip++) 
-        {
-          src = (fy[i])*iw + fx[j];
-          ip = (unsigned char*) match_table[index[src]]->pixel;
-        }
-      }
-
-      xim = gdk_image_new(GDK_IMAGE_FASTEST, ctxcanvas->vis, ew, eh);
-
-      if (!xim) 
-      {
-        fprintf(stderr, "CanvasDraw: not enough memory putting image\n");
-        return NULL;
-      }
-
-      if(xim)
-      {
-        xim->depth = (short)ctxcanvas->depth;
-        xim->bpp = 32;
-        xim->bpl = (short)imew;
-      }
-    }
-    break;
-
-  case 12:
-  case 15:
-  case 16: 
-    {
-      unsigned char *imagedata;
-      unsigned short *ip, *tip;
-    
-      /* Now get the image data - pad each scan line as necessary */
-      imagedata = (unsigned char*)get_data_buffer(ctxcanvas, 2*ew*eh);
-      if (!imagedata) 
-      {
-        fprintf(stderr, "CanvasDraw: not enough memory putting image\n");
-        return NULL;
-      }
-
-      xim = gdk_image_new(GDK_IMAGE_FASTEST, ctxcanvas->vis, ew, eh);
-
-      if (!xim) 
-      {
-        fprintf(stderr, "CanvasDraw: not enough memory putting image\n");
-        return NULL;
-      }
-
-      if(xim)
-      {
-        xim->depth = (short)ctxcanvas->depth;
-        xim->bpp = 16;
-        xim->bpl = 0;
-      }
-    
-      if (ctxcanvas->depth == 12 && xim->bits_per_pixel != 16) 
-      {
-        g_object_unref(xim);
-        fprintf(stderr,"No code for this type of display (depth=%d, bperpix=%d)", ctxcanvas->depth, xim->bits_per_pixel);
-        return NULL;
-      }
-    
-      ip = (unsigned short*)(imagedata + (eh-1)*xim->bpl);
-
-      for (i = 0; i < eh; i++) 
-      {
-        for (j = 0, tip = ip; j < ew; j++) 
-        {
-          src = (fy[i])*iw + fx[j];
-          xcol = match_table[index[src]]->pixel;
-          
-          if (xim->byte_order == GDK_MSB_FIRST) 
-          {
-            *tip++ = (unsigned short)(xcol & 0xffff);
-          }
-          else
-          {
-            /*  WAS *tip++ = ((xcol>>8) & 0xff) | ((xcol&0xff) << 8);  */
-            *tip++ = (unsigned short)(xcol);
-          }
-        }
-
-        ip -= ew;
-      }
-    }
-    break;
-
-  case 24:
-  case 32: 
-    {
-      unsigned char  *imagedata, *ip, *tip;
-      int do32;
-    
-      /* Now get the image data - pad each scan line as necessary */
-      imagedata = (unsigned char*)get_data_buffer(ctxcanvas, 4*ew*eh);
-      if (!imagedata) 
-      {
-        fprintf(stderr, "CanvasDraw: not enough memory putting image\n");
-        return NULL;
-      }
-
-      xim = gdk_image_new(GDK_IMAGE_FASTEST, ctxcanvas->vis, ew, eh);
-
-      if (!xim) 
-      {
-        fprintf(stderr, "CanvasDraw: not enough memory putting image\n");
-        return NULL;
-      }
-
-      if(xim)
-      {
-        xim->depth = (short)ctxcanvas->depth;
-        xim->bpp = 32;
-        xim->bpl = 0;
-      }
-    
-      do32 = (xim->bits_per_pixel == 32 ? 1 : 0);
-    
-      ip = imagedata + (eh-1)*xim->bpl;
-
-      for (i = 0; i < eh; i++) 
-      {
-        for (j = 0, tip = ip; j < ew; j++) 
-        {
-          src = (fy[i])*iw + fx[j];
-          xcol = match_table[index[src]]->pixel;
-        
-          if (xim->byte_order == GDK_MSB_FIRST) 
-          {
-            if (do32) *tip++ = 0;
-            *tip++ = (unsigned char)((xcol>>16) & 0xff);
-            *tip++ = (unsigned char)((xcol>>8)  & 0xff);
-            *tip++ = (unsigned char)( xcol      & 0xff);
-          }
-          else 
-          {  /* GDK_LSB_FIRST */
-            *tip++ = (unsigned char)( xcol      & 0xff);
-            *tip++ = (unsigned char)((xcol>>8)  & 0xff);
-            *tip++ = (unsigned char)((xcol>>16) & 0xff);
-            if (do32) *tip++ = 0;
-          }
-        }
-
-        ip -= xim->bpl;
-      }
-    }
-    break;
-  default: 
-    {
-      /* Now get the image data - pad each scan line as necessary */
-      unsigned long* imagedata = (unsigned long*)get_data_buffer(ctxcanvas, 4*ew*eh);
-      if (!imagedata) 
-      {
-        fprintf(stderr, "CanvasDraw: not enough memory putting image\n");
-        return NULL;
-      }
-    
-      xim = gdk_image_new(GDK_IMAGE_FASTEST, ctxcanvas->vis, ew, eh);
-
-      if (!xim) 
-      {
-        fprintf(stderr, "CanvasDraw: not enough memory putting image\n");
-        return NULL;
-      }
-
-      if(xim)
-      {
-        xim->depth = (short)ctxcanvas->depth;
-        xim->bpp = 32;
-        xim->bpl = (short)ew*4;
-      }
-
-      xim->bits_per_pixel = 32;
-      xim->bpl = 4 * (short)iw;
-      xim->byte_order = GDK_MSB_FIRST;
-
-      for (i = 0; i < eh; i++) 
-      {
-        for (j = 0; j < ew; j++) 
-        {
-          src = (fy[i])*iw + fx[j];
-          dst = (eh-1 - i)*ew + j;
-          imagedata[dst] = match_table[index[src]]->pixel;
-        }
-      }
-    }
-    break;
-  }
-  
-  free(fx);
-  free(fy);
-
-  return(xim);
-}
-
-static GdkImage *rgb2gdkImage(cdCtxCanvas *ctxcanvas, int ew, int eh, 
-                            const unsigned char *red, const unsigned char *green, const unsigned char *blue, 
-                            const unsigned char *alpha, GdkImage *oxi, 
-                            int by, int bx, int bw, int bh, int iw)
-{
-/* if we're displaying on a TrueColor or DirectColor display, we've got all the colors we're going to need,
- * and 'all we have to do' is convert 24-bit RGB pixels into whatever variation of RGB the X device in
- * question wants.  No color allocation is involved.
- */
-  GdkImage *xim;
-  int *fx, *fy;
-  int i, j, maplen, src;
-  int rshift, gshift, bshift, bperpix, bperline, byte_order, cshift;
-  unsigned long r, g, b, rmask, gmask, bmask, xcol;
-  unsigned char *lip, *ip, *imagedata, or, ob, og, al;
-
-  /* compute various shifting constants that we'll need... */
-  rmask = ctxcanvas->vis->red_mask;
-  gmask = ctxcanvas->vis->green_mask;
-  bmask = ctxcanvas->vis->blue_mask;
-  rshift = 7 - highbit(rmask);
-  gshift = 7 - highbit(gmask);
-  bshift = 7 - highbit(bmask);
-
-  maplen = ctxcanvas->vis->colormap_size;
-  
-  if (maplen > 256)
-    maplen = 256;
-  
-  cshift = 7 - highbit((unsigned long) (maplen-1));
-  
-  xim = gdk_image_new(GDK_IMAGE_FASTEST, ctxcanvas->vis, ew, eh);
-
-  if (!xim) 
-  {
-    fprintf(stderr, "CanvasDraw: not enough memory putting image\n");
-    return NULL;
-  }
-
-  bperline   = xim->bpl;
-  bperpix    = xim->bits_per_pixel;
-  byte_order = xim->byte_order;
-
-  if (bperpix != 8 && bperpix != 16 && bperpix != 24 && bperpix != 32) 
-  {
-    g_object_unref(xim);
-    fprintf(stderr, "CanvasDraw: bpp=%d not supported!\n", bperpix);
-    return NULL;
-  }
-  
-  imagedata = (unsigned char*)get_data_buffer(ctxcanvas, eh * bperline);
-  if (!imagedata)
-  {
-    g_object_unref(xim);
-    fprintf(stderr, "CanvasDraw: not enough memory putting image\n");
-    return NULL;
-  }
-
-  fx = cdGetZoomTable(ew, bw, bx);
-  fy = cdGetZoomTable(eh, bh, by);
-
-  lip = imagedata + (eh - 1) * bperline;
-
-  for (i = 0; i < eh; i++, lip -= bperline) 
-  {
-    for (j = 0, ip = lip; j < ew; j++) 
-    {
-      src = fy[i]*iw + fx[j];
-
-      if (alpha)
-      {
-        cdgdkGetRGB(ctxcanvas, gdk_image_get_pixel(oxi, j, eh-i-1), &or, &og, &ob);
-        al = alpha[src];
-        r = CD_ALPHA_BLEND(red[src], or, al);
-        g = CD_ALPHA_BLEND(green[src], og, al);
-        b = CD_ALPHA_BLEND(blue[src], ob, al);
-      }
-      else
-      {
-        r = red[src];  
-        g = green[src];  
-        b = blue[src];
-      }
-      
-      /* shift r, g, b so that high bit of 8-bit color specification is aligned with
-      *  high bit of r, g, b-mask in visual, AND each component with its mask, and
-      *  OR the three components together */
-      if(gdk_visual_get_best_type() == GDK_VISUAL_DIRECT_COLOR)
-      {
-        r = (unsigned long) cdgdkDirectColorTable[(r>>cshift) & 0xff] << cshift;
-        g = (unsigned long) cdgdkDirectColorTable[(g>>cshift) & 0xff] << cshift;
-        b = (unsigned long) cdgdkDirectColorTable[(b>>cshift) & 0xff] << cshift;
-      }
-      
-      /* shift the bits around */
-      if (rshift < 0)
-        r = r << (-rshift);
-      else
-        r = r >> rshift;
-      
-      if (gshift < 0)
-        g = g << (-gshift);
-      else
-        g = g >> gshift;
-      
-      if (bshift < 0)
-        b = b << (-bshift);
-      else
-        b = b >> bshift;
-      
-      r = r & rmask;
-      g = g & gmask;
-      b = b & bmask;
-      
-      xcol = r | g | b;
-      
-      if (bperpix == 32) 
-      {
-        if (byte_order == GDK_MSB_FIRST)
-        {
-          *ip++ = (unsigned char)((xcol>>24) & 0xff);
-          *ip++ = (unsigned char)((xcol>>16) & 0xff);
-          *ip++ = (unsigned char)((xcol>>8)  & 0xff);
-          *ip++ = (unsigned char)( xcol      & 0xff);
-        }
-        else 
-        {  /* GDK_LSB_FIRST */
-          *ip++ = (unsigned char)( xcol      & 0xff);
-          *ip++ = (unsigned char)((xcol>>8)  & 0xff);
-          *ip++ = (unsigned char)((xcol>>16) & 0xff);
-          *ip++ = (unsigned char)((xcol>>24) & 0xff);
-        }
-      }
-      else if (bperpix == 24) 
-      {
-        if (byte_order == GDK_MSB_FIRST) 
-        {
-          *ip++ = (unsigned char)((xcol>>16) & 0xff);
-          *ip++ = (unsigned char)((xcol>>8)  & 0xff);
-          *ip++ = (unsigned char)( xcol      & 0xff);
-        }
-        else 
-        {  /* GDK_LSB_FIRST */
-          *ip++ = (unsigned char)( xcol      & 0xff);
-          *ip++ = (unsigned char)((xcol>>8)  & 0xff);
-          *ip++ = (unsigned char)((xcol>>16) & 0xff);
-        }
-      }
-      else if (bperpix == 16) 
-      {
-        if (byte_order == GDK_MSB_FIRST) 
-        {
-          *ip++ = (unsigned char)((xcol>>8)  & 0xff);
-          *ip++ = (unsigned char)( xcol      & 0xff);
-        }
-        else {  /* GDK_LSB_FIRST */
-          *ip++ = (unsigned char)( xcol      & 0xff);
-          *ip++ = (unsigned char)((xcol>>8)  & 0xff);
-        }
-      }
-      else if (bperpix == 8) 
-      {
-        *ip++ =  (unsigned char)(xcol      & 0xff);
-      }
-    }
-  }
-
-  /* Copy imagedata to GdkImage */
-  memcpy (xim->mem, imagedata, eh * bperline);
-
-  free(fx);
-  free(fy);
-
-  return xim;
+  cdgdkGetPixbufData(pixbuf, r, g, b);
 }
 
 static void cdputimagerectrgba_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
@@ -1970,9 +1150,9 @@ static void cdputimagerectrgba_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, co
 
   {
     int ex = t_xmin, 
-        ey = t_ymin + eh-1;  /* gdkImage origin is at top-left */
-    GdkImage *xi, *oxi = NULL;
-    GdkPixmap *clip_polygon, *clip_mask = NULL;
+        ey = t_ymin + eh-1;  /* GdkPixbuf origin is at top-left */
+    GdkPixbuf *pixbuf;
+    GdkRegion *clip_polygon;
     GdkPoint* pnt = g_malloc(64);
 
     /* Since the transformation used was the original transformation, */
@@ -1984,50 +1164,25 @@ static void cdputimagerectrgba_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, co
     pnt[1].x = (short)rect[2]; pnt[1].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[3]);
     pnt[2].x = (short)rect[4]; pnt[2].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[5]);
     pnt[3].x = (short)rect[6]; pnt[3].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[7]);
-    clip_polygon = build_clip_polygon(ctxcanvas, pnt, 4);
+    clip_polygon = gdk_region_polygon(pnt, 4, ctxcanvas->canvas->fill_mode == CD_EVENODD ? GDK_EVEN_ODD_RULE : GDK_WINDING_RULE);
 
     /* combine with the existing clipping */
-    if (ctxcanvas->canvas->clip_mode == CD_CLIPAREA || ctxcanvas->canvas->clip_mode == CD_CLIPPOLYGON)
-      clip_mask = ctxcanvas->clip_polygon;
-    else if (ctxcanvas->canvas->clip_mode == CD_CLIPREGION)
-      clip_mask = ctxcanvas->new_region;
-
     gdk_gc_set_function(ctxcanvas->gc, GDK_AND);
-
-    gdk_draw_drawable((GdkDrawable*)clip_polygon, ctxcanvas->gc,
-                      (GdkDrawable*)clip_mask, 0, 0, 0, 0,
-                       ctxcanvas->canvas->w, ctxcanvas->canvas->h);
-
-    gdk_gc_set_clip_mask(ctxcanvas->gc, (GdkBitmap*)clip_polygon);
+    gdk_gc_set_clip_region(ctxcanvas->gc, clip_polygon);
 
     cdwritemode(ctxcanvas, ctxcanvas->canvas->write_mode);  /* reset gdk_gc_set_function */
 
-    if (a)
-    {
-      oxi = gdk_drawable_get_image(ctxcanvas->wnd, ex, ey, ew, eh);
-
-      if (!oxi)
-      {
-        fprintf(stderr, "CanvasDraw: error getting image\n");
-        free(dst_r);
-        return;
-      }
-    }
-
-    xi = rgb2gdkImage(ctxcanvas, ew, eh, dst_r, dst_g, dst_b, dst_a, oxi, 0, 0, ew, eh, ew);
-    if (!xi)
+    pixbuf = cdgdkCreatePixbufRGBA(ew, eh, dst_r, dst_g, dst_b, dst_a, 0, 0, ew);
+    if (!pixbuf)
       return;
 
-    gdk_draw_image(ctxcanvas->wnd, ctxcanvas->gc, xi, 0, 0, ex, ey, ew, eh);
+    gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf, 0, 0, ex, ey, ew, eh, ctxcanvas->img_dither, 0, 0);
 
     /* reset clipping */
-    g_object_unref(clip_polygon);
-    cdgdkClip(ctxcanvas, ctxcanvas->canvas->clip_mode);
+    gdk_region_destroy(clip_polygon);
+    cdclip(ctxcanvas, ctxcanvas->canvas->clip_mode);
 
-    g_object_unref(xi);
-    if (oxi)
-      g_object_unref(oxi);
-
+    g_object_unref(pixbuf);
     g_free(pnt);
   }
 
@@ -2079,10 +1234,10 @@ static void cdputimagerectmap_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, con
 
   {
     int ex = t_xmin, 
-        ey = t_ymin + eh-1;  /* GdkImage* origin is at top-left */
+        ey = t_ymin + eh-1;  /* GdkPixbuf* origin is at top-left */
     
-    GdkImage *xi;
-    GdkPixmap *clip_polygon, *clip_mask = NULL;
+    GdkPixbuf *pixbuf;
+    GdkRegion *clip_polygon;
     GdkPoint pnt[4];
 
     /* Since the transformation used was the original transformation, */
@@ -2094,35 +1249,25 @@ static void cdputimagerectmap_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, con
     pnt[1].x = (short)rect[2]; pnt[1].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[3]);
     pnt[2].x = (short)rect[4]; pnt[2].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[5]);
     pnt[3].x = (short)rect[6]; pnt[3].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[7]);
-    clip_polygon = build_clip_polygon(ctxcanvas, pnt, 4);
+    clip_polygon = gdk_region_polygon(pnt, 4, ctxcanvas->canvas->fill_mode == CD_EVENODD ? GDK_EVEN_ODD_RULE : GDK_WINDING_RULE);
 
     /* combine with the existing clipping */
-    if (ctxcanvas->canvas->clip_mode == CD_CLIPAREA || ctxcanvas->canvas->clip_mode == CD_CLIPPOLYGON)
-      clip_mask = ctxcanvas->clip_polygon;
-    else if (ctxcanvas->canvas->clip_mode == CD_CLIPREGION)
-      clip_mask = ctxcanvas->new_region;
-
     gdk_gc_set_function(ctxcanvas->gc, GDK_AND);
-
-    gdk_draw_drawable((GdkDrawable*)clip_polygon, ctxcanvas->gc,
-                      (GdkDrawable*)clip_mask, 0, 0, 0, 0,
-                      ctxcanvas->canvas->w, ctxcanvas->canvas->h);
-
-    gdk_gc_set_clip_mask(ctxcanvas->gc, (GdkBitmap*)clip_polygon);
+    gdk_gc_set_clip_region(ctxcanvas->gc, clip_polygon);
 
     cdwritemode(ctxcanvas, ctxcanvas->canvas->write_mode);  /* reset gdk_gc_set_function */
 
-    xi = map2gdkImage(ctxcanvas, ew, eh, dst_index, colors, 0, 0, ew, eh, ew);
-    if (!xi)
+    pixbuf = cdgdkCreatePixbufMap(ew, eh, colors, dst_index, 0, 0, ew);
+    if (!pixbuf)
       return;
 
-    gdk_draw_image(ctxcanvas->wnd, ctxcanvas->gc, xi, 0, 0, ex, ey, ew, eh);
+    gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf, 0, 0, ex, ey, ew, eh, ctxcanvas->img_dither, 0, 0);
 
     /* reset clipping */
-    g_object_unref(clip_polygon);
-    cdgdkClip(ctxcanvas, ctxcanvas->canvas->clip_mode);
+    gdk_region_destroy(clip_polygon);
+    cdclip(ctxcanvas, ctxcanvas->canvas->clip_mode);
 
-    g_object_unref(xi);
+    g_object_unref(pixbuf);
   }
 
   free(dst_index);
@@ -2133,7 +1278,7 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   int ew = w, eh = h, ex = x, ey = y;
   int bw = iw, bh = ih, bx = 0, by = 0;
   int rw, rh;
-  GdkImage* xi;
+  GdkPixbuf* pixbuf;
 
   if (ctxcanvas->canvas->use_matrix)
   {
@@ -2143,7 +1288,7 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 
   rw = xmax-xmin+1;
   rh = ymax-ymin+1;
-  y -= (h - 1);        /* gdkImage origin is at top-left */
+  y -= (h - 1);        /* GdkPixbuf origin is at top-left */
 
   if (!cdCalcZoom(ctxcanvas->canvas->w, x, w, &ex, &ew, xmin, rw, &bx, &bw, 1))
     return;
@@ -2151,18 +1296,20 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   if (!cdCalcZoom(ctxcanvas->canvas->h, y, h, &ey, &eh, ymin, rh, &by, &bh, 0))
     return;
 
-  xi = rgb2gdkImage(ctxcanvas, ew, eh, r, g, b, NULL, NULL, by, bx, bw, bh, iw);
-  if (!xi)
+  pixbuf = cdgdkCreatePixbufRGBA(bw, bh, r, g, b, NULL, bx, by, iw);
+  if (!pixbuf)
     return;
 
-  gdk_draw_image(ctxcanvas->wnd, ctxcanvas->gc, xi, 0, 0, ex, ey, ew, eh);
+//  GdkPixbuf *pixbuf_scaled = gdk_pixbuf_scale_simple(pixbuf, ew, eh, GDK_INTERP_NEAREST);
 
-  g_object_unref(xi);
+  gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf, 0, 0, ex, ey, -1, -1, ctxcanvas->img_dither, 0, 0);
+
+  g_object_unref(pixbuf);
 }
 
 static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
-  GdkImage *xi, *oxi;
+  GdkPixbuf *pixbuf;
   int ew = w, eh = h, ex = x, ey = y;
   int bw = iw, bh = ih, bx = 0, by = 0;
   int rw, rh;
@@ -2175,7 +1322,7 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
 
   rw = xmax-xmin+1;
   rh = ymax-ymin+1;
-  y -= (h - 1);        /* gdkImage origin is at top-left */
+  y -= (h - 1);        /* GdkPixbuf origin is at top-left */
 
   if (!cdCalcZoom(ctxcanvas->canvas->w, x, w, &ex, &ew, xmin, rw, &bx, &bw, 1))
     return;
@@ -2183,22 +1330,13 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
   if (!cdCalcZoom(ctxcanvas->canvas->h, y, h, &ey, &eh, ymin, rh, &by, &bh, 0))
     return;
 
-  oxi = gdk_drawable_get_image(ctxcanvas->wnd, ex, ey, ew, eh);
-
-  if (!oxi)
-  {
-    fprintf(stderr, "CanvasDraw: error getting image\n");
-    return;
-  }
-
-  xi = rgb2gdkImage(ctxcanvas, ew, eh, r, g, b, a, oxi, by, bx, bw, bh, iw);
-  if (!xi)
+  pixbuf = cdgdkCreatePixbufRGBA(bw, bh, r, g, b, a, bx, by, iw);
+  if (!pixbuf)
     return;
 
-  gdk_draw_image(ctxcanvas->wnd, ctxcanvas->gc, xi, 0, 0, ex, ey, ew, eh);
+  gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf, 0, 0, ex, ey, ew, eh, ctxcanvas->img_dither, 0, 0);
 
-  g_object_unref(xi);
-  g_object_unref(oxi);
+  g_object_unref(pixbuf);
 }
 
 static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *index, const long int *colors, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
@@ -2206,7 +1344,7 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   int ew = w, eh = h, ex = x, ey = y;
   int bw = iw, bh = ih, bx = 0, by = 0;
   int rw, rh;
-  GdkImage* xi;
+  GdkPixbuf* pixbuf;
 
   if (ctxcanvas->canvas->use_matrix)
   {
@@ -2216,7 +1354,7 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 
   rw = xmax-xmin+1;
   rh = ymax-ymin+1;
-  y -= (h - 1);        /* gdkImage origin is at top-left */
+  y -= (h - 1);        /* GdkPixbuf origin is at top-left */
 
   if (!cdCalcZoom(ctxcanvas->canvas->w, x, w, &ex, &ew, xmin, rw, &bx, &bw, 1))
     return;
@@ -2224,20 +1362,20 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   if (!cdCalcZoom(ctxcanvas->canvas->h, y, h, &ey, &eh, ymin, rh, &by, &bh, 0))
     return;
 
-  xi = map2gdkImage(ctxcanvas, ew, eh, index, colors, by, bx, bw, bh, iw);
-  if (!xi)
+  pixbuf = cdgdkCreatePixbufMap(bw, bh, colors, index, bx, by, iw);
+  if (!pixbuf)
     return;
 
-  gdk_draw_image(ctxcanvas->wnd, ctxcanvas->gc, xi, 0, 0, ex, ey, ew, eh);
+  gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf, 0, 0, ex, ey, ew, eh, ctxcanvas->img_dither, 0, 0);
 
-  g_object_unref(xi);
+  g_object_unref(pixbuf);
 }
 
 static void cdpixel(cdCtxCanvas *ctxcanvas, int x, int y, long int color)
 {
   if (ctxcanvas->canvas->foreground != color)
   {
-    GdkColor clr = cdgdkGetPixel(ctxcanvas, color);
+    GdkColor clr = cdColorToGdk(color);
     gdk_gc_set_rgb_fg_color(ctxcanvas->gc, &clr);
   }
 
@@ -2273,7 +1411,7 @@ static cdCtxImage *cdcreateimage (cdCtxCanvas *ctxcanvas, int w, int h)
 
   gc = gdk_gc_new(ctximage->img);
 
-  clr = cdgdkGetPixel(ctxcanvas, CD_WHITE);
+  clr = cdColorToGdk(CD_WHITE);
 
   gdk_gc_set_rgb_fg_color(gc, &clr);
   gdk_draw_rectangle(ctximage->img, gc, TRUE, 0, 0, ctximage->w, ctxcanvas->canvas->h);
@@ -2386,6 +1524,29 @@ static cdAttribute rotate_attrib =
   get_rotate_attrib
 }; 
 
+static void set_imgdither_attrib(cdCtxCanvas* ctxcanvas, char* data)
+{
+  if (data && cdStrEqualNoCase(data, "NORMAL"))
+    ctxcanvas->img_dither = GDK_RGB_DITHER_NORMAL;
+  else
+    ctxcanvas->img_dither = GDK_RGB_DITHER_NONE;
+}
+
+static char* get_imgdither_attrib(cdCtxCanvas* ctxcanvas)
+{
+  if (ctxcanvas->img_dither)
+    return "NORMAL";
+  else
+    return "NONE";
+}
+
+static cdAttribute imgdither_attrib =
+{
+  "IMGDITHER",
+  set_imgdither_attrib,
+  get_imgdither_attrib
+}; 
+
 static char* get_gc_attrib(cdCtxCanvas *ctxcanvas)
 {
   return (char*)ctxcanvas->gc;
@@ -2398,23 +1559,21 @@ static cdAttribute gc_attrib =
   get_gc_attrib
 }; 
 
-static char* get_version_attrib(cdCtxCanvas* ctxcanvas)
+static char* get_pangoversion_attrib(cdCtxCanvas* ctxcanvas)
 {
   (void)ctxcanvas;
   return (char*)pango_version_string();
 }
 
-static cdAttribute version_attrib =
+static cdAttribute pangoversion_attrib =
 {
   "PANGOVERSION",
   NULL,
-  get_version_attrib
+  get_pangoversion_attrib
 }; 
 
 cdCtxCanvas *cdgdkCreateCanvas(cdCanvas* canvas, GdkDrawable* wnd, GdkScreen* scr, GdkVisual* vis)
 {
-  static int first = 1;
-
   cdCtxCanvas *ctxcanvas = (cdCtxCanvas *)malloc(sizeof(cdCtxCanvas));
   memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
 
@@ -2429,8 +1588,6 @@ cdCtxCanvas *cdgdkCreateCanvas(cdCanvas* canvas, GdkDrawable* wnd, GdkScreen* sc
     free(canvas);
     return NULL;
   }
-
-  gdk_gc_set_colormap(ctxcanvas->gc, gdk_screen_get_default_colormap(ctxcanvas->scr));
 
   ctxcanvas->fontcontext = gdk_pango_context_get();
   pango_context_set_language(ctxcanvas->fontcontext, pango_language_get_default());
@@ -2449,54 +1606,20 @@ cdCtxCanvas *cdgdkCreateCanvas(cdCanvas* canvas, GdkDrawable* wnd, GdkScreen* sc
   canvas->h_mm = ((double)canvas->h) / canvas->yres;
   canvas->invert_yaxis = 1;
 
-  if (first)
+  if (canvas->bpp <= 8)
   {
-    if (canvas->bpp > 8)
+    ctxcanvas->colormap = gdk_gc_get_colormap(ctxcanvas->gc);
+    if (!ctxcanvas->colormap)
     {
-      cdgdkGetRGB   = truecolor_get_rgb;
-      cdgdkGetPixel = truecolor_get_pixel;
-
-      /* make linear colormap for DirectColor visual */
-      if(gdk_visual_get_best_type() == GDK_VISUAL_DIRECT_COLOR)
-        makeDirectCmap(ctxcanvas, gdk_screen_get_default_colormap(ctxcanvas->scr));
+      ctxcanvas->colormap = gdk_colormap_get_system();
+      gdk_gc_set_colormap(ctxcanvas->gc, ctxcanvas->colormap);
     }
-    else
-    {
-      cdgdkGetRGB   = not_truecolor_get_rgb;
-      cdgdkGetPixel = not_truecolor_get_pixel;
-    }
-  }
-  
-  if (canvas->bpp > 8)
-  {
-    ctxcanvas->rshift = 15 - highbit(ctxcanvas->vis->red_mask);
-    ctxcanvas->gshift = 15 - highbit(ctxcanvas->vis->green_mask);
-    ctxcanvas->bshift = 15 - highbit(ctxcanvas->vis->blue_mask);
-  
-    ctxcanvas->num_colors = 0;
-    ctxcanvas->colormap = NULL;
-
-    /* For canvas bpp <= 8 RGBA is simulated with cdGetImageRGB */
-    canvas->cxPutImageRectRGBA = cdputimagerectrgba;
-  }
-  else
-  {
-    int i;
-
-    ctxcanvas->colormap = gdk_screen_get_default_colormap(scr);
-    ctxcanvas->num_colors = 1L << canvas->bpp;
-
-    for (i = 0; i < ctxcanvas->num_colors; i++)
-      ctxcanvas->color_table[i].pixel = i;
-
-    update_colors(ctxcanvas);
+    ctxcanvas->num_colors = ctxcanvas->colormap->size;
   }
 
   cdRegisterAttribute(canvas, &gc_attrib);
   cdRegisterAttribute(canvas, &rotate_attrib);
-  cdRegisterAttribute(canvas, &version_attrib);
-
-  first = 0;
+  cdRegisterAttribute(canvas, &pangoversion_attrib);
 
   return ctxcanvas;
 }
@@ -2508,19 +1631,19 @@ void cdgdkInitTable(cdCanvas* canvas)
   
   canvas->cxPixel  = cdpixel;
   canvas->cxLine   = cdline;
-  canvas->cxPoly   = cdgdkPoly;
+  canvas->cxPoly   = cdpoly;
   canvas->cxRect   = cdrect;
   canvas->cxBox    = cdbox;
   canvas->cxArc    = cdarc;
   canvas->cxSector = cdsector;
-  canvas->cxChord  = cdchord;
+  canvas->cxChord  = cdchordSIM;
   canvas->cxText   = cdtext;
 
   canvas->cxNewRegion = cdnewregion;
   canvas->cxIsPointInRegion = cdispointinregion;
   canvas->cxOffsetRegion = cdoffsetregion;
   canvas->cxGetRegionBox = cdgetregionbox;
-  canvas->cxClip = cdgdkClip;
+  canvas->cxClip = cdclip;
   canvas->cxClipArea = cdcliparea;
   canvas->cxWriteMode = cdwritemode;
   canvas->cxLineStyle = cdlinestyle;
@@ -2541,19 +1664,16 @@ void cdgdkInitTable(cdCanvas* canvas)
   canvas->cxForeground = cdforeground;
   canvas->cxTransform = cdtransform;
  
-  canvas->cxGetImageRGB = cdgetimagergb;
   canvas->cxScrollArea = cdscrollarea;
-
   canvas->cxCreateImage = cdcreateimage;
   canvas->cxGetImage = cdgetimage;
   canvas->cxPutImageRect = cdputimagerect;
   canvas->cxKillImage = cdkillimage;
 
+  canvas->cxGetImageRGB = cdgetimagergb;
   canvas->cxPutImageRectRGB = cdputimagerectrgb;
   canvas->cxPutImageRectMap = cdputimagerectmap;
-
-  if (canvas->bpp > 8)
-    canvas->cxPutImageRectRGBA = cdputimagerectrgba;
+  canvas->cxPutImageRectRGBA = cdputimagerectrgba;
 }
 
 int cdBaseDriver(void)

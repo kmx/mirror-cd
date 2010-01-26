@@ -42,22 +42,18 @@ struct _cdCtxCanvas {
   int last_pattern_h;
 
   unsigned int depth;        /* canvas depth */
-  GdkPixmap* clip_polygon;   /* clipping polygon */
-  GdkPixmap* new_region;
-  GdkPixmap* region_aux;
-  GdkGC* region_aux_gc;
   long int *xidata;          /* Image cache */
   int xisize;
-  GdkColormap* colormap;     /* Color map default */
-  GdkColor* color_table;     /* Color table of the color map */
+  GdkColormap* colormap;     /* Color map */
   int num_colors;            /* Size of the color table  */
-  int rshift;                /* Red constant to calculate the true color */
-  int gshift;                /* Green constant to calculate the true color */
-  int bshift;                /* Blue constant to calculate the true color */
   double xmatrix[6];         /* Transformation matrix that includes axis inversion */
   float rotate_angle;
   int rotate_center_x;
   int rotate_center_y;
+  int img_dither;
+
+  GdkRegion* new_rgn;
+  GdkRegion* clip_rgn;
 
   PangoContext *fontcontext;
   PangoFontDescription *fontdesc;
@@ -75,7 +71,5 @@ struct _cdCtxCanvas {
 cdCtxCanvas *cdgdkCreateCanvas(cdCanvas* canvas, GdkDrawable* wnd, GdkScreen* scr, GdkVisual* vis);
 void cdgdkInitTable(cdCanvas* canvas);
 void cdgdkKillCanvas(cdCtxCanvas *ctxcanvas);
-int cdgdkClip(cdCtxCanvas *ctxcanvas, int clip_mode);
-void cdgdkPoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n);
 
 #endif
