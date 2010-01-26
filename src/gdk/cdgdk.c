@@ -153,42 +153,30 @@ static void cdflush(cdCtxCanvas *ctxcanvas)
 
 /******************************************************/
 
-static void gdkClipArea(cdCtxCanvas *ctxcanvas)
-{
-  GdkRectangle rect;
-
-  rect.x      = ctxcanvas->canvas->clip_rect.xmin;
-  rect.y      = ctxcanvas->canvas->clip_rect.ymin;
-  rect.width  = ctxcanvas->canvas->clip_rect.xmax - ctxcanvas->canvas->clip_rect.xmin;
-  rect.height = ctxcanvas->canvas->clip_rect.ymax - ctxcanvas->canvas->clip_rect.ymin;
-
-  gdk_gc_set_clip_rectangle(ctxcanvas->gc, &rect);
-
-  if (ctxcanvas->clip_rgn)
-    gdk_region_destroy(ctxcanvas->clip_rgn);
-  ctxcanvas->clip_rgn = NULL;
-}
-
 static int cdclip(cdCtxCanvas *ctxcanvas, int clip_mode)
 {
   switch (clip_mode)
   {
   case CD_CLIPOFF:
-    gdk_gc_set_clip_mask(ctxcanvas->gc, NULL);
+    gdk_gc_set_clip_region(ctxcanvas->gc, NULL);
     break;
   case CD_CLIPAREA:
-    gdkClipArea(ctxcanvas);
-    break;
+    {
+      GdkRectangle rect;
+      rect.x      = ctxcanvas->canvas->clip_rect.xmin;
+      rect.y      = ctxcanvas->canvas->clip_rect.ymin;
+      rect.width  = ctxcanvas->canvas->clip_rect.xmax - ctxcanvas->canvas->clip_rect.xmin;
+      rect.height = ctxcanvas->canvas->clip_rect.ymax - ctxcanvas->canvas->clip_rect.ymin;
+      gdk_gc_set_clip_rectangle(ctxcanvas->gc, &rect);
+      break;
+    }
   case CD_CLIPPOLYGON:
     if (ctxcanvas->clip_rgn)
       gdk_gc_set_clip_region(ctxcanvas->gc, ctxcanvas->clip_rgn);
     break;
   case CD_CLIPREGION:
     if (ctxcanvas->new_rgn)
-    {
-      //ctxcanvas->clip_rgn = gdk_region_copy(ctxcanvas->new_rgn);
       gdk_gc_set_clip_region(ctxcanvas->gc, ctxcanvas->new_rgn);
-    }
     break;
   }
 
@@ -266,6 +254,8 @@ static void sCombineRegion(cdCtxCanvas *ctxcanvas, GdkRegion* rgn)
     gdk_region_xor(ctxcanvas->new_rgn, rgn);
     break;
   }
+
+  gdk_region_destroy(rgn);
 }
 
 /******************************************************/
@@ -689,7 +679,7 @@ static void cdclear(cdCtxCanvas* ctxcanvas)
   cdgdkCheckSolidStyle(ctxcanvas, 1);
 
   if (ctxcanvas->canvas->clip_mode != CD_CLIPOFF) 
-    gdk_gc_set_clip_mask(ctxcanvas->gc, NULL);
+    gdk_gc_set_clip_region(ctxcanvas->gc, NULL);
 
   clr = cdColorToGdk(ctxcanvas->canvas->background);
   gdk_gc_set_rgb_fg_color(ctxcanvas->gc, &clr);
@@ -781,12 +771,9 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
     rgn = gdk_region_rectangle(&rect);
 
     sCombineRegion(ctxcanvas, rgn);
-    gdk_region_destroy(rgn);
   }
   else
-  {
     gdk_draw_rectangle(ctxcanvas->wnd, ctxcanvas->gc, TRUE, xmin, ymin, xmax-xmin+1, ymax-ymin+1);
-  }
 }
 
 static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
@@ -894,15 +881,15 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
     gint range;
 
     pango_layout_line_get_x_ranges(pango_layout_get_line(ctxcanvas->fontlayout, 0), 0, len, &idx, &range);
+
+    /* TODO: this is only the bounding box of the layout, not the text itself,
+             must transform the text into a polygon. */
     rgn = gdk_pango_layout_get_clip_region(ctxcanvas->fontlayout, x, y, idx, range);
-    gdk_draw_layout(ctxcanvas->wnd, ctxcanvas->gc, x, y, ctxcanvas->fontlayout);
 
     sCombineRegion(ctxcanvas, rgn);
   }
   else
-  {
     gdk_draw_layout(ctxcanvas->wnd, ctxcanvas->gc, x, y, ctxcanvas->fontlayout);
-  }
 
   pango_context_set_matrix(ctxcanvas->fontcontext, NULL);
 
@@ -1300,9 +1287,14 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   if (!pixbuf)
     return;
 
-//  GdkPixbuf *pixbuf_scaled = gdk_pixbuf_scale_simple(pixbuf, ew, eh, GDK_INTERP_NEAREST);
-
-  gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf, 0, 0, ex, ey, -1, -1, ctxcanvas->img_dither, 0, 0);
+  if (bw!=ew || bh!=eh)
+  {
+    GdkPixbuf *pixbuf_scaled = gdk_pixbuf_scale_simple(pixbuf, ew, eh, GDK_INTERP_NEAREST);
+    gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf_scaled, 0, 0, ex, ey, -1, -1, ctxcanvas->img_dither, 0, 0);
+    g_object_unref(pixbuf_scaled);
+  }
+  else
+    gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf, 0, 0, ex, ey, -1, -1, ctxcanvas->img_dither, 0, 0);
 
   g_object_unref(pixbuf);
 }
@@ -1334,7 +1326,14 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
   if (!pixbuf)
     return;
 
-  gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf, 0, 0, ex, ey, ew, eh, ctxcanvas->img_dither, 0, 0);
+  if (bw!=ew || bh!=eh)
+  {
+    GdkPixbuf *pixbuf_scaled = gdk_pixbuf_scale_simple(pixbuf, ew, eh, GDK_INTERP_NEAREST);
+    gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf_scaled, 0, 0, ex, ey, -1, -1, ctxcanvas->img_dither, 0, 0);
+    g_object_unref(pixbuf_scaled);
+  }
+  else
+    gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf, 0, 0, ex, ey, -1, -1, ctxcanvas->img_dither, 0, 0);
 
   g_object_unref(pixbuf);
 }
@@ -1366,7 +1365,14 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   if (!pixbuf)
     return;
 
-  gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf, 0, 0, ex, ey, ew, eh, ctxcanvas->img_dither, 0, 0);
+  if (bw!=ew || bh!=eh)
+  {
+    GdkPixbuf *pixbuf_scaled = gdk_pixbuf_scale_simple(pixbuf, ew, eh, GDK_INTERP_NEAREST);
+    gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf_scaled, 0, 0, ex, ey, -1, -1, ctxcanvas->img_dither, 0, 0);
+    g_object_unref(pixbuf_scaled);
+  }
+  else
+    gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf, 0, 0, ex, ey, -1, -1, ctxcanvas->img_dither, 0, 0);
 
   g_object_unref(pixbuf);
 }
