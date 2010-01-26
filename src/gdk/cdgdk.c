@@ -1163,7 +1163,7 @@ static void cdputimagerectrgba_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, co
     if (!pixbuf)
       return;
 
-    gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf, 0, 0, ex, ey, ew, eh, ctxcanvas->img_dither, 0, 0);
+    gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf, 0, 0, ex, ey, -1, -1, ctxcanvas->img_dither, 0, 0);
 
     /* reset clipping */
     gdk_region_destroy(clip_polygon);
@@ -1248,7 +1248,7 @@ static void cdputimagerectmap_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, con
     if (!pixbuf)
       return;
 
-    gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf, 0, 0, ex, ey, ew, eh, ctxcanvas->img_dither, 0, 0);
+    gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf, 0, 0, ex, ey, -1, -1, ctxcanvas->img_dither, 0, 0);
 
     /* reset clipping */
     gdk_region_destroy(clip_polygon);
@@ -1289,7 +1289,7 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 
   if (bw!=ew || bh!=eh)
   {
-    GdkPixbuf *pixbuf_scaled = gdk_pixbuf_scale_simple(pixbuf, ew, eh, GDK_INTERP_NEAREST);
+    GdkPixbuf *pixbuf_scaled = gdk_pixbuf_scale_simple(pixbuf, ew, eh, ctxcanvas->img_interp);
     gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf_scaled, 0, 0, ex, ey, -1, -1, ctxcanvas->img_dither, 0, 0);
     g_object_unref(pixbuf_scaled);
   }
@@ -1328,7 +1328,7 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
 
   if (bw!=ew || bh!=eh)
   {
-    GdkPixbuf *pixbuf_scaled = gdk_pixbuf_scale_simple(pixbuf, ew, eh, GDK_INTERP_NEAREST);
+    GdkPixbuf *pixbuf_scaled = gdk_pixbuf_scale_simple(pixbuf, ew, eh, ctxcanvas->img_interp);
     gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf_scaled, 0, 0, ex, ey, -1, -1, ctxcanvas->img_dither, 0, 0);
     g_object_unref(pixbuf_scaled);
   }
@@ -1367,7 +1367,7 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 
   if (bw!=ew || bh!=eh)
   {
-    GdkPixbuf *pixbuf_scaled = gdk_pixbuf_scale_simple(pixbuf, ew, eh, GDK_INTERP_NEAREST);
+    GdkPixbuf *pixbuf_scaled = gdk_pixbuf_scale_simple(pixbuf, ew, eh, ctxcanvas->img_interp);
     gdk_draw_pixbuf(ctxcanvas->wnd, ctxcanvas->gc, pixbuf_scaled, 0, 0, ex, ey, -1, -1, ctxcanvas->img_dither, 0, 0);
     g_object_unref(pixbuf_scaled);
   }
@@ -1553,6 +1553,29 @@ static cdAttribute imgdither_attrib =
   get_imgdither_attrib
 }; 
 
+static void set_interp_attrib(cdCtxCanvas* ctxcanvas, char* data)
+{
+  if (data && cdStrEqualNoCase(data, "BILINEAR"))
+    ctxcanvas->img_interp = GDK_INTERP_BILINEAR;
+  else
+    ctxcanvas->img_interp = GDK_INTERP_NEAREST;
+}
+
+static char* get_interp_attrib(cdCtxCanvas* ctxcanvas)
+{
+  if (ctxcanvas->img_interp)
+    return "BILINEAR";
+  else
+    return "NEAREST";
+}
+
+static cdAttribute interp_attrib =
+{
+  "IMGINTERP",
+  set_interp_attrib,
+  get_interp_attrib
+}; 
+
 static char* get_gc_attrib(cdCtxCanvas *ctxcanvas)
 {
   return (char*)ctxcanvas->gc;
@@ -1626,6 +1649,8 @@ cdCtxCanvas *cdgdkCreateCanvas(cdCanvas* canvas, GdkDrawable* wnd, GdkScreen* sc
   cdRegisterAttribute(canvas, &gc_attrib);
   cdRegisterAttribute(canvas, &rotate_attrib);
   cdRegisterAttribute(canvas, &pangoversion_attrib);
+  cdRegisterAttribute(canvas, &imgdither_attrib);
+  cdRegisterAttribute(canvas, &interp_attrib);
 
   return ctxcanvas;
 }

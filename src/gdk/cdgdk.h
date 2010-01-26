@@ -50,7 +50,7 @@ struct _cdCtxCanvas {
   float rotate_angle;
   int rotate_center_x;
   int rotate_center_y;
-  int img_dither;
+  int img_dither, img_interp;
 
   GdkRegion* new_rgn;
   GdkRegion* clip_rgn;
