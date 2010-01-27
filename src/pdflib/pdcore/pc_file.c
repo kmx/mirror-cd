@@ -55,6 +55,10 @@
 
 #if defined(WIN32) && !defined(__BORLANDC__)
 
+#ifndef _IOB_ENTRIES
+#define _IOB_ENTRIES 20
+#endif
+
 #define PDC_MAXFILEHANDLES 2048
 
 /* set a new maximum for the number of simultaneously open files.

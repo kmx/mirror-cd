@@ -37,8 +37,8 @@ SRC = $(SRCCOMM) $(SRCSVG) $(SRCINTCGM) $(SRCDRV) $(SRCSIM)
 
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )
   ifdef USE_GDK
-    SRC += $(SRCGDK)
-    LIBNAME = cdgdk
+    SRC += $(SRCGDK) $(SRCNULL)
+    LIBNAME := cdgdk
     USE_GTK = Yes
   else
     SRC += $(SRCWIN32)
@@ -47,7 +47,7 @@ ifneq ($(findstring Win, $(TEC_SYSNAME)), )
 else
   ifdef USE_GDK
     SRC += $(SRCGDK)
-    LIBNAME = cdgdk
+    LIBNAME := cdgdk
     USE_GTK = Yes
   else
     SRC += $(SRCX11)
