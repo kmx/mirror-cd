@@ -599,7 +599,7 @@ static int cdhatch(cdCtxCanvas *ctxcanvas, int style)
 
 static void make_pattern(cdCtxCanvas *ctxcanvas, int n, int m, void* data, int (*data2rgb)(cdCtxCanvas *ctxcanvas, int n, int i, int j, void* data, unsigned char*r, unsigned char*g, unsigned char*b))
 {
-  int i, j;
+  int i, j, ret;
   unsigned char r, g, b;
   char color[20];
 
@@ -610,7 +610,11 @@ static void make_pattern(cdCtxCanvas *ctxcanvas, int n, int m, void* data, int (
   {
     for (i = 0; i < n; i++)
     {
-      int ret = data2rgb(ctxcanvas, n, i, j, data, &r, &g, &b);
+      if (ctxcanvas->canvas->invert_yaxis)
+        ret = data2rgb(ctxcanvas, n, i, m-1 - j, data, &r, &g, &b);
+      else
+        ret = data2rgb(ctxcanvas, n, i, j, data, &r, &g, &b);
+
       if (ret == -1) continue;
 
       sprintf(color, "rgb(%d,%d,%d)", (int)r, (int)g, (int)b);
