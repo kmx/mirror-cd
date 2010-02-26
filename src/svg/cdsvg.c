@@ -19,6 +19,7 @@
 #include "lodepng.h"
 #include "base64.h"
 
+
 struct _cdCtxCanvas 
 {
   cdCanvas* canvas;
@@ -26,30 +27,26 @@ struct _cdCtxCanvas
 
   char bgColor[20];
   char fgColor[20]; 
-  char linecap[10];
-  char linejoin[10];
-  char linestyle[20];
-  char poly[256];
-  char pattern[30];
+  char* linecap;
+  char* linejoin;
+  char linestyle[50];
+  char pattern[50];
 
-  char font_weight[15];
-  char font_style[15];
-  char font_decoration[15];
+  char* font_weight;
+  char* font_style;
+  char* font_decoration;
   char font_family[256];
   char font_size[10];
 
-  int backopacity;
-  int writemode;
-  int linewidth;
+  double opacity;
   int hatchboxsize;
-
-  double xmatrix[6];         /* Transformation matrix that includes axis inversion */
 
   /* private */
   int last_fill_mode;
   
-  int last_clip_path;
-  int clip_off_control;
+  int last_clip_poly;
+  int last_clip_rect;
+  int clip_control;
   int clip_polygon;
 
   int transform_control;
@@ -57,18 +54,17 @@ struct _cdCtxCanvas
   FILE* file;
 };
 
+static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix);
+
 static void cdkillcanvas(cdCtxCanvas* ctxcanvas)
 {
-  while(ctxcanvas->clip_off_control > 0)
-  {
-    fprintf(ctxcanvas->file, "</g>\n");
-    --ctxcanvas->clip_off_control;
-  }
+  if (ctxcanvas->clip_control)
+    fprintf(ctxcanvas->file, "</g>\n");  /* close clipping container */
 
-  if(ctxcanvas->transform_control)
-    fprintf(ctxcanvas->file, "</g>\n");
+  if (ctxcanvas->transform_control)
+    fprintf(ctxcanvas->file, "</g>\n");  /* close transform container */
 
-  fprintf(ctxcanvas->file, "</g>\n");
+  fprintf(ctxcanvas->file, "</g>\n");  /* close global container */
   fprintf(ctxcanvas->file, "</svg>\n");
 
   free(ctxcanvas->filename);
@@ -78,63 +74,37 @@ static void cdkillcanvas(cdCtxCanvas* ctxcanvas)
   free(ctxcanvas);
 }
 
-static void setclip_area(cdCtxCanvas *ctxcanvas)
+static int cdclip(cdCtxCanvas *ctxcanvas, int clip_mode)
 {
-  cdRect* clip_rect = &ctxcanvas->canvas->clip_rect;
-
-  fprintf(ctxcanvas->file, "<clipPath id=\"clippath%d\">\n", ++ctxcanvas->last_clip_path);
-
-  if (ctxcanvas->canvas->use_matrix)
+  if (ctxcanvas->clip_control)
   {
-    cdPoint poly[4];
-    poly[0].x = clip_rect->xmin; poly[0].y = clip_rect->ymin;
-    poly[1].x = clip_rect->xmin; poly[1].y = clip_rect->ymax;
-    poly[2].x = clip_rect->xmax; poly[2].y = clip_rect->ymax;
-    poly[3].x = clip_rect->xmax; poly[3].y = clip_rect->ymin;
+    int old_transform_control = ctxcanvas->transform_control;
+    if (ctxcanvas->transform_control)
+    {
+      fprintf(ctxcanvas->file, "</g>\n");  /* close transform container */
+      ctxcanvas->transform_control = 0;
+    }
 
-    sprintf(ctxcanvas->poly,    "%g,%g",                  (double)poly[0].x, (double)poly[0].y);
-    sprintf(ctxcanvas->poly, "%s %g,%g", ctxcanvas->poly, (double)poly[1].x, (double)poly[1].y);
-    sprintf(ctxcanvas->poly, "%s %g,%g", ctxcanvas->poly, (double)poly[2].x, (double)poly[2].y);
-    sprintf(ctxcanvas->poly, "%s %g,%g", ctxcanvas->poly, (double)poly[3].x, (double)poly[3].y);
+    fprintf(ctxcanvas->file, "</g>\n");  /* close clipping container */
+    ctxcanvas->clip_control = 0;
 
-    fprintf(ctxcanvas->file, "<polygon points=\"%s\" />\n", ctxcanvas->poly);
-  }
-  else
-  {
-    double x, y, w, h;
-    x = (double)clip_rect->xmin;
-    y = (double)clip_rect->ymin;
-    w = (double)(clip_rect->xmax - clip_rect->xmin + 1);
-    h = (double)(clip_rect->ymax - clip_rect->ymin + 1);
-
-    fprintf(ctxcanvas->file, "<rect x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" />\n", x, y, w, h);
+    if (old_transform_control)
+      cdtransform(ctxcanvas, ctxcanvas->canvas->matrix);  /* reopen transform container */
   }
 
-  fprintf(ctxcanvas->file, "</clipPath>\n");
-
-  fprintf(ctxcanvas->file, "<g clip-path=\"url(#clippath%d)\">\n", ctxcanvas->last_clip_path);
-  ++ctxcanvas->clip_off_control;
-}
-
-int cdclip(cdCtxCanvas *ctxcanvas, int clip_mode)
-{
   switch (clip_mode)
   {
-    case CD_CLIPOFF:
-      if(ctxcanvas->clip_off_control > 0)
-      {
-        fprintf(ctxcanvas->file, "</g>\n");
-        --ctxcanvas->clip_off_control;
-      }
-      break;
     case CD_CLIPAREA:
-      setclip_area(ctxcanvas);
+      /* open clipping container */
+      fprintf(ctxcanvas->file, "<g clip-path=\"url(#cliprect%d)\">\n", ctxcanvas->last_clip_rect);
+      ctxcanvas->clip_control = 1;
       break;
     case CD_CLIPPOLYGON:
       if (ctxcanvas->clip_polygon)
       {
-        fprintf(ctxcanvas->file, "<g clip-path=\"url(#clippath%d)\">\n", ctxcanvas->last_clip_path);
-        ++ctxcanvas->clip_off_control;
+        /* open clipping container */
+        fprintf(ctxcanvas->file, "<g clip-path=\"url(#clippoly%d)\">\n", ctxcanvas->last_clip_poly);
+        ctxcanvas->clip_control = 1;
       }
       break;
   }
@@ -143,14 +113,26 @@ int cdclip(cdCtxCanvas *ctxcanvas, int clip_mode)
 
 static void cdfcliparea(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
 {
+  double x, y, w, h;
+
+  ctxcanvas->canvas->clip_rect.xmin = (int)xmin;
+  ctxcanvas->canvas->clip_rect.ymin = (int)ymin;
+  ctxcanvas->canvas->clip_rect.xmax = (int)xmax;
+  ctxcanvas->canvas->clip_rect.ymax = (int)ymax;
+
+  x = xmin;
+  y = ymin;
+  w = xmax - xmin + 1;
+  h = ymax - ymin + 1;
+
+  fprintf(ctxcanvas->file, "<clipPath id=\"cliprect%d\">\n", ++ctxcanvas->last_clip_rect);
+
+  fprintf(ctxcanvas->file, "<rect x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" />\n", x, y, w, h);
+
+  fprintf(ctxcanvas->file, "</clipPath>\n");
+
   if (ctxcanvas->canvas->clip_mode == CD_CLIPAREA) 
-  {
-    ctxcanvas->canvas->clip_rect.xmin = (int)xmin;
-    ctxcanvas->canvas->clip_rect.ymin = (int)ymin;
-    ctxcanvas->canvas->clip_rect.xmax = (int)xmax;
-    ctxcanvas->canvas->clip_rect.ymax = (int)ymax;
     cdclip(ctxcanvas, CD_CLIPAREA);
-  }
 }
 
 static void cdcliparea(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
@@ -160,39 +142,51 @@ static void cdcliparea(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int
 
 static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
 {
-  if (matrix)
+  if (ctxcanvas->transform_control)
   {
-    /* Matrix identity */
-    ctxcanvas->xmatrix[0] = 1; 
-    ctxcanvas->xmatrix[1] = 0;
-    ctxcanvas->xmatrix[2] = 0; 
-    ctxcanvas->xmatrix[3] = -1; 
-    ctxcanvas->xmatrix[4] = 0; 
-    ctxcanvas->xmatrix[5] = (ctxcanvas->canvas->h-1);
-
-    if(ctxcanvas->transform_control)
+    int old_clip_control = ctxcanvas->clip_control;
+    if (ctxcanvas->clip_control)
     {
-      fprintf(ctxcanvas->file, "</g>\n");
-      --ctxcanvas->transform_control;
+      fprintf(ctxcanvas->file, "</g>\n");  /* close clipping container */
+      ctxcanvas->clip_control = 0;
     }
 
-    cdMatrixMultiply(matrix, ctxcanvas->xmatrix);
+    fprintf(ctxcanvas->file, "</g>\n");  /* close transform container */
+    ctxcanvas->transform_control = 0;
 
-    ++ctxcanvas->transform_control;
-    fprintf(ctxcanvas->file, "<g transform=\"matrix(%g %g %g %g %g %g)\">\n", ctxcanvas->xmatrix[0], ctxcanvas->xmatrix[1], ctxcanvas->xmatrix[2], ctxcanvas->xmatrix[3], ctxcanvas->xmatrix[4], ctxcanvas->xmatrix[5]);
+    if (old_clip_control)
+      cdclip(ctxcanvas, ctxcanvas->canvas->clip_mode);  /* reopen clipping container */
+  }
+
+  if (matrix)
+  {
+    double xmatrix[6];
+
+    /* Matrix identity + invert axis */
+    xmatrix[0] = 1; 
+    xmatrix[1] = 0;
+    xmatrix[2] = 0; 
+    xmatrix[3] = -1; 
+    xmatrix[4] = 0; 
+    xmatrix[5] = (ctxcanvas->canvas->h-1);
+
+    /* compose transform */
+    cdMatrixMultiply(matrix, xmatrix);
+
+    /* open transform container */
+    fprintf(ctxcanvas->file, "<g transform=\"matrix(%g %g %g %g %g %g)\">\n", xmatrix[0], xmatrix[1], xmatrix[2], xmatrix[3], xmatrix[4], xmatrix[5]);
+    ctxcanvas->transform_control = 1;
 
     ctxcanvas->canvas->invert_yaxis = 0;
   }
   else
-  {
     ctxcanvas->canvas->invert_yaxis = 1;
-  }
 }
 
 static void cdfline(cdCtxCanvas *ctxcanvas, double x1, double y1, double x2, double y2)
 {
-  fprintf(ctxcanvas->file, "<line x1=\"%g\" y1=\"%g\" x2=\"%g\" y2=\"%g\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%d\" />\n",
-                                     x1, y1, x2, y2, ctxcanvas->fgColor, ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->backopacity);
+  fprintf(ctxcanvas->file, "<line x1=\"%g\" y1=\"%g\" x2=\"%g\" y2=\"%g\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" />\n",
+          x1, y1, x2, y2, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
 }
 
 static void cdline(cdCtxCanvas *ctxcanvas, int x1, int y1, int x2, int y2)
@@ -202,8 +196,8 @@ static void cdline(cdCtxCanvas *ctxcanvas, int x1, int y1, int x2, int y2)
 
 static void cdfrect(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
 {
-  fprintf(ctxcanvas->file, "<rect x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%d\" />\n",
-    xmin, ymin, xmax-xmin, ymax-ymin, ctxcanvas->fgColor, ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->backopacity);
+  fprintf(ctxcanvas->file, "<rect x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" />\n",
+          xmin, ymin, xmax-xmin, ymax-ymin, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
 }
 
 static void cdrect(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
@@ -213,9 +207,8 @@ static void cdrect(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int yma
 
 static void cdfbox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
 {
-  fprintf(ctxcanvas->file, "<rect x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" style=\"fill:%s; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%d\" />\n",
-    xmin, ymin, xmax-xmin, ymax-ymin, (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor : ctxcanvas->pattern,
-    (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor : "none", ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->backopacity);
+  fprintf(ctxcanvas->file, "<rect x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" style=\"fill:%s; stroke:none; opacity:%g\" />\n",
+          xmin, ymin, xmax-xmin, ymax-ymin, (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor: ctxcanvas->pattern, ctxcanvas->opacity);
 }
 
 static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
@@ -230,9 +223,8 @@ static void cdfarc(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, doubl
 
   if((a1 == 0.0) && (a2 == 360.0)) /* an ellipse/circle */
   {
-    fprintf(ctxcanvas->file, "<ellipse cx=\"%g\" cy=\"%g\" rx=\"%g\" ry=\"%g\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%d\" />\n",
-      xc, yc, w/2, h/2, ctxcanvas->fgColor, ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->backopacity);
-
+    fprintf(ctxcanvas->file, "<ellipse cx=\"%g\" cy=\"%g\" rx=\"%g\" ry=\"%g\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" />\n",
+      xc, yc, w/2, h/2, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
     return;
   }
 
@@ -251,8 +243,8 @@ static void cdfarc(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, doubl
   if((a2-a1) > 180.0)
     largeArc = 1;
 
-  fprintf(ctxcanvas->file, "<path d=\"M%g,%g A%g,%g 0 %d,0 %g,%g\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%d\" />\n",
-    arcStartX, arcStartY, w/2, h/2, largeArc, arcEndX, arcEndY, ctxcanvas->fgColor, ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->backopacity);
+  fprintf(ctxcanvas->file, "<path d=\"M%g,%g A%g,%g 0 %d,0 %g,%g\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" />\n",
+    arcStartX, arcStartY, w/2, h/2, largeArc, arcEndX, arcEndY, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
 }
 
 static void cdarc(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
@@ -267,10 +259,8 @@ static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, do
 
   if((a1 == 0.0) && (a2 == 360.0)) /* an ellipse/circle */
   {
-    fprintf(ctxcanvas->file, "<ellipse cx=\"%g\" cy=\"%g\" rx=\"%g\" ry=\"%g\" style=\"fill:%s; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%d\" />\n",
-      xc, yc, w/2, h/2, (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor : ctxcanvas->pattern,
-      (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor : "none", ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->backopacity);
-
+    fprintf(ctxcanvas->file, "<ellipse cx=\"%g\" cy=\"%g\" rx=\"%g\" ry=\"%g\" style=\"fill:%s; stroke:none; opacity:%g\" />\n",
+            xc, yc, w/2, h/2, (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor: ctxcanvas->pattern, ctxcanvas->opacity);
     return;
   }
 
@@ -289,9 +279,8 @@ static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, do
   if((a2-a1) > 180.0)
     largeArc = 1;
 
-  fprintf(ctxcanvas->file, "<path d=\"M%g,%g L%g,%g A%g,%g 0 %d,0 %g,%g Z\" style=\"fill:%s; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%d\" />\n",
-    xc, yc, arcStartX, arcStartY, w/2, h/2, largeArc, arcEndX, arcEndY, (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor : ctxcanvas->pattern, 
-    (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor : "none", ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->backopacity);
+  fprintf(ctxcanvas->file, "<path d=\"M%g,%g L%g,%g A%g,%g 0 %d,0 %g,%g Z\" style=\"fill:%s; stroke:none; opacity:%g\" />\n",
+          xc, yc, arcStartX, arcStartY, w/2, h/2, largeArc, arcEndX, arcEndY, (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor: ctxcanvas->pattern, ctxcanvas->opacity);
 }
 
 static void cdsector(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
@@ -319,9 +308,8 @@ static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, dou
   if((a2-a1) > 180.0)
     largeArc = 1;
 
-  fprintf(ctxcanvas->file, "<path d=\"M%g,%g A%g,%g 0 %d,0 %g,%g Z\" style=\"fill:%s; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%d\" />\n",
-    arcStartX, arcStartY, w/2, h/2, largeArc, arcEndX, arcEndY, (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor : ctxcanvas->pattern, 
-    (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor : "none", ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->backopacity);
+  fprintf(ctxcanvas->file, "<path d=\"M%g,%g A%g,%g 0 %d,0 %g,%g Z\" style=\"fill:%s; stroke:none; opacity:%g\" />\n",
+          arcStartX, arcStartY, w/2, h/2, largeArc, arcEndX, arcEndY, (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor: ctxcanvas->pattern, ctxcanvas->opacity);
 }
 
 static void cdchord(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
@@ -331,8 +319,8 @@ static void cdchord(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double
 
 static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *text, int len)
 {
-  char anchor[10];
-  char alignment[20];
+  char* anchor;
+  char* alignment;
   int i;
 
   switch (ctxcanvas->canvas->text_alignment)
@@ -340,22 +328,23 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *text
     case CD_NORTH:
     case CD_NORTH_EAST:
     case CD_NORTH_WEST:
-      sprintf(alignment, "%s", "text-before-edge");
+      alignment = "text-before-edge";
       break;
     case CD_SOUTH:
     case CD_SOUTH_EAST:
     case CD_SOUTH_WEST:
-      sprintf(alignment, "%s", "text-after-edge");
+      alignment = "text-after-edge";
       break;
     case CD_CENTER:
     case CD_EAST:
     case CD_WEST:
-      sprintf(alignment, "%s", "middle");
+      alignment = "middle";
       break;
     case CD_BASE_CENTER:
     case CD_BASE_LEFT:
     case CD_BASE_RIGHT:
-      sprintf(alignment, "%s", "baseline");
+    default:
+      alignment = "baseline";
       break;
   }
 
@@ -365,19 +354,20 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *text
     case CD_NORTH_WEST:
     case CD_SOUTH_WEST:
     case CD_BASE_LEFT:
-      sprintf(anchor, "%s", "start");
+      anchor = "start";
       break;
     case CD_CENTER:
     case CD_NORTH:
     case CD_SOUTH:
     case CD_BASE_CENTER:
-      sprintf(anchor, "%s", "middle");
+      anchor = "middle";
       break;
     case CD_EAST:
     case CD_NORTH_EAST:
     case CD_SOUTH_EAST:
     case CD_BASE_RIGHT:
-      sprintf(anchor, "%s", "end");
+    default:
+      anchor = "end";
       break;
   }
 
@@ -392,10 +382,10 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *text
 
     if (ctxcanvas->canvas->use_matrix)  /* Transformation active */
       fprintf(ctxcanvas->file, "<text transform=\"matrix(%g %g %g %g %g %g)\" font-family=\"%s\" font-size=\"%s\" font-style=\"%s\" font-weight=\"%s\" text-decoration=\"%s\" text-anchor=\"%s\" dominant-baseline=\"%s\" fill=\"%s\">\n", 
-      text_cos, text_sin, text_sin, -text_cos, x, y, ctxcanvas->font_family, ctxcanvas->font_size, ctxcanvas->font_style, ctxcanvas->font_weight, ctxcanvas->font_decoration, anchor, alignment, ctxcanvas->fgColor);
+         text_cos, text_sin, text_sin, -text_cos, x, y, ctxcanvas->font_family, ctxcanvas->font_size, ctxcanvas->font_style, ctxcanvas->font_weight, ctxcanvas->font_decoration, anchor, alignment, ctxcanvas->fgColor);
     else
       fprintf(ctxcanvas->file, "<text transform=\"matrix(%g %g %g %g %g %g)\" font-family=\"%s\" font-size=\"%s\" font-style=\"%s\" font-weight=\"%s\" text-decoration=\"%s\" text-anchor=\"%s\" dominant-baseline=\"%s\" fill=\"%s\">\n", 
-      text_cos, -text_sin, text_sin, text_cos, x, y, ctxcanvas->font_family, ctxcanvas->font_size, ctxcanvas->font_style, ctxcanvas->font_weight, ctxcanvas->font_decoration, anchor, alignment, ctxcanvas->fgColor);
+         text_cos, -text_sin, text_sin, text_cos, x, y, ctxcanvas->font_family, ctxcanvas->font_size, ctxcanvas->font_style, ctxcanvas->font_weight, ctxcanvas->font_decoration, anchor, alignment, ctxcanvas->fgColor);
     
     for(i = 0; i < len; i++)
       fprintf(ctxcanvas->file, "&#x%02X;", (unsigned char)text[i]);
@@ -419,46 +409,56 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *text, int l
   cdftext(ctxcanvas, (double)x, (double)y, text, len);
 }
 
+static void write_points(cdCtxCanvas *ctxcanvas, cdfPoint* poly, int n, int close)
+{
+  int i;
+  for(i = 0; i<n; i++)
+    fprintf(ctxcanvas->file, "%g,%g ", poly[i].x, poly[i].y);
+  if (close)
+    fprintf(ctxcanvas->file, "%g,%g ", poly[0].x, poly[0].y);
+}
+
 static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 {
-  int i, m = 0;
-  char rule[8];
-
-  if(mode == CD_BEZIER)
-    m = 1;
-
-  sprintf(ctxcanvas->poly, "%g,%g", poly[m].x, poly[m].y);
-  for(i = m+1; i<n; i++)
-    sprintf(ctxcanvas->poly, "%s %g,%g", ctxcanvas->poly, poly[i].x, poly[i].y);
+  char* rule;
 
   switch (mode)
   {
-  case CD_CLOSED_LINES :
-    fprintf(ctxcanvas->file, "<polygon style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%d\" points=\"%s\" />\n",
-      ctxcanvas->fgColor, ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->backopacity, ctxcanvas->poly);
+  case CD_CLOSED_LINES:
+    fprintf(ctxcanvas->file, "<polygon style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" points=\"",
+            ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
+    write_points(ctxcanvas, poly, n, 1);
+    fprintf(ctxcanvas->file, "\" />\n");
     break;
-  case CD_OPEN_LINES :
-    fprintf(ctxcanvas->file, "<polyline style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%d\" points=\"%s\" />\n",
-      ctxcanvas->fgColor, ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->backopacity, ctxcanvas->poly);
+  case CD_OPEN_LINES:
+    fprintf(ctxcanvas->file, "<polyline style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" points=\"",
+            ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
+    write_points(ctxcanvas, poly, n, 0);
+    fprintf(ctxcanvas->file, "\" />\n");
     break;
-  case CD_BEZIER :
-    fprintf(ctxcanvas->file, "<path d=\"M%g,%g C%s\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%d\" />\n",
-      poly[0].x, poly[0].y, ctxcanvas->poly, ctxcanvas->fgColor, ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->backopacity);
+  case CD_BEZIER:
+    fprintf(ctxcanvas->file, "<path d=\"M%g,%g C", poly[0].x, poly[0].y);
+    write_points(ctxcanvas, poly+1, n-1, 0);
+    fprintf(ctxcanvas->file, "\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" />\n",
+            ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
     break;
-  case CD_FILL :
+  case CD_FILL:
     if(ctxcanvas->canvas->fill_mode==CD_EVENODD)
-      sprintf(rule, "%s", "evenodd");
+      rule = "evenodd";
     else
-      sprintf(rule, "%s", "nonzero");
+      rule = "nonzero";
 
-    fprintf(ctxcanvas->file, "<polygon style=\"fill:%s; fill-rule:%s; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%d\" points=\"%s\" />\n",
-      (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor : ctxcanvas->pattern, rule, (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor : "none",
-      ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->backopacity, ctxcanvas->poly);
+    fprintf(ctxcanvas->file, "<polygon style=\"fill:%s; fill-rule:%s; stroke:none; opacity:%g\" points=\"",
+            (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor: ctxcanvas->pattern, rule, ctxcanvas->opacity);
+    write_points(ctxcanvas, poly, n, 0);
+    fprintf(ctxcanvas->file, "\" />\n");
     break;
   case CD_CLIP:
-    fprintf(ctxcanvas->file, "<clipPath id=\"clippath%d\">\n", ++ctxcanvas->last_clip_path);
+    fprintf(ctxcanvas->file, "<clipPath id=\"clippoly%d\">\n", ++ctxcanvas->last_clip_poly);
 
-    fprintf(ctxcanvas->file, "<polygon points=\"%s\" />\n", ctxcanvas->poly);
+    fprintf(ctxcanvas->file, "<polygon points=\"");
+    write_points(ctxcanvas, poly, n, 0);
+    fprintf(ctxcanvas->file, "\" />\n");
 
     fprintf(ctxcanvas->file, "</clipPath>\n");
     
@@ -490,32 +490,27 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
   free(newPoly);
 }
 
-static int cdbackopacity(cdCtxCanvas *ctxcanvas, int opacity)
-{
-  ctxcanvas->backopacity = opacity;
-  return opacity;
-}
-
 static int cdlinestyle(cdCtxCanvas *ctxcanvas, int style)
 {
   switch (style)
   {
-    case CD_CONTINUOUS : /* empty dash */
+    case CD_CONTINUOUS: /* empty dash */
+    default:
       sprintf(ctxcanvas->linestyle, "%s", "0");
       break;
-    case CD_DASHED :
+    case CD_DASHED:
       sprintf(ctxcanvas->linestyle, "%s", "6,2");
       break;
-    case CD_DOTTED :
+    case CD_DOTTED:
       sprintf(ctxcanvas->linestyle, "%s", "2,2");
       break;
-    case CD_DASH_DOT :
+    case CD_DASH_DOT:
       sprintf(ctxcanvas->linestyle, "%s", "6,2,2,2");
       break;
-    case CD_DASH_DOT_DOT :
+    case CD_DASH_DOT_DOT:
       sprintf(ctxcanvas->linestyle, "%s", "6,2,2,2,2,2");
       break;
-    case CD_CUSTOM :
+    case CD_CUSTOM:
       {
         int i;
         sprintf(ctxcanvas->linestyle, "%d", ctxcanvas->canvas->line_dashes[0]);
@@ -529,34 +524,25 @@ static int cdlinestyle(cdCtxCanvas *ctxcanvas, int style)
   return style;
 }
 
-static int cdlinewidth(cdCtxCanvas *ctxcanvas, int width)
-{
-  ctxcanvas->linewidth = width;
-
-  return width;
-}
-
 static int cdlinecap(cdCtxCanvas *ctxcanvas, int cap)
 {
   if(cap == CD_CAPROUND)
-    sprintf(ctxcanvas->linecap, "%s", "round");
+    ctxcanvas->linecap = "round";
   else if(cap == CD_CAPSQUARE)
-    sprintf(ctxcanvas->linecap, "%s", "square");
+    ctxcanvas->linecap = "square";
   else  /* CD_CAPFLAT */
-    sprintf(ctxcanvas->linecap, "%s", "butt");
-
+    ctxcanvas->linecap = "butt";
   return cap;
 }
 
 static int cdlinejoin(cdCtxCanvas *ctxcanvas, int join)
 {
   if(join == CD_ROUND)
-    sprintf(ctxcanvas->linejoin, "%s", "round");
+    ctxcanvas->linejoin = "round";
   else if(join == CD_BEVEL)
-    sprintf(ctxcanvas->linejoin, "%s", "bevel");
+    ctxcanvas->linejoin = "bevel";
   else  /* CD_MITER */
-    sprintf(ctxcanvas->linejoin, "%s", "miter");
-
+    ctxcanvas->linejoin = "miter";
   return join;
 }
 
@@ -565,39 +551,44 @@ static int cdhatch(cdCtxCanvas *ctxcanvas, int style)
   int hsize = ctxcanvas->hatchboxsize - 1;
   int hhalf = hsize / 2;
 
-  ctxcanvas->canvas->interior_style = CD_HATCH;
   sprintf(ctxcanvas->pattern, "url(#pattern%d)", ++ctxcanvas->last_fill_mode);
   fprintf(ctxcanvas->file, "<pattern id=\"pattern%d\" patternUnits=\"userSpaceOnUse\" x=\"0\" y=\"0\" width=\"%d\" height=\"%d\">\n", ctxcanvas->last_fill_mode, hsize, hsize);
+
+  if (ctxcanvas->canvas->back_opacity==CD_OPAQUE)
+  {
+    fprintf(ctxcanvas->file, "<rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\" style=\"fill:%s; stroke:none; opacity:%g\" />\n",
+            hsize, hsize, ctxcanvas->bgColor, ctxcanvas->opacity);
+  }
 
   switch(style)
   {
   case CD_HORIZONTAL:
-    fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; opacity:%d\" />\n",
-      0, hhalf, hsize, hhalf, (ctxcanvas->canvas->back_opacity != CD_OPAQUE) ? ctxcanvas->fgColor : ctxcanvas->bgColor, ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->backopacity);
+    fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; opacity:%g\" />\n",
+      0, hhalf, hsize, hhalf, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->opacity);
     break;
   case CD_VERTICAL:
-    fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; opacity:%d\" />\n",
-      hhalf, 0, hhalf, hsize, (ctxcanvas->canvas->back_opacity != CD_OPAQUE) ? ctxcanvas->fgColor : ctxcanvas->bgColor, ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->backopacity);
+    fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; opacity:%g\" />\n",
+      hhalf, 0, hhalf, hsize, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->opacity);
     break;
   case CD_BDIAGONAL:
-    fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; opacity:%d\" />\n",
-      0, hsize, hsize, 0, (ctxcanvas->canvas->back_opacity != CD_OPAQUE) ? ctxcanvas->fgColor : ctxcanvas->bgColor, ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->backopacity);
+    fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; opacity:%g\" />\n",
+      0, hsize, hsize, 0, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->opacity);
     break;
   case CD_FDIAGONAL:
-    fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; opacity:%d\" />\n",
-      0, 0, hsize, hsize, (ctxcanvas->canvas->back_opacity != CD_OPAQUE) ? ctxcanvas->fgColor : ctxcanvas->bgColor, ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->backopacity);
+    fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; opacity:%g\" />\n",
+      0, 0, hsize, hsize, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->opacity);
     break;
   case CD_CROSS:
-    fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; opacity:%d\" />\n",
-      hsize, 0, hsize, hsize, (ctxcanvas->canvas->back_opacity != CD_OPAQUE) ? ctxcanvas->fgColor : ctxcanvas->bgColor, ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->backopacity);
-    fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; opacity:%d\" />\n",
-      0, hhalf, hsize, hhalf, (ctxcanvas->canvas->back_opacity != CD_OPAQUE) ? ctxcanvas->fgColor : ctxcanvas->bgColor, ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->backopacity);
+    fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; opacity:%g\" />\n",
+      hsize, 0, hsize, hsize, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->opacity);
+    fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; opacity:%g\" />\n",
+      0, hhalf, hsize, hhalf, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->opacity);
     break;
   case CD_DIAGCROSS:
-    fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; opacity:%d\" />\n",
-      0, 0, hsize, hsize, (ctxcanvas->canvas->back_opacity != CD_OPAQUE) ? ctxcanvas->fgColor : ctxcanvas->bgColor, ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->backopacity);
-    fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; opacity:%d\" />\n",
-      hsize, 0, 0, hsize, (ctxcanvas->canvas->back_opacity != CD_OPAQUE) ? ctxcanvas->fgColor : ctxcanvas->bgColor, ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->backopacity);
+    fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; opacity:%g\" />\n",
+      0, 0, hsize, hsize, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->opacity);
+    fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; opacity:%g\" />\n",
+      hsize, 0, 0, hsize, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->opacity);
     break;
   }
 
@@ -624,8 +615,8 @@ static void make_pattern(cdCtxCanvas *ctxcanvas, int n, int m, void* data, int (
 
       sprintf(color, "rgb(%d,%d,%d)", (int)r, (int)g, (int)b);
 
-      fprintf(ctxcanvas->file, "<rect x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" style=\"fill:%s; opacity:%d\" />\n",
-        (double)i, (double)j, 1.0, 1.0, color, ctxcanvas->backopacity);
+      fprintf(ctxcanvas->file, "<rect x=\"%g\" y=\"%g\" width=\"%g\" height=\"%g\" style=\"fill:%s; opacity:%g\" />\n",
+        (double)i, (double)j, 1.0, 1.0, color, ctxcanvas->opacity);
     }
   }
 
@@ -642,7 +633,6 @@ static int long2rgb(cdCtxCanvas *ctxcanvas, int n, int i, int j, void* data, uns
 
 static void cdpattern(cdCtxCanvas *ctxcanvas, int n, int m, const long int *pattern)
 {
-  ctxcanvas->canvas->interior_style = CD_PATTERN;
   make_pattern(ctxcanvas, n, m, (void*)pattern, long2rgb);
 }
 
@@ -667,40 +657,48 @@ static int uchar2rgb(cdCtxCanvas *ctxcanvas, int n, int i, int j, void* data, un
 
 static void cdstipple(cdCtxCanvas *ctxcanvas, int n, int m, const unsigned char *stipple)
 {
-  ctxcanvas->canvas->interior_style = CD_STIPPLE;
   make_pattern(ctxcanvas, n, m, (void*)stipple, uchar2rgb);
 }
 
 static int cdfont(cdCtxCanvas *ctxcanvas, const char* type_face, int style, int size)
 {
   /* Define type_face and size */
-  if(type_face != NULL)
+  if (type_face != NULL)
     sprintf(ctxcanvas->font_family, "%s", type_face);
   
-  if(size > 0)
+  if (size > 0)
     sprintf(ctxcanvas->font_size, "%dpt", size);
   else
     sprintf(ctxcanvas->font_size, "%dpx", (-1)*size);
 
-  if(style != -1)
+  if (style != -1)
   {
-    /* Default: CD_PLAIN */
-    sprintf(ctxcanvas->font_weight,     "%s", "normal");
-    sprintf(ctxcanvas->font_style,      "%s", "normal");
-    sprintf(ctxcanvas->font_decoration, "%s", "none");
-
     /* Define styles and decorations */
     if (style & CD_BOLD)
-      sprintf(ctxcanvas->font_weight, "%s", "bold");
+      ctxcanvas->font_weight = "bold";
+    else
+      ctxcanvas->font_weight = "normal";
 
     if (style & CD_ITALIC)
-      sprintf(ctxcanvas->font_style, "%s", "italic");
+      ctxcanvas->font_style = "italic";
+    else
+      ctxcanvas->font_style = "normal";
 
-    if (style & CD_STRIKEOUT)
-      sprintf(ctxcanvas->font_decoration, "%s", "line-through");
+    if (style & CD_STRIKEOUT || style & CD_UNDERLINE)
+    {
+      if (style & CD_STRIKEOUT && style & CD_UNDERLINE)
+        ctxcanvas->font_decoration = "line-through underline";
+      else
+      {
+        if (style & CD_STRIKEOUT)
+          ctxcanvas->font_decoration = "line-through";
 
-    if (style & CD_UNDERLINE)
-      sprintf(ctxcanvas->font_decoration, "%s", "underline");
+        if (style & CD_UNDERLINE)
+          ctxcanvas->font_decoration = "underline";
+      }
+    }
+    else
+      ctxcanvas->font_decoration = "none";
   }
 
   return 1;
@@ -711,7 +709,6 @@ static long cdbackground(cdCtxCanvas *ctxcanvas, long int color)
   unsigned char r, g, b;
   cdDecodeColor(color, &r, &g, &b);
   sprintf(ctxcanvas->bgColor, "rgb(%d,%d,%d)", (int)r, (int)g, (int)b);
-
   return color;
 }
 
@@ -720,7 +717,6 @@ static long cdforeground(cdCtxCanvas *ctxcanvas, long int color)
   unsigned char r, g, b;
   cdDecodeColor(color, &r, &g, &b);
   sprintf(ctxcanvas->fgColor, "rgb(%d,%d,%d)", (int)r, (int)g, (int)b);
-
   return color;
 }
 
@@ -762,10 +758,10 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
  
   if (ctxcanvas->canvas->use_matrix)  /* Transformation active */
     fprintf(ctxcanvas->file, "<image transform=\"matrix(%d %d %d %d %d %d)\" width=\"%d\" height=\"%d\" xlink:href=\"data:image/png;base64,%s\"/>\n", 
-    1, 0, 0, -1, x, y+h, w, h, rgb_target);
+            1, 0, 0, -1, x, y+h, w, h, rgb_target);
   else
     fprintf(ctxcanvas->file, "<image transform=\"matrix(%d %d %d %d %d %d)\" width=\"%d\" height=\"%d\" xlink:href=\"data:image/png;base64,%s\"/>\n", 
-    1, 0, 0, 1, x, y-h, w, h, rgb_target);
+            1, 0, 0, 1, x, y-h, w, h, rgb_target);
 
   free(rgb_data);
   free(rgb_buffer);
@@ -811,10 +807,10 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
 
   if (ctxcanvas->canvas->use_matrix)  /* Transformation active */
     fprintf(ctxcanvas->file, "<image transform=\"matrix(%d %d %d %d %d %d)\" width=\"%d\" height=\"%d\" xlink:href=\"data:image/png;base64,%s\"/>\n", 
-    1, 0, 0, -1, x, y+h, w, h, rgb_target);
+            1, 0, 0, -1, x, y+h, w, h, rgb_target);
   else
     fprintf(ctxcanvas->file, "<image transform=\"matrix(%d %d %d %d %d %d)\" width=\"%d\" height=\"%d\" xlink:href=\"data:image/png;base64,%s\"/>\n", 
-    1, 0, 0, 1, x, y-h, w, h, rgb_target);
+            1, 0, 0, 1, x, y-h, w, h, rgb_target);
 
   free(rgb_data);
   free(rgb_buffer);
@@ -862,10 +858,10 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 
   if (ctxcanvas->canvas->use_matrix)  /* Transformation active */
     fprintf(ctxcanvas->file, "<image transform=\"matrix(%d %d %d %d %d %d)\" width=\"%d\" height=\"%d\" xlink:href=\"data:image/png;base64,%s\"/>\n", 
-    1, 0, 0, -1, x, y+h, w, h, rgb_target);
+            1, 0, 0, -1, x, y+h, w, h, rgb_target);
   else
     fprintf(ctxcanvas->file, "<image transform=\"matrix(%d %d %d %d %d %d)\" width=\"%d\" height=\"%d\" xlink:href=\"data:image/png;base64,%s\"/>\n", 
-    1, 0, 0, 1, x, y-h, w, h, rgb_target);
+            1, 0, 0, 1, x, y-h, w, h, rgb_target);
 
   free(rgb_data);
   free(rgb_buffer);
@@ -878,8 +874,8 @@ static void cdpixel(cdCtxCanvas *ctxcanvas, int x, int y, long int color)
   unsigned char r, g, b;
   cdDecodeColor(color, &r, &g, &b);
 
-  fprintf(ctxcanvas->file, "<circle cx=\"%d\" cy=\"%d\" r=\"0.1\" style=\"fill:rgb(%d,%d,%d); stroke:rgb(%d,%d,%d); stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%d\" />\n",
-    x, y, r, g, b, r, g, b, ctxcanvas->linewidth, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->backopacity);
+  fprintf(ctxcanvas->file, "<circle cx=\"%d\" cy=\"%d\" r=\"0.1\" style=\"fill:rgb(%d,%d,%d); stroke:none; opacity:%g\" />\n",
+          x, y, r, g, b, ctxcanvas->opacity);
 }
 
 static void cddeactivate (cdCtxCanvas* ctxcanvas)
@@ -891,6 +887,74 @@ static void cdflush (cdCtxCanvas* ctxcanvas)
 {
   fflush(ctxcanvas->file);
 }
+
+static void set_hatchboxsize_attrib(cdCtxCanvas *ctxcanvas, char* data)
+{
+  int hatchboxsize;
+
+  if (data == NULL)
+  {
+    ctxcanvas->hatchboxsize = 8;
+    return;
+  }
+
+  sscanf(data, "%d", &hatchboxsize);
+  ctxcanvas->hatchboxsize = hatchboxsize;
+}
+
+static char* get_hatchboxsize_attrib(cdCtxCanvas *ctxcanvas)
+{
+  static char size[10];
+  sprintf(size, "%d", ctxcanvas->hatchboxsize);
+  return size;
+}
+
+static cdAttribute hatchboxsize_attrib =
+{
+  "HATCHBOXSIZE",
+  set_hatchboxsize_attrib,
+  get_hatchboxsize_attrib
+}; 
+
+static void set_opacity_attrib(cdCtxCanvas *ctxcanvas, char* data)
+{
+  if (data)
+  {
+    int opacity = 255;
+    sscanf(data, "%d", &opacity);
+    if (opacity < 0) ctxcanvas->opacity = 0.0;
+    else if (opacity > 255) ctxcanvas->opacity = 1.0;
+    else ctxcanvas->opacity = (double)opacity/255.0;
+  }
+  else
+    ctxcanvas->opacity = 1.0;
+}
+
+static char* get_opacity_attrib(cdCtxCanvas *ctxcanvas)
+{
+  static char data[50];
+  sprintf(data, "%d", ctxcanvas->opacity);
+  return data;
+}
+
+static cdAttribute opacity_attrib =
+{
+  "OPACITY",
+  set_opacity_attrib,
+  get_opacity_attrib
+}; 
+
+static void set_cmd_attrib(cdCtxCanvas *ctxcanvas, char* data)
+{
+  fprintf(ctxcanvas->file, data);
+}
+
+static cdAttribute cmd_attrib =
+{
+  "CMD",
+  set_cmd_attrib,
+  NULL
+}; 
 
 static void cdcreatecanvas(cdCanvas *canvas, void *data)
 {
@@ -937,17 +1001,22 @@ static void cdcreatecanvas(cdCanvas *canvas, void *data)
   canvas->ctxcanvas = ctxcanvas;
 
   ctxcanvas->last_fill_mode = -1;
-  ctxcanvas->last_clip_path = -1;
+  ctxcanvas->last_clip_poly = -1;
+  ctxcanvas->last_clip_rect = -1;
   
-  ctxcanvas->clip_off_control  = 0;
+  ctxcanvas->clip_control  = 0;
   ctxcanvas->transform_control = 0;
 
   ctxcanvas->clip_polygon = 0;
   ctxcanvas->hatchboxsize = 8;
+  ctxcanvas->opacity = 1.0;
+
+  cdRegisterAttribute(canvas, &cmd_attrib);
+  cdRegisterAttribute(canvas, &hatchboxsize_attrib);
 
   fprintf(ctxcanvas->file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
   fprintf(ctxcanvas->file, "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" width=\"%dpt\" height=\"%dpt\" viewBox=\"0 0 %d %d\" version=\"1.1\">\n", canvas->w, canvas->h, canvas->w, canvas->h);
-  fprintf(ctxcanvas->file, "<g>\n");
+  fprintf(ctxcanvas->file, "<g>\n"); /* open global container */
 }
 
 static void cdinittable(cdCanvas* canvas)
@@ -979,9 +1048,7 @@ static void cdinittable(cdCanvas* canvas)
   canvas->cxFText = cdftext;
   canvas->cxFClipArea = cdfcliparea;
   
-  canvas->cxBackOpacity = cdbackopacity;
   canvas->cxLineStyle = cdlinestyle;
-  canvas->cxLineWidth = cdlinewidth;
   canvas->cxLineCap = cdlinecap;
   canvas->cxLineJoin = cdlinejoin;
 
@@ -996,7 +1063,7 @@ static void cdinittable(cdCanvas* canvas)
 
   canvas->cxFlush = cdflush;
   canvas->cxDeactivate = cddeactivate;
-  canvas->cxKillCanvas = (void (*)(cdCtxCanvas*))cdkillcanvas;
+  canvas->cxKillCanvas = cdkillcanvas;
 }
 
 static cdContext cdSVGContext =

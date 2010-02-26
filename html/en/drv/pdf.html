@@ -113,7 +113,7 @@ or in C<em>
   parameter &quot;-o&quot; is used, the horizontal and vertical values are switched.</p>
   <p>In Lua, it is necessary to call function <strong><font face="Courier">cdluapdf_open() </strong> </font>after a call 
   to function <strong><font face="Courier">cdlua_open()</font></strong>, apart from linkediting with the &quot;<strong><font face="Courier">cdluapdf</font></strong>&quot; 
-  library.</p>
+  library. This is not necessary if you do require&quot;cdluapdf&quot;.</p>
 
 <h3>Behavior of Functions</h3>
 <h4>Control</h4>
@@ -133,18 +133,9 @@ or in C<em>
 </ul>
 <h4>Attributes</h4>
 <ul>
-  <li><a href="../func/attributes.html#cdBackground"><font face="Courier">
-  <strong>
-  Background</strong></font></a> does nothing, returns <font face="Courier">CD_WHITE</font>.</li>
-  <li><a href="../func/filled.html#cdBackOpacity"><font face="Courier"><strong>
-  BackOpacity</strong></font></a>: does nothing, returns <font face="Courier">CD_TRANSPARENT</font>.</li>
   <li><a href="../func/attributes.html#cdWriteMode"><font face="Courier">
   <strong>
   WriteMode</strong></font></a>: does nothing, returns <font face="Courier">CD_REPLACE</font>.</li>
-  <li><a href="../func/filled.html#cdHatch"><font face="Courier"><strong>Hatch</strong></font></a>: 
-  is always opaque.</li>
-  <li><a href="../func/filled.html#cdStipple"><font face="Courier"><strong>
-  Stipple</strong></font></a>: is always opaque.</li>
   <li><a href="../func/text.html#cdFont"><font face="Courier"><strong>Font</strong></font></a>: 
   the old &quot;System&quot; font is mapped to the &quot;Courier&quot; font. For 
   the PDF core fonts styles are added to the font name, for other fonts styles 

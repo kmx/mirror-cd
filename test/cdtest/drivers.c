@@ -211,7 +211,7 @@ static int fSVG(void)
 
   if (IupGetFile(filename)>=0) 
   { 
-    sprintf(data, "%s -s%d", filename, (int)(ctgc.res * 25.4));
+    sprintf(data, "%s %gx%g %g", filename, ((double)ctgc.w)/ctgc.res, ((double)ctgc.h)/ctgc.res, ctgc.res);
     return SaveCanvas("CD_SVG", CD_SVG, data);
   }
 
