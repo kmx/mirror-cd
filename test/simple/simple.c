@@ -1335,12 +1335,23 @@ void SimpleDrawTest(void)
   cdBackground(CD_WHITE);
   cdClear();
 
-  cdInteriorStyle(CD_SOLID);
-  cdBegin(CD_FILL);
-  cdVertex(w/4, h/4); 
-  cdVertex(w/2-w/8, h/4); 
-  cdVertex(w/2, h/2); 
-  cdVertex(w/2-w/8, h/2); 
+  //cdSetAttribute("ANTIALIAS", "0");
+  cdForeground(cdEncodeAlpha(cdEncodeColor(255, 0, 0), 100));
+
+  cdfCanvasArc(cdActiveCanvas(), 255, 255, 100, 100, 0, 360);
+
+  cdLine(0, 0, 200, 200);
+
+  cdBegin(CD_BEZIER);
+  cdVertex(100, 100); 
+  cdVertex(150, 200); 
+  cdVertex(180, 250); 
+  cdVertex(180, 200); 
+  cdVertex(180, 150); 
+  cdVertex(150, 100); 
+  cdVertex(300, 100); 
+  cdEnd();
+
 
   cdEnd();
 }
