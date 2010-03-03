@@ -878,7 +878,7 @@ static void cdpixel(cdCtxCanvas *ctxcanvas, int x, int y, long int color)
   unsigned char r, g, b;
   cdDecodeColor(color, &r, &g, &b);
 
-  fprintf(ctxcanvas->file, "<circle cx=\"%d\" cy=\"%d\" r=\"0.1\" style=\"fill:rgb(%d,%d,%d); stroke:none; opacity:%g\" />\n",
+  fprintf(ctxcanvas->file, "<circle cx=\"%d\" cy=\"%d\" r=\"0.5\" style=\"fill:rgb(%d,%d,%d); stroke:none; opacity:%g\" />\n",
           x, y, r, g, b, ctxcanvas->opacity);
 }
 
@@ -1017,6 +1017,7 @@ static void cdcreatecanvas(cdCanvas *canvas, void *data)
 
   cdRegisterAttribute(canvas, &cmd_attrib);
   cdRegisterAttribute(canvas, &hatchboxsize_attrib);
+  cdRegisterAttribute(canvas, &opacity_attrib);
 
   fprintf(ctxcanvas->file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
   fprintf(ctxcanvas->file, "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" width=\"%dpt\" height=\"%dpt\" viewBox=\"0 0 %d %d\" version=\"1.1\">\n", canvas->w, canvas->h, canvas->w, canvas->h);
