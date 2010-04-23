@@ -424,11 +424,19 @@
 				>
 			</File>
 			<File
+				RelativePath="..\include\cdpicture.h"
+				>
+			</File>
+			<File
 				RelativePath="..\include\cdprint.h"
 				>
 			</File>
 			<File
 				RelativePath="..\include\cdps.h"
+				>
+			</File>
+			<File
+				RelativePath="..\include\cdsvg.h"
 				>
 			</File>
 			<File

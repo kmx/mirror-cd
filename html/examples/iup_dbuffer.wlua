@@ -14,7 +14,8 @@ dlg = iup.dialog{box; title="Example IUPLUA/CDLUA"}
 
 function cnv:map_cb()
   local canvas = cd.CreateCanvas(cd.IUP, self)
-  local dbuffer = cdCreateCanvas(cd.DBUFFER, canvas);
+  local dbuffer = cd.CreateCanvas(cd.DBUFFERRGB, canvas);
+--  local dbuffer = cd.CreateCanvas(cd.DBUFFER, canvas);
   self.canvas = canvas     -- store the CD canvas in a IUP attribute
   self.dbuffer = dbuffer
 end

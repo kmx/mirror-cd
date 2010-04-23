@@ -25,7 +25,9 @@
 #include "cdps.h"
 #include "cdsvg.h"
 #include "cddbuf.h"
-#include "cdgdiplus.h"
+#include "cddebug.h"
+#include "cdpicture.h"
+
 
 #include <lua.h>
 #include <lauxlib.h>
@@ -316,6 +318,24 @@ static cdluaContext cdluadbufctx =
   "DBUFFER",
   cdContextDBuffer,
   cddbuf_checkdata,
+  NULL,
+  0
+};
+
+/***************************************************************************\
+* CD_DBUFFERRGB.                                                                 *
+\***************************************************************************/
+static void *cddbufrgb_checkdata(lua_State * L, int param)
+{
+  return cdlua_checkcanvas(L, param);
+}
+
+static cdluaContext cdluadbufrgbctx = 
+{
+  0,
+  "DBUFFERRGB",
+  cdContextDBufferRGB,
+  cddbufrgb_checkdata,
   NULL,
   0
 };
@@ -620,6 +640,42 @@ static int emf_sizecb(cdCanvas *canvas, int w, int h, double mm_w, double mm_h)
 }
 
 /***************************************************************************\
+* CD_PICTURE.                                                              *
+\***************************************************************************/
+static void *cdpicture_checkdata(lua_State *L,int param)
+{
+  return (void *)luaL_checkstring(L,param);
+}
+
+static cdluaContext cdluapicturectx = 
+{
+  0,
+  "PICTURE",
+  cdContextPicture,
+  cdpicture_checkdata,
+  NULL,
+  0
+};
+
+/***************************************************************************\
+* CD_DEBUG.                                                              *
+\***************************************************************************/
+static void *cddebug_checkdata(lua_State *L,int param)
+{
+  return (void *)luaL_checkstring(L,param);
+}
+
+static cdluaContext cdluadebugctx = 
+{
+  0,
+  "DEBUG",
+  cdContextDebug,
+  cddebug_checkdata,
+  NULL,
+  0
+};
+
+/***************************************************************************\
 * CD_METAFILE.                                                              *
 \***************************************************************************/
 static void *cdmetafile_checkdata(lua_State *L,int param)
@@ -811,6 +867,8 @@ void cdlua_initdrivers(lua_State * L, cdluaLuaState* cdL)
   cdlua_addcontext(L, cdL, &cdluadgnctx);
   cdlua_addcontext(L, cdL, &cdluacgmctx);
   cdlua_addcontext(L, cdL, &cdluamfctx);
+  cdlua_addcontext(L, cdL, &cdluadebugctx);
+  cdlua_addcontext(L, cdL, &cdluapicturectx);
   cdlua_addcontext(L, cdL, &cdluapsctx);
   cdlua_addcontext(L, cdL, &cdluasvgctx);
   cdlua_addcontext(L, cdL, &cdluaclipboardctx);
@@ -819,4 +877,5 @@ void cdlua_initdrivers(lua_State * L, cdluaLuaState* cdL)
   cdlua_addcontext(L, cdL, &cdluawmfctx);
   cdlua_addcontext(L, cdL, &cdluaemfctx);
   cdlua_addcontext(L, cdL, &cdluadbufctx);
+  cdlua_addcontext(L, cdL, &cdluadbufrgbctx);
 }
