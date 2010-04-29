@@ -9,6 +9,7 @@
 #include <string.h>
 #include <math.h>
 #include <limits.h>
+
 #include "cd.h"
 #include "cd_private.h"
 #include "cddxf.h"
@@ -182,6 +183,123 @@ static void writepolyf (cdCtxCanvas *ctxcanvas, cdfPoint *poly, int nv) /* write
   fprintf ( ctxcanvas->file, "SEQEND\n" );
 }
 
+static void writehatch (cdCtxCanvas *ctxcanvas, cdPoint *poly, int nv) /* write polygon */
+{
+  int i;
+
+  fprintf ( ctxcanvas->file, "0\n" );
+  fprintf ( ctxcanvas->file, "HATCH\n" );
+  fprintf ( ctxcanvas->file, "8\n" );
+  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer); /* current layer */
+  fprintf ( ctxcanvas->file, "62\n" );
+  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->fgcolor );
+
+  fprintf ( ctxcanvas->file, "10\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+  fprintf ( ctxcanvas->file, "20\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+  fprintf ( ctxcanvas->file, "30\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+
+  fprintf ( ctxcanvas->file, "210\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+  fprintf ( ctxcanvas->file, "220\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+  fprintf ( ctxcanvas->file, "230\n" );
+  fprintf ( ctxcanvas->file, "1.0\n" );
+
+  fprintf ( ctxcanvas->file, "2\n" );
+  fprintf ( ctxcanvas->file, "SOLID\n" );
+  fprintf ( ctxcanvas->file, "70\n" );
+  fprintf ( ctxcanvas->file, "1\n" );
+  fprintf ( ctxcanvas->file, "71\n" );
+  fprintf ( ctxcanvas->file, "0\n" );
+  fprintf ( ctxcanvas->file, "91\n" );
+  fprintf ( ctxcanvas->file, "1\n" );
+
+  fprintf ( ctxcanvas->file, "92\n" );
+  fprintf ( ctxcanvas->file, "2\n" );
+  fprintf ( ctxcanvas->file, "72\n" );
+  fprintf ( ctxcanvas->file, "1\n" );
+
+  fprintf ( ctxcanvas->file, "73\n" );
+  fprintf ( ctxcanvas->file, "1\n" );
+  fprintf ( ctxcanvas->file, "93\n" );           /* entire polygon line width */
+  fprintf ( ctxcanvas->file, "%d\n", nv );
+  for ( i=0; i<nv; i++ )
+  {
+    fprintf ( ctxcanvas->file, "10\n" );
+    fprintf ( ctxcanvas->file, "%f\n", poly[i].x/ctxcanvas->canvas->xres );
+    fprintf ( ctxcanvas->file, "20\n" );
+    fprintf ( ctxcanvas->file, "%f\n", poly[i].y/ctxcanvas->canvas->xres );
+  }
+
+  fprintf ( ctxcanvas->file, "97\n" );
+  fprintf ( ctxcanvas->file, "0\n" );
+  fprintf ( ctxcanvas->file, "75\n" );
+  fprintf ( ctxcanvas->file, "0\n" );
+  fprintf ( ctxcanvas->file, "76\n" );
+  fprintf ( ctxcanvas->file, "1\n" );
+}
+
+static void writehatchf (cdCtxCanvas *ctxcanvas, cdfPoint *poly, int nv) /* write polygon */
+{
+  int i;
+
+  fprintf ( ctxcanvas->file, "0\n" );
+  fprintf ( ctxcanvas->file, "HATCH\n" );
+  fprintf ( ctxcanvas->file, "8\n" );
+  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer); /* current layer */
+  fprintf ( ctxcanvas->file, "62\n" );
+  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->fgcolor );
+
+  fprintf ( ctxcanvas->file, "10\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+  fprintf ( ctxcanvas->file, "20\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+  fprintf ( ctxcanvas->file, "30\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+
+  fprintf ( ctxcanvas->file, "210\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+  fprintf ( ctxcanvas->file, "220\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+  fprintf ( ctxcanvas->file, "230\n" );
+  fprintf ( ctxcanvas->file, "1.0\n" );
+
+  fprintf ( ctxcanvas->file, "2\n" );
+  fprintf ( ctxcanvas->file, "SOLID\n" );
+  fprintf ( ctxcanvas->file, "70\n" );
+  fprintf ( ctxcanvas->file, "1\n" );
+  fprintf ( ctxcanvas->file, "71\n" );
+  fprintf ( ctxcanvas->file, "0\n" );
+  fprintf ( ctxcanvas->file, "91\n" );           /* entire polygon line width */
+  fprintf ( ctxcanvas->file, "1\n" );
+
+  fprintf ( ctxcanvas->file, "92\n" );
+  fprintf ( ctxcanvas->file, "2\n" );
+  fprintf ( ctxcanvas->file, "72\n" );
+  fprintf ( ctxcanvas->file, "1\n" );
+
+  fprintf ( ctxcanvas->file, "73\n" );
+  fprintf ( ctxcanvas->file, "1\n" );
+  fprintf ( ctxcanvas->file, "93\n" );           /* entire polygon line width */
+  fprintf ( ctxcanvas->file, "%d\n", nv );
+  for ( i=0; i<nv; i++ )
+  {
+    fprintf ( ctxcanvas->file, "10\n" );
+    fprintf ( ctxcanvas->file, "%f\n", poly[i].x/ctxcanvas->canvas->xres );
+    fprintf ( ctxcanvas->file, "20\n" );
+    fprintf ( ctxcanvas->file, "%f\n", poly[i].y/ctxcanvas->canvas->xres );
+  }
+  fprintf ( ctxcanvas->file, "97\n" );
+  fprintf ( ctxcanvas->file, "0\n" );
+  fprintf ( ctxcanvas->file, "75\n" );
+  fprintf ( ctxcanvas->file, "0\n" );
+  fprintf ( ctxcanvas->file, "76\n" );
+  fprintf ( ctxcanvas->file, "1\n" );
+}
+
 static void deflines (cdCtxCanvas *ctxcanvas)    /* define lines */
 {
   int i, j;
@@ -330,7 +448,10 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
     n++;
   }
 
-  writepoly (ctxcanvas, poly, n);                /* write polygon */
+  if( mode == CD_FILL )
+    writehatch (ctxcanvas, poly, n);               /* write fill area */
+  else
+    writepoly (ctxcanvas, poly, n);                /* write polygon */
 }
 
 static void cdline (cdCtxCanvas *ctxcanvas, int x1, int y1, int x2, int y2)
@@ -370,7 +491,10 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
     n++;
   }
 
-  writepolyf (ctxcanvas, poly, n);                /* write polygon */
+  if( mode == CD_FILL )
+    writehatchf (ctxcanvas, poly, n);               /* write fill area */
+  else
+    writepolyf (ctxcanvas, poly, n);                /* write polygon */
 }
 
 static void cdfline (cdCtxCanvas *ctxcanvas, double x1, double y1, double x2, double y2)
@@ -1066,6 +1190,10 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   fprintf (ctxcanvas->file, "SECTION\n");  /* header maker */
   fprintf (ctxcanvas->file, "2\n");
   fprintf (ctxcanvas->file, "HEADER\n");
+  fprintf (ctxcanvas->file, "  9\n");
+  fprintf (ctxcanvas->file, "$ACADVER\n");
+  fprintf (ctxcanvas->file, "  1\n");
+  fprintf (ctxcanvas->file, "AC1006\n"); /* AutoCad R10 */
   fprintf (ctxcanvas->file, "9\n");
   fprintf (ctxcanvas->file, "$LIMCHECK\n");
   fprintf (ctxcanvas->file, "70\n");
