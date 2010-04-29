@@ -465,7 +465,7 @@ static void cdline (cdCtxCanvas *ctxcanvas, int x1, int y1, int x2, int y2)
   writepoly (ctxcanvas, line, 2);    /* draw line as a polygon */
 }
 
-static void cdboxrect(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
+static void cdrect(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
 {
   cdPoint rect[5];                     /* uses new array of points to avoid      */
 
@@ -480,6 +480,23 @@ static void cdboxrect(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int 
   rect[4].x = xmin;
   rect[4].y = ymin;
   writepoly (ctxcanvas, rect, 5);              /* draw box as a polygon */
+}
+
+static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
+{
+  cdPoint rect[5];                     /* uses new array of points to avoid      */
+
+  rect[0].x = xmin;
+  rect[0].y = ymin;
+  rect[1].x = xmin;
+  rect[1].y = ymax;
+  rect[2].x = xmax;                  /* box edges */
+  rect[2].y = ymax;
+  rect[3].x = xmax;
+  rect[3].y = ymin;
+  rect[4].x = xmin;
+  rect[4].y = ymin;
+  writehatch (ctxcanvas, rect, 5);               /* write fill area */
 }
 
 static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
@@ -508,7 +525,7 @@ static void cdfline (cdCtxCanvas *ctxcanvas, double x1, double y1, double x2, do
   writepolyf (ctxcanvas, line, 2);    /* draw line as a polygon */
 }
 
-static void cdfboxrect(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
+static void cdfrect(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
 {
   cdfPoint rect[5];                     /* uses new array of points to avoid      */
 
@@ -523,6 +540,23 @@ static void cdfboxrect(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double 
   rect[4].x = xmin;
   rect[4].y = ymin;
   writepolyf (ctxcanvas, rect, 5);              /* draw box as a polygon */
+}
+
+static void cdfbox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
+{
+  cdfPoint rect[5];                     /* uses new array of points to avoid      */
+
+  rect[0].x = xmin;
+  rect[0].y = ymin;
+  rect[1].x = xmin;
+  rect[1].y = ymax;
+  rect[2].x = xmax;                  /* box edges */
+  rect[2].y = ymax;
+  rect[3].x = xmax;
+  rect[3].y = ymin;
+  rect[4].x = xmin;
+  rect[4].y = ymin;
+  writehatchf (ctxcanvas, rect, 5);               /* write fill area */
 }
 
 /*--------------------------------------------------------------------------*/
@@ -1270,12 +1304,12 @@ static void cdinittable(cdCanvas* canvas)
   canvas->cxPixel = cdpixel;
   canvas->cxLine = cdline;
   canvas->cxPoly = cdpoly;
-  canvas->cxRect = cdboxrect;
-  canvas->cxBox = cdboxrect;
+  canvas->cxRect = cdrect;
+  canvas->cxBox = cdbox;
   canvas->cxFLine = cdfline;
   canvas->cxFPoly = cdfpoly;
-  canvas->cxFRect = cdfboxrect;
-  canvas->cxFBox = cdfboxrect;
+  canvas->cxFRect = cdfrect;
+  canvas->cxFBox = cdfbox;
   canvas->cxArc = cdarc;
   canvas->cxSector = cdsector;
   canvas->cxText = cdtext;

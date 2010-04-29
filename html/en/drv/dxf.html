@@ -65,18 +65,15 @@
 </ul>
 <h4>Primitives</h4>
 <ul>
-  <li><a href="../func/filled.html#cdBox"><font face="Courier"><strong>Box</strong></font></a>: 
-  draws only the box's borders (no filling function is supported). Behaves like 
-  <strong><font face="Courier">Rect</font></strong>.</li>
   <li><a href="../func/filled.html#cdSector"><font face="Courier"><strong>Sector</strong></font></a>: 
   draws a &quot;hollow&quot; sector, that is, only its borders.</li>
   <li><a href="../func/lines.html#cdBegin"><font face="Courier"><strong>Begin</strong></font></a>:
-  <font face="Courier"><strong><tt>CD_FILL</tt></strong></font> is mapped to <font face="Courier"><strong><tt>
-  CD_CLOSED_LINES</tt></strong></font>. if parameter <strong><tt>CD_CLIP</tt></strong> or <strong><tt>CD_BEZIER</tt></strong> 
+  if parameter <strong><tt>CD_CLIP</tt></strong> or <strong><tt>CD_BEZIER</tt></strong> 
   are specified, does nothing.</li>
   <li><strong><font face="Courier"><a href="../func/filled.html#cdChord">Chord</a></font></strong>: 
   does nothing.</li>
   <li>Floating point primitives are supported.</li>
+	<li>Solid filled primitives are supported only for polygons and rectangles.</li>
 </ul>
 <h4>Attributes</h4>
 <ul>
@@ -85,9 +82,6 @@
   <li><a href="../func/attributes.html#cdWriteMode"><font face="Courier">
   <strong>
   WriteMode</strong></font></a>: does nothing, returns <font face="Courier">CD_REPLACE</font>.</li>
-  <li><a href="../func/filled.html#cdInteriorStyle"><font face="Courier">
-  <strong>
-  InteriorStyle</strong></font></a>: does nothing (filling is not supported), returns 0.</li>
   <li><a href="../func/filled.html#cdHatch"><font face="Courier"><strong>Hatch</strong></font></a>: 
   does nothing. </li>
   <li><a href="../func/filled.html#cdFillMode"><font face="Courier"><strong>
