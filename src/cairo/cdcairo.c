@@ -14,13 +14,10 @@
 
 #include "cdcairoctx.h"
 
-#define HATCH_WIDTH  8
-#define HATCH_HEIGHT 8
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
-
 
 static int StrIsAscii(const char* str)
 {
@@ -294,12 +291,12 @@ static void cdstipple(cdCtxCanvas *ctxcanvas, int n, int m, const unsigned char 
 
 static int cdhatch(cdCtxCanvas *ctxcanvas, int style)
 {
-  int hsize = HATCH_WIDTH - 1;
+  int hsize = ctxcanvas->hatchboxsize;
   int hhalf = hsize / 2;
   cairo_surface_t* hatch_surface;
   cairo_t* cr;
 
-  hatch_surface = cairo_surface_create_similar(cairo_get_target(ctxcanvas->cr), CAIRO_CONTENT_COLOR_ALPHA, HATCH_WIDTH, HATCH_HEIGHT);
+  hatch_surface = cairo_surface_create_similar(cairo_get_target(ctxcanvas->cr), CAIRO_CONTENT_COLOR_ALPHA, hsize, hsize);
 
   cr = cairo_create(hatch_surface);
 
@@ -365,21 +362,6 @@ static int cdhatch(cdCtxCanvas *ctxcanvas, int style)
 /******************************************************/
 /* attributes                                         */
 /******************************************************/
-
-static int cdwritemode(cdCtxCanvas *ctxcanvas, int write_mode)
-{
-  switch (write_mode)
-  {
-  case CD_REPLACE:
-    cairo_set_operator (ctxcanvas->cr, CAIRO_OPERATOR_OVER);
-    break;
-  case CD_XOR:
-    cairo_set_operator (ctxcanvas->cr, CAIRO_OPERATOR_XOR);
-    break;
-  }
-
-  return write_mode;
-}
 
 static int cdinteriorstyle (cdCtxCanvas* ctxcanvas, int style)
 {
@@ -1676,6 +1658,7 @@ cdCtxCanvas *cdcairoCreateCanvas(cdCanvas* canvas, cairo_t* cr)
   ctxcanvas->cr = cr;
   ctxcanvas->canvas = canvas;
   ctxcanvas->last_source = -1;
+  ctxcanvas->hatchboxsize = 8;
 
   canvas->ctxcanvas = ctxcanvas;
   canvas->invert_yaxis = 1;
@@ -1735,7 +1718,6 @@ void cdcairoInitTable(cdCanvas* canvas)
   canvas->cxGetFontDim = cdgetfontdim;
   canvas->cxGetTextSize = cdgettextsize;
   canvas->cxTransform = cdtransform;
-  canvas->cxWriteMode = cdwritemode;
   canvas->cxForeground = cdforeground;
 
   canvas->cxGetImageRGB = cdgetimagergb;

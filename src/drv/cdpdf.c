@@ -799,7 +799,7 @@ static int cdhatch(cdCtxCanvas *ctxcanvas, int style)
   int hhalf = hsize / 2;
 
   PDF_suspend_page(ctxcanvas->pdf, "");
-  ctxcanvas->pattern = PDF_begin_pattern(ctxcanvas->pdf, hsize+1, hsize+1,
+  ctxcanvas->pattern = PDF_begin_pattern(ctxcanvas->pdf, hsize, hsize,
       ((double)hsize)*ctxcanvas->scale, ((double)hsize)*ctxcanvas->scale, 1);
 
   PDF_scale(ctxcanvas->pdf, ctxcanvas->scale, ctxcanvas->scale);

@@ -31,6 +31,7 @@ struct _cdCtxCanvas
 
   cairo_pattern_t *pattern, *solid;
   int last_source;
+  int hatchboxsize;
 
   char* cairoLastConvertUTF8;
 

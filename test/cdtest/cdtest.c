@@ -229,7 +229,7 @@ void CDTestInit(void)
 
   if (use_contextplus) 
   {
-#ifdef USE_GDIPLUS
+#ifdef USE_CONTEXTPLUS
     cdInitContextPlus();
 #endif
   }
