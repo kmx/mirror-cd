@@ -23,7 +23,6 @@
 struct _cdCtxCanvas 
 {
   cdCanvas* canvas;
-  char* filename;       
 
   char bgColor[20];
   char fgColor[20]; 
@@ -67,7 +66,6 @@ static void cdkillcanvas(cdCtxCanvas* ctxcanvas)
   fprintf(ctxcanvas->file, "</g>\n");  /* close global container */
   fprintf(ctxcanvas->file, "</svg>\n");
 
-  free(ctxcanvas->filename);
   fclose(ctxcanvas->file);
 
   memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
@@ -564,31 +562,31 @@ static int cdhatch(cdCtxCanvas *ctxcanvas, int style)
   {
   case CD_HORIZONTAL:
     fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; opacity:%g\" />\n",
-      0, hhalf, hsize, hhalf, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->opacity);
+      0, hhalf, hsize, hhalf, ctxcanvas->fgColor, ctxcanvas->opacity);
     break;
   case CD_VERTICAL:
     fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; opacity:%g\" />\n",
-      hhalf, 0, hhalf, hsize, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->opacity);
+      hhalf, 0, hhalf, hsize, ctxcanvas->fgColor, ctxcanvas->opacity);
     break;
   case CD_BDIAGONAL:
     fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; opacity:%g\" />\n",
-      0, hsize, hsize, 0, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->opacity);
+      0, hsize, hsize, 0, ctxcanvas->fgColor, ctxcanvas->opacity);
     break;
   case CD_FDIAGONAL:
     fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; opacity:%g\" />\n",
-      0, 0, hsize, hsize, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->opacity);
+      0, 0, hsize, hsize, ctxcanvas->fgColor, ctxcanvas->opacity);
     break;
   case CD_CROSS:
     fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; opacity:%g\" />\n",
-      hsize, 0, hsize, hsize, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->opacity);
+      hsize, 0, hsize, hsize, ctxcanvas->fgColor, ctxcanvas->opacity);
     fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; opacity:%g\" />\n",
-      0, hhalf, hsize, hhalf, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->opacity);
+      0, hhalf, hsize, hhalf, ctxcanvas->fgColor, ctxcanvas->opacity);
     break;
   case CD_DIAGCROSS:
     fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; opacity:%g\" />\n",
-      0, 0, hsize, hsize, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->opacity);
+      0, 0, hsize, hsize, ctxcanvas->fgColor, ctxcanvas->opacity);
     fprintf(ctxcanvas->file, "<line x1=\"%d\" y1=\"%d\" x2=\"%d\" y2=\"%d\" style=\"fill:none; stroke:%s; opacity:%g\" />\n",
-      hsize, 0, 0, hsize, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->opacity);
+      hsize, 0, 0, hsize, ctxcanvas->fgColor, ctxcanvas->opacity);
     break;
   }
 
@@ -642,21 +640,18 @@ static void cdpattern(cdCtxCanvas *ctxcanvas, int n, int m, const long int *patt
 
 static int uchar2rgb(cdCtxCanvas *ctxcanvas, int n, int i, int j, void* data, unsigned char*r, unsigned char*g, unsigned char*b)
 {
-  int ret = 1;
   unsigned char* uchar_data = (unsigned char*)data;
   if (uchar_data[j*n+i])
-  {
     cdDecodeColor(ctxcanvas->canvas->foreground, r, g, b);
-    ret = 1;
-  }
   else
   {
-    cdDecodeColor(ctxcanvas->canvas->background, r, g, b);
     if (ctxcanvas->canvas->back_opacity==CD_TRANSPARENT)
-      ret = -1;
+      return -1;
+    else
+      cdDecodeColor(ctxcanvas->canvas->background, r, g, b);
   }
 
-  return ret;
+  return 1;
 }
 
 static void cdstipple(cdCtxCanvas *ctxcanvas, int n, int m, const unsigned char *stipple)
@@ -966,7 +961,6 @@ static void cdcreatecanvas(cdCanvas *canvas, void *data)
   char* strdata = (char*)data;
   double w_mm = INT_MAX*3.78, h_mm = INT_MAX*3.78, res = 3.78;
   cdCtxCanvas* ctxcanvas;
-  int size;
 
   strdata += cdGetFileName(strdata, filename);
   if (filename[0] == 0)
@@ -983,10 +977,6 @@ static void cdcreatecanvas(cdCanvas *canvas, void *data)
     free(ctxcanvas);
     return;
   }
-
-  size = strlen(filename);
-  ctxcanvas->filename = malloc(size+1);
-  memcpy(ctxcanvas->filename, filename, size+1);
 
   /* store the base canvas */
   ctxcanvas->canvas = canvas;

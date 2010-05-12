@@ -1781,6 +1781,7 @@ static void set_rotate_attrib(cdCtxCanvas* ctxcanvas, char* data)
 {
   if (data)
   {
+    /* use this configuration when there is NO native tranformation support */
     sscanf(data, "%g %d %d", &ctxcanvas->rotate_angle,
                              &ctxcanvas->rotate_center_x,
                              &ctxcanvas->rotate_center_y);

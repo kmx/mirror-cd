@@ -219,6 +219,7 @@ EXPORTS
   cdGetFontSizePixels
   cdGetFontSizePoints
   cdStrEqualNoCase
+  cdSetPaperSize
   
   wdCanvasLineWidth
   wdCanvasMarkSize

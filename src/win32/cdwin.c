@@ -626,6 +626,7 @@ static int cdinteriorstyle (cdCtxCanvas* ctxcanvas, int style)
     ctxcanvas->hBrush = CreateBrushIndirect(&ctxcanvas->logBrush);
     ctxcanvas->hOldBrush = SelectObject(ctxcanvas->hDC, ctxcanvas->hBrush);
     break;
+    /* the remaining styles must recreate the current brush */
   case CD_HATCH:
     cdhatch(ctxcanvas, ctxcanvas->canvas->hatch_style);
     break;
@@ -963,8 +964,37 @@ static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
   else
   {
     ctxcanvas->canvas->invert_yaxis = 1;
-    ModifyWorldTransform(ctxcanvas->hDC, NULL, MWT_IDENTITY);
-    SetGraphicsMode(ctxcanvas->hDC, GM_COMPATIBLE);
+
+    if (ctxcanvas->rotate_angle)
+    {
+      XFORM xForm;
+
+      /* the rotation  must be corrected because of the Y axis orientation */
+
+      SetGraphicsMode(ctxcanvas->hDC, GM_ADVANCED);
+      ModifyWorldTransform(ctxcanvas->hDC, NULL, MWT_IDENTITY);
+
+      xForm.eM11 = (FLOAT) cos(-CD_DEG2RAD*ctxcanvas->rotate_angle); 
+      xForm.eM12 = (FLOAT) sin(-CD_DEG2RAD*ctxcanvas->rotate_angle); 
+      xForm.eM21 = (FLOAT) -xForm.eM12; 
+      xForm.eM22 = (FLOAT) xForm.eM11; 
+      xForm.eDx  = (FLOAT) ctxcanvas->rotate_center_x; 
+      xForm.eDy  = (FLOAT) _cdInvertYAxis(ctxcanvas->canvas, ctxcanvas->rotate_center_y); 
+      ModifyWorldTransform(ctxcanvas->hDC, &xForm, MWT_LEFTMULTIPLY);
+
+      xForm.eM11 = (FLOAT) 1; 
+      xForm.eM12 = (FLOAT) 0; 
+      xForm.eM21 = (FLOAT) 0; 
+      xForm.eM22 = (FLOAT) 1; 
+      xForm.eDx  = (FLOAT) -ctxcanvas->rotate_center_x; 
+      xForm.eDy  = (FLOAT) -_cdInvertYAxis(ctxcanvas->canvas, ctxcanvas->rotate_center_y); 
+      ModifyWorldTransform(ctxcanvas->hDC, &xForm, MWT_LEFTMULTIPLY);
+    }
+    else
+    {
+      ModifyWorldTransform(ctxcanvas->hDC, NULL, MWT_IDENTITY);
+      SetGraphicsMode(ctxcanvas->hDC, GM_COMPATIBLE);
+    }
   }
 }
 
@@ -1581,11 +1611,12 @@ static void cdgetimagergb(cdCtxCanvas* ctxcanvas, unsigned char *red, unsigned c
   
   if (GetGraphicsMode(ctxcanvas->hDC) == GM_ADVANCED)
   {
+    /* reset to the identity. */
     GetWorldTransform(ctxcanvas->hDC, &xForm);
     ModifyWorldTransform(ctxcanvas->hDC, NULL, MWT_IDENTITY);
   }
 
-  if (ctxcanvas->canvas->invert_yaxis==0) // if 0, then the transform was reset
+  if (ctxcanvas->canvas->invert_yaxis==0) /* if 0, invert because the transform was reset here */
     y = _cdInvertYAxis(ctxcanvas->canvas, y);
   
   yr = y - (h - 1);  /* y starts at the bottom of the image */
@@ -1891,20 +1922,21 @@ static cdCtxImage *cdcreateimage(cdCtxCanvas* ctxcanvas, int width, int height)
 
 static void cdgetimage(cdCtxCanvas* ctxcanvas, cdCtxImage *ctximage, int x, int y)
 {
-  int yr;
   XFORM xForm;
 
   if (GetGraphicsMode(ctxcanvas->hDC) == GM_ADVANCED)
   {
+    /* reset to the identity. */
     GetWorldTransform(ctxcanvas->hDC, &xForm);
     ModifyWorldTransform(ctxcanvas->hDC, NULL, MWT_IDENTITY);
   }
 
-  if (ctxcanvas->canvas->invert_yaxis==0)  // if 0, then the transform was reset
+  if (ctxcanvas->canvas->invert_yaxis==0)  /* if 0, invert because the transform was reset here */
     y = _cdInvertYAxis(ctxcanvas->canvas, y);
 
-  yr = y - (ctximage->h - 1);
-  BitBlt(ctximage->hDC, 0, 0, ctximage->w, ctximage->h, ctxcanvas->hDC, x, yr, SRCCOPY);
+  /* y is the bottom-left of the image in CD, must be at upper-left */
+  y -= ctximage->h-1;
+  BitBlt(ctximage->hDC, 0, 0, ctximage->w, ctximage->h, ctxcanvas->hDC, x, y, SRCCOPY);
 
   if (GetGraphicsMode(ctxcanvas->hDC) == GM_ADVANCED)
     ModifyWorldTransform(ctxcanvas->hDC, &xForm, MWT_LEFTMULTIPLY);
@@ -1971,24 +2003,26 @@ static void cdscrollarea(cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, i
 {
   XFORM xForm;
   RECT rect;
-  rect.left   = xmin;          
-  rect.right  = xmax+1;
-  rect.top    = ymin;
-  rect.bottom = ymax+1; 
   
   if (GetGraphicsMode(ctxcanvas->hDC) == GM_ADVANCED)
   {
+    /* reset to the identity. */
     GetWorldTransform(ctxcanvas->hDC, &xForm);
     ModifyWorldTransform(ctxcanvas->hDC, NULL, MWT_IDENTITY);
   }
 
-  if (ctxcanvas->canvas->invert_yaxis==0)  // if 0, then the transform was reset
+  if (ctxcanvas->canvas->invert_yaxis==0)  /* if 0, invert because the transform was reset here */
   {
     dy = -dy;
     ymin = _cdInvertYAxis(ctxcanvas->canvas, ymin);
     ymax = _cdInvertYAxis(ctxcanvas->canvas, ymax);
     _cdSwapInt(ymin, ymax);
   }
+
+  rect.left   = xmin;          
+  rect.right  = xmax+1;
+  rect.top    = ymin;
+  rect.bottom = ymax+1; 
 
   ScrollDC(ctxcanvas->hDC, dx, dy, &rect, NULL, NULL, NULL);
 
@@ -2136,47 +2170,25 @@ static cdAttribute img_points_attrib =
 
 static void set_rotate_attrib(cdCtxCanvas* ctxcanvas, char* data)
 {
-  /* ignore ROTATE if transform is set */
+  /* ignore ROTATE if transform is set, 
+     because there is native support for transformations */
   if (ctxcanvas->canvas->use_matrix)
     return;
 
   if (data)
   {
-    XFORM xForm;
     sscanf(data, "%g %d %d", &ctxcanvas->rotate_angle,
                              &ctxcanvas->rotate_center_x,
                              &ctxcanvas->rotate_center_y);
-
-    /* the rotation  must be corrected because of the Y axis orientation */
-
-    SetGraphicsMode(ctxcanvas->hDC, GM_ADVANCED);
-    ModifyWorldTransform(ctxcanvas->hDC, NULL, MWT_IDENTITY);
-
-    xForm.eM11 = (FLOAT) cos(-CD_DEG2RAD*ctxcanvas->rotate_angle); 
-    xForm.eM12 = (FLOAT) sin(-CD_DEG2RAD*ctxcanvas->rotate_angle); 
-    xForm.eM21 = (FLOAT) -xForm.eM12; 
-    xForm.eM22 = (FLOAT) xForm.eM11; 
-    xForm.eDx  = (FLOAT) ctxcanvas->rotate_center_x; 
-    xForm.eDy  = (FLOAT) _cdInvertYAxis(ctxcanvas->canvas, ctxcanvas->rotate_center_y); 
-    ModifyWorldTransform(ctxcanvas->hDC, &xForm, MWT_LEFTMULTIPLY);
-
-    xForm.eM11 = (FLOAT) 1; 
-    xForm.eM12 = (FLOAT) 0; 
-    xForm.eM21 = (FLOAT) 0; 
-    xForm.eM22 = (FLOAT) 1; 
-    xForm.eDx  = (FLOAT) -ctxcanvas->rotate_center_x; 
-    xForm.eDy  = (FLOAT) -_cdInvertYAxis(ctxcanvas->canvas, ctxcanvas->rotate_center_y); 
-    ModifyWorldTransform(ctxcanvas->hDC, &xForm, MWT_LEFTMULTIPLY);
   }
   else
   {
     ctxcanvas->rotate_angle = 0;
     ctxcanvas->rotate_center_x = 0;
     ctxcanvas->rotate_center_y = 0;
-
-    ModifyWorldTransform(ctxcanvas->hDC, NULL, MWT_IDENTITY);
-    SetGraphicsMode(ctxcanvas->hDC, GM_COMPATIBLE);
   }
+
+  cdtransform(ctxcanvas, NULL);
 }
 
 static char* get_rotate_attrib(cdCtxCanvas* ctxcanvas)

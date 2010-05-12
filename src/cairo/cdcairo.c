@@ -1,0 +1,1758 @@
+/** \file
+* \brief Cairo Base Driver
+*
+* See Copyright Notice in cd.h
+*/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <string.h>
+#include <math.h>
+
+#include <glib.h>
+
+#include "cdcairoctx.h"
+
+#define HATCH_WIDTH  8
+#define HATCH_HEIGHT 8
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+
+static int StrIsAscii(const char* str)
+{
+  while(*str)
+  {
+    int c = *str;
+    if (c < 0)
+      return 0;
+    str++;
+  }
+  return 1;
+}
+
+static char* StrToUTF8(const char *str, const char* charset, int length)
+{
+  return g_convert(str, length, "UTF-8", charset, NULL, NULL, NULL);
+}
+
+char* StrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, int length)
+{
+  const char *charset = NULL;
+
+  if (!str || *str == 0)
+    return (char*)str;
+
+  if (g_get_charset(&charset))  /* current locale is already UTF-8 */
+  {
+    if (g_utf8_validate(str, -1, NULL))
+    {
+      return (char*)str;
+    }
+    else
+    {
+      ctxcanvas->cairoLastConvertUTF8 = StrToUTF8(str, "ISO8859-1", length);   /* if string is not UTF-8, assume ISO8859-1 */
+
+      if (!ctxcanvas->cairoLastConvertUTF8)
+        return (char*)str;
+
+      return ctxcanvas->cairoLastConvertUTF8;
+    }
+  }
+  else
+  {
+    if (StrIsAscii(str) || !charset)
+    {
+      return (char*)str;
+    }
+    else if (charset)
+    {    
+      ctxcanvas->cairoLastConvertUTF8 = StrToUTF8(str, charset, length);
+
+      if (!ctxcanvas->cairoLastConvertUTF8)
+        return (char*)str;
+
+      return ctxcanvas->cairoLastConvertUTF8;
+    }
+  }
+
+  return (char*)str;
+}
+
+static void update_fill(cdCtxCanvas *ctxcanvas, int fill)
+{
+  if (fill == 0 || ctxcanvas->canvas->interior_style == CD_SOLID)
+  {
+    if (ctxcanvas->last_source == 0)
+      return;
+
+    cairo_set_source(ctxcanvas->cr, ctxcanvas->solid);
+    ctxcanvas->last_source = 0;
+  }
+  else
+  {
+    if (ctxcanvas->last_source == 1)
+      return;
+
+    cairo_set_source(ctxcanvas->cr, ctxcanvas->pattern);
+    ctxcanvas->last_source = 1;
+  }
+}
+
+/******************************************************/
+
+void cdcairoKillCanvas(cdCtxCanvas *ctxcanvas)
+{
+  if (ctxcanvas->solid)
+    cairo_pattern_destroy(ctxcanvas->solid);
+
+  if (ctxcanvas->pattern)
+    cairo_pattern_destroy(ctxcanvas->pattern);
+
+  if (ctxcanvas->font)
+    cairo_scaled_font_destroy(ctxcanvas->font);
+
+  if (ctxcanvas->cairoLastConvertUTF8)
+    g_free(ctxcanvas->cairoLastConvertUTF8);
+
+  cairo_destroy(ctxcanvas->cr);
+
+  memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
+  free(ctxcanvas);
+}
+
+/******************************************************/
+
+static void cdflush(cdCtxCanvas *ctxcanvas)
+{
+  cairo_show_page(ctxcanvas->cr);
+}
+
+/******************************************************/
+
+static void setcliprect(cdCtxCanvas* ctxcanvas, double xmin, double ymin, double xmax, double ymax)
+{
+  cairo_reset_clip(ctxcanvas->cr);
+  cairo_rectangle(ctxcanvas->cr, xmin, ymin, xmax-xmin+1, ymax-ymin+1);
+  cairo_clip(ctxcanvas->cr);
+}
+
+static void cdcliparea(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
+{
+  if (ctxcanvas->canvas->clip_mode != CD_CLIPAREA)
+    return;
+
+  setcliprect(ctxcanvas, (double)xmin, (double)ymin, (double)xmax, (double)ymax);
+}
+
+static int cdclip(cdCtxCanvas *ctxcanvas, int mode)
+{
+  switch (mode)
+  {
+  case CD_CLIPOFF:
+    cairo_reset_clip(ctxcanvas->cr);
+    break;
+  case CD_CLIPAREA:
+      ctxcanvas->canvas->clip_mode = CD_CLIPAREA;
+      setcliprect(ctxcanvas, (double)ctxcanvas->canvas->clip_rect.xmin, 
+        (double)ctxcanvas->canvas->clip_rect.ymin, 
+        (double)ctxcanvas->canvas->clip_rect.xmax, 
+        (double)ctxcanvas->canvas->clip_rect.ymax);
+      break;
+  case CD_CLIPPOLYGON:
+    {
+      int hole_index = 0;
+      int i;
+      cairo_reset_clip(ctxcanvas->cr);
+
+      if (ctxcanvas->canvas->clip_poly)
+      {
+        cdPoint *poly = ctxcanvas->canvas->clip_poly; 
+        cairo_move_to(ctxcanvas->cr, poly[0].x, poly[0].y);
+        for (i=1; i<ctxcanvas->canvas->clip_poly_n; i++)
+        {
+          if (ctxcanvas->holes && i == ctxcanvas->poly_holes[hole_index])
+          {
+            cairo_move_to(ctxcanvas->cr, poly[i].x, poly[i].y);
+            hole_index++;
+          }
+          else
+            cairo_line_to(ctxcanvas->cr, poly[i].x, poly[i].y);
+        }
+      }
+      else if (ctxcanvas->canvas->clip_fpoly)
+      {
+        cdfPoint *poly = ctxcanvas->canvas->clip_fpoly; 
+        cairo_move_to(ctxcanvas->cr, poly[0].x, poly[0].y);
+        for (i=1; i<ctxcanvas->canvas->clip_poly_n; i++)
+        {
+          if (ctxcanvas->holes && i == ctxcanvas->poly_holes[hole_index])
+          {
+            cairo_move_to(ctxcanvas->cr, poly[i].x, poly[i].y);
+            hole_index++;
+          }
+          else
+            cairo_line_to(ctxcanvas->cr, poly[i].x, poly[i].y);
+        }
+      }
+      cairo_clip(ctxcanvas->cr);
+      break;
+    }
+  case CD_CLIPREGION:
+    break;
+  }
+
+  return mode;
+}
+
+/******************************************************/
+
+static void make_pattern(cdCtxCanvas *ctxcanvas, int n, int m, void* data, int (*data2rgb)(cdCtxCanvas *ctxcanvas, int n, int i, int j, void* data, unsigned char*r, unsigned char*g, unsigned char*b, unsigned char*a))
+{
+  int i, j;
+  unsigned char r, g, b, a;
+  cairo_surface_t* pattern_surface;
+  cairo_t* cr;
+
+  pattern_surface = cairo_surface_create_similar(cairo_get_target(ctxcanvas->cr), CAIRO_CONTENT_COLOR_ALPHA, n, m);
+
+  cr = cairo_create(pattern_surface);
+
+  for (j = 0; j < m; j++)
+  {
+    for (i = 0; i < n; i++)
+    {
+      int ret = data2rgb(ctxcanvas, n, i, j, data, &r, &g, &b, &a);
+      if (ret == -1)
+        continue;
+
+      cairo_set_source_rgba(cr, (double)r/255.0, (double)g/255.0, (double)b/255.0, (double)a/255.0);
+
+      cairo_rectangle(cr, i, m-1-j, 1.0, 1.0);
+      cairo_fill(cr);
+    }
+  }
+
+  if (ctxcanvas->pattern)
+    cairo_pattern_destroy(ctxcanvas->pattern);
+
+  ctxcanvas->pattern = cairo_pattern_create_for_surface(pattern_surface);
+  cairo_pattern_set_extend(ctxcanvas->pattern, CAIRO_EXTEND_REPEAT);
+
+  cairo_surface_destroy(pattern_surface);
+  cairo_destroy(cr);
+}
+
+static int long2rgb(cdCtxCanvas *ctxcanvas, int n, int i, int j, void* data, unsigned char*r, unsigned char*g, unsigned char*b, unsigned char*a)
+{
+  long* long_data = (long*)data;
+  long c = long_data[j*n+i];
+  (void)ctxcanvas;
+  cdDecodeColor(c, r, g, b);
+  *a = cdDecodeAlpha(c);
+  return 1;
+}
+
+static void cdpattern(cdCtxCanvas *ctxcanvas, int n, int m, const long int *pattern)
+{
+  make_pattern(ctxcanvas, n, m, (void*)pattern, long2rgb);
+  cairo_set_source(ctxcanvas->cr, ctxcanvas->pattern);
+  ctxcanvas->last_source = 1;
+}
+
+static int uchar2rgb(cdCtxCanvas *ctxcanvas, int n, int i, int j, void* data, unsigned char*r, unsigned char*g, unsigned char*b, unsigned char*a)
+{
+  unsigned char* uchar_data = (unsigned char*)data;
+  if (uchar_data[j*n+i])
+  {
+    cdDecodeColor(ctxcanvas->canvas->foreground, r, g, b);
+    *a = cdDecodeAlpha(ctxcanvas->canvas->foreground);
+  }
+  else
+  {
+    if (ctxcanvas->canvas->back_opacity == CD_TRANSPARENT)
+      return -1;
+    else
+    {
+      cdDecodeColor(ctxcanvas->canvas->background, r, g, b);
+      *a = cdDecodeAlpha(ctxcanvas->canvas->background);
+    }
+  }
+
+  return 1;
+}
+
+static void cdstipple(cdCtxCanvas *ctxcanvas, int n, int m, const unsigned char *stipple)
+{
+  make_pattern(ctxcanvas, n, m, (void*)stipple, uchar2rgb);
+  cairo_set_source(ctxcanvas->cr, ctxcanvas->pattern);
+  ctxcanvas->last_source = 1;
+}
+
+static int cdhatch(cdCtxCanvas *ctxcanvas, int style)
+{
+  int hsize = HATCH_WIDTH - 1;
+  int hhalf = hsize / 2;
+  cairo_surface_t* hatch_surface;
+  cairo_t* cr;
+
+  hatch_surface = cairo_surface_create_similar(cairo_get_target(ctxcanvas->cr), CAIRO_CONTENT_COLOR_ALPHA, HATCH_WIDTH, HATCH_HEIGHT);
+
+  cr = cairo_create(hatch_surface);
+
+  if (ctxcanvas->canvas->back_opacity == CD_OPAQUE)
+  {
+    cairo_set_source_rgba(cr, cdCairoGetRed(ctxcanvas->canvas->background), cdCairoGetGreen(ctxcanvas->canvas->background), cdCairoGetBlue(ctxcanvas->canvas->background), cdCairoGetAlpha(ctxcanvas->canvas->background));
+    cairo_rectangle(cr, 0, 0, hsize, hsize);
+    cairo_fill(cr);
+  }
+
+  cairo_set_source_rgba(cr, cdCairoGetRed(ctxcanvas->canvas->foreground), cdCairoGetGreen(ctxcanvas->canvas->foreground), cdCairoGetBlue(ctxcanvas->canvas->foreground), cdCairoGetAlpha(ctxcanvas->canvas->foreground));
+
+  switch(style)
+  {
+  case CD_HORIZONTAL:
+    cairo_move_to(cr, 0.0, (double)hhalf);
+    cairo_line_to(cr, (double)hsize, (double)hhalf);
+    break;
+  case CD_VERTICAL:
+    cairo_move_to(cr, (double)hhalf, 0.0);
+    cairo_line_to(cr, (double)hhalf, (double)hsize);
+    break;
+  case CD_BDIAGONAL:
+    cairo_move_to(cr, 0.0, (double)hsize);
+    cairo_line_to(cr, (double)hsize, 0.0);
+    break;
+  case CD_FDIAGONAL:
+    cairo_move_to(cr, 0.0, 0.0);
+    cairo_line_to(cr, (double)hsize, (double)hsize);
+    break;
+  case CD_CROSS:
+    cairo_move_to(cr, (double)hsize, 0.0);
+    cairo_line_to(cr, (double)hsize, (double)hsize);
+    cairo_move_to(cr, 0.0, (double)hhalf);
+    cairo_line_to(cr, (double)hsize, (double)hhalf);
+    break;
+  case CD_DIAGCROSS:
+    cairo_move_to(cr, 0.0, 0.0);
+    cairo_line_to(cr, (double)hsize, (double)hsize);
+    cairo_move_to(cr, (double)hsize, 0.0);
+    cairo_line_to(cr, 0.0, (double)hsize);
+    break;
+  }
+
+  cairo_stroke(cr);
+
+  if (ctxcanvas->pattern)
+    cairo_pattern_destroy(ctxcanvas->pattern);
+
+  ctxcanvas->pattern = cairo_pattern_create_for_surface(hatch_surface);
+  cairo_pattern_reference(ctxcanvas->pattern);
+  cairo_pattern_set_extend(ctxcanvas->pattern, CAIRO_EXTEND_REPEAT);
+
+  cairo_surface_destroy(hatch_surface);
+  cairo_destroy(cr);
+
+  cairo_set_source(ctxcanvas->cr, ctxcanvas->pattern);
+  ctxcanvas->last_source = 1;
+
+  return style;
+}
+
+/******************************************************/
+/* attributes                                         */
+/******************************************************/
+
+static int cdwritemode(cdCtxCanvas *ctxcanvas, int write_mode)
+{
+  switch (write_mode)
+  {
+  case CD_REPLACE:
+    cairo_set_operator (ctxcanvas->cr, CAIRO_OPERATOR_OVER);
+    break;
+  case CD_XOR:
+    cairo_set_operator (ctxcanvas->cr, CAIRO_OPERATOR_XOR);
+    break;
+  }
+
+  return write_mode;
+}
+
+static int cdinteriorstyle (cdCtxCanvas* ctxcanvas, int style)
+{
+  switch (style)
+  {
+  case CD_SOLID:
+    cairo_set_source(ctxcanvas->cr, ctxcanvas->solid);
+    ctxcanvas->last_source = 0;
+    break;
+  /* must recriate the current pattern */
+  case CD_HATCH:
+    cdhatch(ctxcanvas, ctxcanvas->canvas->hatch_style);
+    break;
+  case CD_STIPPLE:
+    cdstipple(ctxcanvas, ctxcanvas->canvas->stipple_w, ctxcanvas->canvas->stipple_h, ctxcanvas->canvas->stipple);
+    break;
+  case CD_PATTERN:
+    cdpattern(ctxcanvas, ctxcanvas->canvas->pattern_w, ctxcanvas->canvas->pattern_h, ctxcanvas->canvas->pattern);
+    break;
+  }
+
+  return style;
+}
+
+static int cdlinestyle(cdCtxCanvas *ctxcanvas, int style)
+{
+  double dashes[10];
+
+  switch (style)
+  {
+  case CD_CONTINUOUS : /* empty dash */
+    cairo_set_dash(ctxcanvas->cr, 0, 0, 0);
+    break;
+  case CD_DASHED :
+    dashes[0] = 6.0;  dashes[1] = 2.0;
+    cairo_set_dash(ctxcanvas->cr, dashes, 2, 0);
+    break;
+  case CD_DOTTED :
+    dashes[0] = 2.0;  dashes[1] = 2.0;
+    cairo_set_dash(ctxcanvas->cr, dashes, 2, 0);
+    break;
+  case CD_DASH_DOT :
+    dashes[0] = 6.0;  dashes[1] = 2.0;
+    dashes[2] = 2.0;  dashes[3] = 2.0;
+    cairo_set_dash(ctxcanvas->cr, dashes, 4, 0);
+    break;
+  case CD_DASH_DOT_DOT :
+    dashes[0] = 6.0;  dashes[1] = 2.0;
+    dashes[2] = 2.0;  dashes[3] = 2.0;
+    dashes[4] = 2.0;  dashes[5] = 2.0;
+    cairo_set_dash(ctxcanvas->cr, dashes, 6, 0);
+    break;
+  case CD_CUSTOM :
+    {
+      int i;
+      double* dash_style = (double*)malloc(sizeof(double)*ctxcanvas->canvas->line_dashes_count);
+
+      for (i = 0; i < ctxcanvas->canvas->line_dashes_count; i++)
+        dash_style[i] = (double)ctxcanvas->canvas->line_dashes[i];
+
+      cairo_set_dash(ctxcanvas->cr, dash_style, ctxcanvas->canvas->line_dashes_count, 0);
+
+      free(dash_style);
+    }
+    break;
+  }
+
+  return style;
+}
+
+static int cdlinewidth(cdCtxCanvas *ctxcanvas, int width)
+{
+  if(width == 0)
+    width = 1;
+
+  cairo_set_line_width(ctxcanvas->cr, (double)width);
+
+  return width;
+}
+
+static int cdlinejoin(cdCtxCanvas *ctxcanvas, int join)
+{
+  int cd2ps_join[] = {CAIRO_LINE_JOIN_MITER, CAIRO_LINE_JOIN_BEVEL, CAIRO_LINE_JOIN_ROUND};
+
+  cairo_set_line_join(ctxcanvas->cr, cd2ps_join[join]); 
+
+  return join;
+}
+
+static int cdlinecap(cdCtxCanvas *ctxcanvas, int cap)
+{
+  int cd2pdf_cap[] = {CAIRO_LINE_CAP_BUTT, CAIRO_LINE_CAP_SQUARE, CAIRO_LINE_CAP_ROUND};
+
+  cairo_set_line_cap(ctxcanvas->cr, cd2pdf_cap[cap]); 
+
+  return cap;
+}
+
+static int cdfont(cdCtxCanvas *ctxcanvas, const char *typeface, int style, int size)
+{
+  //TODO:pango
+  cairo_scaled_font_t *font;
+  cairo_font_slant_t  slant  = CAIRO_FONT_SLANT_NORMAL;    /* default is */
+  cairo_font_weight_t weight = CAIRO_FONT_WEIGHT_NORMAL;   /*  CD_PLAIN  */
+
+  if (cdStrEqualNoCase(typeface, "Courier") || cdStrEqualNoCase(typeface, "Monospace"))
+    typeface = "Courier New";
+  else if (cdStrEqualNoCase(typeface, "Times") || cdStrEqualNoCase(typeface, "Serif"))
+    typeface = "Times New Roman";
+  else if (cdStrEqualNoCase(typeface, "Helvetica") || cdStrEqualNoCase(typeface, "Sans"))
+    typeface = "Arial";
+
+  /* no support to underline and strikeout */
+  switch(style&3)
+  {
+  case CD_BOLD:
+    weight = CAIRO_FONT_WEIGHT_BOLD;
+    break;
+  case CD_ITALIC:
+    slant = CAIRO_FONT_SLANT_ITALIC;
+    break;
+  case CD_BOLD_ITALIC:
+    weight = CAIRO_FONT_WEIGHT_BOLD;
+    slant = CAIRO_FONT_SLANT_ITALIC;
+    break;
+  }
+
+  cairo_select_font_face(ctxcanvas->cr, typeface, slant, weight);
+  cairo_set_font_size(ctxcanvas->cr, (double)cdGetFontSizePixels(ctxcanvas->canvas, size));
+
+  font = cairo_get_scaled_font(ctxcanvas->cr);
+
+  if (!font)
+    return 0;
+
+  font = cairo_scaled_font_reference(font);
+  ctxcanvas->font = font;
+
+  return 1;
+}
+
+static void cdgetfontdim(cdCtxCanvas *ctxcanvas, int *max_width, int *height, int *ascent, int *descent)
+{
+  cairo_font_extents_t extents;
+
+  if (!ctxcanvas->font)
+    return;
+
+  cairo_set_scaled_font(ctxcanvas->cr, ctxcanvas->font);
+  cairo_font_extents(ctxcanvas->cr, &extents);
+
+  if (ascent)  *ascent  = (int)extents.ascent;
+  if (descent) *descent = (int)extents.descent;
+  if (height)  *height  = (int)extents.height;
+  if (max_width) *max_width = (int)extents.max_x_advance;
+}
+
+static long int cdforeground(cdCtxCanvas *ctxcanvas, long int color)
+{
+  if (ctxcanvas->solid)
+    cairo_pattern_destroy(ctxcanvas->solid);
+
+  cairo_set_source_rgba(ctxcanvas->cr, cdCairoGetRed(color),
+                                       cdCairoGetGreen(color),
+                                       cdCairoGetBlue(color),
+                                       cdCairoGetAlpha(color));
+  ctxcanvas->solid = cairo_get_source(ctxcanvas->cr);
+  cairo_pattern_reference(ctxcanvas->solid);
+  ctxcanvas->last_source = 0;
+  return color;
+}
+
+
+/******************************************************/
+
+static void cdclear(cdCtxCanvas* ctxcanvas)
+{
+  cairo_save (ctxcanvas->cr);
+  cairo_set_source_rgba(ctxcanvas->cr, cdCairoGetRed(ctxcanvas->canvas->background), cdCairoGetGreen(ctxcanvas->canvas->background), cdCairoGetBlue(ctxcanvas->canvas->background), cdCairoGetAlpha(ctxcanvas->canvas->background));
+  cairo_set_operator (ctxcanvas->cr, CAIRO_OPERATOR_SOURCE);
+  cairo_paint (ctxcanvas->cr);  /* paints the current source everywhere within the current clip region. */
+  cairo_restore (ctxcanvas->cr);
+}
+
+static void cdfline(cdCtxCanvas *ctxcanvas, double x1, double y1, double x2, double y2)
+{ 
+  update_fill(ctxcanvas, 0);
+
+  cairo_move_to(ctxcanvas->cr, x1, y1);
+  cairo_line_to(ctxcanvas->cr, x2, y2);
+  cairo_stroke(ctxcanvas->cr);
+}
+
+static void cdline(cdCtxCanvas *ctxcanvas, int x1, int y1, int x2, int y2)
+{
+  cdfline(ctxcanvas, (double)x1, (double)y1, (double)x2, (double)y2);
+}
+
+static void cdfarc(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
+{
+  update_fill(ctxcanvas, 0);
+
+  if (w == h)
+  {
+    cairo_arc_negative(ctxcanvas->cr, xc, yc, 0.5*w, -a1*CD_DEG2RAD, -a2*CD_DEG2RAD);
+    cairo_stroke(ctxcanvas->cr);
+  }
+  else  /* Ellipse: change the scale to create from the circle */
+  {
+    cairo_save(ctxcanvas->cr);  /* save to use the local transform */
+
+    cairo_translate(ctxcanvas->cr, xc, yc);
+    cairo_scale(ctxcanvas->cr, w/h, 1.0);
+    cairo_translate(ctxcanvas->cr, -xc, -yc);
+
+    cairo_arc_negative(ctxcanvas->cr, xc, yc, 0.5*h, -a1*CD_DEG2RAD, -a2*CD_DEG2RAD);
+    cairo_stroke(ctxcanvas->cr);
+
+    cairo_restore(ctxcanvas->cr);  /* restore from local */
+  }
+}
+
+static void cdarc(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
+{
+  cdfarc(ctxcanvas, (double)xc, (double)yc, (double)w, (double)h, a1, a2);
+}
+
+static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
+{
+  update_fill(ctxcanvas, 1);
+
+  if (w == h)
+  {
+    cairo_move_to(ctxcanvas->cr, xc, yc);
+    cairo_arc_negative(ctxcanvas->cr, xc, yc, 0.5*w, -a1*CD_DEG2RAD, -a2*CD_DEG2RAD);
+    cairo_fill(ctxcanvas->cr);
+  }
+  else  /* Ellipse: change the scale to create from the circle */
+  {
+    cairo_save(ctxcanvas->cr);  /* save to use the local transform */
+
+    cairo_translate(ctxcanvas->cr, xc, yc);
+    cairo_scale(ctxcanvas->cr, w/h, 1.0);
+    cairo_translate(ctxcanvas->cr, -xc, -yc);
+
+    cairo_move_to(ctxcanvas->cr, xc, yc);
+    cairo_arc_negative(ctxcanvas->cr, xc, yc, 0.5*h, -a1*CD_DEG2RAD, -a2*CD_DEG2RAD);
+
+    if (ctxcanvas->canvas->interior_style == CD_SOLID ||
+      ctxcanvas->canvas->interior_style == CD_PATTERN)
+      cairo_fill(ctxcanvas->cr);
+    else
+    {
+      cairo_line_to(ctxcanvas->cr, xc, yc);
+      cairo_stroke(ctxcanvas->cr);
+    }
+
+    cairo_restore(ctxcanvas->cr);  /* restore from local */
+  }
+}
+
+static void cdsector(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
+{
+  cdfsector(ctxcanvas, (double)xc, (double)yc, (double)w, (double)h, a1, a2);
+}
+
+static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
+{
+  update_fill(ctxcanvas, 1);
+
+  if (w == h)
+  {
+    cairo_arc_negative(ctxcanvas->cr, xc, yc, 0.5*w, -a1*CD_DEG2RAD, -a2*CD_DEG2RAD);
+    cairo_fill_preserve(ctxcanvas->cr);
+    cairo_stroke(ctxcanvas->cr);
+  }
+  else  /* Ellipse: change the scale to create from the circle */
+  {
+    cairo_save(ctxcanvas->cr);  /* save to use the local transform */
+
+    /* local transform */
+    cairo_translate(ctxcanvas->cr, xc, yc);
+    cairo_scale(ctxcanvas->cr, 1.0, w/h);
+
+    cairo_arc_negative(ctxcanvas->cr, xc, yc, 0.5*w, -a1*CD_DEG2RAD, -a2*CD_DEG2RAD);
+    cairo_fill_preserve(ctxcanvas->cr);
+    cairo_stroke(ctxcanvas->cr);
+
+    cairo_restore(ctxcanvas->cr);  /* restore from local */
+  }
+}
+
+static void cdchord(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
+{
+  cdfchord(ctxcanvas, (double)xc, (double)yc, (double)w, (double)h, a1, a2);
+}
+
+static void cdfrect(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
+{
+  update_fill(ctxcanvas, 0);
+  cairo_rectangle(ctxcanvas->cr, xmin, ymin, xmax-xmin+1, ymax-ymin+1);
+  cairo_stroke(ctxcanvas->cr);
+}
+
+static void cdrect(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
+{
+  cdfrect(ctxcanvas, (double)xmin, (double)xmax, (double)ymin, (double)ymax);
+}
+
+static void cdfbox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
+{
+  update_fill(ctxcanvas, 1);
+  cairo_rectangle(ctxcanvas->cr, xmin, ymin, xmax-xmin+1, ymax-ymin+1);
+  cairo_fill(ctxcanvas->cr);
+}
+
+static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
+{
+  cdfbox(ctxcanvas, (double)xmin, (double)xmax, (double)ymin, (double)ymax);
+}
+
+static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, int len)
+{
+  cairo_text_extents_t extents;
+  cairo_font_extents_t font_extents;
+  int dir = -1;
+  double x_origin = x;
+  double y_origin = y;
+
+  s = StrConvertToUTF8(ctxcanvas, s, len);
+
+  cairo_set_scaled_font(ctxcanvas->cr, ctxcanvas->font);
+  cairo_font_extents(ctxcanvas->cr, &font_extents);
+  cairo_text_extents(ctxcanvas->cr, s, &extents);
+
+  switch (ctxcanvas->canvas->text_alignment)
+  {
+  case CD_BASE_RIGHT:
+  case CD_NORTH_EAST:
+  case CD_EAST:
+  case CD_SOUTH_EAST:
+    x = x - (int)extents.width; 
+    break;
+  case CD_BASE_CENTER:
+  case CD_CENTER:
+  case CD_NORTH:
+  case CD_SOUTH:
+    x = x - (int)(extents.width/2);  
+    break;
+  case CD_BASE_LEFT:
+  case CD_NORTH_WEST:
+  case CD_WEST:
+  case CD_SOUTH_WEST:
+    x = x;         
+    break;
+  }
+
+  if (ctxcanvas->canvas->invert_yaxis)
+    dir = 1;
+
+  switch (ctxcanvas->canvas->text_alignment)
+  {
+  case CD_BASE_LEFT:
+  case CD_BASE_CENTER:
+  case CD_BASE_RIGHT:
+    y = y;
+    break;
+  case CD_SOUTH_EAST:
+  case CD_SOUTH_WEST:
+  case CD_SOUTH:
+    y = y - dir*(int)font_extents.descent;
+    break;
+  case CD_NORTH_EAST:
+  case CD_NORTH:
+  case CD_NORTH_WEST:
+    y = y + dir*(int)(extents.height - font_extents.descent);
+    break;
+  case CD_CENTER:
+  case CD_EAST:
+  case CD_WEST:
+    y = y + dir*(int)(extents.height/2 - font_extents.descent);
+    break;
+  }
+
+  if (ctxcanvas->canvas->text_orientation != 0)
+  {
+    cairo_matrix_t matrix;
+    double angle = CD_DEG2RAD * ctxcanvas->canvas->text_orientation;
+    double cos_angle = cos(angle);
+    double sin_angle = sin(angle);
+
+    cdfRotatePoint(ctxcanvas->canvas, x, y, x_origin, y_origin, &x, &y, sin_angle, cos_angle);
+
+    cairo_get_font_matrix(ctxcanvas->cr, &matrix);
+    cairo_matrix_rotate(&matrix, -angle);
+    cairo_set_font_matrix(ctxcanvas->cr, &matrix);
+  }
+
+  update_fill(ctxcanvas, 0);
+
+  cairo_move_to(ctxcanvas->cr, x, y);
+  cairo_show_text(ctxcanvas->cr, s);
+  cairo_fill(ctxcanvas->cr);
+}
+
+static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
+{
+  cdftext(ctxcanvas, (double)x, (double)y, s, len);
+}
+
+static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *s, int len, int *width, int *height)
+{
+  cairo_text_extents_t extents;
+
+  if (!ctxcanvas->font)
+    return;
+
+  s = StrConvertToUTF8(ctxcanvas, s, len);
+
+  cairo_set_scaled_font(ctxcanvas->cr, ctxcanvas->font);
+  cairo_text_extents(ctxcanvas->cr, s, &extents);
+
+  if (width)
+    *width = (int)extents.width;
+
+  if (height)
+    *height = (int)extents.height;
+}
+
+static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
+{
+  int i;
+
+  if (mode == CD_CLIP)
+    return;
+
+  if (mode == CD_FILL)
+  {
+    update_fill(ctxcanvas, 1);
+
+    if (ctxcanvas->holes || ctxcanvas->canvas->fill_mode==CD_EVENODD)
+      cairo_set_fill_rule(ctxcanvas->cr, CAIRO_FILL_RULE_EVEN_ODD);
+    else
+      cairo_set_fill_rule(ctxcanvas->cr, CAIRO_FILL_RULE_WINDING);
+  }
+  else
+    update_fill(ctxcanvas, 0);
+
+  cairo_move_to(ctxcanvas->cr, poly[0].x, poly[0].y);
+
+  if (mode == CD_BEZIER)
+  {
+    for (i=1; i<n; i+=3)
+      cairo_curve_to(ctxcanvas->cr, poly[i].x, poly[i].y, poly[i+1].x, poly[i+1].y, poly[i+2].x, poly[i+2].y);
+  }
+  else
+  {
+    int hole_index = 0;
+
+    for (i=1; i<n; i++)
+    {
+      if (ctxcanvas->holes && i == ctxcanvas->poly_holes[hole_index])
+      {
+        cairo_move_to(ctxcanvas->cr, poly[i].x, poly[i].y);
+        hole_index++;
+      }
+      else
+        cairo_line_to(ctxcanvas->cr, poly[i].x, poly[i].y);
+    }
+  }
+
+  switch (mode)
+  {
+  case CD_CLOSED_LINES :
+    cairo_close_path(ctxcanvas->cr);
+    cairo_stroke(ctxcanvas->cr);
+    break;
+  case CD_OPEN_LINES :
+    cairo_stroke(ctxcanvas->cr);
+    break;
+  case CD_BEZIER :
+    cairo_stroke(ctxcanvas->cr);
+    break;
+  case CD_FILL :
+    cairo_fill(ctxcanvas->cr);
+    break;
+  }
+}
+
+static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
+{
+  int i;
+
+  if (mode == CD_CLIP)
+    return;
+
+  if (mode == CD_FILL)
+  {
+    update_fill(ctxcanvas, 1);
+
+    if (ctxcanvas->holes || ctxcanvas->canvas->fill_mode==CD_EVENODD)
+      cairo_set_fill_rule(ctxcanvas->cr, CAIRO_FILL_RULE_EVEN_ODD);
+    else
+      cairo_set_fill_rule(ctxcanvas->cr, CAIRO_FILL_RULE_WINDING);
+  }
+  else
+    update_fill(ctxcanvas, 0);
+
+  cairo_move_to(ctxcanvas->cr, poly[0].x, poly[0].y);
+
+  if (mode == CD_BEZIER)
+  {
+    for (i=1; i<n; i+=3)
+      cairo_curve_to(ctxcanvas->cr, poly[i].x, poly[i].y, poly[i+1].x, poly[i+1].y, poly[i+2].x, poly[i+2].y);
+  }
+  else
+  {
+    int hole_index = 0;
+
+    for (i=1; i<n; i++)
+    {
+      if (ctxcanvas->holes && i == ctxcanvas->poly_holes[hole_index])
+      {
+        cairo_move_to(ctxcanvas->cr, poly[i].x, poly[i].y);
+        hole_index++;
+      }
+      else
+        cairo_line_to(ctxcanvas->cr, poly[i].x, poly[i].y);
+    }
+  }
+
+  switch (mode)
+  {
+  case CD_CLOSED_LINES :
+    cairo_close_path(ctxcanvas->cr);
+    cairo_stroke(ctxcanvas->cr);
+    break;
+  case CD_OPEN_LINES :
+    cairo_stroke(ctxcanvas->cr);
+    break;
+  case CD_BEZIER :
+    cairo_stroke(ctxcanvas->cr);
+    break;
+  case CD_FILL :
+    cairo_fill(ctxcanvas->cr);
+    break;
+  }
+}
+
+/******************************************************/
+
+static void cdgetimagergb(cdCtxCanvas *ctxcanvas, unsigned char *r, unsigned char *g, unsigned char *b, int x, int y, int w, int h)
+{
+  int col, lin, pos;
+  double red, green, blue;
+  cairo_pattern_t *pattern;
+
+  cairo_save (ctxcanvas->cr);
+
+  /* reset to the identity. */
+  cairo_identity_matrix(ctxcanvas->cr);
+
+  if (ctxcanvas->canvas->invert_yaxis==0) // if 0, invert because the transform was reset here
+    y = _cdInvertYAxis(ctxcanvas->canvas, y);
+
+  //TODO:fix
+  pattern = cairo_get_source(ctxcanvas->cr);
+  if (!pattern)
+    return;
+
+  for (lin = (y-h+1); lin < h; lin++)
+  {
+    for (col = x; col < w; col++)
+    {
+      pos = (h-lin-1) * w + col;
+      cairo_pattern_get_color_stop_rgba(pattern, pos, NULL, &red, &green, &blue, NULL);
+      *r = (unsigned char)(red*255.0);
+      *g = (unsigned char)(green*255.0);
+      *b = (unsigned char)(blue*255.0);
+    }
+  }
+
+  cairo_pattern_destroy(pattern);
+  cairo_restore (ctxcanvas->cr);
+}
+
+static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
+{
+  int i, j, d, rw, rh;
+  unsigned char* rgb_data;
+  int stride;
+  cairo_surface_t* surface, *new_surface;
+  cairo_t* cr;
+
+  if (xmin<0 || ymin<0 || xmax-xmin+1>iw || ymax-ymin+1>ih) return;
+
+  rw = xmax-xmin+1;
+  rh = ymax-ymin+1;
+  y -= (h - 1);        /* Cairo image origin is at top-left */
+
+  stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, rw);
+  rgb_data = (unsigned char*)malloc(sizeof(unsigned char)*(stride * rh));
+
+  if (!rgb_data) return;
+
+  surface = cairo_image_surface_create_for_data(rgb_data, CAIRO_FORMAT_RGB24, rw, rh, stride);
+
+  d = 0;
+  for (i=ymax; i>=ymin; i--)
+  {
+    for (j=xmin; j<=xmax; j++)
+    {
+      rgb_data[d] = b[i*iw+j]; d++;
+      rgb_data[d] = g[i*iw+j]; d++;
+      rgb_data[d] = r[i*iw+j]; d++;
+      rgb_data[d] = (unsigned char)0; d++;
+    }
+  }
+
+  /* Scaling surface to fit into the image */
+//  if (w != rw || h != rh)
+  {
+    new_surface = cairo_surface_create_similar(surface, CAIRO_CONTENT_COLOR, w, h);
+    cr = cairo_create (new_surface);
+
+    /* Scale *before* setting the source surface (1) */
+    cairo_scale (cr, (double)w / rw, (double)h / rh);
+    cairo_set_source_surface (cr, surface, 0, 0);
+
+    /* To avoid getting the edge pixels blended with 0 alpha,
+    * which would occur with the default EXTEND_NONE */
+    cairo_pattern_set_extend (cairo_get_source(cr), CAIRO_EXTEND_REFLECT); 
+
+    /* Replace the destination with the source instead of overlaying */
+    cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
+
+    cairo_paint (cr);
+
+    cairo_destroy (cr);
+  }
+
+  /* Put image rect */
+  cairo_set_source_surface(ctxcanvas->cr, new_surface, x, y);
+  cairo_pattern_set_extend(cairo_get_source(ctxcanvas->cr), CAIRO_EXTEND_NONE); 
+  cairo_paint(ctxcanvas->cr);
+
+  cairo_surface_destroy(surface);
+  cairo_surface_destroy(new_surface);
+  free(rgb_data);
+}
+
+static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
+{
+  int i, j, d, rw, rh;
+  unsigned char* rgba_data;
+  int stride;
+  cairo_surface_t* surface, *new_surface, *new_alpha_surface;
+  cairo_t* cr;
+
+  if (xmin<0 || ymin<0 || xmax-xmin+1>iw || ymax-ymin+1>ih) return;
+
+  rw = xmax-xmin+1;
+  rh = ymax-ymin+1;
+  y -= (h - 1);        /* Cairo image origin is at top-left */
+
+  stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, rw);
+  rgba_data = (unsigned char*)malloc(sizeof(unsigned char)*(stride * rh));
+  
+  if (!rgba_data) return;
+
+  surface = cairo_image_surface_create_for_data(rgba_data, CAIRO_FORMAT_ARGB32, rw, rh, stride);
+
+  d = 0;
+  for (i=ymax; i>=ymin; i--)
+  {
+    for (j=xmin; j<=xmax; j++)
+    {
+      rgba_data[d] = b[i*iw+j]; d++;
+      rgba_data[d] = g[i*iw+j]; d++;
+      rgba_data[d] = r[i*iw+j]; d++;
+      rgba_data[d] = a[i*iw+j]; d++;
+    }
+  }
+
+  // TODO: use only one surface ?????
+
+  /* Scaling RGB surface to fit into the image */
+//  if (w != rw || h != rh)
+  {
+    new_surface = cairo_surface_create_similar(surface, CAIRO_CONTENT_COLOR, w, h);
+    cr = cairo_create (new_surface);
+
+    /* Scale *before* setting the source surface (1) */
+    cairo_scale (cr, (double)w / rw, (double)h / rh);
+    cairo_set_source_surface (cr, surface, 0, 0);
+    cairo_paint (cr);
+
+    cairo_destroy (cr);
+  }
+
+  /* Scaling ALPHA surface to fit into the image */
+  {
+    new_alpha_surface = cairo_surface_create_similar(surface, CAIRO_CONTENT_ALPHA, w, h);
+    cr = cairo_create (new_alpha_surface);
+
+    /* Scale *before* setting the source surface (1) */
+    cairo_scale (cr, (double)w / rw, (double)h / rh);
+    cairo_set_source_surface (cr, surface, 0, 0);
+    cairo_paint (cr);
+
+    cairo_destroy (cr);
+  }
+
+  /* Put image rect */
+  cairo_set_source_surface(ctxcanvas->cr, new_surface, x, y);
+  cairo_mask_surface(ctxcanvas->cr, new_alpha_surface, x, y);
+//  cairo_pattern_set_extend(cairo_get_source(ctxcanvas->cr), CAIRO_EXTEND_NONE); 
+//  cairo_paint(ctxcanvas->cr);
+
+  cairo_surface_destroy(surface);
+  cairo_surface_destroy(new_surface);
+  cairo_surface_destroy(new_alpha_surface);
+  free(rgba_data);
+}
+
+static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *index, const long int *colors, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
+{
+  int i, j, d, rw, rh;
+  unsigned char* rgb_data;
+  int stride;
+  cairo_surface_t* surface, *new_surface;
+  cairo_t* cr;
+
+  if (xmin<0 || ymin<0 || xmax-xmin+1>iw || ymax-ymin+1>ih) return;
+
+  rw = xmax-xmin+1;
+  rh = ymax-ymin+1;
+  y -= (h - 1);        /* Cairo image origin is at top-left */
+
+  stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, rw);
+  rgb_data = (unsigned char*)malloc(sizeof(unsigned char)*(stride * rh));
+
+  if (!rgb_data) return;
+
+  surface = cairo_image_surface_create_for_data(rgb_data, CAIRO_FORMAT_RGB24, rw, rh, stride);
+
+  d = 0;
+  for (i=ymax; i>=ymin; i--)
+  {
+    for (j=xmin; j<=xmax; j++)
+    {
+      long c = colors[index[i*iw+j]];
+      rgb_data[d] = cdRed(c); d++;
+      rgb_data[d] = cdGreen(c); d++;
+      rgb_data[d] = cdBlue(c); d++;
+      rgb_data[d] = (unsigned char)0; d++;
+    }
+  }
+
+  /* Scaling surface to fit into the image */
+//  if (w != rw || h != rh)
+  {
+    new_surface = cairo_surface_create_similar(surface, CAIRO_CONTENT_COLOR, w, h);
+    cr = cairo_create (new_surface);
+
+    /* Scale *before* setting the source surface (1) */
+    cairo_scale (cr, (double)w / rw, (double)h / rh);
+    cairo_set_source_surface (cr, surface, 0, 0);
+
+    /* To avoid getting the edge pixels blended with 0 alpha,
+    * which would occur with the default EXTEND_NONE */
+    cairo_pattern_set_extend (cairo_get_source(cr), CAIRO_EXTEND_REFLECT); 
+
+    /* Replace the destination with the source instead of overlaying */
+    cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
+
+    cairo_paint (cr);
+
+    cairo_destroy (cr);
+  }
+
+  cairo_set_source_surface(ctxcanvas->cr, surface, x, y);
+  cairo_pattern_set_extend(cairo_get_source(ctxcanvas->cr), CAIRO_EXTEND_NONE); 
+  cairo_paint(ctxcanvas->cr);
+
+  cairo_surface_destroy(surface);
+  cairo_surface_destroy(new_surface);
+  free(rgb_data);
+}
+
+static void cdpixel(cdCtxCanvas *ctxcanvas, int x, int y, long int color)
+{
+  cairo_pattern_t* old_source = cairo_get_source(ctxcanvas->cr);
+  cairo_set_source_rgba(ctxcanvas->cr, cdCairoGetRed(color), cdCairoGetGreen(color), cdCairoGetBlue(color), cdCairoGetAlpha(color));
+
+  cairo_move_to(ctxcanvas->cr, (double)x, (double)y);
+  cairo_arc(ctxcanvas->cr, (double)x, (double)y, 0.5, 0.0, 2 * M_PI);
+
+  cairo_fill(ctxcanvas->cr);
+  cairo_set_source(ctxcanvas->cr, old_source);
+}
+
+static cdCtxImage *cdcreateimage (cdCtxCanvas *ctxcanvas, int w, int h)
+{
+  cdCtxImage *ctximage = (cdCtxImage *)malloc(sizeof(cdCtxImage));
+  cairo_surface_t* img_surface;
+
+  ctximage->w = w;
+  ctximage->h = h;
+  ctximage->bpp = ctxcanvas->canvas->bpp;
+  ctximage->xres = ctxcanvas->canvas->xres;
+  ctximage->yres = ctxcanvas->canvas->yres;
+  ctximage->w_mm = ctximage->w / ctximage->xres;
+  ctximage->h_mm = ctximage->h / ctximage->yres;
+
+  img_surface = cairo_surface_create_similar(cairo_get_target(ctxcanvas->cr), CAIRO_CONTENT_COLOR_ALPHA, w, h);
+  ctximage->img = cairo_create(img_surface);
+
+  if (!ctximage->img)
+  {
+    free(ctximage);
+    return (void *)0;
+  }
+
+  cairo_rectangle(ctximage->img, 0, 0, ctximage->w, ctximage->h);
+  cairo_set_source_rgba(ctximage->img, 1.0, 1.0, 1.0, 1.0); /* white opaque */
+  cairo_fill(ctximage->img);
+
+  cairo_surface_destroy(img_surface);
+
+  return (void*)ctximage;
+}
+
+static void cdkillimage (cdCtxImage *ctximage)
+{
+  cairo_destroy(ctximage->img);
+  free(ctximage);
+}
+
+static void cdgetimage (cdCtxCanvas *ctxcanvas, cdCtxImage *ctximage, int x, int y)
+{
+  cairo_save (ctximage->img);
+
+  /* reset to the identity. */
+  cairo_identity_matrix(ctximage->img);
+
+  cairo_reset_clip(ctximage->img);
+
+  if (ctxcanvas->canvas->invert_yaxis==0)  /* if 0, invert because the transform was reset here */
+    y = _cdInvertYAxis(ctxcanvas->canvas, y);
+
+  /* y is the bottom-left of the image in CD, must be at upper-left */
+  y -= ctximage->h-1;
+
+  /* creates a pattern from the canvas and sets it as source in the image. */
+  cairo_set_source_surface(ctximage->img, cairo_get_target(ctxcanvas->cr), x, y);
+
+  cairo_pattern_set_extend (cairo_get_source(ctximage->img), CAIRO_EXTEND_NONE); 
+  cairo_set_operator (ctximage->img, CAIRO_OPERATOR_SOURCE);
+  cairo_paint(ctximage->img);  /* paints the current source everywhere within the current clip region. */
+
+  /* must restore matrix, clipping and source */
+  cairo_restore (ctximage->img);
+}
+
+static void cdputimagerect (cdCtxCanvas *ctxcanvas, cdCtxImage *ctximage, int x, int y, int xmin, int xmax, int ymin, int ymax)
+{
+  cairo_save (ctxcanvas->cr);
+
+  /* y is the bottom-left of the image region in CD */
+  y -= (ymax-ymin+1)-1;
+
+  cairo_reset_clip(ctxcanvas->cr);
+  cairo_rectangle(ctxcanvas->cr, x, y, xmax-xmin+1, ymax-ymin+1);
+  cairo_clip(ctxcanvas->cr);
+
+  ymin = (ctximage->h-1) - ymax; /* ymin starts at the bottom of the image in CD, we want ymax, but oriented top-down */
+
+  /* creates a pattern from the image and sets it as source in the canvas. */
+  cairo_set_source_surface(ctxcanvas->cr, cairo_get_target(ctximage->img), xmin, ymin);
+
+  cairo_pattern_set_extend (cairo_get_source(ctxcanvas->cr), CAIRO_EXTEND_NONE); 
+  cairo_set_operator (ctxcanvas->cr, CAIRO_OPERATOR_SOURCE);
+  cairo_paint(ctxcanvas->cr);  /* paints the current source everywhere within the current clip region. */
+
+  /* must restore clipping and source */
+  cairo_restore (ctxcanvas->cr);
+}
+
+static void cdscrollarea (cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax, int dx, int dy)
+{
+  cairo_save (ctxcanvas->cr);
+
+  /* reset to identity */
+  cairo_identity_matrix(ctxcanvas->cr);
+
+  if (ctxcanvas->canvas->invert_yaxis==0)  /* if 0, invert because the transform was reset here */
+  {
+    dy = -dy;
+    ymin = _cdInvertYAxis(ctxcanvas->canvas, ymin);
+    ymax = _cdInvertYAxis(ctxcanvas->canvas, ymax);
+    _cdSwapInt(ymin, ymax);
+  }
+
+  cairo_reset_clip(ctxcanvas->cr);
+  cairo_rectangle(ctxcanvas->cr, xmin+dx, ymin+dy, xmax-xmin+1, ymax-ymin+1);
+  cairo_clip(ctxcanvas->cr);
+
+  /* creates a pattern from the canvas and sets it as source in the canvas. */
+  cairo_set_source_surface(ctxcanvas->cr, cairo_get_target(ctxcanvas->cr), xmin, ymin);
+
+  cairo_pattern_set_extend (cairo_get_source(ctxcanvas->cr), CAIRO_EXTEND_NONE); 
+  cairo_set_operator (ctxcanvas->cr, CAIRO_OPERATOR_SOURCE);
+  cairo_paint(ctxcanvas->cr);  /* paints the current source everywhere within the current clip region. */
+
+  /* must restore matrix, clipping and source */
+  cairo_restore (ctxcanvas->cr);
+}
+
+static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
+{
+  /* reset to identity */
+  cairo_identity_matrix(ctxcanvas->cr);
+  ctxcanvas->canvas->invert_yaxis = 1;
+
+  if (matrix)
+  {
+    cairo_matrix_t mtx;
+
+    /* configure a bottom-up coordinate system */
+    mtx.xx = 1; mtx.yx = 0;
+    mtx.xy = 0; mtx.yy = -1;
+    mtx.x0 = 0; mtx.y0 = (ctxcanvas->canvas->h-1);
+    cairo_transform(ctxcanvas->cr, &mtx);
+    ctxcanvas->canvas->invert_yaxis = 0;
+
+    mtx.xx = matrix[0]; mtx.yx = matrix[1];
+    mtx.xy = matrix[2]; mtx.yy = matrix[3];
+    mtx.x0 = matrix[4]; mtx.y0 = matrix[5];
+    cairo_transform(ctxcanvas->cr, &mtx);
+  }
+  else if (ctxcanvas->rotate_angle)
+  {
+    /* rotation = translate to point + rotation + translate back */
+    /* the rotation must be corrected because of the Y axis orientation */
+    cairo_translate(ctxcanvas->cr, ctxcanvas->rotate_center_x, _cdInvertYAxis(ctxcanvas->canvas, ctxcanvas->rotate_center_y));
+    cairo_rotate(ctxcanvas->cr, (double)-ctxcanvas->rotate_angle * CD_DEG2RAD);
+    cairo_translate(ctxcanvas->cr, -ctxcanvas->rotate_center_x, -_cdInvertYAxis(ctxcanvas->canvas, ctxcanvas->rotate_center_y));
+  }
+}
+
+/******************************************************************/
+
+static void set_hatchboxsize_attrib(cdCtxCanvas *ctxcanvas, char* data)
+{
+  int hatchboxsize;
+
+  if (data == NULL)
+  {
+    ctxcanvas->hatchboxsize = 8;
+    return;
+  }
+
+  sscanf(data, "%d", &hatchboxsize);
+  ctxcanvas->hatchboxsize = hatchboxsize;
+}
+
+static char* get_hatchboxsize_attrib(cdCtxCanvas *ctxcanvas)
+{
+  static char size[10];
+  sprintf(size, "%d", ctxcanvas->hatchboxsize);
+  return size;
+}
+
+static cdAttribute hatchboxsize_attrib =
+{
+  "HATCHBOXSIZE",
+  set_hatchboxsize_attrib,
+  get_hatchboxsize_attrib
+}; 
+
+static void set_poly_attrib(cdCtxCanvas *ctxcanvas, char* data)
+{
+  int hole;
+
+  if (data == NULL)
+  {
+    ctxcanvas->holes = 0;
+    return;
+  }
+
+  sscanf(data, "%d", &hole);
+  ctxcanvas->poly_holes[ctxcanvas->holes] = hole;
+  ctxcanvas->holes++;
+}
+
+static char* get_poly_attrib(cdCtxCanvas *ctxcanvas)
+{
+  static char holes[10];
+  sprintf(holes, "%d", ctxcanvas->holes);
+  return holes;
+}
+
+static cdAttribute poly_attrib =
+{
+  "POLYHOLE",
+  set_poly_attrib,
+  get_poly_attrib
+}; 
+
+static void set_rotate_attrib(cdCtxCanvas* ctxcanvas, char* data)
+{
+  /* ignore ROTATE if transform is set, 
+     because there is native support for transformations */
+  if (ctxcanvas->canvas->use_matrix)
+    return;
+
+  if (data)
+  {
+    sscanf(data, "%g %d %d", &ctxcanvas->rotate_angle,
+                             &ctxcanvas->rotate_center_x,
+                             &ctxcanvas->rotate_center_y);
+  }
+  else
+  {
+    ctxcanvas->rotate_angle = 0;
+    ctxcanvas->rotate_center_x = 0;
+    ctxcanvas->rotate_center_y = 0;
+  }
+
+  cdtransform(ctxcanvas, NULL);
+}
+
+static char* get_rotate_attrib(cdCtxCanvas* ctxcanvas)
+{
+  static char data[100];
+
+  if (!ctxcanvas->rotate_angle)
+    return NULL;
+
+  sprintf(data, "%g %d %d", (double)ctxcanvas->rotate_angle,
+    ctxcanvas->rotate_center_x,
+    ctxcanvas->rotate_center_y);
+
+  return data;
+}
+
+static cdAttribute rotate_attrib =
+{
+  "ROTATE",
+  set_rotate_attrib,
+  get_rotate_attrib
+}; 
+
+static void set_aa_attrib(cdCtxCanvas* ctxcanvas, char* data)
+{
+  cairo_font_options_t* options = NULL;
+  cairo_scaled_font_get_font_options(ctxcanvas->font, options);
+
+  if (!data || data[0] == '0')
+  {
+    cairo_set_antialias(ctxcanvas->cr, CAIRO_ANTIALIAS_NONE);
+    cairo_font_options_set_antialias(options, CAIRO_ANTIALIAS_NONE);
+  }
+  else
+  {
+    cairo_set_antialias(ctxcanvas->cr, CAIRO_ANTIALIAS_DEFAULT);
+    cairo_font_options_set_antialias(options, CAIRO_ANTIALIAS_DEFAULT);
+  }
+  
+  cairo_font_options_destroy(options);
+}
+
+static char* get_aa_attrib(cdCtxCanvas* ctxcanvas)
+{
+  if (cairo_get_antialias(ctxcanvas->cr) != CAIRO_ANTIALIAS_NONE)
+    return "1";
+  else
+    return "0";
+}
+
+static cdAttribute aa_attrib =
+{
+  "ANTIALIAS",
+  set_aa_attrib,
+  get_aa_attrib
+}; 
+
+static void set_linegradient_attrib(cdCtxCanvas* ctxcanvas, char* data)
+{
+  if (data)
+  {
+    int x1, y1, x2, y2;
+    double offset;
+    int count = 1;
+
+    sscanf(data, "%d %d %d %d", &x1, &y1, &x2, &y2);
+
+    if (ctxcanvas->canvas->invert_yaxis)
+    {
+      y1 = _cdInvertYAxis(ctxcanvas->canvas, y1);
+      y2 = _cdInvertYAxis(ctxcanvas->canvas, y2);
+    }
+
+    if (ctxcanvas->pattern)
+      cairo_pattern_destroy(ctxcanvas->pattern);
+
+    ctxcanvas->pattern = cairo_pattern_create_linear((double)x1, (double)y1, (double)x2, (double)y2);
+    cairo_pattern_reference(ctxcanvas->pattern);
+
+    for(offset = 0.1; offset < 1.0; offset += 0.1)
+    {
+      if ( count % 2 )
+      {
+        cairo_pattern_add_color_stop_rgb(ctxcanvas->pattern, offset,
+          cdCairoGetRed(ctxcanvas->canvas->foreground),
+          cdCairoGetGreen(ctxcanvas->canvas->foreground),
+          cdCairoGetBlue(ctxcanvas->canvas->foreground));
+      }
+      else
+      {
+        cairo_pattern_add_color_stop_rgb(ctxcanvas->pattern, offset,
+          cdCairoGetRed(ctxcanvas->canvas->background),
+          cdCairoGetGreen(ctxcanvas->canvas->background),
+          cdCairoGetBlue(ctxcanvas->canvas->background));
+      }
+      count++;
+    }
+
+    cairo_pattern_set_extend(ctxcanvas->pattern, CAIRO_EXTEND_REPEAT);
+
+    cairo_set_source(ctxcanvas->cr, ctxcanvas->pattern);
+    ctxcanvas->last_source = 1;
+  }
+}
+
+static char* get_linegradient_attrib(cdCtxCanvas* ctxcanvas)
+{
+  double x1, y1, x2, y2;
+
+  if (cairo_pattern_get_linear_points(ctxcanvas->pattern, &x1, &y1, &x2, &y2) == CAIRO_STATUS_SUCCESS)
+  {
+    static char data[100];
+    sprintf(data, "%d %d %d %d", (int)x1, (int)y1, (int)x2, (int)y2);
+    return data;
+  }
+  else
+    return NULL;
+}
+
+static cdAttribute linegradient_attrib =
+{
+  "LINEGRADIENT",
+  set_linegradient_attrib,
+  get_linegradient_attrib
+}; 
+
+static void set_radialgradient_attrib(cdCtxCanvas* ctxcanvas, char* data)
+{
+  if (data)
+  {
+    int cx1, cy1, cx2, cy2;
+    float rad1, rad2;
+    double offset;
+    int count = 1;
+
+    sscanf(data, "%d %d %g %d %d %g", &cx1, &cy1, &rad1, &cx2, &cy2, &rad2);
+
+    if (ctxcanvas->canvas->invert_yaxis)
+    {
+      cy1 = _cdInvertYAxis(ctxcanvas->canvas, cy1);
+      cy2 = _cdInvertYAxis(ctxcanvas->canvas, cy2);
+    }
+
+    if (ctxcanvas->pattern)
+      cairo_pattern_destroy(ctxcanvas->pattern);
+
+    ctxcanvas->pattern = cairo_pattern_create_radial((double)cx1, (double)cx1, (double)rad1, (double)cx2, (double)cx2, (double)rad2);
+    cairo_pattern_reference(ctxcanvas->pattern);
+
+    for(offset = 0.1; offset < 1.0; offset += 0.1)
+    {
+      if ( count % 2 )
+      {
+        cairo_pattern_add_color_stop_rgb(ctxcanvas->pattern, offset,
+          cdCairoGetRed(ctxcanvas->canvas->foreground),
+          cdCairoGetGreen(ctxcanvas->canvas->foreground),
+          cdCairoGetBlue(ctxcanvas->canvas->foreground));
+      }
+      else
+      {
+        cairo_pattern_add_color_stop_rgb(ctxcanvas->pattern, offset,
+          cdCairoGetRed(ctxcanvas->canvas->background),
+          cdCairoGetGreen(ctxcanvas->canvas->background),
+          cdCairoGetBlue(ctxcanvas->canvas->background));
+      }
+      count++;
+    }
+
+    cairo_pattern_set_extend(ctxcanvas->pattern, CAIRO_EXTEND_REPEAT);
+
+    cairo_set_source(ctxcanvas->cr, ctxcanvas->pattern);
+    ctxcanvas->last_source = 1;
+  }
+}
+
+static char* get_radialgradient_attrib(cdCtxCanvas* ctxcanvas)
+{
+  double cx1, cy1, rad1, cx2, cy2, rad2;
+
+  if (cairo_pattern_get_radial_circles(ctxcanvas->pattern, &cx1, &cy1, &rad1, &cx2, &cy2, &rad2) == CAIRO_STATUS_SUCCESS)
+  {
+    static char data[100];
+    sprintf(data, "%d %d %g %d %d %g", (int)cx1, (int)cy1, (float)rad1, (int)cx2, (int)cy2, (float)rad2);
+    return data;
+  }
+  else
+    return NULL;
+}
+
+static cdAttribute radialgradient_attrib =
+{
+  "RADIALGRADIENT",
+  set_radialgradient_attrib,
+  get_radialgradient_attrib
+}; 
+
+static char* get_version_attrib(cdCtxCanvas* ctxcanvas)
+{
+  (void)ctxcanvas;
+  return (char*)cairo_version_string();
+}
+
+static cdAttribute version_attrib =
+{
+  "CAIROVERSION",
+  NULL,
+  get_version_attrib
+};
+
+static void set_interp_attrib(cdCtxCanvas* ctxcanvas, char* data)
+{
+  if (data && cdStrEqualNoCase(data, "BEST"))
+    cairo_pattern_set_filter(cairo_get_source(ctxcanvas->cr), CAIRO_FILTER_BEST);
+  else if (data && cdStrEqualNoCase(data, "NEAREST"))
+    cairo_pattern_set_filter(cairo_get_source(ctxcanvas->cr), CAIRO_FILTER_NEAREST);
+  else if (data && cdStrEqualNoCase(data, "FAST"))
+    cairo_pattern_set_filter(cairo_get_source(ctxcanvas->cr), CAIRO_FILTER_FAST);
+  else if (data && cdStrEqualNoCase(data, "BILINEAR"))
+    cairo_pattern_set_filter(cairo_get_source(ctxcanvas->cr), CAIRO_FILTER_BILINEAR);
+  else
+    cairo_pattern_set_filter(cairo_get_source(ctxcanvas->cr), CAIRO_FILTER_GOOD);
+}
+
+static char* get_interp_attrib(cdCtxCanvas* ctxcanvas)
+{
+  if(cairo_pattern_get_filter(cairo_get_source(ctxcanvas->cr)) == CAIRO_FILTER_BEST)
+    return "BEST";
+  else if(cairo_pattern_get_filter(cairo_get_source(ctxcanvas->cr)) == CAIRO_FILTER_NEAREST)
+    return "NEAREST";
+  else if(cairo_pattern_get_filter(cairo_get_source(ctxcanvas->cr)) == CAIRO_FILTER_FAST)
+    return "FAST";
+  else if(cairo_pattern_get_filter(cairo_get_source(ctxcanvas->cr)) == CAIRO_FILTER_BILINEAR)
+    return "BILINEAR";
+  else
+    return "GOOD";
+}
+
+static cdAttribute interp_attrib =
+{
+  "IMGINTERP",
+  set_interp_attrib,
+  get_interp_attrib
+};
+
+static char* get_cairodc_attrib(cdCtxCanvas *ctxcanvas)
+{
+  return (char*)ctxcanvas->cr;
+}
+
+static cdAttribute cairodc_attrib =
+{
+  "CAIRODC",
+  NULL,
+  get_cairodc_attrib
+}; 
+
+
+cdCtxCanvas *cdcairoCreateCanvas(cdCanvas* canvas, cairo_t* cr)
+{
+  cdCtxCanvas *ctxcanvas = (cdCtxCanvas *)malloc(sizeof(cdCtxCanvas));
+  memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
+
+  ctxcanvas->cr = cr;
+  ctxcanvas->canvas = canvas;
+  ctxcanvas->last_source = -1;
+
+  canvas->ctxcanvas = ctxcanvas;
+  canvas->invert_yaxis = 1;
+
+  cdRegisterAttribute(canvas, &rotate_attrib);
+  cdRegisterAttribute(canvas, &version_attrib);
+  cdRegisterAttribute(canvas, &poly_attrib);
+  cdRegisterAttribute(canvas, &aa_attrib);
+  cdRegisterAttribute(canvas, &linegradient_attrib);
+  cdRegisterAttribute(canvas, &radialgradient_attrib);
+  cdRegisterAttribute(canvas, &interp_attrib);
+  cdRegisterAttribute(canvas, &cairodc_attrib);
+  cdRegisterAttribute(canvas, &hatchboxsize_attrib);
+
+  cairo_save(ctxcanvas->cr);
+  cairo_set_operator(ctxcanvas->cr, CAIRO_OPERATOR_OVER);
+
+  return ctxcanvas;
+}
+
+void cdcairoInitTable(cdCanvas* canvas)
+{
+  canvas->cxFlush = cdflush;
+  canvas->cxClear = cdclear;
+
+  canvas->cxPixel  = cdpixel;
+
+  canvas->cxLine   = cdline;
+  canvas->cxPoly   = cdpoly;
+  canvas->cxRect   = cdrect;
+  canvas->cxBox    = cdbox;
+  canvas->cxArc    = cdarc;
+  canvas->cxSector = cdsector;
+  canvas->cxChord  = cdchord;
+  canvas->cxText   = cdtext;
+
+  canvas->cxFLine = cdfline;
+  canvas->cxFPoly = cdfpoly;
+  canvas->cxFRect = cdfrect;
+  canvas->cxFBox = cdfbox;
+  canvas->cxFArc = cdfarc;
+  canvas->cxFSector = cdfsector;
+  canvas->cxFChord = cdfchord;
+  canvas->cxFText = cdftext;
+
+  canvas->cxClip = cdclip;
+  canvas->cxClipArea = cdcliparea;
+  canvas->cxLineStyle = cdlinestyle;
+  canvas->cxLineWidth = cdlinewidth;
+  canvas->cxLineCap = cdlinecap;
+  canvas->cxLineJoin = cdlinejoin;
+  canvas->cxInteriorStyle = cdinteriorstyle;
+  canvas->cxHatch = cdhatch;
+  canvas->cxStipple = cdstipple;
+  canvas->cxPattern = cdpattern;
+  canvas->cxFont = cdfont;
+  canvas->cxGetFontDim = cdgetfontdim;
+  canvas->cxGetTextSize = cdgettextsize;
+  canvas->cxTransform = cdtransform;
+  canvas->cxWriteMode = cdwritemode;
+  canvas->cxForeground = cdforeground;
+
+  canvas->cxGetImageRGB = cdgetimagergb;
+  canvas->cxScrollArea = cdscrollarea;
+
+  canvas->cxCreateImage = cdcreateimage;
+  canvas->cxGetImage = cdgetimage;
+  canvas->cxPutImageRect = cdputimagerect;
+  canvas->cxKillImage = cdkillimage;
+
+  canvas->cxPutImageRectRGB = cdputimagerectrgb;
+  canvas->cxPutImageRectMap = cdputimagerectmap;
+  canvas->cxPutImageRectRGBA = cdputimagerectrgba;
+}
+
+/*
+cairo_arc (cr, 128.0, 128.0, 76.8, 0, 2*M_PI);
+cairo_clip (cr);
+cairo_new_path (cr); // path not consumed by clip()
+*/

@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="cdsimplegdk"
-	ProjectGUID="{82BC36B1-DDDD-41D4-ABCD-A12312378CE6}"
-	TargetFrameworkVersion="131072"
+	Name="cdtestcairo"
+	ProjectGUID="{A7E49FB8-0022-15EC-AB17-FFCDC7E83C00}"
+	TargetFrameworkVersion="0"
 	>
 	<Platforms>
 		<Platform
@@ -38,16 +38,18 @@
 			/>
 			<Tool
 				Name="VCMIDLTool"
-				TypeLibraryName=".\..\bin/cdsimplegdk.tlb"
+				PreprocessorDefinitions="_DEBUG"
+				MkTypLibCompatible="true"
+				SuppressStartupBanner="true"
+				TargetEnvironment="1"
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\include,..\..\iup\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;__CD__;simple;_CRT_SECURE_NO_DEPRECATE;USE_GDK;USE_CONTEXTPLUS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;CDTEST_WIN32;_CRT_SECURE_NO_DEPRECATE;USE_CONTEXTPLUS"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
-				PrecompiledHeaderFile=".\..\obj\cdsimplegdk/cdsimplegdk.pch"
 				AssemblerListingLocation=""
 				ObjectFile="$(IntDir)\"
 				ProgramDataBaseFileName="$(IntDir)\vc90.pdb"
@@ -70,7 +72,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="gtk-win32-2.0.lib gdk-win32-2.0.lib gdk_pixbuf-2.0.lib cairo.lib pango-1.0.lib pangowin32-1.0.lib gobject-2.0.lib gmodule-2.0.lib glib-2.0.lib freetype6.lib cdgdk.lib cdcairo.lib iupcd.lib iupgtk.lib comctl32.lib cdpdf.lib pdflib.lib iupcontrols.lib"
+				AdditionalDependencies="gtk-win32-2.0.lib gdk-win32-2.0.lib gdk_pixbuf-2.0.lib cairo.lib pango-1.0.lib pangowin32-1.0.lib gobject-2.0.lib gmodule-2.0.lib glib-2.0.lib freetype6.lib comctl32.lib cdgdk.lib cdcairo.lib iupcd.lib iupgtk.lib cdpdf.lib pdflib.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -79,8 +81,6 @@
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"
 				SubSystem="1"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -108,26 +108,52 @@
 	<References>
 	</References>
 	<Files>
-		<File
-			RelativePath="..\test\simple\iupmain.c"
+		<Filter
+			Name="Source Files"
+			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 			>
-		</File>
-		<File
-			RelativePath="..\test\simple\simple.c"
+			<File
+				RelativePath="..\test\cdtest\cdtest.c"
+				>
+			</File>
+			<File
+				RelativePath="..\test\cdtest\cdtest.led"
+				>
+			</File>
+			<File
+				RelativePath="..\test\cdtest\cdtest.rc"
+				>
+			</File>
+			<File
+				RelativePath="..\test\cdtest\cdtest_led.c"
+				>
+			</File>
+			<File
+				RelativePath="..\test\cdtest\colorbar.c"
+				>
+			</File>
+			<File
+				RelativePath="..\test\cdtest\drivers.c"
+				>
+			</File>
+			<File
+				RelativePath="..\test\cdtest\list.c"
+				>
+			</File>
+			<File
+				RelativePath="..\test\cdtest\rubber.c"
+				>
+			</File>
+		</Filter>
+		<Filter
+			Name="Header Files"
+			Filter="h;hpp;hxx;hm;inl"
 			>
-		</File>
-		<File
-			RelativePath="..\test\simple\simple.h"
-			>
-		</File>
-		<File
-			RelativePath="..\test\simple\simple.led"
-			>
-		</File>
-		<File
-			RelativePath="..\test\simple\simple_led.c"
-			>
-		</File>
+			<File
+				RelativePath="..\test\cdtest\cdtest.h"
+				>
+			</File>
+		</Filter>
 	</Files>
 	<Globals>
 	</Globals>

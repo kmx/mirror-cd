@@ -1,23 +1,19 @@
 /** \file
- * \brief Windows Double Buffer
+ * \brief Cairo Double Buffer Driver
  *
  * See Copyright Notice in cd.h
  */
 
+#include "cdcairoctx.h"
+#include "cddbuf.h"
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "cdwin.h"
-#include "cddbuf.h"
 
-
-static void cdkillcanvas(cdCtxCanvas *ctxcanvas)
+static void cdkillcanvas (cdCtxCanvas* ctxcanvas)
 {
   cdKillImage(ctxcanvas->image_dbuffer);
-  cdwKillCanvas(ctxcanvas);
-  
-  memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
-  free(ctxcanvas);
+  cdcairoKillCanvas(ctxcanvas);
 }
 
 static void cddeactivate(cdCtxCanvas* ctxcanvas)
@@ -27,13 +23,14 @@ static void cddeactivate(cdCtxCanvas* ctxcanvas)
   cdCanvasDeactivate(canvas_dbuffer);
 }
 
-static void cdflush(cdCtxCanvas *ctxcanvas)
+static void cdflush(cdCtxCanvas* ctxcanvas)
 {
   int old_writemode;
   cdImage* image_dbuffer = ctxcanvas->image_dbuffer;
   cdCanvas* canvas_dbuffer = ctxcanvas->canvas_dbuffer;
 
-  GdiFlush();
+  /* flush the writing in the image */
+  cairo_show_page(ctxcanvas->cr);
 
   /* this is done in the canvas_dbuffer context */
   /* Flush can be affected by Origin and Clipping, but not WriteMode */
@@ -61,9 +58,12 @@ static void cdcreatecanvas(cdCanvas* canvas, cdCanvas* canvas_dbuffer)
     return;
 
   ctximage = image_dbuffer->ctximage;
-  
-  /* Inicializa driver DBuffer */
-  ctxcanvas = cdwCreateCanvas(canvas, NULL, ctximage->hDC, CDW_BMP);
+
+  /* Init the driver DBuffer */
+  ctxcanvas = cdcairoCreateCanvas(canvas, ctximage->img);
+
+  if (!ctxcanvas)
+    return;
 
   ctxcanvas->image_dbuffer = image_dbuffer;
   ctxcanvas->canvas_dbuffer = canvas_dbuffer;
@@ -75,12 +75,9 @@ static void cdcreatecanvas(cdCanvas* canvas, cdCanvas* canvas_dbuffer)
   canvas->bpp = ctximage->bpp;
   canvas->xres = ctximage->xres;
   canvas->yres = ctximage->yres;
-
-  ctxcanvas->clip_pnt[2].x = ctxcanvas->clip_pnt[1].x = ctximage->w - 1;
-  ctxcanvas->clip_pnt[3].y = ctxcanvas->clip_pnt[2].y = ctximage->h - 1;
 }
 
-static int cdactivate(cdCtxCanvas *ctxcanvas)
+static int cdactivate(cdCtxCanvas* ctxcanvas)
 {
   int w, h;
   cdCanvas* canvas_dbuffer = ctxcanvas->canvas_dbuffer;
@@ -106,7 +103,7 @@ static int cdactivate(cdCtxCanvas *ctxcanvas)
 
     /* rebuild the image and the canvas */
     canvas->ctxcanvas = NULL;
-    cdcreatecanvas(canvas, canvas_dbuffer);
+    canvas->context->cxCreateCanvas(canvas, canvas_dbuffer);
     if (!canvas->ctxcanvas)
     {
       canvas->ctxcanvas = old_ctxcanvas;
@@ -115,8 +112,7 @@ static int cdactivate(cdCtxCanvas *ctxcanvas)
 
     /* remove the old image and canvas */
     cdKillImage(old_image_dbuffer);
-    cdwKillCanvas(old_ctxcanvas);
-    free(old_ctxcanvas);
+    cdcairoKillCanvas(old_ctxcanvas);
 
     ctxcanvas = canvas->ctxcanvas;
 
@@ -135,9 +131,8 @@ static int cdactivate(cdCtxCanvas *ctxcanvas)
     canvas->cxInteriorStyle(ctxcanvas, canvas->interior_style);
     if (canvas->native_font[0] == 0) canvas->cxFont(ctxcanvas, canvas->font_type_face, canvas->font_style, canvas->font_size);
     else canvas->cxNativeFont(ctxcanvas, canvas->native_font);
-    canvas->cxTextAlignment(ctxcanvas, canvas->text_alignment);
-    canvas->cxTextOrientation(ctxcanvas, canvas->text_orientation);
-    if (canvas->use_matrix && canvas->cxTransform) canvas->cxTransform(ctxcanvas, canvas->matrix);
+/*    canvas->cxTextAlignment(ctxcanvas, canvas->text_alignment);     */
+/*    canvas->cxTextOrientation(ctxcanvas, canvas->text_orientation); */
     if (canvas->clip_mode == CD_CLIPAREA && canvas->cxClipArea) canvas->cxClipArea(ctxcanvas, canvas->clip_rect.xmin, canvas->clip_rect.xmax, canvas->clip_rect.ymin, canvas->clip_rect.ymax);
 /*    if (canvas->clip_mode == CD_CLIPAREA && canvas->cxFClipArea) canvas->cxFClipArea(ctxcanvas, canvas->clip_frect.xmin, canvas->clip_frect.xmax, canvas->clip_frect.ymin, canvas->clip_frect.ymax); */
     if (canvas->clip_mode == CD_CLIPPOLYGON && canvas->clip_poly) canvas->cxPoly(ctxcanvas, CD_CLIP, canvas->clip_poly, canvas->clip_poly_n);
@@ -150,7 +145,7 @@ static int cdactivate(cdCtxCanvas *ctxcanvas)
 
 static void cdinittable(cdCanvas* canvas)
 {
-  cdwInitTable(canvas);
+  cdcairoInitTable(canvas);
 
   canvas->cxActivate = cdactivate;
   canvas->cxDeactivate = cddeactivate;
@@ -169,14 +164,7 @@ static cdContext cdDBufferContext =
   NULL, 
 };
 
-cdContext* cdContextDBuffer(void)
+cdContext* cdContextCairoDBuffer(void)
 {
-  if (cdUseContextPlus(CD_QUERY))
-  {
-    cdContext* ctx = cdGetContextPlus(CD_CTX_DBUFFER);
-    if (ctx != NULL)
-      return ctx;
-  }
-
   return &cdDBufferContext;
 }

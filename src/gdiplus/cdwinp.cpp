@@ -551,6 +551,7 @@ static int cdinteriorstyle(cdCtxCanvas* ctxcanvas, int style)
     delete ctxcanvas->fillBrush;
     ctxcanvas->fillBrush = new SolidBrush(ctxcanvas->fg);
     break;
+    /* the remaining styles must recreate the current brush */
   case CD_HATCH:
     cdhatch(ctxcanvas, ctxcanvas->canvas->hatch_style);
     break;
@@ -1173,6 +1174,10 @@ static void sRGB2Bitmap(Bitmap& image, int width, int height, const unsigned cha
   Rect rect(0,0,image.GetWidth(),image.GetHeight());
   image.LockBits(&rect, ImageLockModeWrite, PixelFormat24bppRGB, &bitmapData); 
 
+  /* ymin and xmax unused */
+  (void)ymin;
+  (void)xmax;
+
   int line_offset;
   for(int j = 0; j < rect.Height; j++)
   {
@@ -1206,6 +1211,10 @@ static void sRGBA2Bitmap(Bitmap& image, int width, int height, const unsigned ch
   Rect rect(0,0,image.GetWidth(),image.GetHeight());
   image.LockBits(&rect, ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData); 
 
+  /* ymin and xmax unused */
+  (void)ymin;
+  (void)xmax;
+
   int line_offset;
   for(int j = 0; j < rect.Height; j++)
   {
@@ -1236,6 +1245,10 @@ static void sAlpha2Bitmap(Bitmap& image, int width, int height, const unsigned c
   BitmapData bitmapData;
   Rect rect(0,0,image.GetWidth(),image.GetHeight());
   image.LockBits(&rect, ImageLockModeWrite, PixelFormat32bppARGB, &bitmapData); 
+
+  /* ymin and xmax unused */
+  (void)ymin;
+  (void)xmax;
 
   int line_offset;
   for(int j = 0; j < rect.Height; j++)
@@ -1278,6 +1291,10 @@ static void sMap2Bitmap(Bitmap& image, int width, int height, const unsigned cha
   BitmapData bitmapData;
   Rect rect(0,0,image.GetWidth(),image.GetHeight());
   image.LockBits(&rect, ImageLockModeWrite, PixelFormat24bppRGB, &bitmapData); 
+
+  /* ymin and xmax unused */
+  (void)ymin;
+  (void)xmax;
 
   int line_offset;
   for(int j = 0; j < rect.Height; j++)
@@ -1337,7 +1354,7 @@ static void cdgetimagergb(cdCtxCanvas* ctxcanvas, unsigned char *red, unsigned c
   if (!transformMatrix.IsIdentity())
     ctxcanvas->graphics->ResetTransform(); // reset to the identity.
 
-  if (ctxcanvas->canvas->invert_yaxis==0) // if 0, then the transform was reset
+  if (ctxcanvas->canvas->invert_yaxis==0) // if 0, invert because the transform was reset here
     y = _cdInvertYAxis(ctxcanvas->canvas, y);
 
   int yr = y - (h - 1);  /* y starts at the bottom of the image */
@@ -1649,10 +1666,11 @@ static void cdgetimage(cdCtxCanvas* ctxcanvas, cdCtxImage *ctximage, int x, int 
   if (!transformMatrix.IsIdentity())
     ctxcanvas->graphics->ResetTransform(); // reset to the identity.
 
-  if (ctxcanvas->canvas->invert_yaxis==0)  // if 0, then the transform was reset
+  if (ctxcanvas->canvas->invert_yaxis==0)  // if 0, invert because the transform was reset here
     y = _cdInvertYAxis(ctxcanvas->canvas, y);
 
-  int yr = y - (ctximage->h - 1);  /* y0 starts at the bottom of the image */
+  /* y is the bottom-left of the image in CD, must be at upper-left */
+  y -= ctximage->h-1;
 
   if (ctxcanvas->wtype == CDW_BMP)
   {
@@ -1660,7 +1678,7 @@ static void cdgetimage(cdCtxCanvas* ctxcanvas, cdCtxImage *ctximage, int x, int 
 
     imggraphics.DrawImage(ctxcanvas->bitmap, 
                           Rect(0, 0, ctximage->w,ctximage->h), 
-                          x, yr, ctximage->w, ctximage->h, UnitPixel,
+                          x, y, ctximage->w, ctximage->h, UnitPixel,
                           NULL, NULL, NULL);
   }
   else
@@ -1670,7 +1688,7 @@ static void cdgetimage(cdCtxCanvas* ctxcanvas, cdCtxImage *ctximage, int x, int 
     HDC hdc = ctxcanvas->graphics->GetHDC();
     HDC img_hdc = imggraphics.GetHDC();
 
-    BitBlt(img_hdc,0,0,ctximage->w,ctximage->h,hdc,x,yr,SRCCOPY);
+    BitBlt(img_hdc,0,0,ctximage->w,ctximage->h,hdc,x,y,SRCCOPY);
 
     imggraphics.ReleaseHDC(img_hdc);
     ctxcanvas->graphics->ReleaseHDC(hdc);
@@ -1740,7 +1758,7 @@ static void cdscrollarea(cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, i
   if (!transformMatrix.IsIdentity())
     ctxcanvas->graphics->ResetTransform(); // reset to the identity.
 
-  if (ctxcanvas->canvas->invert_yaxis==0)  // if 0, then the transform was reset
+  if (ctxcanvas->canvas->invert_yaxis==0)  // if 0, invert because the transform was reset here
   {
     dy = -dy;
     ymin = _cdInvertYAxis(ctxcanvas->canvas, ymin);
@@ -1992,7 +2010,8 @@ static cdAttribute linecap_attrib =
 
 static void set_rotate_attrib(cdCtxCanvas* ctxcanvas, char* data)
 {
-  /* ignore ROTATE if transform is set */
+  /* ignore ROTATE if transform is set, 
+     because there is native support for transformations */
   if (ctxcanvas->canvas->use_matrix)
     return;
 
@@ -2009,7 +2028,7 @@ static void set_rotate_attrib(cdCtxCanvas* ctxcanvas, char* data)
     ctxcanvas->rotate_center_y = 0;
   }
 
-  cdwpUpdateTransform(ctxcanvas);
+  cdtransform(ctxcanvas, NULL);
 }
 
 static char* get_rotate_attrib(cdCtxCanvas* ctxcanvas)

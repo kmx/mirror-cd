@@ -12,8 +12,6 @@
 
 #include "cdgdk.h"
 
-#include <gdk/gdk.h>
-
 #define NUM_HATCHES  6
 #define HATCH_WIDTH  8
 #define HATCH_HEIGHT 8
@@ -52,7 +50,7 @@ static char* gdkStrToUTF8(const char *str, const char* charset, int length)
   return g_convert(str, length, "UTF-8", charset, NULL, NULL, NULL);
 }
 
-char* cdgdkStrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, int length)  /* From CD to GTK/GDK */
+char* cdgdkStrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, int length)  /* From CD to GDK */
 {
   const char *charset = NULL;
 
@@ -558,28 +556,6 @@ static int cdfont(cdCtxCanvas *ctxcanvas, const char *typeface, int style, int s
   pango_layout_set_attributes(ctxcanvas->fontlayout, attrs);
 
   pango_attr_list_unref(attrs);
-
-  return 1;
-}
-
-static int cdnativefont(cdCtxCanvas *ctxcanvas, const char* nativefont)
-{
-  int size = 12, style = CD_PLAIN;
-  char typeface[1024];
-
-  /* parse the old Windows format first */
-  if (!cdParseIupWinFont(nativefont, typeface, &style, &size))
-    if (!cdParseXWinFont(nativefont, typeface, &style, &size))
-      if (!cdParsePangoFont(nativefont, typeface, &style, &size))
-        return 0;
-
-  if (!cdfont(ctxcanvas, typeface, style, size))
-    return 0;
-
-  /* update cdfont parameters */
-  ctxcanvas->canvas->font_style = style;
-  ctxcanvas->canvas->font_size = size;
-  strcpy(ctxcanvas->canvas->font_type_face, typeface);
 
   return 1;
 }
@@ -1353,7 +1329,7 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 
   rw = xmax-xmin+1;
   rh = ymax-ymin+1;
-  y -= (h - 1);        /* GdkPixbuf origin is at top-left */
+  y -= (h - 1);        /* GdkPixbuf image origin is at top-left */
 
   if (!cdCalcZoom(ctxcanvas->canvas->w, x, w, &ex, &ew, xmin, rw, &bx, &bw, 1))
     return;
@@ -1429,8 +1405,11 @@ static cdCtxImage *cdcreateimage (cdCtxCanvas *ctxcanvas, int w, int h)
 
 static void cdgetimage (cdCtxCanvas *ctxcanvas, cdCtxImage *ctximage, int x, int y)
 {
+  /* y is the bottom-left of the image in CD, must be at upper-left */
+  y -= ctximage->h-1;
+
   gdk_draw_drawable(ctximage->img, ctxcanvas->gc,
-                    ctxcanvas->wnd, x, y - ctximage->h+1, 0, 0,
+                    ctxcanvas->wnd, x, y, 0, 0,
                     ctximage->w, ctximage->h);
 }
 
@@ -1491,6 +1470,7 @@ static void set_rotate_attrib(cdCtxCanvas* ctxcanvas, char* data)
 {
   if (data)
   {
+    /* use this configuration when there is NO native tranformation support */
     sscanf(data, "%g %d %d", &ctxcanvas->rotate_angle,
                              &ctxcanvas->rotate_center_x,
                              &ctxcanvas->rotate_center_y);
@@ -1687,7 +1667,6 @@ void cdgdkInitTable(cdCanvas* canvas)
   canvas->cxStipple = cdstipple;
   canvas->cxPattern = cdpattern;
   canvas->cxFont = cdfont;
-  canvas->cxNativeFont = cdnativefont;
   canvas->cxGetFontDim = cdgetfontdim;
   canvas->cxGetTextSize = cdgettextsize;
   canvas->cxPalette = cdpalette;

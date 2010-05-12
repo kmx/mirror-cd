@@ -273,6 +273,7 @@ int cdStrEqualNoCase(const char* str1, const char* str2);
 int cdStrLineCount(const char* str);
 char* cdStrDup(const char* str);
 char* cdStrDupN(const char* str, int len);
+void cdSetPaperSize(int size, double *w_pt, double *h_pt);
 
 #define _cdCheckCanvas(_canvas) (_canvas!=NULL && ((unsigned char*)_canvas)[0] == 'C' && ((unsigned char*)_canvas)[1] == 'D')
 #define _cdInvertYAxis(_canvas, _y) (_canvas->h - (_y) - 1)
@@ -288,6 +289,7 @@ void cdMatrixTransformPoint(double* matrix, int x, int y, int *rx, int *ry);
 void cdfMatrixTransformPoint(double* matrix, double x, double y, double *rx, double *ry);
 void cdMatrixMultiply(const double* matrix, double* mul_matrix);
 void cdMatrixInverse(const double* matrix, double* inv_matrix);
+void cdfRotatePoint(cdCanvas* canvas, double x, double y, double cx, double cy, double *rx, double *ry, double sin_theta, double cos_theta);
 void cdRotatePoint(cdCanvas* canvas, int x, int y, int cx, int cy, int *rx, int *ry, double sin_teta, double cos_teta);
 void cdRotatePointY(cdCanvas* canvas, int x, int y, int cx, int cy, int *ry, double sin_theta, double cos_theta);
 void cdTextTranslatePoint(cdCanvas* canvas, int x, int y, int w, int h, int baseline, int *rx, int *ry);

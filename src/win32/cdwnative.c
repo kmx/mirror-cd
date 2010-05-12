@@ -44,7 +44,6 @@ static int cdactivate(cdCtxCanvas *ctxcanvas)
   if (ctxcanvas->hWnd)
   {
     RECT rect;
-    HDC ScreenDC;
     GetClientRect(ctxcanvas->hWnd, &rect);
     ctxcanvas->canvas->w = rect.right - rect.left;
     ctxcanvas->canvas->h = rect.bottom - rect.top;
@@ -52,12 +51,7 @@ static int cdactivate(cdCtxCanvas *ctxcanvas)
     ctxcanvas->canvas->w_mm = ((double)ctxcanvas->canvas->w) / ctxcanvas->canvas->xres;
     ctxcanvas->canvas->h_mm = ((double)ctxcanvas->canvas->h) / ctxcanvas->canvas->yres;
   
-    ScreenDC = GetDC(NULL);
-    ctxcanvas->canvas->bpp = GetDeviceCaps(ScreenDC, BITSPIXEL);
-    ReleaseDC(NULL, ScreenDC);
-
-    if (ctxcanvas->canvas->use_matrix)
-      ctxcanvas->canvas->cxTransform(ctxcanvas, ctxcanvas->canvas->matrix);
+    ctxcanvas->canvas->bpp = cdGetScreenColorPlanes();
   }
   
   /* Se nao e' ownwer, tem que restaurar o contexto */
@@ -69,6 +63,9 @@ static int cdactivate(cdCtxCanvas *ctxcanvas)
     ctxcanvas->hDC = GetDC(ctxcanvas->hWnd);
     cdwRestoreDC(ctxcanvas);
   }
+
+  if (ctxcanvas->canvas->use_matrix)
+    ctxcanvas->canvas->cxTransform(ctxcanvas, ctxcanvas->canvas->matrix);
 
   return CD_OK;
 }

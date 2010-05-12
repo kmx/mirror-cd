@@ -68,7 +68,6 @@
 struct _cdCtxCanvas 
 {
   cdCanvas* canvas;
-  char* filename;       
   FILE* file;
   int last_line_style;
   int last_fill_mode;
@@ -601,7 +600,6 @@ static void cdgettextsize(cdCtxCanvas* ctxcanvas, const char *s, int len, int *w
 static void cdkillcanvas(cdCtxCanvas *ctxcanvas)
 {
 	fprintf(ctxcanvas->file, "KillCanvas()\n");
-  free(ctxcanvas->filename);
   fclose(ctxcanvas->file);
   memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
   free(ctxcanvas);
@@ -613,7 +611,6 @@ static void cdcreatecanvas(cdCanvas *canvas, void *data)
   char* strdata = (char*)data;
   double w_mm = INT_MAX*3.78, h_mm = INT_MAX*3.78, res = 3.78;
   cdCtxCanvas* ctxcanvas;
-  int size;
 
   strdata += cdGetFileName(strdata, filename);
   if (filename[0] == 0)
@@ -630,10 +627,6 @@ static void cdcreatecanvas(cdCanvas *canvas, void *data)
     free(ctxcanvas);
     return;
   }
-
-  size = strlen(filename);
-  ctxcanvas->filename = malloc(size+1);
-  memcpy(ctxcanvas->filename, filename, size+1);
 
   ctxcanvas->canvas = canvas;
 

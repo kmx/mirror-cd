@@ -21,7 +21,7 @@ extern "C" {
 #define CD_COPYRIGHT    "Copyright (C) 1994-2010 Tecgraf, PUC-Rio."
 #define CD_VERSION "5.3"              /* bug fixes are reported only by cdVersion functions */
 #define CD_VERSION_NUMBER 503000
-#define CD_VERSION_DATE "2010/01/26"
+#define CD_VERSION_DATE "2010/01/26"  /* does not include bug fix releases */
 
 typedef struct _cdContext cdContext;
 typedef struct _cdCanvas cdCanvas;
@@ -459,6 +459,18 @@ typedef int(*cdSizeCB)(cdCanvas *canvas, int w, int h, double w_mm, double h_mm)
 #define CD_MM2PT     2.834645669   /* milimeters to points (pt = CD_MM2PT * mm) */
 #define CD_RAD2DEG  57.295779513   /* radians to degrees (deg = CD_RAD2DEG * rad) */
 #define CD_DEG2RAD  0.01745329252  /* degrees to radians (rad = CD_DEG2RAD * deg) */
+
+/* paper sizes */
+enum {
+  CD_A0,
+  CD_A1,
+  CD_A2,
+  CD_A3,
+  CD_A4,
+  CD_A5,
+  CD_LETTER,
+  CD_LEGAL
+};
 
 
 #ifdef __cplusplus

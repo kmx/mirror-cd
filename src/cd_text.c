@@ -319,7 +319,7 @@ char* cdCanvasNativeFont(cdCanvas* canvas, const char* font)
   else
   {
     char type_face[1024];
-    int size, style = CD_PLAIN;
+    int size = 12, style = CD_PLAIN;
 
     if (!cdParseIupWinFont(font, type_face, &style, &size))
     {

@@ -76,42 +76,13 @@ struct _cdCtxCanvas
 
 };
 
-
-/*
-%F Ajusta o tamanho do papel em points.
-*/
-static void setpspapersize(cdCtxCanvas *ctxcanvas, int size)
-{
-  static struct
-  {
-    int width;
-    int height;
-  } paper[] =
-    {
-      { 2393, 3391 },   /*   A0   */
-      { 1689, 2393 },   /*   A1   */
-      { 1192, 1689 },   /*   A2   */
-      {  842, 1192 },   /*   A3   */
-      {  595,  842 },   /*   A4   */
-      {  420,  595 },   /*   A5   */
-      {  612,  792 },   /* LETTER */
-      {  612, 1008 }    /*  LEGAL */
-    };
-
-  if (size<CD_A0 || size>CD_LEGAL) 
-    return;
-
-  ctxcanvas->width = (double)paper[size].width;
-  ctxcanvas->height = (double)paper[size].height;
-}
-
 /*
 %F Registra os valores default para impressao.
 */
 static void setpsdefaultvalues(cdCtxCanvas *ctxcanvas)
 {
   /* all the other values are set to 0 */
-  setpspapersize(ctxcanvas, CD_A4);
+  cdSetPaperSize(CD_A4, &ctxcanvas->width, &ctxcanvas->height);
   ctxcanvas->xmin = 25.4; /* ainda em mm, sera' convertido para points na init_ps */
   ctxcanvas->xmax = 25.4;
   ctxcanvas->ymin = 25.4;
@@ -1379,6 +1350,7 @@ static int cdfont(cdCtxCanvas *ctxcanvas, const char *type_face, int style, int 
 
 static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
 {
+  /* reset to identity */
   set_default_matrix(ctxcanvas);
 
   if (matrix)
@@ -1568,7 +1540,8 @@ static void cdpixel(cdCtxCanvas *ctxcanvas, int x, int y, long int color)
 
 static void set_rotate_attrib(cdCtxCanvas *ctxcanvas, char* data)
 {
-  /* ignore ROTATE if transform is set */
+  /* ignore ROTATE if transform is set, 
+     because there is native support for transformations */
   if (ctxcanvas->canvas->use_matrix)
     return;
 
@@ -1585,15 +1558,7 @@ static void set_rotate_attrib(cdCtxCanvas *ctxcanvas, char* data)
     ctxcanvas->rotate_center_y = 0;
   }
 
-  set_default_matrix(ctxcanvas);
-
-  if (ctxcanvas->rotate_angle)
-  {
-    /* rotation = translate to point + rotation + translate back */
-    fprintf(ctxcanvas->file, "%d %d translate\n", ctxcanvas->rotate_center_x, ctxcanvas->rotate_center_y);
-    fprintf(ctxcanvas->file, "%g rotate\n", (double)ctxcanvas->rotate_angle);
-    fprintf(ctxcanvas->file, "%d %d translate\n", -ctxcanvas->rotate_center_x, -ctxcanvas->rotate_center_y);
-  }
+  cdtransform(ctxcanvas, NULL);
 }
 
 static char* get_rotate_attrib(cdCtxCanvas *ctxcanvas)
@@ -1715,7 +1680,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
         {
           int paper;
           sscanf(line, "%d", &paper);
-          setpspapersize(ctxcanvas, paper);
+          cdSetPaperSize(paper, &ctxcanvas->width, &ctxcanvas->height);
           break;
         }
       case 'w':

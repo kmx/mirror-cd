@@ -2192,8 +2192,11 @@ static cdCtxImage *cdcreateimage (cdCtxCanvas *ctxcanvas, int w, int h)
 
 static void cdgetimage (cdCtxCanvas *ctxcanvas, cdCtxImage *ctximage, int x, int y)
 {
+  /* y is the bottom-left of the image in CD, must be at upper-left */
+  y -= ctximage->h-1;
+
   XCopyArea(ctxcanvas->dpy, ctxcanvas->wnd, ctximage->img, ctxcanvas->gc,
-            x, y - ctximage->h+1, ctximage->w, ctximage->h, 0, 0);
+            x, y, ctximage->w, ctximage->h, 0, 0);
 }
 
 static void cdputimagerect (cdCtxCanvas *ctxcanvas, cdCtxImage *ctximage, int x, int y, int xmin, int xmax, int ymin, int ymax)
@@ -2243,6 +2246,7 @@ static void set_rotate_attrib(cdCtxCanvas* ctxcanvas, char* data)
 {
   if (data)
   {
+    /* use this configuration when there is NO native tranformation support */
     sscanf(data, "%g %d %d", &ctxcanvas->rotate_angle,
                              &ctxcanvas->rotate_center_x,
                              &ctxcanvas->rotate_center_y);

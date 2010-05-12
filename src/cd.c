@@ -20,6 +20,7 @@
 /* This appears only here to avoid changing the cd.h header fo bug fixes */
 #define CD_VERSION_FIX ""
 #define CD_VERSION_FIX_NUMBER 0
+/* #define CD_VERSION_FIX_DATE "" */
 
 const char cd_ident[] =
   "$CD: " CD_VERSION CD_VERSION_FIX " " CD_COPYRIGHT " $\n"
@@ -36,7 +37,11 @@ char* cdVersion(void)
 
 char* cdVersionDate(void)
 {
+#ifdef CD_VERSION_FIX_DATE
+  return CD_VERSION_FIX_DATE;
+#else
   return CD_VERSION_DATE;
+#endif
 }
  
 int cdVersionNumber(void)
@@ -716,14 +721,13 @@ static cdContext* context_plus[NUM_CONTEXTPLUS] = {NULL, NULL, NULL, NULL, NULL,
 
 int cdUseContextPlus(int use)
 {
+  int old_use_context_plus = use_context_plus;
+
   if (use == CD_QUERY)
     return use_context_plus;
 
-  {
-    int old_use_context_plus = use_context_plus;
-    use_context_plus = use;
-    return old_use_context_plus;
-  }
+  use_context_plus = use;
+  return old_use_context_plus;
 }
 
 void cdInitContextPlusList(cdContext* ctx_list[])

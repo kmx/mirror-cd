@@ -56,36 +56,6 @@ struct _cdCtxCanvas
 
 
 /*
-%F Ajusta o tamanho do papel em points.
-*/
-static void setpdfpapersize(cdCtxCanvas* ctxcanvas, int size)
-{
-  static struct
-  {
-    int width;
-    int height;
-  } paper[] =
-    {
-      { 2393, 3391 },   /*   A0   */
-      { 1689, 2393 },   /*   A1   */
-      { 1192, 1689 },   /*   A2   */
-      {  842, 1192 },   /*   A3   */
-      {  595,  842 },   /*   A4   */
-      {  420,  595 },   /*   A5   */
-      {  612,  792 },   /* LETTER */
-      {  612, 1008 }    /*  LEGAL */
-    };
-  
-  if (size<CD_A0 || size>CD_LEGAL) 
-    return;
-
-  ctxcanvas->width_pt = paper[size].width;   
-  ctxcanvas->height_pt = paper[size].height; 
-  ctxcanvas->width_mm = ctxcanvas->width_pt/CD_MM2PT;
-  ctxcanvas->height_mm = ctxcanvas->height_pt/CD_MM2PT;
-}
-
-/*
 %F Registra os valores default para impressao.
 */
 static void setpdfdefaultvalues(cdCtxCanvas* ctxcanvas)
@@ -93,7 +63,9 @@ static void setpdfdefaultvalues(cdCtxCanvas* ctxcanvas)
   int i;
 
   /* all the other values are set to 0 */
-  setpdfpapersize(ctxcanvas, CD_A4);
+  cdSetPaperSize(CD_A4, &ctxcanvas->width_pt, &ctxcanvas->height_pt);
+  ctxcanvas->width_mm = ctxcanvas->width_pt/CD_MM2PT;
+  ctxcanvas->height_mm = ctxcanvas->height_pt/CD_MM2PT;
   ctxcanvas->res = 300;
   ctxcanvas->hatchboxsize = 8;
   ctxcanvas->opacity = 255; /* full opaque */
@@ -361,7 +333,7 @@ static void cdfarc(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, doubl
     PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*w, a1, a2);
     PDF_stroke(ctxcanvas->pdf);
   }
-  else /* Elipse: mudar a escala p/ criar a partir do circulo */
+  else /* Ellipse: change the scale to create from the circle */
   {
     PDF_save(ctxcanvas->pdf);  /* save to use the local transform */
 
@@ -487,8 +459,8 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, i
   char temp[200], options[200];
 
   PDF_setcolor(ctxcanvas->pdf, "fill", "rgb", get_red(ctxcanvas->canvas->foreground), 
-                                               get_green(ctxcanvas->canvas->foreground), 
-                                               get_blue(ctxcanvas->canvas->foreground), 0);
+                                              get_green(ctxcanvas->canvas->foreground), 
+                                              get_blue(ctxcanvas->canvas->foreground), 0);
 
   strcpy(options, "");
 
@@ -768,7 +740,6 @@ static void make_pattern(cdCtxCanvas *ctxcanvas, int n, int m, void* data, int (
   PDF_suspend_page(ctxcanvas->pdf, "");
   ctxcanvas->pattern = PDF_begin_pattern(ctxcanvas->pdf, n, m,
       ((double)n)*ctxcanvas->scale, ((double)m)*ctxcanvas->scale, 1);
-
   PDF_scale(ctxcanvas->pdf, ctxcanvas->scale, ctxcanvas->scale);
 
   for (j=0; j<m; j++)
@@ -802,21 +773,18 @@ static void cdpattern(cdCtxCanvas *ctxcanvas, int n, int m, const long int *patt
 
 static int uchar2rgb(cdCtxCanvas *ctxcanvas, int n, int i, int j, void* data, unsigned char*r, unsigned char*g, unsigned char*b)
 {
-  int ret = 1;
   unsigned char* uchar_data = (unsigned char*)data;
   if (uchar_data[j*n+i])
-  {
     cdDecodeColor(ctxcanvas->canvas->foreground, r, g, b);
-    ret = 1;
-  }
   else
   {
-    cdDecodeColor(ctxcanvas->canvas->background, r, g, b);
     if (ctxcanvas->canvas->back_opacity==CD_TRANSPARENT)
-        ret = -1;
+      return -1;
+    else
+      cdDecodeColor(ctxcanvas->canvas->background, r, g, b);
   }
 
-  return ret;
+  return 1;
 }
 
 static void cdstipple(cdCtxCanvas *ctxcanvas, int n, int m, const unsigned char *stipple)
@@ -824,14 +792,14 @@ static void cdstipple(cdCtxCanvas *ctxcanvas, int n, int m, const unsigned char 
   make_pattern(ctxcanvas, n, m, (void*)stipple, uchar2rgb);
 }
 
-static void make_hatch(cdCtxCanvas *ctxcanvas, int style)
+static int cdhatch(cdCtxCanvas *ctxcanvas, int style)
 {
   unsigned char r, g, b;
   int hsize = ctxcanvas->hatchboxsize - 1;
   int hhalf = hsize / 2;
 
   PDF_suspend_page(ctxcanvas->pdf, "");
-  ctxcanvas->pattern = PDF_begin_pattern(ctxcanvas->pdf, hsize + 1, hsize + 1,
+  ctxcanvas->pattern = PDF_begin_pattern(ctxcanvas->pdf, hsize+1, hsize+1,
       ((double)hsize)*ctxcanvas->scale, ((double)hsize)*ctxcanvas->scale, 1);
 
   PDF_scale(ctxcanvas->pdf, ctxcanvas->scale, ctxcanvas->scale);
@@ -883,11 +851,6 @@ static void make_hatch(cdCtxCanvas *ctxcanvas, int style)
 
   PDF_end_pattern(ctxcanvas->pdf);
   PDF_resume_page(ctxcanvas->pdf, "");
-}
-
-static int cdhatch(cdCtxCanvas *ctxcanvas, int style)
-{
-  make_hatch(ctxcanvas, style);
   return style;
 }
 
@@ -976,6 +939,7 @@ static int cdfont(cdCtxCanvas *ctxcanvas, const char *type_face, int style, int 
 
 static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
 {
+  /* reset to identity */
   PDF_setmatrix(ctxcanvas->pdf, 1, 0, 0, 1, 0, 0);
 
   /* default coordinate system is in points, change it to pixels. */
@@ -1202,7 +1166,8 @@ static cdAttribute hatchboxsize_attrib =
 
 static void set_rotate_attrib(cdCtxCanvas *ctxcanvas, char* data)
 {
-  /* ignore ROTATE if transform is set */
+  /* ignore ROTATE if transform is set, 
+     because there is native support for transformations */
   if (ctxcanvas->canvas->use_matrix)
     return;
 
@@ -1219,15 +1184,7 @@ static void set_rotate_attrib(cdCtxCanvas *ctxcanvas, char* data)
     ctxcanvas->rotate_center_y = 0;
   }
 
-  PDF_setmatrix(ctxcanvas->pdf, 1, 0, 0, 1, 0, 0);
-
-  if (ctxcanvas->rotate_angle)
-  {
-    /* rotation = translate to point + rotation + translate back */
-    PDF_translate(ctxcanvas->pdf, ctxcanvas->rotate_center_x, ctxcanvas->rotate_center_y);
-    PDF_rotate(ctxcanvas->pdf, (double)ctxcanvas->rotate_angle);
-    PDF_translate(ctxcanvas->pdf, -ctxcanvas->rotate_center_x, -ctxcanvas->rotate_center_y);
-  }
+  cdtransform(ctxcanvas, NULL);
 }
 
 static char* get_rotate_attrib(cdCtxCanvas *ctxcanvas)
@@ -1469,7 +1426,9 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
         {
           int paper;
           sscanf(line, "%d", &paper);
-          setpdfpapersize(ctxcanvas, paper);
+          cdSetPaperSize(paper, &ctxcanvas->width_pt, &ctxcanvas->height_pt);
+          ctxcanvas->width_mm = ctxcanvas->width_pt/CD_MM2PT;
+          ctxcanvas->height_mm = ctxcanvas->height_pt/CD_MM2PT;
           break;
         }
       case 'w':
@@ -1513,7 +1472,9 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 static void cdinittable(cdCanvas* canvas)
 {
   canvas->cxFlush = cdflush;
+
   canvas->cxPixel = cdpixel;
+
   canvas->cxLine = cdline;
   canvas->cxPoly = cdpoly;
   canvas->cxRect = cdrect;
@@ -1522,6 +1483,7 @@ static void cdinittable(cdCanvas* canvas)
   canvas->cxSector = cdsector;
   canvas->cxChord = cdchord;
   canvas->cxText = cdtext;
+
   canvas->cxFLine = cdfline;
   canvas->cxFPoly = cdfpoly;
   canvas->cxFRect = cdfrect;
@@ -1530,6 +1492,7 @@ static void cdinittable(cdCanvas* canvas)
   canvas->cxFSector = cdfsector;
   canvas->cxFChord = cdfchord;
   canvas->cxFText = cdftext;
+
   canvas->cxGetFontDim = cdgetfontdim;
   canvas->cxGetTextSize = cdgettextsize;
   canvas->cxPutImageRectRGB = cdputimagerectrgb;

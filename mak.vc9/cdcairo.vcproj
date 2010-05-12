@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="cdx11"
-	ProjectGUID="{01818D2C-7689-4D5C-1234-4DFF401C6461}"
+	Name="cdcairo"
+	ProjectGUID="{01818D2C-AAAA-DD23-00AA-5678401C6461}"
 	TargetFrameworkVersion="0"
 	>
 	<Platforms>
@@ -41,11 +41,11 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\include;..\src;..\src\drv;..\src\iup;..\src\x11;..\src\sim;D:\LNG\x11inc"
-				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,CD_NO_OLD_INTERFACE,_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories="..\include;..\src;..\src\drv;..\src\freetype2;..\src\intcgm;..\src\iup;..\src\sim;&quot;d:\lng\gtk\include\atk-1.0&quot;;d:\lng\gtk\include\cairo;&quot;d:\lng\gtk\include\glib-2.0&quot;;&quot;d:\lng\gtk\include\pango-1.0&quot;;&quot;d:\lng\gtk\include\gtk-2.0&quot;;&quot;d:\lng\gtk\lib\glib-2.0\include&quot;;&quot;d:\lng\gtk\lib\gtk-2.0\include&quot;;D:\LNG\x11inc"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;CD_NO_OLD_INTERFACE;FT2_BUILD_LIBRARY;_CRT_SECURE_NO_DEPRECATE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
-				PrecompiledHeaderFile=".\..\obj\x11/cdx11.pch"
+				PrecompiledHeaderFile=".\..\obj\cdcairo/cd.pch"
 				AssemblerListingLocation=""
 				ObjectFile="$(IntDir)\"
 				ProgramDataBaseFileName="$(IntDir)\vc90.pdb"
@@ -95,50 +95,76 @@
 			Name="inc"
 			>
 			<File
-				RelativePath="..\src\x11\cdx11.h"
+				RelativePath="..\src\cairo\cdcairoctx.h"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
 			</File>
+		</Filter>
+		<Filter
+			Name="include"
+			>
 			<File
-				RelativePath="..\src\x11\xvertex.h"
+				RelativePath="..\include\cdcairo.h"
 				>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
 			</File>
 		</Filter>
 		<File
-			RelativePath="..\src\x11\cdx11.c"
+			RelativePath="..\src\cairo\cdcairo.c"
 			>
 		</File>
 		<File
-			RelativePath="..\src\x11\cdxclp.c"
+			RelativePath="..\src\cairo\cdcairodbuf.c"
 			>
 		</File>
 		<File
-			RelativePath="..\src\x11\cdxdbuf.c"
+			RelativePath="..\src\cairo\cdcairoimg.c"
 			>
 		</File>
 		<File
-			RelativePath="..\src\x11\cdximg.c"
+			RelativePath="..\src\cairo\cdcairoirgb.c"
 			>
 		</File>
 		<File
-			RelativePath="..\src\x11\cdxnative.c"
+			RelativePath="..\src\cairo\cdcaironative_gdk.c"
 			>
 		</File>
 		<File
-			RelativePath="..\src\x11\xvertex.c"
+			RelativePath="..\src\cairo\cdcaironative_win32.c"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				ExcludedFromBuild="true"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+				/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\src\cairo\cdcaironative_x11.c"
+			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				ExcludedFromBuild="true"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+				/>
+			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\src\cairo\cdcairopdf.c"
+			>
+		</File>
+		<File
+			RelativePath="..\src\cairo\cdcairoplus.c"
+			>
+		</File>
+		<File
+			RelativePath="..\src\cairo\cdcairops.c"
+			>
+		</File>
+		<File
+			RelativePath="..\src\cairo\cdcairosvg.c"
 			>
 		</File>
 	</Files>

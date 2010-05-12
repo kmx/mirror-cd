@@ -263,6 +263,29 @@ void cdRotatePoint(cdCanvas* canvas, int x, int y, int cx, int cy, int *rx, int 
   *ry = *ry + cy;
 }
 
+void cdfRotatePoint(cdCanvas* canvas, double x, double y, double cx, double cy, double *rx, double *ry, double sin_theta, double cos_theta)
+{
+  /* translate to (cx,cy) */
+  x = x - cx;
+  y = y - cy;
+
+  /* rotate */
+  if (canvas->invert_yaxis)
+  {
+    *rx =  (x * cos_theta) + (y * sin_theta); 
+    *ry = -(x * sin_theta) + (y * cos_theta); 
+  }
+  else
+  {
+    *rx = (x * cos_theta) - (y * sin_theta); 
+    *ry = (x * sin_theta) + (y * cos_theta); 
+  }
+
+  /* translate back */
+  *rx = *rx + cx;
+  *ry = *ry + cy;
+}
+
 void cdRotatePointY(cdCanvas* canvas, int x, int y, int cx, int cy, int *ry, double sin_theta, double cos_theta)
 {
   double t;
@@ -348,4 +371,29 @@ char* cdStrDupN(const char *str, int len)
     return newstr;
   }
   return NULL;
+}
+
+void cdSetPaperSize(int size, double *w_pt, double *h_pt)
+{
+  static struct
+  {
+    int w_pt;
+    int h_pt;
+  } paper[] =
+    {
+      { 2393, 3391 },   /*   A0   */
+      { 1689, 2393 },   /*   A1   */
+      { 1192, 1689 },   /*   A2   */
+      {  842, 1192 },   /*   A3   */
+      {  595,  842 },   /*   A4   */
+      {  420,  595 },   /*   A5   */
+      {  612,  792 },   /* LETTER */
+      {  612, 1008 }    /*  LEGAL */
+    };
+
+  if (size<CD_A0 || size>CD_LEGAL) 
+    return;
+
+  *w_pt = (double)paper[size].w_pt;
+  *h_pt = (double)paper[size].h_pt;
 }
