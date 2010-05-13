@@ -18,7 +18,7 @@ struct _cdCtxImage {
   double w_mm, h_mm;   /* size in mm                                  */                  
   double xres, yres;   /* resolution in pixels/mm                     */     
   int bpp;
-  cairo_t* img;
+  cairo_t* cr;
 };
 
 struct _cdCtxCanvas

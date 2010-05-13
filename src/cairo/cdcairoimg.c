@@ -18,7 +18,7 @@ static void cdkillcanvas(cdCtxCanvas* ctxcanvas)
 static void cdcreatecanvas(cdCanvas* canvas, void *data)
 {
   cdCtxImage *ctximage = ((cdImage*)data)->ctximage;
-  cdcairoCreateCanvas(canvas, (cairo_t*)ctximage->img);
+  cdcairoCreateCanvas(canvas, (cairo_t*)ctximage->cr);
   canvas->w = ctximage->w;
   canvas->h = ctximage->h;
   canvas->w_mm = ctximage->w_mm;

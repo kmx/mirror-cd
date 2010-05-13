@@ -360,7 +360,7 @@ static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, do
   if (w==h)
   {
     PDF_moveto(ctxcanvas->pdf, xc, yc);
-    PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*w, a1, a2);
+    PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*h, a1, a2);
     PDF_fill(ctxcanvas->pdf);
   }
   else /* Elipse: mudar a escala p/ criar a partir do circulo */
@@ -373,15 +373,7 @@ static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, do
 
     PDF_moveto(ctxcanvas->pdf, xc, yc);
     PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*h, a1, a2);
-
-    if (ctxcanvas->canvas->interior_style == CD_SOLID ||
-        ctxcanvas->canvas->interior_style == CD_PATTERN)
-      PDF_fill(ctxcanvas->pdf);
-    else
-    {
-      PDF_lineto(ctxcanvas->pdf, xc, yc);
-      PDF_stroke(ctxcanvas->pdf);
-    }
+    PDF_fill(ctxcanvas->pdf);
 
     PDF_restore(ctxcanvas->pdf);  /* restore from local */
   }
@@ -398,7 +390,7 @@ static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, dou
 
   if (w==h)
   {
-    PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*w, a1, a2);
+    PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*h, a1, a2);
     PDF_fill_stroke(ctxcanvas->pdf);
   }
   else /* Elipse: mudar a escala p/ criar a partir do circulo */
@@ -407,9 +399,10 @@ static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, dou
 
     /* local transform */
     PDF_translate(ctxcanvas->pdf, xc, yc);
-    PDF_scale(ctxcanvas->pdf, 1, w/h);
+    PDF_scale(ctxcanvas->pdf, w/h, 1);
+    PDF_translate(ctxcanvas->pdf, -xc, -yc);
 
-    PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*w, a1, a2);
+    PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*h, a1, a2);
     PDF_fill_stroke(ctxcanvas->pdf);
 
     PDF_restore(ctxcanvas->pdf);  /* restore from local */
@@ -964,7 +957,7 @@ static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
 
 static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
-  int i, j, d, image, rw, rh, rgb_size;
+  int i, j, d, image, rw, rh, rgb_size, pos;
   char options[80];
   unsigned char* rgb_data;
 
@@ -981,9 +974,10 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   for (i=ymax; i>=ymin; i--)
     for (j=xmin; j<=xmax; j++)
     {
-      rgb_data[d] = r[i*iw+j]; d++;
-      rgb_data[d] = g[i*iw+j]; d++;
-      rgb_data[d] = b[i*iw+j]; d++;
+      pos = i*iw+j;
+      rgb_data[d] = r[pos]; d++;
+      rgb_data[d] = g[pos]; d++;
+      rgb_data[d] = b[pos]; d++;
     }
 
   PDF_create_pvf(ctxcanvas->pdf, "cd_raw_rgb", 0, rgb_data, rgb_size, "");
@@ -1000,7 +994,7 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 
 static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
-  int i, j, d, image, image_mask, rw, rh, alpha_size, rgb_size;
+  int i, j, d, image, image_mask, rw, rh, alpha_size, rgb_size, pos;
   char options[80];
   unsigned char *rgb_data, *alpha_data;
 
@@ -1017,9 +1011,10 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
   for (i=ymax; i>=ymin; i--)
     for (j=xmin; j<=xmax; j++)
     {
-      rgb_data[d] = r[i*iw+j]; d++;
-      rgb_data[d] = g[i*iw+j]; d++;
-      rgb_data[d] = b[i*iw+j]; d++;
+      pos = i*iw+j;
+      rgb_data[d] = r[pos]; d++;
+      rgb_data[d] = g[pos]; d++;
+      rgb_data[d] = b[pos]; d++;
     }
 
   alpha_size = rw*rh;
@@ -1030,7 +1025,8 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
   for (i=ymax; i>=ymin; i--)
     for (j=xmin; j<=xmax; j++)
     {
-      alpha_data[d] = a[i*iw+j]; d++;
+      pos = i*iw+j;
+      alpha_data[d] = a[pos]; d++;
     }
 
   PDF_create_pvf(ctxcanvas->pdf, "cd_raw_rgb", 0, rgb_data, rgb_size, "");
@@ -1053,9 +1049,10 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
 
 static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *index, const long int *colors, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
-  int i, j, d, rw, rh, image, rgb_size;
+  int i, j, d, rw, rh, image, rgb_size, pos;
   char options[80];
   unsigned char* rgb_data;
+  unsigned char r, g, b;
 
   if (xmin<0 || ymin<0 || xmax-xmin+1>iw || ymax-ymin+1>ih) return;
 
@@ -1070,8 +1067,8 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   for (i=ymax; i>=ymin; i--)
     for (j=xmin; j<=xmax; j++)
     {
-      unsigned char r, g, b;
-      cdDecodeColor(colors[index[i*iw+j]], &r, &g, &b);
+      pos = i*iw+j;
+      cdDecodeColor(colors[index[pos]], &r, &g, &b);
       rgb_data[d] = r; d++;
       rgb_data[d] = g; d++;
       rgb_data[d] = b; d++;

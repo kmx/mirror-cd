@@ -598,7 +598,7 @@ static void cdwpFixAngles(cdCtxCanvas* ctxcanvas, double *angle1, double *angle2
 {
   if (ctxcanvas->canvas->invert_yaxis)
   {
-    // GDI+ angle are clock-wise by default
+    // GDI+ angles are clock-wise by default
     *angle1 *= -1;
     *angle2 *= -1;
   }

@@ -721,10 +721,12 @@ int SimpleDrawAll(void)
   cdLine(0, 10, w, 10);
   cdLineStyle(CD_DASHED);
   cdLine(0, 20, w, 20);
-  cdLineStyle(CD_DASH_DOT);
+  cdLineStyle(CD_DOTTED);
   cdLine(0, 30, w, 30);
-  cdLineStyle(CD_DASH_DOT_DOT);
+  cdLineStyle(CD_DASH_DOT);
   cdLine(0, 40, w, 40);
+  cdLineStyle(CD_DASH_DOT_DOT);
+  cdLine(0, 50, w, 50);
 
   /* draws all the hatch style possibilities */
   cdHatch(CD_VERTICAL); 
@@ -828,8 +830,8 @@ int SimpleDrawAll(void)
 
 //  cdPutImageRGB(IMAGE_SIZE, IMAGE_SIZE, red, green, blue, 100, h - 200, IMAGE_SIZE, IMAGE_SIZE);
 //  cdPutImageRGBA(IMAGE_SIZE, IMAGE_SIZE, red, green, blue, alpha, 100, h - 200, IMAGE_SIZE, IMAGE_SIZE);
-  cdPutImageRGB(IMAGE_SIZE, IMAGE_SIZE, red, green, blue, w - 400, h - 310, 3*IMAGE_SIZE, 3*IMAGE_SIZE);
-//  cdPutImageRGBA(IMAGE_SIZE, IMAGE_SIZE, red, green, blue, alpha, w - 400, h - 310, 3*IMAGE_SIZE, 3*IMAGE_SIZE);
+//  cdPutImageRGB(IMAGE_SIZE, IMAGE_SIZE, red, green, blue, w - 400, h - 310, 3*IMAGE_SIZE, 3*IMAGE_SIZE);
+  cdPutImageRGBA(IMAGE_SIZE, IMAGE_SIZE, red, green, blue, alpha, w - 400, h - 310, 3*IMAGE_SIZE, 3*IMAGE_SIZE);
 
   cdSetAttribute("ROTATE", NULL);
   if (use_transform)

@@ -1341,7 +1341,7 @@ static void cdputimagerectrgba(cdCtxCanvas* ctxcanvas, int iw, int ih, const uns
 
 static void cdputimagerectmap(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsigned char *index, const long int *colors, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
-  int l, c, xsize, ysize, xpos, ypos, src_offset, dst_offset, rw, rh, pal_size, idx, img_topdown = 0;
+  int l, c, xsize, ysize, xpos, ypos, src_offset, dst_offset, rw, rh, idx, img_topdown = 0;
   const unsigned char *src_index;
 
   if (ctxcanvas->canvas->use_matrix)
@@ -1370,22 +1370,6 @@ static void cdputimagerectmap(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsi
 
   rw = xmax-xmin+1;
   rh = ymax-ymin+1;
-
-  /* Como nao sabemos o tamanho da palette a priori, 
-  teremos que ver qual o maior indice usado na imagem. */
-  pal_size = 0;
-  
-  for (l=0; l<ih; l++) 
-  {
-    for (c=0; c<iw; c++) 
-    {
-      idx = index[l*iw + c];
-      if (idx > pal_size)
-        pal_size = idx;
-    }
-  }
-  
-  pal_size++;
 
   /* testa se tem que fazer zoom */
   if (rw != w || rh != h)

@@ -60,7 +60,7 @@ static void cdcreatecanvas(cdCanvas* canvas, cdCanvas* canvas_dbuffer)
   ctximage = image_dbuffer->ctximage;
 
   /* Init the driver DBuffer */
-  ctxcanvas = cdcairoCreateCanvas(canvas, ctximage->img);
+  ctxcanvas = cdcairoCreateCanvas(canvas, ctximage->cr);
 
   if (!ctxcanvas)
     return;
