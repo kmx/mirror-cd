@@ -17,6 +17,16 @@ EXPORTS
   cdContextDebug
   cdContextSVG
 
+  cdContextCairoImage
+  cdContextCairoImageRGB
+  cdContextCairoPS
+  cdContextCairoPrinter
+  cdContextCairoNativeWindow
+  cdContextCairoDBuffer
+  cdContextCairoSVG
+  cdContextCairoPDF
+  cdInitContextPlus
+  
   cdRedImage
   cdGreenImage
   cdBlueImage

@@ -5,7 +5,7 @@ OPT = YES
 DEFINES = CD_NO_OLD_INTERFACE
 
 SRCSVG = base64.c lodepng.c cdsvg.c
-SRCSVG  := $(addprefix svg/, $(SRCSVG))
+SRCSVG := $(addprefix svg/, $(SRCSVG))
 
 SRCINTCGM = circle.c ellipse.c intcgm1.c \
   intcgm2.c intcgm4.c intcgm6.c list.c \
@@ -24,6 +24,9 @@ SRCX11  := $(addprefix x11/, $(SRCX11))
 SRCGDK = cdgdk.c cdgdkclp.c cdgdkdbuf.c cdgdkimg.c cdgdknative.c
 SRCGDK  := $(addprefix gdk/, $(SRCGDK))
 
+SRCCAIRO = cdcairodbuf.c cdcairopdf.c cdcairosvg.c cdcairo.c cdcairoimg.c cdcairoplus.c cdcairoirgb.c cdcairops.c cdcaironative_gdk.c
+SRCCAIRO := $(addprefix cairo/, $(SRCCAIRO))
+
 SRCDRV = cddgn.c cdcgm.c cgm.c cddxf.c cdirgb.c cdmf.c cdps.c cdpicture.c cddebug.c
 SRCDRV  := $(addprefix drv/, $(SRCDRV))
 
@@ -37,7 +40,7 @@ SRC = $(SRCCOMM) $(SRCSVG) $(SRCINTCGM) $(SRCDRV) $(SRCSIM)
 
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )
   ifdef USE_GDK
-    SRC += $(SRCGDK) $(SRCNULL)
+    SRC += $(SRCGDK) $(SRCNULL) $(SRCCAIRO)
     LIBNAME := cdgdk
     USE_GTK = Yes
   else
@@ -46,7 +49,7 @@ ifneq ($(findstring Win, $(TEC_SYSNAME)), )
   LIBS = freetype6
 else
   ifdef USE_GDK
-    SRC += $(SRCGDK)
+    SRC += $(SRCGDK) $(SRCCAIRO)
     LIBNAME := cdgdk
     USE_GTK = Yes
   else
@@ -63,4 +66,4 @@ endif
 
 LDIR = ../lib/$(TEC_UNAME)
 
-INCLUDES = . drv x11 win32 intcgm freetype2 sim ../include
+INCLUDES = . drv x11 win32 intcgm freetype2 sim cairo ../include
