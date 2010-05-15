@@ -130,8 +130,11 @@ static void cdflush(cdCtxCanvas *ctxcanvas)
 
 /******************************************************/
 
-static void setcliprect(cdCtxCanvas* ctxcanvas, double xmin, double ymin, double xmax, double ymax)
+static void cdfcliparea(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
 {
+  if (ctxcanvas->canvas->clip_mode != CD_CLIPAREA)
+    return;
+
   cairo_reset_clip(ctxcanvas->cr);
   cairo_rectangle(ctxcanvas->cr, xmin, ymin, xmax-xmin+1, ymax-ymin+1);
   cairo_clip(ctxcanvas->cr);
@@ -139,31 +142,27 @@ static void setcliprect(cdCtxCanvas* ctxcanvas, double xmin, double ymin, double
 
 static void cdcliparea(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
 {
-  if (ctxcanvas->canvas->clip_mode != CD_CLIPAREA)
-    return;
-
-  setcliprect(ctxcanvas, (double)xmin, (double)ymin, (double)xmax, (double)ymax);
+  cdfcliparea(ctxcanvas, (double)xmin, (double)xmax, (double)ymin, (double)ymax);
 }
 
 static int cdclip(cdCtxCanvas *ctxcanvas, int mode)
 {
+  cairo_reset_clip(ctxcanvas->cr);
+
   switch (mode)
   {
   case CD_CLIPOFF:
-    cairo_reset_clip(ctxcanvas->cr);
     break;
   case CD_CLIPAREA:
-      ctxcanvas->canvas->clip_mode = CD_CLIPAREA;
-      setcliprect(ctxcanvas, (double)ctxcanvas->canvas->clip_rect.xmin, 
-        (double)ctxcanvas->canvas->clip_rect.ymin, 
-        (double)ctxcanvas->canvas->clip_rect.xmax, 
-        (double)ctxcanvas->canvas->clip_rect.ymax);
+      cairo_rectangle(ctxcanvas->cr, ctxcanvas->canvas->clip_frect.xmin, 
+                                     ctxcanvas->canvas->clip_frect.ymin, 
+                                     ctxcanvas->canvas->clip_frect.xmax, 
+                                     ctxcanvas->canvas->clip_frect.ymax);
       break;
   case CD_CLIPPOLYGON:
     {
       int hole_index = 0;
       int i;
-      cairo_reset_clip(ctxcanvas->cr);
 
       if (ctxcanvas->canvas->clip_poly)
       {
@@ -195,12 +194,14 @@ static int cdclip(cdCtxCanvas *ctxcanvas, int mode)
             cairo_line_to(ctxcanvas->cr, poly[i].x, poly[i].y);
         }
       }
-      cairo_clip(ctxcanvas->cr);
       break;
     }
   case CD_CLIPREGION:
     break;
   }
+
+  if (mode != CD_CLIPOFF)
+    cairo_clip(ctxcanvas->cr);
 
   return mode;
 }
@@ -1731,6 +1732,7 @@ void cdcairoInitTable(cdCanvas* canvas)
 
   canvas->cxClip = cdclip;
   canvas->cxClipArea = cdcliparea;
+  canvas->cxFClipArea = cdfcliparea;
   canvas->cxLineStyle = cdlinestyle;
   canvas->cxLineWidth = cdlinewidth;
   canvas->cxLineCap = cdlinecap;
