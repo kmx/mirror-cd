@@ -121,8 +121,7 @@ static void cdinittable(cdCanvas* canvas)
 
 static cdContext cdNativeContext =
 {
-  CD_CAP_ALL & ~(CD_CAP_FLUSH | CD_CAP_PLAY | CD_CAP_YAXIS | 
-                 CD_CAP_FPRIMTIVES  ),
+  CD_CAP_ALL & ~(CD_CAP_FLUSH | CD_CAP_PLAY | CD_CAP_YAXIS ),
   1,
   cdcreatecanvas,
   cdinittable,

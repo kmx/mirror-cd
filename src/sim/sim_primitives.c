@@ -471,6 +471,124 @@ void cdchordSIM(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, int height, d
   cdSimElipse(ctxcanvas, xc, yc, width, height, angle1, angle2, 0);
 }
 
+void cdfSimPolyPath(cdCtxCanvas* ctxcanvas, cdfPoint* poly, int n)
+{
+}
+
+void cdSimPolyPath(cdCtxCanvas* ctxcanvas, cdPoint* poly, int n)
+{
+//  int p, i, current_x = 0, current_y = 0, current_set = 0;
+//
+//  i = 0;
+//  for (p=0; p<ctxcanvas->canvas->path_n; p++)
+//  {
+//    switch(ctxcanvas->canvas->path[p])
+//    {
+//    case CD_PATH_NEW:
+//      current_set = 0;
+//      break;
+//    case CD_PATH_MOVETO:
+//      if (i+1 > n) break;
+//      current_x = poly[i].x;
+//      current_y = poly[i].y;
+//      current_set = 1;
+//      i++;
+//      break;
+//    case CD_PATH_LINETO:
+//      if (i+1 > n) break;
+//      if (current_set)
+//        graphics_path->AddLine(current_x, current_y, poly[i].x, poly[i].y);
+//      current_x = poly[i].x;
+//      current_y = poly[i].y;
+//      current_set = 1;
+//      i++;
+//      break;
+//    case CD_PATH_ARC:
+//      {
+//        int xc, yc, w, h;
+//        double a1, a2;
+//
+//        if (i+3 > n) break;
+//
+//        xc = poly[i].x, 
+//        yc = poly[i].y, 
+//        w = poly[i+1].x, 
+//        h = poly[i+1].y, 
+//        a1 = poly[i+2].x/1000.0, 
+//        a2 = poly[i+2].y/1000.0;
+//
+//        if (current_set)
+//        {
+//          int StartX, StartY;
+//
+//          if (ctxcanvas->canvas->invert_yaxis)
+//          {
+//            StartX = xc + cdRound(w * cos(CD_DEG2RAD * a1) / 2.0);
+//            StartY = yc - cdRound(h * sin(CD_DEG2RAD * a1) / 2.0);
+//          }
+//          else
+//          {
+//            StartX = xc + cdRound(w * cos(CD_DEG2RAD * a2) / 2.0);
+//            StartY = yc + cdRound(h * sin(CD_DEG2RAD * a2) / 2.0);
+//          }
+//
+//          graphics_path->AddLine(current_x, current_y, StartX, StartY);
+//        }
+//
+//        Rect rect(xc - w/2, yc - h/2, w, h);
+//        if (a1 == 0 && a2 == 360)
+//          graphics_path->AddEllipse(rect);
+//        else
+//        {
+//          cdwpFixAngles(ctxcanvas, &a1, &a2);
+//          graphics_path->AddArc(rect, (REAL)a1, (REAL)(a2-a1));
+//        }
+//
+//        graphics_path->GetLastPoint(&lastPoint);
+//        current_x = (int)lastPoint.X;
+//        current_y = (int)lastPoint.Y;
+//        current_set = 1;
+//
+//        i += 3;
+//      }
+//      break;
+//    case CD_PATH_CURVETO:
+//      if (i+3 > n) break;
+//      if (!current_set)
+//      {
+//        current_x = poly[i].x;
+//        current_y = poly[i].y;
+//      }
+//      graphics_path->AddBezier(current_x, current_y, poly[i].x, poly[i].y, poly[i+1].x, poly[i+1].y, poly[i+2].x, poly[i+2].y);
+//      graphics_path->GetLastPoint(&lastPoint);
+//      current_x = (int)lastPoint.X;
+//      current_y = (int)lastPoint.Y;
+//      current_set = 1;
+//      i += 3;
+//      break;
+//    case CD_PATH_CLOSE:
+//      graphics_path->CloseFigure();
+//      break;
+//    case CD_PATH_FILL:
+//      ctxcanvas->graphics->FillPath(ctxcanvas->fillBrush, graphics_path);
+//      break;
+//    case CD_PATH_STROKE:
+//      ctxcanvas->graphics->DrawPath(ctxcanvas->linePen, graphics_path);
+//      break;
+//    case CD_PATH_FILLSTROKE:
+//      ctxcanvas->graphics->FillPath(ctxcanvas->fillBrush, graphics_path);
+//      ctxcanvas->graphics->DrawPath(ctxcanvas->linePen, graphics_path);
+//      break;
+//    case CD_PATH_CLIP:
+//      ctxcanvas->graphics->SetClip(graphics_path, CombineModeIntersect);
+//      break;
+//    }
+//  }
+//
+//  delete graphics_path;
+//  break;
+}
+
 void cdpolySIM(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
 {
   cdCanvas* canvas = ((cdCtxCanvasBase*)ctxcanvas)->canvas;
@@ -495,6 +613,11 @@ void cdpolySIM(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
   case CD_BEZIER:
     simLineStyleNoReset = 1;
     cdSimPolyBezier(canvas, poly, n);
+    simLineStyleNoReset = 0;
+    break;
+  case CD_PATH:
+    simLineStyleNoReset = 1;
+    cdSimPolyPath(canvas, poly, n);
     simLineStyleNoReset = 0;
     break;
   case CD_FILL:

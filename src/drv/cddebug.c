@@ -27,6 +27,7 @@
 #define CDDBG_BEGIN                  "Begin"                    
 #define CDDBG_VERTEX                 "Vertex"                   
 #define CDDBG_END                    "End"                      
+#define CDDBG_PATHSET                "PathSet"
 #define CDDBG_MARK                   "Mark"                     
 #define CDDBG_BACKOPACITY            "BackOpacity"              
 #define CDDBG_WRITEMODE              "WriteMode"                
@@ -236,7 +237,8 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
    "CD_CLOSED_LINES",
    "CD_CLIP",
    "CD_BEZIER",
-   "CD_REGION"
+   "CD_REGION",
+   "CD_PATH"
   };
 
   if (mode == CD_FILL && ctxcanvas->canvas->fill_mode != ctxcanvas->last_fill_mode)
@@ -254,8 +256,61 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
   else
     fprintf(ctxcanvas->file, "%s(%s)\n", CDDBG_BEGIN, enum2str[mode]);
 
-  for(i = 0; i<n; i++)
-    fprintf(ctxcanvas->file, "%s(%d, %d)\n", CDDBG_VERTEX, poly[i].x, poly[i].y);
+  if (mode == CD_PATH)
+  {
+    const char* path2str[] = {                        
+     "CD_PATH_NEW",
+     "CD_PATH_MOVETO",
+     "CD_PATH_LINETO",
+     "CD_PATH_ARC",
+     "CD_PATH_CURVETO",
+     "CD_PATH_CLOSE",
+     "CD_PATH_FILL",
+     "CD_PATH_STROKE",
+     "CD_PATH_FILLSTROKE",
+     "CD_PATH_CLIP"
+    };
+    int p;
+
+    i = 0;
+    for (p=0; p<ctxcanvas->canvas->path_n; p++)
+    {
+      fprintf(ctxcanvas->file, "%s(%s)\n", CDDBG_PATHSET, path2str[ctxcanvas->canvas->path[p]]);
+
+      switch(ctxcanvas->canvas->path[p])
+      {
+      case CD_PATH_MOVETO:
+      case CD_PATH_LINETO:
+        if (i+1 > n) 
+        {
+          fprintf(ctxcanvas->file, "ERROR: not enough points in path\n");
+          return;
+        }
+        fprintf(ctxcanvas->file, "%s(%d, %d)\n", CDDBG_VERTEX, poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_CURVETO:
+      case CD_PATH_ARC:
+        {
+          if (i+3 > n)
+          {
+            fprintf(ctxcanvas->file, "ERROR: not enough points in path\n");
+            return;
+          }
+          fprintf(ctxcanvas->file, "%s(%d, %d)\n", CDDBG_VERTEX, poly[i].x, poly[i].y);
+          fprintf(ctxcanvas->file, "%s(%d, %d)\n", CDDBG_VERTEX, poly[i+1].x, poly[i+1].y);
+          fprintf(ctxcanvas->file, "%s(%d, %d)\n", CDDBG_VERTEX, poly[i+2].x, poly[i+2].y);
+          i += 3;
+        }
+        break;
+      }
+    }
+  }
+  else
+  {
+    for(i = 0; i<n; i++)
+      fprintf(ctxcanvas->file, "%s(%d, %d)\n", CDDBG_VERTEX, poly[i].x, poly[i].y);
+  }
 
   fprintf(ctxcanvas->file, "%s()\n", CDDBG_END);
 }
@@ -284,8 +339,61 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 
   fprintf(ctxcanvas->file, "%s(%s)\n", CDDBG_BEGIN, enum2str[mode]);
 
-  for(i = 0; i<n; i++)
-    fprintf(ctxcanvas->file, "%s(%g, %g)\n", CDDBG_FVERTEX, poly[i].x, poly[i].y);
+  if (mode == CD_PATH)
+  {
+    const char* path2str[] = {                        
+     "CD_PATH_NEW",
+     "CD_PATH_MOVETO",
+     "CD_PATH_LINETO",
+     "CD_PATH_ARC",
+     "CD_PATH_CURVETO",
+     "CD_PATH_CLOSE",
+     "CD_PATH_FILL",
+     "CD_PATH_STROKE",
+     "CD_PATH_FILLSTROKE",
+     "CD_PATH_CLIP"
+    };
+    int p;
+
+    i = 0;
+    for (p=0; p<ctxcanvas->canvas->path_n; p++)
+    {
+      fprintf(ctxcanvas->file, "%s(%s)\n", CDDBG_PATHSET, path2str[ctxcanvas->canvas->path[p]]);
+
+      switch(ctxcanvas->canvas->path[p])
+      {
+      case CD_PATH_MOVETO:
+      case CD_PATH_LINETO:
+        if (i+1 > n) 
+        {
+          fprintf(ctxcanvas->file, "ERROR: not enough points in path\n");
+          return;
+        }
+        fprintf(ctxcanvas->file, "%s(%g, %g)\n", CDDBG_VERTEX, poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_CURVETO:
+      case CD_PATH_ARC:
+        {
+          if (i+3 > n)
+          {
+            fprintf(ctxcanvas->file, "ERROR: not enough points in path\n");
+            return;
+          }
+          fprintf(ctxcanvas->file, "%s(%g, %g)\n", CDDBG_VERTEX, poly[i].x, poly[i].y);
+          fprintf(ctxcanvas->file, "%s(%g, %g)\n", CDDBG_VERTEX, poly[i+1].x, poly[i+1].y);
+          fprintf(ctxcanvas->file, "%s(%g, %g)\n", CDDBG_VERTEX, poly[i+2].x, poly[i+2].y);
+          i += 3;
+        }
+        break;
+      }
+    }
+  }
+  else
+  {
+    for(i = 0; i<n; i++)
+      fprintf(ctxcanvas->file, "%s(%g, %g)\n", CDDBG_FVERTEX, poly[i].x, poly[i].y);
+  }
 
   fprintf(ctxcanvas->file, "%s()\n", CDDBG_END);
 }

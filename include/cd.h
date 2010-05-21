@@ -19,9 +19,9 @@ extern "C" {
 #define CD_NAME "CD - Canvas Draw"
 #define CD_DESCRIPTION "A 2D Graphics Library"
 #define CD_COPYRIGHT    "Copyright (C) 1994-2010 Tecgraf, PUC-Rio."
-#define CD_VERSION "5.3"              /* bug fixes are reported only by cdVersion functions */
-#define CD_VERSION_NUMBER 503000
-#define CD_VERSION_DATE "2010/01/26"  /* does not include bug fix releases */
+#define CD_VERSION "5.4"              /* bug fixes are reported only by cdVersion functions */
+#define CD_VERSION_NUMBER 504000
+#define CD_VERSION_DATE "2010/XX/XX"  /* does not include bug fix releases */
 
 typedef struct _cdContext cdContext;
 typedef struct _cdCanvas cdCanvas;
@@ -425,6 +425,8 @@ enum {                          /* some font sizes */
 #define CD_CAP_PALETTE          0x08000000
 #define CD_CAP_LINECAP          0x10000000
 #define CD_CAP_LINEJOIN         0x20000000
+#define CD_CAP_PATH             0x40000000
+#define CD_CAP_BEZIER           0x80000000
 #define CD_CAP_ALL              0xFFFFFFFF
 
 /* cdPlay definitions */

@@ -441,6 +441,17 @@ static void cdflush (cdCtxCanvas *ctxcanvas)
 /*==========================================================================*/
 static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
 {
+  if (mode == CD_BEZIER)
+  {
+    cdSimPolyBezier(ctxcanvas->canvas, poly, n);
+    return;
+  }
+  if (mode == CD_PATH)
+  {
+    cdSimPolyPath(ctxcanvas->canvas, poly, n);
+    return;
+  }
+
   if (mode == CD_CLOSED_LINES || mode == CD_FILL)
   {
     poly[n].x = poly[0].x;
@@ -501,6 +512,17 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
 
 static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 {
+  if (mode == CD_BEZIER)
+  {
+    cdfSimPolyBezier(ctxcanvas->canvas, poly, n);
+    return;
+  }
+  if (mode == CD_PATH)
+  {
+    cdfSimPolyPath(ctxcanvas->canvas, poly, n);
+    return;
+  }
+
   if (mode == CD_CLOSED_LINES || mode == CD_FILL)
   {
     poly[n].x = poly[0].x;
@@ -1331,7 +1353,7 @@ static void cdinittable(cdCanvas* canvas)
 static cdContext cdDXFContext =
 {
   CD_CAP_ALL & ~(CD_CAP_CLEAR | CD_CAP_PLAY | CD_CAP_PALETTE |
-                 CD_CAP_CLIPAREA | CD_CAP_CLIPPOLY |
+                 CD_CAP_CLIPAREA | CD_CAP_CLIPPOLY | CD_CAP_PATH | CD_CAP_BEZIER |
                  CD_CAP_LINECAP | CD_CAP_LINEJOIN | CD_CAP_REGION | CD_CAP_CHORD |
                  CD_CAP_IMAGERGB | CD_CAP_IMAGEMAP | CD_CAP_IMAGESRV |
                  CD_CAP_BACKGROUND | CD_CAP_BACKOPACITY | CD_CAP_WRITEMODE |

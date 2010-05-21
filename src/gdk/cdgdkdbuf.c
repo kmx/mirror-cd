@@ -147,8 +147,7 @@ static void cdinittable(cdCanvas* canvas)
 
 static cdContext cdDBufferContext =
 {
-  CD_CAP_ALL & ~(CD_CAP_PLAY | CD_CAP_YAXIS | 
-                 CD_CAP_FPRIMTIVES ),
+  CD_CAP_ALL & ~(CD_CAP_PLAY | CD_CAP_YAXIS | CD_CAP_PATH | CD_CAP_BEZIER | CD_CAP_FPRIMTIVES ),
   0,
   cdcreatecanvas,  
   cdinittable,

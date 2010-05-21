@@ -140,7 +140,6 @@ static void cdinittable(cdCanvas* canvas)
 static cdContext cdPrinterContext =
 {
   CD_CAP_ALL & ~(CD_CAP_CLEAR | CD_CAP_PLAY | CD_CAP_YAXIS | 
-                  CD_CAP_FPRIMTIVES | 
                  CD_CAP_GETIMAGERGB | CD_CAP_IMAGESRV),
   1,
   cdcreatecanvas,  

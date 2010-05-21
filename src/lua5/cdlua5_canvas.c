@@ -2205,6 +2205,12 @@ static int cdlua5_vertex(lua_State *L)
   return 0;
 }
 
+static int cdlua5_pathset(lua_State *L)
+{
+  cdCanvasPathSet(cdlua_checkcanvas(L, 1), luaL_checkint(L, 2));
+  return 0;
+}
+
 static int wdlua5_vertex(lua_State *L)
 {
   wdCanvasVertex(cdlua_checkcanvas(L, 1), luaL_checknumber(L, 2), luaL_checknumber(L, 3));
@@ -2429,6 +2435,7 @@ static const struct luaL_reg cdlib_canvas_meta[] = {
 
   /* Polygon */
   {"Begin"         , cdlua5_begin},
+  {"PathSet"        , cdlua5_pathset},
   {"Vertex"        , cdlua5_vertex},
   {"wVertex"       , wdlua5_vertex},
   {"fVertex"        , cdlua5_fvertex},

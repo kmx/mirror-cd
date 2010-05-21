@@ -353,12 +353,14 @@ void cdgettextsizeSIM(cdCtxCanvas* ctxcanvas, const char *s, int len, int *width
 /* Simulation functions that are independent of the simulation base driver */
 void cdSimMark(cdCanvas* canvas, int x, int y);
 void cdSimPolyBezier(cdCanvas* canvas, const cdPoint* points, int n);
+void cdSimPolyPath(cdCanvas* canvas, const cdPoint* points, int n);
 void cdSimPutImageRectRGBA(cdCanvas* canvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax);
 
 /* Simulation functions that are independent of the simulation base driver,
    and does not checks for axis and matrix. 
    All use the polygon method ->cxFPoly only. */
 void cdfSimPolyBezier(cdCanvas* canvas, const cdfPoint* points, int n);
+void cdfSimPolyPath(cdCanvas* canvas, const cdfPoint* points, int n);
 void cdfSimRect(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax);
 void cdfSimBox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax);
 void cdfSimElipse(cdCtxCanvas* ctxcanvas, double xc, double yc, double width, double height, double angle1, double angle2, int sector);

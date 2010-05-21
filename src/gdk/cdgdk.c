@@ -886,51 +886,55 @@ static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *s, int len, int *w
 
 static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
 {
-   int i;
+  int i;
 
-   if (mode != CD_BEZIER)
-   {
-     for (i = 0; i < n; i++)
-     {
-       if (ctxcanvas->canvas->use_matrix)
-         cdMatrixTransformPoint(ctxcanvas->xmatrix, poly[i].x, poly[i].y, &(poly[i].x), &(poly[i].y));
-     }
-   }
- 
-   switch( mode )
-   {
-     case CD_FILL:
-       if (ctxcanvas->canvas->new_region)
-       {
-         GdkRegion* rgn = gdk_region_polygon((GdkPoint*)poly, n, ctxcanvas->canvas->fill_mode == CD_EVENODD ? GDK_EVEN_ODD_RULE : GDK_WINDING_RULE);
-         sCombineRegion(ctxcanvas, rgn);
-       }
-       else
-         gdk_draw_polygon(ctxcanvas->wnd, ctxcanvas->gc, TRUE, (GdkPoint*)poly, n);
-       break;
-     
-     case CD_CLOSED_LINES:
-       cdgdkCheckSolidStyle(ctxcanvas, 1);
-       gdk_draw_polygon(ctxcanvas->wnd, ctxcanvas->gc, FALSE, (GdkPoint*)poly, n);
-       cdgdkCheckSolidStyle(ctxcanvas, 0);
-       break;
-   
-     case CD_OPEN_LINES:
-       cdgdkCheckSolidStyle(ctxcanvas, 1);
-       gdk_draw_lines(ctxcanvas->wnd, ctxcanvas->gc, (GdkPoint*)poly, n);
-       cdgdkCheckSolidStyle(ctxcanvas, 0);
-       break;
-          
-     case CD_CLIP:
-       ctxcanvas->clip_rgn = gdk_region_polygon((GdkPoint*)poly, n, ctxcanvas->canvas->fill_mode == CD_EVENODD ? GDK_EVEN_ODD_RULE : GDK_WINDING_RULE);     
-       if (ctxcanvas->canvas->clip_mode == CD_CLIPPOLYGON)
-         cdclip(ctxcanvas, CD_CLIPPOLYGON);
-       break;
-     
-     case CD_BEZIER:
-       cdSimPolyBezier(ctxcanvas->canvas, poly, n);
-       break;
-   }
+  if (mode != CD_BEZIER)
+  {
+    for (i = 0; i < n; i++)
+    {
+      if (ctxcanvas->canvas->use_matrix)
+        cdMatrixTransformPoint(ctxcanvas->xmatrix, poly[i].x, poly[i].y, &(poly[i].x), &(poly[i].y));
+    }
+  }
+
+  switch( mode )
+  {
+  case CD_FILL:
+    if (ctxcanvas->canvas->new_region)
+    {
+      GdkRegion* rgn = gdk_region_polygon((GdkPoint*)poly, n, ctxcanvas->canvas->fill_mode == CD_EVENODD ? GDK_EVEN_ODD_RULE : GDK_WINDING_RULE);
+      sCombineRegion(ctxcanvas, rgn);
+    }
+    else
+      gdk_draw_polygon(ctxcanvas->wnd, ctxcanvas->gc, TRUE, (GdkPoint*)poly, n);
+    break;
+
+  case CD_CLOSED_LINES:
+    cdgdkCheckSolidStyle(ctxcanvas, 1);
+    gdk_draw_polygon(ctxcanvas->wnd, ctxcanvas->gc, FALSE, (GdkPoint*)poly, n);
+    cdgdkCheckSolidStyle(ctxcanvas, 0);
+    break;
+
+  case CD_OPEN_LINES:
+    cdgdkCheckSolidStyle(ctxcanvas, 1);
+    gdk_draw_lines(ctxcanvas->wnd, ctxcanvas->gc, (GdkPoint*)poly, n);
+    cdgdkCheckSolidStyle(ctxcanvas, 0);
+    break;
+
+  case CD_CLIP:
+    ctxcanvas->clip_rgn = gdk_region_polygon((GdkPoint*)poly, n, ctxcanvas->canvas->fill_mode == CD_EVENODD ? GDK_EVEN_ODD_RULE : GDK_WINDING_RULE);     
+    if (ctxcanvas->canvas->clip_mode == CD_CLIPPOLYGON)
+      cdclip(ctxcanvas, CD_CLIPPOLYGON);
+    break;
+
+  case CD_BEZIER:
+    cdSimPolyBezier(ctxcanvas->canvas, poly, n);
+    break;
+
+  case CD_PATH:
+    cdSimPolyPath(ctxcanvas->canvas, poly, n);
+    break;
+  }
 }
 
 /******************************************************/

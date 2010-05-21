@@ -96,7 +96,8 @@ enum
   CDMF_FCHORD,                   /* 72 */ 
   CDMF_FCLIPAREA,                /* 73 */
   CDMF_FONT,                     /* 74 */
-  CDMF_RESETMATRIX               /* 75 */
+  CDMF_RESETMATRIX,              /* 75 */
+  CDMF_PATHSET                   /* 76 */
 };                                  
                                     
 struct _cdCtxCanvas 
@@ -242,8 +243,49 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
 
   fprintf(ctxcanvas->file, "%d %d\n", CDMF_BEGIN, mode);
 
-  for(i = 0; i<n; i++)
-    fprintf(ctxcanvas->file, "%d %d %d\n", CDMF_VERTEX, poly[i].x, poly[i].y);
+  if (mode == CD_PATH)
+  {
+    int p;
+
+    i = 0;
+    for (p=0; p<ctxcanvas->canvas->path_n; p++)
+    {
+      fprintf(ctxcanvas->file, "%d %d\n", CDMF_PATHSET, ctxcanvas->canvas->path[p]);
+
+      switch(ctxcanvas->canvas->path[p])
+      {
+      case CD_PATH_MOVETO:
+      case CD_PATH_LINETO:
+        if (i+1 > n) 
+        {
+          fprintf(ctxcanvas->file, "ERROR: not enough points in path\n");
+          return;
+        }
+        fprintf(ctxcanvas->file, "%d %d %d\n", CDMF_VERTEX, poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_CURVETO:
+      case CD_PATH_ARC:
+        {
+          if (i+3 > n)
+          {
+            fprintf(ctxcanvas->file, "ERROR: not enough points in path\n");
+            return;
+          }
+          fprintf(ctxcanvas->file, "%d %d %d\n", CDMF_VERTEX, poly[i].x, poly[i].y);
+          fprintf(ctxcanvas->file, "%d %d %d\n", CDMF_VERTEX, poly[i+1].x, poly[i+1].y);
+          fprintf(ctxcanvas->file, "%d %d %d\n", CDMF_VERTEX, poly[i+2].x, poly[i+2].y);
+          i += 3;
+        }
+        break;
+      }
+    }
+  }
+  else
+  {
+    for(i = 0; i<n; i++)
+      fprintf(ctxcanvas->file, "%d %d %d\n", CDMF_VERTEX, poly[i].x, poly[i].y);
+  }
 
   fprintf(ctxcanvas->file, "%d\n", CDMF_END);
 }
@@ -260,8 +302,49 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 
   fprintf(ctxcanvas->file, "%d %d\n", CDMF_BEGIN, mode);
 
-  for(i = 0; i<n; i++)
-    fprintf(ctxcanvas->file, "%d %g %g\n", CDMF_FVERTEX, poly[i].x, poly[i].y);
+  if (mode == CD_PATH)
+  {
+    int p;
+
+    i = 0;
+    for (p=0; p<ctxcanvas->canvas->path_n; p++)
+    {
+      fprintf(ctxcanvas->file, "%d %d\n", CDMF_PATHSET, ctxcanvas->canvas->path[p]);
+
+      switch(ctxcanvas->canvas->path[p])
+      {
+      case CD_PATH_MOVETO:
+      case CD_PATH_LINETO:
+        if (i+1 > n) 
+        {
+          fprintf(ctxcanvas->file, "ERROR: not enough points in path\n");
+          return;
+        }
+        fprintf(ctxcanvas->file, "%d %g %g\n", CDMF_FVERTEX, poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_CURVETO:
+      case CD_PATH_ARC:
+        {
+          if (i+3 > n)
+          {
+            fprintf(ctxcanvas->file, "ERROR: not enough points in path\n");
+            return;
+          }
+          fprintf(ctxcanvas->file, "%d %g %g\n", CDMF_FVERTEX, poly[i].x, poly[i].y);
+          fprintf(ctxcanvas->file, "%d %g %g\n", CDMF_FVERTEX, poly[i+1].x, poly[i+1].y);
+          fprintf(ctxcanvas->file, "%d %g %g\n", CDMF_FVERTEX, poly[i+2].x, poly[i+2].y);
+          i += 3;
+        }
+        break;
+      }
+    }
+  }
+  else
+  {
+    for(i = 0; i<n; i++)
+      fprintf(ctxcanvas->file, "%d %g %g\n", CDMF_FVERTEX, poly[i].x, poly[i].y);
+  }
 
   fprintf(ctxcanvas->file, "%d\n", CDMF_END);
 }

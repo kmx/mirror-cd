@@ -566,6 +566,12 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
   case CD_FILL:
     cgm_polygon( ctxcanvas->cgm, n, fpoly);
     break;
+  case CD_BEZIER:
+    cdfSimPolyBezier(ctxcanvas->canvas, fpoly, n);
+    break;
+  case CD_PATH:
+    cdfSimPolyPath(ctxcanvas->canvas, fpoly, n);
+    break;
   }
 
   free(fpoly);
@@ -594,6 +600,12 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
     break;
   case CD_FILL:
     cgm_polygon( ctxcanvas->cgm, n, fpoly);
+    break;
+  case CD_BEZIER:
+    cdfSimPolyBezier(ctxcanvas->canvas, fpoly, n);
+    break;
+  case CD_PATH:
+    cdfSimPolyPath(ctxcanvas->canvas, fpoly, n);
     break;
   }
 }
@@ -1122,7 +1134,7 @@ static cdContext cdCGMContext =
                  CD_CAP_LINECAP | CD_CAP_LINEJOIN | CD_CAP_REGION | CD_CAP_CHORD |
                  CD_CAP_FONTDIM | CD_CAP_TEXTSIZE | 
                  CD_CAP_IMAGERGBA | CD_CAP_GETIMAGERGB | 
-                 CD_CAP_TEXTORIENTATION),
+                 CD_CAP_TEXTORIENTATION | CD_CAP_PATH | CD_CAP_BEZIER),
   0,
   cdcreatecanvas,
   cdinittable,

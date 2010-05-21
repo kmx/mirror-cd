@@ -1394,6 +1394,9 @@ void cdxPoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
   case CD_BEZIER:
     cdSimPolyBezier(ctxcanvas->canvas, poly, n);
     break;
+  case CD_PATH:
+    cdSimPolyPath(ctxcanvas->canvas, poly, n);
+    break;
   }
 
   if (pnt) free(pnt);

@@ -27,6 +27,7 @@ typedef enum _tPrim
   CDPIC_CHORD,
   CDPIC_TEXT,
   CDPIC_POLY,
+  CDPIC_PATH,
   CDPIC_FLINE,
   CDPIC_FRECT,
   CDPIC_FBOX,
@@ -35,6 +36,7 @@ typedef enum _tPrim
   CDPIC_FCHORD,
   CDPIC_FTEXT,
   CDPIC_FPOLY,
+  CDPIC_FPATH,
   CDPIC_PIXEL,
   CDPIC_IMAGEMAP,
   CDPIC_IMAGERGB,
@@ -109,6 +111,24 @@ typedef struct _tfPoly
   cdfPoint* points;
 } tfPoly;     /* Begin, Vertex and End */
 
+typedef struct _tPath
+{
+  int fill;
+  int n;
+  cdPoint* points;
+  int path_n;
+  int *path;
+} tPath;     /* Begin, PathSet, Vertex and End */
+
+typedef struct _tfPath
+{
+  int fill;
+  int n;
+  cdfPoint* points;
+  int path_n;
+  int *path;
+} tfPath;     /* Begin, PathSet, Vertex and End */
+
 typedef struct _tText
 {
   int x, y;
@@ -156,6 +176,8 @@ typedef struct _tPrimNode
     tfASC arcsectorchordf;
     tPoly poly;
     tfPoly polyf;
+    tPath path;
+    tfPath pathf;
     tText text;
     tfText textf;
     tPixel pixel;
@@ -608,16 +630,72 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *text
   picUpdateBBox(ctxcanvas, xmax, ymax, 0);
 }
 
+static void cdpath(cdCtxCanvas *ctxcanvas, cdPoint* poly, int n)
+{
+  int i, p, fill = -1;
+  tPrimNode *prim;
+
+  for (p=0; p<ctxcanvas->canvas->path_n; p++)
+  {
+    if (ctxcanvas->canvas->path[p] == CD_PATH_CLIP)
+      return;
+    else if (ctxcanvas->canvas->path[p] == CD_PATH_FILL ||
+             ctxcanvas->canvas->path[p] == CD_PATH_FILLSTROKE)  /* no support for both in cdPicture */
+    {
+      fill = 1;
+      break;
+    }
+    else if (ctxcanvas->canvas->path[p] == CD_PATH_STROKE)
+    {
+      fill = -1;
+      break;
+    }
+  }
+
+  if (fill == -1)
+    return;
+
+  prim = primCreate(CDPIC_PATH);
+  prim->param.path.fill = fill;
+
+  if (fill)
+    primAddAttrib_Fill(prim, ctxcanvas->canvas);
+  else
+    primAddAttrib_Line(prim, ctxcanvas->canvas);
+
+  prim->param_buffer = malloc(n * sizeof(cdPoint) + ctxcanvas->canvas->path_n * sizeof(int));
+
+  prim->param.path.n = n;
+  prim->param.path.points = (cdPoint*)prim->param_buffer;
+  memcpy(prim->param.path.points, poly, n * sizeof(cdPoint));
+  prim->param.path.path = (int*)((unsigned char*)prim->param_buffer + n * sizeof(cdPoint));
+  memcpy(prim->param.path.path, ctxcanvas->canvas->path, ctxcanvas->canvas->path_n * sizeof(int));
+  prim->param.path.path_n = ctxcanvas->canvas->path_n;
+  
+  picAddPrim(ctxcanvas, prim);
+
+  for (i = 0; i < n; i++)
+  {
+    picUpdateBBox(ctxcanvas, poly[i].x, poly[i].y, 0);
+  }
+}
+
 static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
 {
   int i;
   tPrimNode *prim;
   if (mode == CD_CLIP || mode == CD_REGION) return;
+  if (mode == CD_PATH)
+  {
+    cdpath(ctxcanvas, poly, n);
+    return;
+  }
   prim = primCreate(CDPIC_POLY);
   if (mode == CD_FILL)
     primAddAttrib_Fill(prim, ctxcanvas->canvas);
   else
     primAddAttrib_Line(prim, ctxcanvas->canvas);
+  prim->param.poly.mode = mode;
   prim->param.poly.n = n;
   prim->param.poly.points = malloc(n * sizeof(cdPoint));
   memcpy(prim->param.poly.points, poly, n * sizeof(cdPoint));
@@ -633,6 +711,56 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
   }
 }
 
+static void cdfpath(cdCtxCanvas *ctxcanvas, cdfPoint* poly, int n)
+{
+  int i, p, fill = -1;
+  tPrimNode *prim;
+
+  for (p=0; p<ctxcanvas->canvas->path_n; p++)
+  {
+    if (ctxcanvas->canvas->path[p] == CD_PATH_CLIP)
+      return;
+    else if (ctxcanvas->canvas->path[p] == CD_PATH_FILL ||
+             ctxcanvas->canvas->path[p] == CD_PATH_FILLSTROKE)  /* no support for both in cdPicture */
+    {
+      fill = 1;
+      break;
+    }
+    else if (ctxcanvas->canvas->path[p] == CD_PATH_STROKE)
+    {
+      fill = -1;
+      break;
+    }
+  }
+
+  if (fill == -1)
+    return;
+
+  prim = primCreate(CDPIC_FPATH);
+  prim->param.pathf.fill = fill;
+
+  if (fill)
+    primAddAttrib_Fill(prim, ctxcanvas->canvas);
+  else
+    primAddAttrib_Line(prim, ctxcanvas->canvas);
+
+  prim->param_buffer = malloc(n * sizeof(cdfPoint) + ctxcanvas->canvas->path_n * sizeof(int));
+
+  prim->param.pathf.n = n;
+  prim->param.pathf.points = (cdfPoint*)prim->param_buffer;
+  memcpy(prim->param.pathf.points, poly, n * sizeof(cdfPoint));
+  prim->param.pathf.path = (int*)((unsigned char*)prim->param_buffer + n * sizeof(cdfPoint));
+  memcpy(prim->param.pathf.path, ctxcanvas->canvas->path, ctxcanvas->canvas->path_n * sizeof(int));
+  prim->param.pathf.path_n = ctxcanvas->canvas->path_n;
+  
+  picAddPrim(ctxcanvas, prim);
+
+  for (i = 0; i < n; i++)
+  {
+    picUpdateBBox(ctxcanvas, _cdRound(poly[i].x), _cdRound(poly[i].y), 0);
+  }
+}
+
 static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 {
   int i;
@@ -643,9 +771,10 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
     primAddAttrib_Fill(prim, ctxcanvas->canvas);
   else
     primAddAttrib_Line(prim, ctxcanvas->canvas);
+  prim->param.polyf.mode = mode;
   prim->param.polyf.n = n;
-  prim->param.polyf.points = malloc(n * sizeof(cdPoint));
-  memcpy(prim->param.polyf.points, poly, n * sizeof(cdPoint));
+  prim->param.polyf.points = malloc(n * sizeof(cdfPoint));
+  memcpy(prim->param.polyf.points, poly, n * sizeof(cdfPoint));
   prim->param_buffer = prim->param.polyf.points;
   picAddPrim(ctxcanvas, prim);
 
@@ -843,7 +972,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
   tPrimNode *prim;
   cdCanvas* pic_canvas = (cdCanvas*)data;
   cdCtxCanvas* ctxcanvas = pic_canvas->ctxcanvas;
-  int p, i, scale = 0, 
+  int p, i, n, scale = 0, 
       pic_xmin = ctxcanvas->xmin,
       pic_ymin = ctxcanvas->ymin;
   double factorX = 1, factorY = 1;
@@ -947,6 +1076,72 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
         cdCanvasBegin(canvas, prim->param.polyf.mode);
         for (p = 0; p < prim->param.polyf.n; p++)
           cdfCanvasVertex(canvas, sfScaleX(prim->param.polyf.points[p].x), sfScaleY(prim->param.polyf.points[p].y));
+        cdCanvasEnd(canvas);
+        break;
+      case CDPIC_PATH:
+        if (prim->param.path.fill)
+          primUpdateAttrib_Fill(prim, canvas);
+        else
+          primUpdateAttrib_Line(prim, canvas);
+        cdCanvasBegin(canvas, CD_PATH);
+        n = 0;
+        for (p=0; p<prim->param.path.path_n; p++)
+        {
+          cdCanvasPathSet(canvas, prim->param.path.path[p]);
+
+          switch(prim->param.path.path[p])
+          {
+          case CD_PATH_MOVETO:
+          case CD_PATH_LINETO:
+            if (n+1 > n) break;
+            cdCanvasVertex(canvas, sScaleX(prim->param.path.points[n].x), sScaleY(prim->param.path.points[n].y));
+            n++;
+            break;
+          case CD_PATH_CURVETO:
+          case CD_PATH_ARC:
+            {
+              if (n+3 > n) break;
+              cdCanvasVertex(canvas, sScaleX(prim->param.path.points[n].x), sScaleY(prim->param.path.points[n].y));
+              cdCanvasVertex(canvas, sScaleX(prim->param.path.points[n+1].x), sScaleY(prim->param.path.points[n+1].y));
+              cdCanvasVertex(canvas, sScaleX(prim->param.path.points[n+2].x), sScaleY(prim->param.path.points[n+2].y));
+              n += 3;
+            }
+            break;
+          }
+        }
+        cdCanvasEnd(canvas);
+        break;
+      case CDPIC_FPATH:
+        if (prim->param.path.fill)
+          primUpdateAttrib_Fill(prim, canvas);
+        else
+          primUpdateAttrib_Line(prim, canvas);
+        cdCanvasBegin(canvas, CD_PATH);
+        n = 0;
+        for (p=0; p<prim->param.pathf.path_n; p++)
+        {
+          cdCanvasPathSet(canvas, prim->param.pathf.path[p]);
+
+          switch(prim->param.pathf.path[p])
+          {
+          case CD_PATH_MOVETO:
+          case CD_PATH_LINETO:
+            if (n+1 > n) break;
+            cdfCanvasVertex(canvas, sfScaleX(prim->param.pathf.points[n].x), sfScaleY(prim->param.pathf.points[n].y));
+            n++;
+            break;
+          case CD_PATH_CURVETO:
+          case CD_PATH_ARC:
+            {
+              if (n+3 > n) break;
+              cdfCanvasVertex(canvas, sfScaleX(prim->param.pathf.points[n].x), sfScaleY(prim->param.pathf.points[n].y));
+              cdfCanvasVertex(canvas, sfScaleX(prim->param.pathf.points[n+1].x), sfScaleY(prim->param.pathf.points[n+1].y));
+              cdfCanvasVertex(canvas, sfScaleX(prim->param.pathf.points[n+2].x), sfScaleY(prim->param.pathf.points[n+2].y));
+              n += 3;
+            }
+            break;
+          }
+        }
         cdCanvasEnd(canvas);
         break;
       case CDPIC_IMAGERGB:

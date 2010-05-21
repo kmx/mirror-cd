@@ -1428,7 +1428,20 @@ static const struct cdlua5_constant cdlibconstant[] = {
   {"CLIP"        , CD_CLIP},
   {"BEZIER"      , CD_BEZIER},
   {"REGION"      , CD_REGION},
+  {"PATH"        , CD_PATH},
   {"POLYCUSTOM"  , CD_POLYCUSTOM},
+
+  /* path actions */
+  {"PATH_NEW",         CD_PATH_NEW},
+  {"PATH_MOVETO",      CD_PATH_MOVETO},
+  {"PATH_LINETO",      CD_PATH_LINETO},
+  {"PATH_ARC",         CD_PATH_ARC},
+  {"PATH_CURVETO",     CD_PATH_CURVETO},
+  {"PATH_CLOSE",       CD_PATH_CLOSE},
+  {"PATH_FILL",        CD_PATH_FILL},
+  {"PATH_STROKE",      CD_PATH_STROKE},
+  {"PATH_FILLSTROKE",  CD_PATH_FILLSTROKE},
+  {"PATH_CLIP",        CD_PATH_CLIP},
 
   /* fill mode */
   {"EVENODD", CD_EVENODD},

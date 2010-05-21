@@ -259,6 +259,9 @@ static void cdfpoly(cdCtxCanvas* ctxcanvas, int mode, cdfPoint* fpoly, int n)
   case CD_BEZIER:
     cdfSimPolyBezier(ctxcanvas->canvas, fpoly, n);
     break;
+  case CD_PATH:
+    cdfSimPolyPath(ctxcanvas->canvas, fpoly, n);
+    break;
   case CD_FILL:
     {
       if (ctxcanvas->canvas->new_region)
@@ -327,11 +330,12 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
     /* continue */
   case CD_OPEN_LINES:
     for (i = 0; i<n-1; i++)
-      cdfline(ctxcanvas, (int)poly[i].x, (int)poly[i].y, (int)poly[i+1].x, (int)poly[i+1].y);
+      cdfline(ctxcanvas, (double)poly[i].x, (double)poly[i].y, (double)poly[i+1].x, (double)poly[i+1].y);
     break;
+  case CD_PATH:
   case CD_BEZIER:
     {
-      cdfPoint* fpoly = malloc(sizeof(cdfPoint)*n);
+      cdfPoint* fpoly = malloc(sizeof(cdfPoint)*n);     /* because we support cdfpoly */
 
       for (i = 0; i<n; i++)
       {
@@ -339,7 +343,10 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
         fpoly[i].y = (double)poly[i].y;
       }
 
-      cdfSimPolyBezier(ctxcanvas->canvas, fpoly, n);
+      if (mode == CD_BEZIER)
+        cdfSimPolyBezier(ctxcanvas->canvas, fpoly, n);  
+      else
+        cdfSimPolyPath(ctxcanvas->canvas, fpoly, n);  
 
       free(fpoly);
     }
@@ -1062,6 +1069,7 @@ cdContext* cdContextDBufferPlus(void)
     int old_plus = cdUseContextPlus(0);  /* disable context plus */
     cdDBufferContext = *cdContextDBuffer();  /* copy original context */
     cdDBufferContext.plus = 1; /* mark as plus */
+    cdDBufferContext.caps |= CD_CAP_FPRIMTIVES;
 
     /* save original methods */
     cdcreatecanvasDBUFFER = cdDBufferContext.cxCreateCanvas;
@@ -1101,6 +1109,7 @@ cdContext* cdContextNativeWindowPlus(void)
     cdNativeWindowContext.cxCreateCanvas = xrCreateCanvasNATIVE;
     cdNativeWindowContext.cxInitTable = xrInitTableNATIVE;
     cdNativeWindowContext.plus = 1;
+    cdNativeWindowContext.caps |= CD_CAP_FPRIMTIVES;
     cdUseContextPlus(old_plus);
   }
   return &cdNativeWindowContext;
@@ -1131,6 +1140,7 @@ cdContext* cdContextImagePlus(void)
     cdImageContext.cxCreateCanvas = xrCreateCanvasIMAGE;
     cdImageContext.cxInitTable = xrInitTableIMAGE;
     cdImageContext.plus = 1;
+    cdImageContext.caps |= CD_CAP_FPRIMTIVES;
     cdUseContextPlus(old_plus);
   }
   return &cdImageContext;

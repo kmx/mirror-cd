@@ -261,7 +261,7 @@ void cdSimPolyBezier(cdCanvas* canvas, const cdPoint* points, int n)
       last_yi_b = -65535;
 
   /* Use special floating point anti-alias line draw when
-     line_width==1, and NOT using cdlineSIM. */
+     line_width==1, and using cdlineSIM. */
   if (canvas->line_width > 1 || canvas->cxLine != cdlineSIM)
     use_poly = 1;
 

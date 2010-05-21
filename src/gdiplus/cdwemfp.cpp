@@ -58,7 +58,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void* data)
     Rect frameRect(0, 0, (int)(100 * w / canvas->xres), (int)(100 * h / canvas->yres));
 
     metafile = new Metafile(cdwpString2Unicode(filename, strlen(filename)), 
-                                      ScreenDC, frameRect, MetafileFrameUnitGdi, EmfTypeEmfPlusDual, NULL);
+                            ScreenDC, frameRect, MetafileFrameUnitGdi, EmfTypeEmfPlusDual, NULL);
 
     ReleaseDC(NULL, ScreenDC);
   }
@@ -86,7 +86,6 @@ static void cdinittable(cdCanvas* canvas)
 static cdContext cdEMFContext =
 {
   CD_CAP_ALL & ~(CD_CAP_CLEAR | CD_CAP_PLAY | CD_CAP_FLUSH | CD_CAP_YAXIS | 
-                  CD_CAP_FPRIMTIVES | 
                  CD_CAP_GETIMAGERGB | CD_CAP_IMAGESRV),
   1,
   cdcreatecanvas,  

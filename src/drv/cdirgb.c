@@ -1956,8 +1956,8 @@ static void cdinittable(cdCanvas* canvas)
 static cdContext cdImageRGBContext =
 {
   CD_CAP_ALL & ~(CD_CAP_FLUSH | CD_CAP_PLAY | CD_CAP_FPRIMTIVES |
-                 CD_CAP_LINECAP | CD_CAP_LINEJOIN | CD_CAP_REGION |
-                 CD_CAP_PALETTE | CD_CAP_TEXTORIENTATION),
+                 CD_CAP_LINECAP | CD_CAP_LINEJOIN | 
+                 CD_CAP_PALETTE ),
   0,
   cdcreatecanvas,
   cdinittable,
@@ -2074,8 +2074,8 @@ static void cdinittableDB(cdCanvas* canvas)
 static cdContext cdDBufferRGBContext =
 {
   CD_CAP_ALL & ~(CD_CAP_PLAY | CD_CAP_FPRIMTIVES | 
-                 CD_CAP_LINECAP | CD_CAP_LINEJOIN | CD_CAP_REGION |
-                 CD_CAP_PALETTE | CD_CAP_TEXTORIENTATION),
+                 CD_CAP_LINECAP | CD_CAP_LINEJOIN | 
+                 CD_CAP_PALETTE ),
   0,
   cdcreatecanvasDB,  
   cdinittableDB,

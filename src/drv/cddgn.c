@@ -1066,6 +1066,17 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
 {
   short is_fill=0;
 
+  if (mode == CD_BEZIER)
+  {
+    cdSimPolyBezier(ctxcanvas->canvas, poly, n);
+    return;
+  }
+  if (mode == CD_PATH)
+  {
+    cdSimPolyPath(ctxcanvas->canvas, poly, n);
+    return;
+  }
+
   if(mode == CD_FILL && ctxcanvas->fill_type == NOFILL)
     mode = CD_CLOSED_LINES;
 
@@ -1667,7 +1678,7 @@ static void cdinittable(cdCanvas* canvas)
 
 static cdContext cdDGNContext =
 {
-  CD_CAP_ALL & ~(CD_CAP_CLEAR | CD_CAP_PLAY | 
+  CD_CAP_ALL & ~(CD_CAP_CLEAR | CD_CAP_PLAY | CD_CAP_PATH | CD_CAP_BEZIER | 
                  CD_CAP_IMAGERGBA | CD_CAP_GETIMAGERGB | 
                  CD_CAP_CLIPAREA | CD_CAP_CLIPPOLY |  CD_CAP_RECT | 
                  CD_CAP_LINECAP | CD_CAP_LINEJOIN | CD_CAP_REGION | CD_CAP_CHORD |
