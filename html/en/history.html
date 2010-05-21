@@ -19,13 +19,19 @@
 <body>
 
 <h2>History of Changes</h2>
-<h3>CVS (12/May/2010)</h3>
+<h3><a href="http://sourceforge.net/projects/canvasdraw/files/5.4/">Version 5.4</a> (XX/XX/2010)</h3>
 <ul>
 	<li><span style="color: #0000FF">New:</span> context plus driver Cairo.</li>
 	<li><span style="color: #0000FF">New:</span> &quot;CMD&quot;, &quot;OPACITY&quot; and &quot;HATCHBOXSIZE&quot; 
 	attributes in the SVG driver.</li>
+	<li><span style="color: #0000FF">New:</span> CD_PATH <strong>cdCanvasBegin</strong> 
+	mode in the SVG, PS, PDF, Cairo, Win32 and GDI+ drivers.</li>
 	<li><span class="style1">Changed</span><span class="hist_changed">:</span>
     CD_DXF now supports solid filled primitives for polygons and rectangles.</li>
+	<li><span class="style1">Changed</span><span class="hist_changed">:</span>
+    GDI+ base driver now supports floating point primitives. ATTENTION: check 
+	for alignment and size problems in the application. Please report if 
+	anything changed.</li>
 	<li><span style="color: #FF0000">Fixed:</span> PDF driver documentation,
 	<strong>CanvasBackOpacity</strong> and <strong>CanvasBackground</strong> are 
 	supported.</li>
@@ -37,6 +43,7 @@
 	CanvasArc</strong> and Bezier polygon in the IMAGERGB driver.</li>
 	<li><span style="color: #FF0000">Fixed:</span> missed implementation for 
 	CD_DEBUG, CD_PICTURE and CD_DBUFFERRGB in Lua.</li>
+	<li><span style="color: #FF0000">Fixed:</span> Chord in PDF driver.</li>
 </ul>
 <h3><a href="http://sourceforge.net/projects/canvasdraw/files/5.3/">Version 5.3</a> (26/Jan/2010)</h3>
 <ul>

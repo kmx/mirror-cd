@@ -52,8 +52,9 @@ cd.DecodeColor(color: lightuserdata) -&gt; (r, g, b: number) [in Lua]</pre>
 
 cd.EncodeAlpha(color: lightuserdata, alpha: number) -&gt; (color: lightuserdata) [in Lua]</pre>
     <p>Returns the given color coded with the alpha information. ATENTION: At the 
-      moment only the <a href="../drv/gdiplus.html">Win32 with GDI+</a>, the
-	<a href="../drv/xrender.html">XRender</a> and the <a href="../drv/irgb.html">IMAGERGB</a> 
+      moment only the <a href="../drv/cairo.html">Cairo</a>,
+	<a href="../drv/gdiplus.html">GDI+</a>, <a href="../drv/xrender.html">XRender</a> 
+	and <a href="../drv/irgb.html">IMAGERGB</a> 
 	drivers support alpha components in color coding. The 
       internal representation of the component is inverted, because the default value 
       must be 0 and opaque for backward compatibility, so you should use the <strong>cdDecodeAlpha</strong>

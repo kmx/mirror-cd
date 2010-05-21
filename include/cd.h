@@ -116,6 +116,7 @@ void cdCanvasMark(cdCanvas* canvas, int x, int y);
 void cdCanvasLine(cdCanvas* canvas, int x1, int y1, int x2, int y2);
 void cdCanvasBegin(cdCanvas* canvas, int mode);
 void cdCanvasVertex(cdCanvas* canvas, int x, int y);
+void cdCanvasPathSet(cdCanvas* canvas, int action);
 void cdCanvasEnd(cdCanvas* canvas);
 void cdCanvasRect(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax);
 void cdCanvasBox(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax);
@@ -271,10 +272,24 @@ enum {                          /* polygon mode (begin...end) */
  CD_CLOSED_LINES,
  CD_CLIP,
  CD_BEZIER,
- CD_REGION
+ CD_REGION,
+ CD_PATH
 };
 
 #define CD_POLYCUSTOM 10
+
+enum {                          /* path actions */
+ CD_PATH_NEW,
+ CD_PATH_MOVETO,
+ CD_PATH_LINETO,
+ CD_PATH_ARC,
+ CD_PATH_CURVETO,
+ CD_PATH_CLOSE,
+ CD_PATH_FILL,
+ CD_PATH_STROKE,
+ CD_PATH_FILLSTROKE,
+ CD_PATH_CLIP
+};
 
 enum {                          /* fill mode */
  CD_EVENODD,

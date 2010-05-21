@@ -6,6 +6,11 @@
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 <title>CAIRO</title>
 <link rel="stylesheet" type="text/css" href="../../style.css">
+<style type="text/css">
+.style1 {
+	font-family: Courier;
+}
+</style>
 </head>
 
 <body>
@@ -15,8 +20,9 @@
   <p>This driver represents a basic driver for all system-dependent drivers 
   implemented in the X-Windows and MS-Windows systems. The implementation uses the
   <a href="http://library.gnome.org/devel/pango/">Cairo</a> API 
-  functions and some GTK functions to support Unicode text. This driver can be 
-  compiled and used in all systems Cairo is supported.</p>
+  functions and Pango functions to support Unicode text. This driver can be 
+  compiled and used in all systems Cairo is supported. The drivers <b>Native Window</b>, 
+	<b>Image</b>, <b>Printer</b> and <b>Double Buffer</b> were implemented.</p>
 <p>The main motivation for the use of Cairo was transparency for all the 
 primitives. Beyond that we got other features like anti-aliasing, gradient 
 filling, transformations and back-ends (support to rendering: PDF, PS, SVG and 
@@ -24,6 +30,25 @@ PNG surfaces).</p>
 <p>This driver still does not completely replace the X-Windows and GDI Windows 
 base drivers, because Cairo does not have support for bitwise XOR operations and 
 for complex clipping regions.</p>
+  <p>So we let the programmer to choose what to use. We created the function <font face="Courier"><strong>
+  cdUseContextPlus</strong></font> that allows to activate or to deactivate the use of 
+	Cairo for the available GDK, Win32 or X-Windows based drivers. 
+  This function affects only the <font face="Courier"><strong>cdCreateCanvas</strong></font> function call, once created 
+  the canvas will be always a Cairo canvas. In fact the function affects primary the definitions 
+	<font face="Courier"><strong>CD_NATIVEWINDOW</strong></font>, 
+  <strong><span style="font-family: Courier">CD_IMAGE</span></strong> and <strong>
+  <span style="font-family: Courier">CD_DBUFFER</span></strong>, because they are 
+  function calls and not static defines.</p>
+  <p>Using Cairo it is allowed to create more that one canvas at the same time for the same Window. And they can co-exist 
+  with a standard GD, Win32 or X-Windows canvas.</p>
+  <p>To enable the use of Cairo based drivers you must call the initialization function <font face="Courier"><strong>
+  cdInitContextPlus()</strong></font> once and link to the libraries &quot;<strong>cdcairo</strong>&quot; and &quot;<strong>cairo</strong>&quot;. 
+  When using the GDK base driver you do not need to link with the &quot;<strong>cdcairo</strong>&quot; 
+	library. Also the Cairo library must be installed in your system.</p>
+  <p>In CDLua it is not necessary any additional initialization, but the 
+	application must still be linked with the <strong>cdcontextplus.lib</strong> 
+	library or a <strong>require&quot;cdluacontextplus&quot;</strong> can be used when 
+	using dynamic libraries.</p>
 
 <h3>Behavior of Functions</h3>
 <h4>Control&nbsp; </h4>
@@ -38,6 +63,13 @@ for complex clipping regions.</p>
   <a href="../func/coordinates.html#cdUpdateYAxis">
   <font face="Courier"><strong>UpdateYAxis</strong></font></a>: the 
   orientation of axis Y is the opposite to its orientation in the CD library.</li>
+</ul>
+<h4>Primitives</h4>
+<ul>
+  <li><a href="../func/lines.html#cdBegin">
+  <font face="Courier"><strong>Begin</strong></font></a>: <strong><tt>CD_PATH</tt></strong> 
+	is supported.</li>
+	<li>Floating point primitives are supported.</li>
 </ul>
 <h4>Attributes </h4>
 <ul>
@@ -101,6 +133,12 @@ for complex clipping regions.</p>
   2 points (&quot;%d %d %d %d&quot; = x1 y1 x2 y2), one for the starting point using 
   (using the foreground color), and another one for the end point (using the 
   background color).</li>
+</ul>
+
+<ul>
+  <li>&quot;<span class="style1"><strong>PATTERNIMAGE</strong></span>&quot;:&nbsp;defines 
+  a filled interior style using a server image as pattern. Data must be a server 
+	image handle created with he Cairo base driver.</li>
 </ul>
 
 <ul>

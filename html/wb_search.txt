@@ -5,11 +5,12 @@ en/func/wd.html
 en/func/client.html
 en/func/region.html
 en/drv/sim.html
+en/drv/xrender.html
 en/drv/native.html
 en/func/control.html
-en/drv/xrender.html
-en/drv/irgb.html
 en/drv/gdiplus.html
+en/drv/cairo.html
+en/drv/irgb.html
 en/func/vectortext.html
 en/cvs.html
 en/func/init.html

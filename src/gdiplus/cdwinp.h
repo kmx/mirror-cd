@@ -48,14 +48,11 @@ struct _cdCtxCanvas
   } fontinfo;
   
   Point *clip_poly; /* coordenadas do pixel no X,Y                  */
+  PointF *clip_fpoly; /* coordenadas do pixel no X,Y                  */
   int clip_poly_n;       /* numero de pontos correntes                   */
   Region *clip_region;
 
   Region *new_region;
-
-  int max_points;
-  PointF *wdpoly;  // cache buffer for wdpoly
-  Point *cdpoly;   // alias to cache buffer (float=int)
 
   int antialias;
 

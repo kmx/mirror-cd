@@ -41,7 +41,9 @@ cd.CreateCanvas(ctx: number, data: string or userdata) -&gt; (canvas: cdCanvas) 
 
   <ul>
     <li><a href="../drv/clipbd.html"><b>CD_CLIPBOARD</b></a> = Clipboard (<b>cdclipbd.h</b>).</li>
-    <li><a href="../drv/printer.html"><b>CD_PRINTER</b></a> = Printer (<b>cdprint.h</b>).</li>
+    <li><a href="../drv/printer.html"><b>CD_PRINTER</b></a> = Printer (<b>cdprint.h</b>).<br>
+	<a href="../drv/picture.html"><strong>CD_PICTURE</strong></a> = Picture in 
+	memory (<strong>cdpicture.h</strong>).</li>
   </ul>
   <p><b>Image-Based Drivers</b>&nbsp; </p>
   <ul>
@@ -51,22 +53,28 @@ cd.CreateCanvas(ctx: number, data: string or userdata) -&gt; (canvas: cdCanvas) 
     Drawing (<b>cdirgb.h</b>).</li>
     <li><a href="../drv/dbuf.html"><b>CD_DBUFFER</b></a> = Offscreen Drawing 
     (<b>cddbuf.h</b>).</li>
+	<li><b><a href="../drv/dbufrgb.html">CD_DBUFFERRGB</a></b> = Client Offscreen Drawing 
+    (<b>cddbuf.h</b>).</li>
   </ul>
   <p><b>File-Based Drivers</b>&nbsp; </p>
   <ul>
-    <li><a href="../drv/cgm.html"><b>CD_CGM</b></a> = Computer Graphics 
+    <li><a href="../drv/pdf.html"><b>CD_PDF</b></a> = Adobe Portable Document Format (<b>cdpdf.h</b>).</li>
+	<li><a href="../drv/ps.html"><b>CD_PS</b></a> = PostScript File (<b>cdps.h</b>).</li>
+	<li><a href="../drv/svg.html"><b>CD_SVG</b></a> = Scalable Vector Graphics (<b>cdsvg.h</b>).</li>
+	<li><a href="../drv/mf.html"><b>CD_METAFILE</b></a> = Internal CD Metafile (<b>cdmf.h</b>).</li>
+	<li><a href="../drv/debug.html"><b>CD_DEBUG</b></a> = Internal CD Debug Log (<b>cddebug.h</b>).<br>
+	</li>
+	<li><a href="../drv/cgm.html"><b>CD_CGM</b></a> = Computer Graphics 
     Metafile ISO (<b>cdcgm.h</b>).</li>
     <li><a href="../drv/dgn.html"><b>CD_DGN</b></a> = MicroStation Design 
     File (<b>cddgn.h</b>).</li>
     <li><a href="../drv/dxf.html"><b>CD_DXF</b></a> = AutoCad Drawing 
-    Interchange File (<b>cddxf.h</b>).</li>
+    Interchange File (<b>cddxf.h</b>).<br>
+	</li>
     <li><a href="../drv/emf.html"><b>CD_EMF</b></a> = Microsoft Windows 
     Enhanced Metafile (<b>cdemf.h</b>). Works only in MS Windows systems.</li>
-    <li><a href="../drv/mf.html"><b>CD_METAFILE</b></a> = Metafile Canvas 
-    Draw (<b>cdmf.h</b>).</li>
-    <li><a href="../drv/ps.html"><b>CD_PS</b></a> = PostScript File (<b>cdps.h</b>).</li>
     <li><a href="../drv/wmf.html"><b>CD_WMF</b></a> = Microsoft Windows 
-    Metafile (<b>cdwmf.h</b>).</li>
+    Metafile (<b>cdwmf.h</b>). Works only in MS Windows systems.</li>
   </ul>
 
 <pre class="function"><span class="mainFunction">cdCanvas*&nbsp;<a name="cdCreateCanvasf">cdCreateCanvasf(cdContext *ctx, const char* format, ...)</a>; [in C]
@@ -115,8 +123,8 @@ cd.UseContextPlus(use: boolean) -&gt; (old_use: boolean) [in Lua]</pre>
 cd.InitContextPlus() [in Lua]</pre>
 <p>Initializes the context driver to use another context replacing the standard drivers. 
 This functions is only available when a library containing a &quot;ContextPlus&quot; 
-context driver is used. See the <a href="../drv/gdiplus.html">GDI+</a> base 
-driver and the <a href="../drv/xrender.html">XRender</a> base driver.</p>
+context driver is used. See the <a href="../drv/cairo.html">Cairo</a>,&nbsp; <a href="../drv/gdiplus.html">GDI+</a> 
+and <a href="../drv/xrender.html">XRender</a> base drivers.</p>
 <p>In Lua, when using require&quot;cdluacontextplus&quot; this function will be 
 automatically called.</p>
 

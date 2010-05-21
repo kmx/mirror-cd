@@ -215,6 +215,11 @@ struct _cdCanvas
   cdfPoint* fpoly;           /* used during an real poligon creation, only if ->fPoly exists */
   int use_fpoly;
 
+  /* last path */
+  int path_n,                /* current number of actions */
+      path_size;             /* allocated number of actions, only increases */
+  int* path;                 /* used during path creation */
+
   /* simulation flags */
   int sim_mode;
   int sim_poly;

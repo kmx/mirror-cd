@@ -79,7 +79,7 @@ char* StrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, int length)
   return (char*)str;
 }
 
-static void update_fill(cdCtxCanvas *ctxcanvas, int fill)
+static void sUpdateFill(cdCtxCanvas *ctxcanvas, int fill)
 {
   if (fill == 0 || ctxcanvas->canvas->interior_style == CD_SOLID)
   {
@@ -320,7 +320,6 @@ static int cdhatch(cdCtxCanvas *ctxcanvas, int style)
   cairo_t* cr;
 
   hatch_surface = cairo_surface_create_similar(cairo_get_target(ctxcanvas->cr), CAIRO_CONTENT_COLOR_ALPHA, hsize, hsize);
-
   cr = cairo_create(hatch_surface);
 
   if (ctxcanvas->canvas->back_opacity == CD_OPAQUE)
@@ -576,7 +575,7 @@ static void cdclear(cdCtxCanvas* ctxcanvas)
 
 static void cdfline(cdCtxCanvas *ctxcanvas, double x1, double y1, double x2, double y2)
 { 
-  update_fill(ctxcanvas, 0);
+  sUpdateFill(ctxcanvas, 0);
 
   cairo_move_to(ctxcanvas->cr, x1, y1);
   cairo_line_to(ctxcanvas->cr, x2, y2);
@@ -608,7 +607,7 @@ static void sFixAngles(cdCtxCanvas* ctxcanvas, double *angle1, double *angle2)
 
 static void cdfarc(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
 {
-  update_fill(ctxcanvas, 0);
+  sUpdateFill(ctxcanvas, 0);
 
   sFixAngles(ctxcanvas, &a1, &a2);
 
@@ -639,7 +638,7 @@ static void cdarc(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a
 
 static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
 {
-  update_fill(ctxcanvas, 1);
+  sUpdateFill(ctxcanvas, 1);
 
   sFixAngles(ctxcanvas, &a1, &a2);
 
@@ -673,15 +672,14 @@ static void cdsector(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, doubl
 
 static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
 {
-  update_fill(ctxcanvas, 1);
+  sUpdateFill(ctxcanvas, 1);
 
   sFixAngles(ctxcanvas, &a1, &a2);
 
   if (w == h)
   {
     cairo_arc(ctxcanvas->cr, xc, yc, 0.5*w, a1, a2);
-    cairo_fill_preserve(ctxcanvas->cr);
-    cairo_stroke(ctxcanvas->cr);
+    cairo_fill(ctxcanvas->cr);
   }
   else  /* Ellipse: change the scale to create from the circle */
   {
@@ -693,8 +691,7 @@ static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, dou
     cairo_translate(ctxcanvas->cr, -xc, -yc);
 
     cairo_arc(ctxcanvas->cr, xc, yc, 0.5*h, a1, a2);
-    cairo_fill_preserve(ctxcanvas->cr);
-    cairo_stroke(ctxcanvas->cr);
+    cairo_fill(ctxcanvas->cr);
 
     cairo_restore(ctxcanvas->cr);  /* restore from local */
   }
@@ -707,7 +704,7 @@ static void cdchord(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double
 
 static void cdfrect(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
 {
-  update_fill(ctxcanvas, 0);
+  sUpdateFill(ctxcanvas, 0);
   cairo_rectangle(ctxcanvas->cr, xmin, ymin, xmax-xmin+1, ymax-ymin+1);
   cairo_stroke(ctxcanvas->cr);
 }
@@ -719,7 +716,7 @@ static void cdrect(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int yma
 
 static void cdfbox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
 {
-  update_fill(ctxcanvas, 1);
+  sUpdateFill(ctxcanvas, 1);
   cairo_rectangle(ctxcanvas->cr, xmin, ymin, xmax-xmin+1, ymax-ymin+1);
   cairo_fill(ctxcanvas->cr);
 }
@@ -806,7 +803,7 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, i
     cairo_set_font_matrix(ctxcanvas->cr, &matrix);
   }
 
-  update_fill(ctxcanvas, 0);
+  sUpdateFill(ctxcanvas, 0);
 
   cairo_move_to(ctxcanvas->cr, x, y);
   cairo_show_text(ctxcanvas->cr, s);
@@ -844,9 +841,102 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
   if (mode == CD_CLIP)
     return;
 
+  if (mode == CD_PATH)
+  {
+    int p;
+
+    /* if there is any current path, remove it */
+    cairo_new_path(ctxcanvas->cr);
+
+    i = 0;
+    for (p=0; p<ctxcanvas->canvas->path_n; p++)
+    {
+      switch(ctxcanvas->canvas->path[p])
+      {
+      case CD_PATH_NEW:
+        cairo_new_path(ctxcanvas->cr);
+        break;
+      case CD_PATH_MOVETO:
+        if (i+1 > n) return;
+        cairo_move_to(ctxcanvas->cr, poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_LINETO:
+        if (i+1 > n) return;
+        cairo_line_to(ctxcanvas->cr, poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_ARC:
+        {
+          double xc, yc, w, h, a1, a2;
+
+          if (i+3 > n) return;
+
+          xc = poly[i].x, 
+          yc = poly[i].y, 
+          w = poly[i+1].x, 
+          h = poly[i+1].y, 
+          a1 = poly[i+2].x/1000.0, 
+          a2 = poly[i+2].y/1000.0;
+
+          sFixAngles(ctxcanvas, &a1, &a2);
+
+          if (w == h)
+          {
+            cairo_arc(ctxcanvas->cr, xc, yc, 0.5*w, a1, a2);
+          }
+          else  /* Ellipse: change the scale to create from the circle */
+          {
+            cairo_save(ctxcanvas->cr);  /* save to use the local transform */
+
+            cairo_translate(ctxcanvas->cr, xc, yc);
+            cairo_scale(ctxcanvas->cr, w/h, 1.0);
+            cairo_translate(ctxcanvas->cr, -xc, -yc);
+
+            cairo_arc(ctxcanvas->cr, xc, yc, 0.5*h, a1, a2);
+
+            cairo_restore(ctxcanvas->cr);  /* restore from local */
+          }
+
+          i += 3;
+        }
+        break;
+      case CD_PATH_CURVETO:
+        if (i+3 > n) return;
+        cairo_curve_to(ctxcanvas->cr, poly[i].x, poly[i].y, poly[i+1].x, poly[i+1].y, poly[i+2].x, poly[i+2].y);
+        i += 3;
+        break;
+      case CD_PATH_CLOSE:
+        cairo_close_path(ctxcanvas->cr);
+        break;
+      case CD_PATH_FILL:
+        sUpdateFill(ctxcanvas, 1);
+        cairo_set_fill_rule(ctxcanvas->cr, ctxcanvas->canvas->fill_mode==CD_EVENODD? CAIRO_FILL_RULE_EVEN_ODD: CAIRO_FILL_RULE_WINDING);
+        cairo_fill(ctxcanvas->cr);
+        break;
+      case CD_PATH_STROKE:
+        sUpdateFill(ctxcanvas, 0);
+        cairo_stroke(ctxcanvas->cr);
+        break;
+      case CD_PATH_FILLSTROKE:
+        sUpdateFill(ctxcanvas, 1);
+        cairo_set_fill_rule(ctxcanvas->cr, ctxcanvas->canvas->fill_mode==CD_EVENODD? CAIRO_FILL_RULE_EVEN_ODD: CAIRO_FILL_RULE_WINDING);
+        cairo_fill_preserve(ctxcanvas->cr);
+        sUpdateFill(ctxcanvas, 0);
+        cairo_stroke(ctxcanvas->cr);
+        break;
+      case CD_PATH_CLIP:
+        cairo_set_fill_rule(ctxcanvas->cr, ctxcanvas->canvas->fill_mode==CD_EVENODD? CAIRO_FILL_RULE_EVEN_ODD: CAIRO_FILL_RULE_WINDING);
+        cairo_clip(ctxcanvas->cr);
+        break;
+      }
+    }
+    return;
+  }
+
   if (mode == CD_FILL)
   {
-    update_fill(ctxcanvas, 1);
+    sUpdateFill(ctxcanvas, 1);
 
     if (ctxcanvas->holes || ctxcanvas->canvas->fill_mode==CD_EVENODD)
       cairo_set_fill_rule(ctxcanvas->cr, CAIRO_FILL_RULE_EVEN_ODD);
@@ -854,7 +944,7 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
       cairo_set_fill_rule(ctxcanvas->cr, CAIRO_FILL_RULE_WINDING);
   }
   else
-    update_fill(ctxcanvas, 0);
+    sUpdateFill(ctxcanvas, 0);
 
   cairo_move_to(ctxcanvas->cr, poly[0].x, poly[0].y);
 
@@ -904,9 +994,102 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
   if (mode == CD_CLIP)
     return;
 
+  if (mode == CD_PATH)
+  {
+    int p;
+
+    /* if there is any current path, remove it */
+    cairo_new_path(ctxcanvas->cr);
+
+    i = 0;
+    for (p=0; p<ctxcanvas->canvas->path_n; p++)
+    {
+      switch(ctxcanvas->canvas->path[p])
+      {
+      case CD_PATH_NEW:
+        cairo_new_path(ctxcanvas->cr);
+        break;
+      case CD_PATH_MOVETO:
+        if (i+1 > n) return;
+        cairo_move_to(ctxcanvas->cr, poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_LINETO:
+        if (i+1 > n) return;
+        cairo_line_to(ctxcanvas->cr, poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_ARC:
+        {
+          double xc, yc, w, h, a1, a2;
+
+          if (i+3 > n) return;
+
+          xc = poly[i].x, 
+          yc = poly[i].y, 
+          w = poly[i+1].x, 
+          h = poly[i+1].y, 
+          a1 = poly[i+2].x, 
+          a2 = poly[i+2].y;
+
+          sFixAngles(ctxcanvas, &a1, &a2);
+
+          if (w == h)
+          {
+            cairo_arc(ctxcanvas->cr, xc, yc, 0.5*w, a1, a2);
+          }
+          else  /* Ellipse: change the scale to create from the circle */
+          {
+            cairo_save(ctxcanvas->cr);  /* save to use the local transform */
+
+            cairo_translate(ctxcanvas->cr, xc, yc);
+            cairo_scale(ctxcanvas->cr, w/h, 1.0);
+            cairo_translate(ctxcanvas->cr, -xc, -yc);
+
+            cairo_arc(ctxcanvas->cr, xc, yc, 0.5*h, a1, a2);
+
+            cairo_restore(ctxcanvas->cr);  /* restore from local */
+          }
+
+          i += 3;
+        }
+        break;
+      case CD_PATH_CURVETO:
+        if (i+3 > n) return;
+        cairo_curve_to(ctxcanvas->cr, poly[i].x, poly[i].y, poly[i+1].x, poly[i+1].y, poly[i+2].x, poly[i+2].y);
+        i += 3;
+        break;
+      case CD_PATH_CLOSE:
+        cairo_close_path(ctxcanvas->cr);
+        break;
+      case CD_PATH_FILL:
+        sUpdateFill(ctxcanvas, 1);
+        cairo_set_fill_rule(ctxcanvas->cr, ctxcanvas->canvas->fill_mode==CD_EVENODD? CAIRO_FILL_RULE_EVEN_ODD: CAIRO_FILL_RULE_WINDING);
+        cairo_fill(ctxcanvas->cr);
+        break;
+      case CD_PATH_STROKE:
+        sUpdateFill(ctxcanvas, 0);
+        cairo_stroke(ctxcanvas->cr);
+        break;
+      case CD_PATH_FILLSTROKE:
+        sUpdateFill(ctxcanvas, 1);
+        cairo_set_fill_rule(ctxcanvas->cr, ctxcanvas->canvas->fill_mode==CD_EVENODD? CAIRO_FILL_RULE_EVEN_ODD: CAIRO_FILL_RULE_WINDING);
+        cairo_fill_preserve(ctxcanvas->cr);
+        sUpdateFill(ctxcanvas, 0);
+        cairo_stroke(ctxcanvas->cr);
+        break;
+      case CD_PATH_CLIP:
+        cairo_set_fill_rule(ctxcanvas->cr, ctxcanvas->canvas->fill_mode==CD_EVENODD? CAIRO_FILL_RULE_EVEN_ODD: CAIRO_FILL_RULE_WINDING);
+        cairo_clip(ctxcanvas->cr);
+        break;
+      }
+    }
+    return;
+  }
+
   if (mode == CD_FILL)
   {
-    update_fill(ctxcanvas, 1);
+    sUpdateFill(ctxcanvas, 1);
 
     if (ctxcanvas->holes || ctxcanvas->canvas->fill_mode==CD_EVENODD)
       cairo_set_fill_rule(ctxcanvas->cr, CAIRO_FILL_RULE_EVEN_ODD);
@@ -914,7 +1097,7 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
       cairo_set_fill_rule(ctxcanvas->cr, CAIRO_FILL_RULE_WINDING);
   }
   else
-    update_fill(ctxcanvas, 0);
+    sUpdateFill(ctxcanvas, 0);
 
   cairo_move_to(ctxcanvas->cr, poly[0].x, poly[0].y);
 
@@ -1476,6 +1659,31 @@ static cdAttribute aa_attrib =
   get_aa_attrib
 }; 
 
+static void set_pattern_image_attrib(cdCtxCanvas *ctxcanvas, char* data)
+{
+  if (data)
+  {
+    cdCtxImage *ctximage = (cdCtxImage *)data;
+
+    if (ctxcanvas->pattern)
+      cairo_pattern_destroy(ctxcanvas->pattern);
+
+    ctxcanvas->pattern = cairo_pattern_create_for_surface(cairo_get_target(ctximage->cr));
+    cairo_pattern_reference(ctxcanvas->pattern);
+    cairo_pattern_set_extend(ctxcanvas->pattern, CAIRO_EXTEND_REPEAT);
+
+    cairo_set_source(ctxcanvas->cr, ctxcanvas->pattern);
+    ctxcanvas->last_source = 1;
+  }
+}
+
+static cdAttribute pattern_image_attrib =
+{
+  "PATTERNIMAGE",
+  set_pattern_image_attrib,
+  NULL
+}; 
+
 static void set_linegradient_attrib(cdCtxCanvas* ctxcanvas, char* data)
 {
   if (data)
@@ -1698,6 +1906,7 @@ cdCtxCanvas *cdcairoCreateCanvas(cdCanvas* canvas, cairo_t* cr)
   cdRegisterAttribute(canvas, &interp_attrib);
   cdRegisterAttribute(canvas, &cairodc_attrib);
   cdRegisterAttribute(canvas, &hatchboxsize_attrib);
+  cdRegisterAttribute(canvas, &pattern_image_attrib);
 
   cairo_save(ctxcanvas->cr);
   cairo_set_operator(ctxcanvas->cr, CAIRO_OPERATOR_OVER);
@@ -1759,9 +1968,3 @@ void cdcairoInitTable(cdCanvas* canvas)
   canvas->cxPutImageRectMap = cdputimagerectmap;
   canvas->cxPutImageRectRGBA = cdputimagerectrgba;
 }
-
-/*
-cairo_arc (cr, 128.0, 128.0, 76.8, 0, 2*M_PI);
-cairo_clip (cr);
-cairo_new_path (cr); // path not consumed by clip()
-*/

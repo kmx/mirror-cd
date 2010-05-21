@@ -120,7 +120,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   bitmap->SetResolution((REAL)(canvas_dbuffer->xres*25.4), (REAL)(canvas_dbuffer->yres*25.4));
 
   Graphics imggraphics(bitmap);
-  imggraphics.Clear(Color::White);
+  imggraphics.Clear(Color((ARGB)Color::White));
 
   Graphics* graphics = new Graphics(bitmap);
 

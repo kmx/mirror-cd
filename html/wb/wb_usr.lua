@@ -12,7 +12,7 @@ wb_usr = {
 
 wb_usr.messages = {
   en = {
-    bar_title = "CD - Version 5.3",
+    bar_title = "CD - Version 5.4",
     title = "CD - Canvas Draw",
   }
 } 
@@ -1007,6 +1007,10 @@ wb_usr.tree =
               name= {nl= "MF"},
               link= "drv/mf.html"
             },
+            {
+              name= {nl= "DEBUG"},
+              link= "drv/debug.html"
+            },
             { link= "", name= {en= "" } },
             {
               name= {nl= "CGM"},
@@ -1029,10 +1033,6 @@ wb_usr.tree =
               name= {nl= "WMF"},
               link= "drv/wmf.html"
             },
-            {
-              name= {nl= "DEBUG"},
-              link= "drv/debug.html"
-            }
           }
         },
         {
@@ -1040,11 +1040,7 @@ wb_usr.tree =
           folder=
           {
             {
-              name= {en= "Simulation"},
-              link= "drv/sim.html"
-            },
-            {
-              name= {en= "GDK/Cairo"},
+              name= {en= "GDK"},
               link= "drv/gdk.html"
             },
             {
@@ -1052,12 +1048,27 @@ wb_usr.tree =
               link= "drv/win32.html"
             },
             {
-              name= {nl= "Win32 GDI+"},
-              link= "drv/gdiplus.html"
-            },
-            {
               name= {nl= "X-Win"},
               link= "drv/xwin.html"
+            },
+            { link= "", name= {en= "" } },
+            {
+              name= {en= "Simulation"},
+              link= "drv/sim.html"
+            },
+          }
+        },
+        {
+          name= {en= "Context Plus"},
+          folder=
+          {
+            {
+              name= {en= "Cairo"},
+              link= "drv/cairo.html"
+            },
+            {
+              name= {nl= "GDI+"},
+              link= "drv/gdiplus.html"
             },
             {
               name= {nl= "XRender"},

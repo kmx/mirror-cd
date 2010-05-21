@@ -138,7 +138,7 @@ static void cdkillcanvas(cdCtxCanvas *ctxcanvas)
   free(ctxcanvas);
 }
 
-static void update_fill(cdCtxCanvas *ctxcanvas, int fill)
+static void sUpdateFill(cdCtxCanvas *ctxcanvas, int fill)
 {
   if (fill == 0)
   {
@@ -283,7 +283,7 @@ static int cdclip(cdCtxCanvas *ctxcanvas, int mode)
 
 static void cdfline(cdCtxCanvas *ctxcanvas, double x1, double y1, double x2, double y2)
 {
-  update_fill(ctxcanvas, 0);
+  sUpdateFill(ctxcanvas, 0);
 
   PDF_moveto(ctxcanvas->pdf, x1, y1);
   PDF_lineto(ctxcanvas->pdf, x2, y2);
@@ -297,7 +297,7 @@ static void cdline(cdCtxCanvas *ctxcanvas, int x1, int y1, int x2, int y2)
 
 static void cdfrect(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
 {
-  update_fill(ctxcanvas, 0);
+  sUpdateFill(ctxcanvas, 0);
 
   PDF_rect(ctxcanvas->pdf, xmin, ymin, xmax-xmin, ymax-ymin);
   PDF_stroke(ctxcanvas->pdf);
@@ -310,7 +310,7 @@ static void cdrect(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int yma
 
 static void cdfbox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
 {
-  update_fill(ctxcanvas, 1);
+  sUpdateFill(ctxcanvas, 1);
 
   PDF_moveto(ctxcanvas->pdf, xmin, ymin);
   PDF_lineto(ctxcanvas->pdf, xmax, ymin);
@@ -326,7 +326,7 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
 
 static void cdfarc(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
 {
-  update_fill(ctxcanvas, 0);
+  sUpdateFill(ctxcanvas, 0);
 
   if (w==h)
   {
@@ -355,7 +355,7 @@ static void cdarc(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a
 
 static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
 {
-  update_fill(ctxcanvas, 1);
+  sUpdateFill(ctxcanvas, 1);
 
   if (w==h)
   {
@@ -386,12 +386,12 @@ static void cdsector(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, doubl
 
 static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
 {
-  update_fill(ctxcanvas, 1);
+  sUpdateFill(ctxcanvas, 1);
 
   if (w==h)
   {
     PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*h, a1, a2);
-    PDF_fill_stroke(ctxcanvas->pdf);
+    PDF_fill(ctxcanvas->pdf);
   }
   else /* Elipse: mudar a escala p/ criar a partir do circulo */
   {
@@ -403,7 +403,7 @@ static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, dou
     PDF_translate(ctxcanvas->pdf, -xc, -yc);
 
     PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*h, a1, a2);
-    PDF_fill_stroke(ctxcanvas->pdf);
+    PDF_fill(ctxcanvas->pdf);
 
     PDF_restore(ctxcanvas->pdf);  /* restore from local */
   }
@@ -537,10 +537,94 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
   if (mode == CD_CLIP)
     return;
 
+  if (mode == CD_PATH)
+  {
+    int p;
+
+    /* if there is any current path, remove it */
+    PDF_endpath(ctxcanvas->pdf);
+
+    i = 0;
+    for (p=0; p<ctxcanvas->canvas->path_n; p++)
+    {
+      switch(ctxcanvas->canvas->path[p])
+      {
+      case CD_PATH_NEW:
+        PDF_endpath(ctxcanvas->pdf);
+        break;
+      case CD_PATH_MOVETO:
+        if (i+1 > n) return;
+        PDF_moveto(ctxcanvas->pdf, poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_LINETO:
+        if (i+1 > n) return;
+        PDF_moveto(ctxcanvas->pdf, poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_ARC:
+        {
+          double xc, yc, w, h, a1, a2;
+
+          if (i+3 > n) return;
+
+          xc = poly[i].x, 
+          yc = poly[i].y, 
+          w = poly[i+1].x, 
+          h = poly[i+1].y, 
+          a1 = poly[i+2].x/1000.0, 
+          a2 = poly[i+2].y/1000.0;
+
+          if (w==h)
+            PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*w, a1, a2);
+          else /* Ellipse: change the scale to create from the circle */
+          {
+            PDF_save(ctxcanvas->pdf);  /* save to use the local transform */
+
+            PDF_translate(ctxcanvas->pdf, xc, yc);
+            PDF_scale(ctxcanvas->pdf, w/h, 1);
+            PDF_translate(ctxcanvas->pdf, -xc, -yc);
+
+            PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*h, a1, a2);
+
+            PDF_restore(ctxcanvas->pdf);  /* restore from local */
+          }
+
+          i += 3;
+        }
+        break;
+      case CD_PATH_CURVETO:
+        if (i+3 > n) return;
+        PDF_curveto(ctxcanvas->pdf, poly[i].x, poly[i].y, poly[i+1].x, poly[i+1].y, poly[i+2].x, poly[i+2].y);
+        i += 3;
+        break;
+      case CD_PATH_CLOSE:
+        PDF_closepath(ctxcanvas->pdf);
+        break;
+      case CD_PATH_FILL:
+        PDF_set_parameter(ctxcanvas->pdf, "fillrule", ctxcanvas->canvas->fill_mode==CD_EVENODD? "evenodd": "winding");
+        PDF_fill(ctxcanvas->pdf);
+        break;
+      case CD_PATH_STROKE:
+        PDF_stroke(ctxcanvas->pdf);
+        break;
+      case CD_PATH_FILLSTROKE:
+        PDF_set_parameter(ctxcanvas->pdf, "fillrule", ctxcanvas->canvas->fill_mode==CD_EVENODD? "evenodd": "winding");
+        PDF_fill_stroke(ctxcanvas->pdf);
+        break;
+      case CD_PATH_CLIP:
+        PDF_set_parameter(ctxcanvas->pdf, "fillrule", ctxcanvas->canvas->fill_mode==CD_EVENODD? "evenodd": "winding");
+        PDF_clip(ctxcanvas->pdf);
+        break;
+      }
+    }
+    return;
+  }
+
   if (mode == CD_FILL)
-    update_fill(ctxcanvas, 1);
+    sUpdateFill(ctxcanvas, 1);
   else
-    update_fill(ctxcanvas, 0);
+    sUpdateFill(ctxcanvas, 0);
 
   if (mode==CD_FILL)
   {
@@ -599,10 +683,94 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
   if (mode == CD_CLIP)
     return;
 
+  if (mode == CD_PATH)
+  {
+    int p;
+
+    /* if there is any current path, remove it */
+    PDF_endpath(ctxcanvas->pdf);
+
+    i = 0;
+    for (p=0; p<ctxcanvas->canvas->path_n; p++)
+    {
+      switch(ctxcanvas->canvas->path[p])
+      {
+      case CD_PATH_NEW:
+        PDF_endpath(ctxcanvas->pdf);
+        break;
+      case CD_PATH_MOVETO:
+        if (i+1 > n) return;
+        PDF_moveto(ctxcanvas->pdf, poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_LINETO:
+        if (i+1 > n) return;
+        PDF_moveto(ctxcanvas->pdf, poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_ARC:
+        {
+          double xc, yc, w, h, a1, a2;
+
+          if (i+3 > n) return;
+
+          xc = poly[i].x, 
+          yc = poly[i].y, 
+          w = poly[i+1].x, 
+          h = poly[i+1].y, 
+          a1 = poly[i+2].x, 
+          a2 = poly[i+2].y;
+
+          if (w==h)
+            PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*w, a1, a2);
+          else /* Ellipse: change the scale to create from the circle */
+          {
+            PDF_save(ctxcanvas->pdf);  /* save to use the local transform */
+
+            PDF_translate(ctxcanvas->pdf, xc, yc);
+            PDF_scale(ctxcanvas->pdf, w/h, 1);
+            PDF_translate(ctxcanvas->pdf, -xc, -yc);
+
+            PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*h, a1, a2);
+
+            PDF_restore(ctxcanvas->pdf);  /* restore from local */
+          }
+
+          i += 3;
+        }
+        break;
+      case CD_PATH_CURVETO:
+        if (i+3 > n) return;
+        PDF_curveto(ctxcanvas->pdf, poly[i].x, poly[i].y, poly[i+1].x, poly[i+1].y, poly[i+2].x, poly[i+2].y);
+        i += 3;
+        break;
+      case CD_PATH_CLOSE:
+        PDF_closepath(ctxcanvas->pdf);
+        break;
+      case CD_PATH_FILL:
+        PDF_set_parameter(ctxcanvas->pdf, "fillrule", ctxcanvas->canvas->fill_mode==CD_EVENODD? "evenodd": "winding");
+        PDF_fill(ctxcanvas->pdf);
+        break;
+      case CD_PATH_STROKE:
+        PDF_stroke(ctxcanvas->pdf);
+        break;
+      case CD_PATH_FILLSTROKE:
+        PDF_set_parameter(ctxcanvas->pdf, "fillrule", ctxcanvas->canvas->fill_mode==CD_EVENODD? "evenodd": "winding");
+        PDF_fill_stroke(ctxcanvas->pdf);
+        break;
+      case CD_PATH_CLIP:
+        PDF_set_parameter(ctxcanvas->pdf, "fillrule", ctxcanvas->canvas->fill_mode==CD_EVENODD? "evenodd": "winding");
+        PDF_clip(ctxcanvas->pdf);
+        break;
+      }
+    }
+    return;
+  }
+
   if (mode == CD_FILL)
-    update_fill(ctxcanvas, 1);
+    sUpdateFill(ctxcanvas, 1);
   else
-    update_fill(ctxcanvas, 0);
+    sUpdateFill(ctxcanvas, 0);
 
   if (mode==CD_FILL)
   {

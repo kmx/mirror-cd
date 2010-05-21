@@ -697,7 +697,7 @@ typedef struct _winArcParam
     YEndArc; 	   /* second radial ending point */
 } winArcParam;
 
-static void calcArc(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double angle1, double angle2, winArcParam* arc)
+static void sCalcArc(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double angle1, double angle2, winArcParam* arc)
 {
   arc->LeftRect = xc - w/2;
   arc->RightRect = xc + w/2 + 1;
@@ -727,7 +727,7 @@ static void calcArc(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double
 static void cdarc(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double angle1, double angle2)
 {
   winArcParam arc;
-  calcArc(ctxcanvas, xc, yc, w, h, angle1, angle2, &arc);
+  sCalcArc(ctxcanvas, xc, yc, w, h, angle1, angle2, &arc);
   
   if (ctxcanvas->rebuild_pen) 
     sCreatePen(ctxcanvas);
@@ -738,7 +738,7 @@ static void cdarc(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double a
 static void cdsector(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double angle1, double angle2)
 {
   winArcParam arc;
-  calcArc(ctxcanvas, xc, yc, w, h, angle1, angle2, &arc);
+  sCalcArc(ctxcanvas, xc, yc, w, h, angle1, angle2, &arc);
 
   if ((ctxcanvas->logBrush.lbColor != ctxcanvas->fg) && 
     (ctxcanvas->canvas->interior_style != CD_PATTERN) ) 
@@ -782,7 +782,7 @@ static void cdsector(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, doubl
 static void cdchord(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double angle1, double angle2)
 {
   winArcParam arc;
-  calcArc(ctxcanvas, xc, yc, w, h, angle1, angle2, &arc);
+  sCalcArc(ctxcanvas, xc, yc, w, h, angle1, angle2, &arc);
 
   if ((ctxcanvas->logBrush.lbColor != ctxcanvas->fg) && 
     (ctxcanvas->canvas->interior_style != CD_PATTERN) ) 
@@ -828,6 +828,84 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
   int i, t, nc;
   POINT* pnt;
   HPEN oldPen = NULL, Pen = NULL;
+
+  if (mode == CD_PATH)
+  {
+    int p;
+
+    /* if there is any current path, remove it */
+    BeginPath(ctxcanvas->hDC);
+
+    i = 0;
+    for (p=0; p<ctxcanvas->canvas->path_n; p++)
+    {
+      switch(ctxcanvas->canvas->path[p])
+      {
+      case CD_PATH_NEW:
+        BeginPath(ctxcanvas->hDC);
+        break;
+      case CD_PATH_MOVETO:
+        if (i+1 > n) return;
+        MoveToEx(ctxcanvas->hDC, poly[i].x, poly[i].y, NULL);
+        i++;
+        break;
+      case CD_PATH_LINETO:
+        if (i+1 > n) return;
+        LineTo(ctxcanvas->hDC, poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_ARC:
+        {
+          int xc, yc, w, h;
+          double a1, a2;
+          winArcParam arc;
+
+          if (i+3 > n) return;
+
+          xc = poly[i].x, 
+          yc = poly[i].y, 
+          w = poly[i+1].x, 
+          h = poly[i+1].y, 
+          a1 = poly[i+2].x/1000.0, 
+          a2 = poly[i+2].y/1000.0;
+
+          sCalcArc(ctxcanvas, xc, yc, w, h, a1, a2, &arc);
+          
+          Arc(ctxcanvas->hDC, arc.LeftRect, arc.TopRect, arc.RightRect, arc.BottomRect, arc.XStartArc, arc.YStartArc, arc.XEndArc, arc.YEndArc);
+
+          i += 3;
+        }
+        break;
+      case CD_PATH_CURVETO:
+        if (i+3 > n) return;
+        PolyBezierTo(ctxcanvas->hDC, (POINT*)(poly + i), 3);
+        i += 3;
+        break;
+      case CD_PATH_CLOSE:
+        CloseFigure(ctxcanvas->hDC);
+        break;
+      case CD_PATH_FILL:
+        sUpdateFill(ctxcanvas, 1);
+        SetPolyFillMode(ctxcanvas->hDC, ctxcanvas->canvas->fill_mode==CD_EVENODD?ALTERNATE:WINDING);
+        FillPath(ctxcanvas->hDC);
+        break;
+      case CD_PATH_STROKE:
+        sUpdateFill(ctxcanvas, 0);
+        StrokePath(ctxcanvas->hDC);
+        break;
+      case CD_PATH_FILLSTROKE:
+        sUpdateFill(ctxcanvas, 1);
+        SetPolyFillMode(ctxcanvas->hDC, ctxcanvas->canvas->fill_mode==CD_EVENODD?ALTERNATE:WINDING);
+        StrokeAndFillPath(ctxcanvas->hDC);
+        break;
+      case CD_PATH_CLIP:
+        SetPolyFillMode(ctxcanvas->hDC, ctxcanvas->canvas->fill_mode==CD_EVENODD?ALTERNATE:WINDING);
+        SelectClipPath(ctxcanvas->hDC, RGN_AND);
+        break;
+      }
+    }
+    return;
+  }
 
   switch( mode )
   {
@@ -2337,6 +2415,7 @@ void cdwInitTable(cdCanvas* canvas)
   canvas->cxSector = cdsector;
   canvas->cxChord = cdchord;
   canvas->cxText = cdtext;
+
   canvas->cxGetFontDim = cdgetfontdim;
   canvas->cxGetTextSize = cdgettextsize; 
   canvas->cxPutImageRectRGB = cdputimagerectrgb;

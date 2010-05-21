@@ -123,12 +123,15 @@ void cdCanvasBegin(cdCanvas* canvas, int mode)
   assert(mode>=CD_FILL);
   if (!_cdCheckCanvas(canvas)) return;
 
+  canvas->use_fpoly = -1;
+  canvas->poly_n = 0;
+  canvas->path_n = 0;
+
   if (mode == CD_REGION)
   {
     if (!canvas->cxNewRegion) return;
 
     canvas->new_region = 1;
-    canvas->poly_n = 0;
     canvas->cxNewRegion(canvas->ctxcanvas);
     return;
   }
@@ -147,8 +150,6 @@ void cdCanvasBegin(cdCanvas* canvas, int mode)
   if (mode == CD_FILL && canvas->sim_mode & CD_SIM_POLYGON)
     canvas->sim_poly = 1;
 
-  canvas->use_fpoly = -1;
-  canvas->poly_n = 0;
   canvas->poly_mode = mode;
 }
 
@@ -233,6 +234,30 @@ void cdfCanvasVertex(cdCanvas* canvas, double x, double y)
   canvas->poly_n++;
 }
 
+void cdCanvasPathSet(cdCanvas* canvas, int action)
+{
+  assert(canvas);
+  if (!_cdCheckCanvas(canvas)) return;
+
+  if (canvas->poly_mode!=CD_PATH) 
+    return;
+
+  if (!canvas->path)
+  {
+    canvas->path = (int*)malloc(sizeof(int)*(_CD_POLY_BLOCK+1));
+    canvas->path_size = _CD_POLY_BLOCK;
+  }
+
+  if (canvas->path_n == canvas->path_size)
+  {
+    canvas->path_size += _CD_POLY_BLOCK;
+    canvas->path = (int*)realloc(canvas->path, sizeof(int) * (canvas->path_size+1));
+  }
+
+  canvas->path[canvas->path_n] = action;
+  canvas->path_n++;
+}
+
 void cdCanvasEnd(cdCanvas* canvas)
 {
   assert(canvas);
@@ -242,6 +267,13 @@ void cdCanvasEnd(cdCanvas* canvas)
   {
     canvas->new_region = 0;
     if (canvas->clip_mode == CD_CLIPREGION) cdCanvasClip(canvas, CD_CLIPREGION);
+    return;
+  }
+
+  if (canvas->poly_mode==CD_PATH && canvas->poly_n < 2)
+  {
+    canvas->poly_n = 0;
+    canvas->path_n = 0;
     return;
   }
 
@@ -303,6 +335,7 @@ void cdCanvasEnd(cdCanvas* canvas)
     }
   }
 
+  canvas->path_n = 0;
   canvas->poly_n = 0;
   canvas->use_fpoly = -1;
 }

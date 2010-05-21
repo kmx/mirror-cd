@@ -361,6 +361,7 @@ EXPORTS
   cdCanvasVectorTextDirection
   cdCanvasVectorTextSize
   cdCanvasVertex
+  cdCanvasPathSet
   
   cdfCanvasGetClipArea
   cdfCanvasArc

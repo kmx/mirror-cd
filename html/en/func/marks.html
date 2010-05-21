@@ -25,7 +25,8 @@ canvas:Pixel(x, y: number, color: lightuserdata) [in Lua]
 canvas:wPixel(x, y: number, color: lightuserdata) (WC) [in Lua]</pre>
 
   <p>Configures the pixel <b>(x,y)</b> with the color defined by  <b>color</b>. It is the smallest element of the canvas. It depends only 
-  on global attributes of the canvas.</p>
+  on global attributes of the canvas. It can be very slow on some drivers. 
+	Sometimes it is implemented as a rectangle with size 1x1.</p>
 
 <pre class="function"><span class="mainFunction">void <a name="cdMark">cdCanvasMark</a>(cdCanvas* canvas, int x, int y); [in C]</span>
 void wdCanvasMark(cdCanvas* canvas, double x, double y); (WC) [in C]

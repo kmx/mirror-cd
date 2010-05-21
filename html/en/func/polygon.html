@@ -6,6 +6,11 @@
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 <title>Polygons</title>
 <link rel="stylesheet" type="text/css" href="../../style.css">
+<style type="text/css">
+.style1 {
+	font-family: Courier;
+}
+</style>
 </head>
 
 <body>
@@ -81,6 +86,31 @@ canvas:End() [in Lua]</pre>
 
   <p>Ends the polygon's definition and draws it.</p>
 
+
+<p>&nbsp;</p>
+&quot;<span class="style1"><strong>PATH</strong></span>&quot;:&nbsp;allows to create 
+	a complex path using CD primitives and then fill, stroke or clip using the 
+	new path. Must be used with the following parameters:<ul>
+	<li>&quot;BEGIN&quot; - creates a new empty path, must be the first call</li>
+	<li>cdCanvasPixel, cdCanvasLine, cdCanvasArc - add elements to the path 
+	instead of drawing to the canvas</li>
+	<li>&quot;FILL&quot; - closes the path, and fills it with the current fill attributes, 
+	then the path is discarded</li>
+	<li>&quot;STROKE&quot; - strokes the path with the current line attributes, then the 
+	path is discarded</li>
+	<li>&quot;CLOSESTROKE&quot; - closes the path, and strokes it with the current line 
+	attributes, then the path is discarded</li>
+	<li>&quot;FILLSTROKE&quot; - closes the path, and fills it with the current fill 
+	attributes, strokes the path with the current line attributes, then the path 
+	is discarded</li>
+	<li>&quot;CLIP&quot; - closes the path, and use it as a clipping area to be 
+	intersected with the current clipping area, then the path is discarded</li>
+	<li>&quot;NULL&quot; - discards the path and ends the process without any output.</li>
+	<li>ARC - If there is a current point an additional straight line is drawn 
+	from the current point to the starting point of the arc. The endpoint of the 
+	arc becomes the new current point. </li>
+	</ul>
+	
 
 </body>
 

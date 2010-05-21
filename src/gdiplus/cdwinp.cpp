@@ -51,10 +51,10 @@ void cdwpShowStatus(const char* title, Status status)
 void cdwpKillCanvas(cdCtxCanvas* ctxcanvas)
 {
   if (ctxcanvas->clip_poly) delete[] ctxcanvas->clip_poly;
+  if (ctxcanvas->clip_fpoly) delete[] ctxcanvas->clip_fpoly;
   if (ctxcanvas->clip_region) delete ctxcanvas->clip_region;
   if (ctxcanvas->new_region) delete ctxcanvas->new_region;
   if (ctxcanvas->font) delete ctxcanvas->font;
-  if (ctxcanvas->wdpoly) delete ctxcanvas->wdpoly;
 
   delete ctxcanvas->fillBrush;
   delete ctxcanvas->lineBrush;
@@ -245,7 +245,10 @@ static void sClipPoly(cdCtxCanvas* ctxcanvas)
 
   GraphicsPath path;
   path.SetFillMode(ctxcanvas->canvas->fill_mode==CD_EVENODD?FillModeAlternate:FillModeWinding);
-  path.AddPolygon(ctxcanvas->clip_poly, ctxcanvas->clip_poly_n);
+  if (ctxcanvas->clip_fpoly)
+    path.AddPolygon(ctxcanvas->clip_fpoly, ctxcanvas->clip_poly_n);
+  else
+    path.AddPolygon(ctxcanvas->clip_poly, ctxcanvas->clip_poly_n);
   ctxcanvas->clip_region = new Region(&path);
 
   ctxcanvas->graphics->SetClip(ctxcanvas->clip_region);
@@ -572,6 +575,12 @@ static void cdline(cdCtxCanvas* ctxcanvas, int x1, int y1, int x2, int y2)
   ctxcanvas->dirty = 1;
 }
 
+static void cdfline(cdCtxCanvas* ctxcanvas, double x1, double y1, double x2, double y2)
+{
+  ctxcanvas->graphics->DrawLine(ctxcanvas->linePen, (REAL)x1, (REAL)y1, (REAL)x2, (REAL)y2);
+  ctxcanvas->dirty = 1;
+}
+
 static void cdrect(cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, int ymax)
 {
   Rect rect(xmin, ymin, xmax-xmin, ymax-ymin);  // in this case Size = Max - Min 
@@ -579,9 +588,31 @@ static void cdrect(cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, int yma
   ctxcanvas->dirty = 1;
 }
 
+static void cdfrect(cdCtxCanvas* ctxcanvas, double xmin, double xmax, double ymin, double ymax)
+{
+  RectF rect((REAL)xmin, (REAL)ymin, (REAL)(xmax-xmin), (REAL)(ymax-ymin));  // in this case Size = Max - Min 
+  ctxcanvas->graphics->DrawRectangle(ctxcanvas->linePen, rect); 
+  ctxcanvas->dirty = 1;
+}
+
 static void cdbox(cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, int ymax)
 {
   Rect rect(xmin, ymin, xmax-xmin+1, ymax-ymin+1); 
+  if (ctxcanvas->canvas->new_region)
+  {
+    Region region(rect);
+    sCombineRegion(ctxcanvas, region);
+  }
+  else
+  {
+    ctxcanvas->graphics->FillRectangle(ctxcanvas->fillBrush, rect);
+    ctxcanvas->dirty = 1;
+  }
+}
+
+static void cdfbox(cdCtxCanvas* ctxcanvas, double xmin, double xmax, double ymin, double ymax)
+{
+  RectF rect((REAL)xmin, (REAL)ymin, (REAL)(xmax-xmin+1), (REAL)(ymax-ymin+1));
   if (ctxcanvas->canvas->new_region)
   {
     Region region(rect);
@@ -617,9 +648,58 @@ static void cdarc(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double a
   ctxcanvas->dirty = 1;
 }
 
+static void cdfarc(cdCtxCanvas* ctxcanvas, double xc, double yc, double w, double h, double angle1, double angle2)
+{
+  RectF rect((REAL)(xc - w/2.0), (REAL)(yc - h/2.0), (REAL)w, (REAL)h);
+  if (angle1 == 0 && angle2 == 360)
+    ctxcanvas->graphics->DrawEllipse(ctxcanvas->linePen, rect);
+  else
+  {
+    cdwpFixAngles(ctxcanvas, &angle1, &angle2);
+    ctxcanvas->graphics->DrawArc(ctxcanvas->linePen, rect, (REAL)angle1, (REAL)(angle2-angle1));
+  }
+  ctxcanvas->dirty = 1;
+}
+
 static void cdsector(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double angle1, double angle2)
 {
   Rect rect(xc - w/2, yc - h/2, w, h);
+  if (ctxcanvas->canvas->new_region)
+  {
+    GraphicsPath path;
+    if (angle1==0 && angle2==360)
+      path.AddEllipse(rect);
+    else
+    {
+      cdwpFixAngles(ctxcanvas, &angle1, &angle2);
+      path.AddPie(rect, (REAL)angle1, (REAL)(angle2-angle1));
+    }
+    Region region(&path);
+    sCombineRegion(ctxcanvas, region);
+  }
+  else
+  {
+    // complete the remaining pixels using an Arc
+    Pen pen(ctxcanvas->fillBrush); 
+
+    if (angle1==0 && angle2==360)
+    {
+      ctxcanvas->graphics->FillEllipse(ctxcanvas->fillBrush, rect);
+      ctxcanvas->graphics->DrawEllipse(&pen, rect);
+    }
+    else
+    {
+      cdwpFixAngles(ctxcanvas, &angle1, &angle2);
+      ctxcanvas->graphics->FillPie(ctxcanvas->fillBrush, rect, (REAL)angle1, (REAL)(angle2-angle1));
+      ctxcanvas->graphics->DrawArc(&pen, rect, (REAL)angle1, (REAL)(angle2-angle1));
+    }
+    ctxcanvas->dirty = 1;
+  }
+}
+
+static void cdfsector(cdCtxCanvas* ctxcanvas, double xc, double yc, double w, double h, double angle1, double angle2)
+{
+  RectF rect((REAL)(xc - w/2.0), (REAL)(yc - h/2.0), (REAL)w, (REAL)h);
   if (ctxcanvas->canvas->new_region)
   {
     GraphicsPath path;
@@ -687,10 +767,135 @@ static void cdchord(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double
   }
 }
 
+static void cdfchord(cdCtxCanvas* ctxcanvas, double xc, double yc, double w, double h, double angle1, double angle2)
+{
+  RectF rect((REAL)(xc - w/2.0), (REAL)(yc - h/2.0), (REAL)w, (REAL)h);
+  if (ctxcanvas->canvas->new_region)
+  {
+    GraphicsPath path;
+    if (angle1==0 && angle2==360)
+      path.AddEllipse(rect);
+    else
+    {
+      cdwpFixAngles(ctxcanvas, &angle1, &angle2);
+      path.AddArc(rect, (REAL)angle1, (REAL)(angle2-angle1));
+      path.CloseFigure();
+    }
+    Region region(&path);
+    sCombineRegion(ctxcanvas, region);
+  }
+  else
+  {
+    if (angle1==0 && angle2==360)
+      ctxcanvas->graphics->FillEllipse(ctxcanvas->fillBrush, rect);
+    else
+    {
+      GraphicsPath path;
+      cdwpFixAngles(ctxcanvas, &angle1, &angle2);
+      path.AddArc(rect, (REAL)angle1, (REAL)(angle2-angle1));
+      ctxcanvas->graphics->FillPath(ctxcanvas->fillBrush, &path);
+    }
+    Pen pen(ctxcanvas->fillBrush); // complete the remaining pixels using an Arc
+    ctxcanvas->graphics->DrawArc(&pen, rect, (REAL)angle1, (REAL)(angle2-angle1));
+    ctxcanvas->dirty = 1;
+  }
+}
+
 static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
 {
-  switch( mode )
+  switch (mode)
   {
+  case CD_PATH:
+    {
+      int p, i, current_x = 0, current_y = 0;
+      GraphicsPath* graphics_path;
+      PointF lastPoint;
+
+      /* starts a new path */
+      graphics_path = new GraphicsPath(ctxcanvas->canvas->fill_mode==CD_EVENODD?FillModeAlternate:FillModeWinding);
+
+      i = 0;
+      for (p=0; p<ctxcanvas->canvas->path_n; p++)
+      {
+        switch(ctxcanvas->canvas->path[p])
+        {
+        case CD_PATH_NEW:
+          graphics_path->Reset();
+          graphics_path->SetFillMode(ctxcanvas->canvas->fill_mode==CD_EVENODD?FillModeAlternate:FillModeWinding);
+          break;
+        case CD_PATH_MOVETO:
+          if (i+1 > n) break;
+          current_x = poly[i].x;
+          current_y = poly[i].y;
+          i++;
+          break;
+        case CD_PATH_LINETO:
+          if (i+1 > n) break;
+          graphics_path->AddLine(current_x, current_y, poly[i].x, poly[i].y);
+          current_x = poly[i].x;
+          current_y = poly[i].y;
+          i++;
+          break;
+        case CD_PATH_ARC:
+          {
+            int xc, yc, w, h;
+            double a1, a2;
+
+            if (i+3 > n) break;
+
+            xc = poly[i].x, 
+            yc = poly[i].y, 
+            w = poly[i+1].x, 
+            h = poly[i+1].y, 
+            a1 = poly[i+2].x/1000.0, 
+            a2 = poly[i+2].y/1000.0;
+
+            Rect rect(xc - w/2, yc - h/2, w, h);
+            if (a1 == 0 && a2 == 360)
+              graphics_path->AddEllipse(rect);
+            else
+            {
+              cdwpFixAngles(ctxcanvas, &a1, &a2);
+              graphics_path->AddArc(rect, (REAL)a1, (REAL)(a2-a1));
+            }
+
+            graphics_path->GetLastPoint(&lastPoint);
+            current_x = (int)lastPoint.X;
+            current_y = (int)lastPoint.Y;
+
+            i += 3;
+          }
+          break;
+        case CD_PATH_CURVETO:
+          if (i+3 > n) break;
+          graphics_path->AddBezier(current_x, current_y, poly[i].x, poly[i].y, poly[i+1].x, poly[i+1].y, poly[i+2].x, poly[i+2].y);
+          graphics_path->GetLastPoint(&lastPoint);
+          current_x = (int)lastPoint.X;
+          current_y = (int)lastPoint.Y;
+          i += 3;
+          break;
+        case CD_PATH_CLOSE:
+          graphics_path->CloseFigure();
+          break;
+        case CD_PATH_FILL:
+          ctxcanvas->graphics->FillPath(ctxcanvas->fillBrush, graphics_path);
+          break;
+        case CD_PATH_STROKE:
+          ctxcanvas->graphics->DrawPath(ctxcanvas->linePen, graphics_path);
+          break;
+        case CD_PATH_FILLSTROKE:
+          ctxcanvas->graphics->FillPath(ctxcanvas->fillBrush, graphics_path);
+          ctxcanvas->graphics->DrawPath(ctxcanvas->linePen, graphics_path);
+          break;
+        case CD_PATH_CLIP:
+          ctxcanvas->graphics->SetClip(graphics_path, CombineModeIntersect);
+          break;
+        }
+      }
+
+      delete graphics_path;
+      break;
+    }
   case CD_BEZIER:
     if (n < 4) return;
     ctxcanvas->graphics->DrawBeziers(ctxcanvas->linePen, (Point*)poly, n);
@@ -749,6 +954,11 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
     
     if (ctxcanvas->clip_poly)
       delete[] ctxcanvas->clip_poly;
+    if (ctxcanvas->clip_fpoly)
+    {
+      delete[] ctxcanvas->clip_fpoly;
+      ctxcanvas->clip_fpoly = NULL;
+    }
     
     ctxcanvas->clip_poly = new Point [n];
 
@@ -776,6 +986,223 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
     
     break;
   }
+
+  ctxcanvas->dirty = 1;
+}
+
+static PointF* sPolyToFloat(cdfPoint* poly, int n)
+{
+  PointF* fpoly = new PointF[n+1];
+
+  for (int i = 0; i < n; i++)
+  {
+    fpoly[i].X = (REAL)poly[i].x;
+    fpoly[i].Y = (REAL)poly[i].y;
+  }
+
+  return fpoly;
+}
+
+static void cdfpoly(cdCtxCanvas* ctxcanvas, int mode, cdfPoint* poly, int n)
+{
+  PointF* fpoly = NULL;
+
+  switch (mode)
+  {
+  case CD_PATH:
+    {
+      int p, i;
+      double current_x = 0, current_y = 0;
+      GraphicsPath* graphics_path;
+      PointF lastPoint;
+
+      /* starts a new path */
+      graphics_path = new GraphicsPath(ctxcanvas->canvas->fill_mode==CD_EVENODD?FillModeAlternate:FillModeWinding);
+
+      i = 0;
+      for (p=0; p<ctxcanvas->canvas->path_n; p++)
+      {
+        switch(ctxcanvas->canvas->path[p])
+        {
+        case CD_PATH_NEW:
+          graphics_path->Reset();
+          graphics_path->SetFillMode(ctxcanvas->canvas->fill_mode==CD_EVENODD?FillModeAlternate:FillModeWinding);
+          break;
+        case CD_PATH_MOVETO:
+          if (i+1 > n) break;
+          current_x = poly[i].x;
+          current_y = poly[i].y;
+          i++;
+          break;
+        case CD_PATH_LINETO:
+          if (i+1 > n) break;
+          graphics_path->AddLine((REAL)current_x, (REAL)current_y, (REAL)poly[i].x, (REAL)poly[i].y);
+          current_x = poly[i].x;
+          current_y = poly[i].y;
+          i++;
+          break;
+        case CD_PATH_ARC:
+          {
+            double xc, yc, w, h;
+            double a1, a2;
+
+            if (i+3 > n) break;
+
+            xc = poly[i].x, 
+            yc = poly[i].y, 
+            w = poly[i+1].x, 
+            h = poly[i+1].y, 
+            a1 = poly[i+2].x, 
+            a2 = poly[i+2].y;
+
+            RectF rect((REAL)(xc - w/2.0), (REAL)(yc - h/2.0), (REAL)w, (REAL)h);
+            if (a1 == 0 && a2 == 360)
+              graphics_path->AddEllipse(rect);
+            else
+            {
+              cdwpFixAngles(ctxcanvas, &a1, &a2);
+              graphics_path->AddArc(rect, (REAL)a1, (REAL)(a2-a1));
+            }
+
+            graphics_path->GetLastPoint(&lastPoint);
+            current_x = lastPoint.X;
+            current_y = lastPoint.Y;
+
+            i += 3;
+          }
+          break;
+        case CD_PATH_CURVETO:
+          if (i+3 > n) break;
+          graphics_path->AddBezier((REAL)current_x, (REAL)current_y, (REAL)poly[i].x, (REAL)poly[i].y, (REAL)poly[i+1].x, (REAL)poly[i+1].y, (REAL)poly[i+2].x, (REAL)poly[i+2].y);
+          graphics_path->GetLastPoint(&lastPoint);
+          current_x = lastPoint.X;
+          current_y = lastPoint.Y;
+          i += 3;
+          break;
+        case CD_PATH_CLOSE:
+          graphics_path->CloseFigure();
+          break;
+        case CD_PATH_FILL:
+          ctxcanvas->graphics->FillPath(ctxcanvas->fillBrush, graphics_path);
+          break;
+        case CD_PATH_STROKE:
+          ctxcanvas->graphics->DrawPath(ctxcanvas->linePen, graphics_path);
+          break;
+        case CD_PATH_FILLSTROKE:
+          ctxcanvas->graphics->FillPath(ctxcanvas->fillBrush, graphics_path);
+          ctxcanvas->graphics->DrawPath(ctxcanvas->linePen, graphics_path);
+          break;
+        case CD_PATH_CLIP:
+          ctxcanvas->graphics->SetClip(graphics_path, CombineModeIntersect);
+          break;
+        }
+      }
+
+      delete graphics_path;
+      break;
+    }
+  case CD_BEZIER:
+    if (n < 4) return;
+    fpoly = sPolyToFloat(poly, n);
+    ctxcanvas->graphics->DrawBeziers(ctxcanvas->linePen, (PointF*)fpoly, n);
+    break;
+  case CD_FILLSPLINE:
+    if (n < 4) return;
+    fpoly = sPolyToFloat(poly, n);
+    if (ctxcanvas->canvas->new_region)
+    {
+      GraphicsPath path(ctxcanvas->canvas->fill_mode==CD_EVENODD?FillModeAlternate:FillModeWinding);
+      path.AddClosedCurve((PointF*)fpoly, n);
+      Region region(&path);
+      sCombineRegion(ctxcanvas, region);
+    }
+    else
+      ctxcanvas->graphics->FillClosedCurve(ctxcanvas->fillBrush, (PointF*)fpoly, n);
+    break;
+  case CD_SPLINE:
+    if (n < 4) return;
+    fpoly = sPolyToFloat(poly, n);
+    ctxcanvas->graphics->DrawClosedCurve(ctxcanvas->linePen, (PointF*)fpoly, n);
+    break;
+  case CD_CLOSED_LINES:
+    poly[n].x = poly[0].x;
+    poly[n].y = poly[0].y;
+    n++;
+    /* continue */
+  case CD_OPEN_LINES:
+    fpoly = sPolyToFloat(poly, n);
+    ctxcanvas->graphics->DrawLines(ctxcanvas->linePen, (PointF*)fpoly, n);
+    break;
+  case CD_FILLGRADIENT:
+    {
+      int count = n;
+      PathGradientBrush* brush = new PathGradientBrush((PointF*)fpoly, n);
+      fpoly = sPolyToFloat(poly, n);
+      brush->SetSurroundColors(ctxcanvas->pathGradient, &count);
+      brush->SetCenterColor(ctxcanvas->pathGradient[n]);
+      ctxcanvas->graphics->FillPolygon(brush, (PointF*)fpoly, n, ctxcanvas->canvas->fill_mode==CD_EVENODD?FillModeAlternate:FillModeWinding);
+      delete brush;
+    }
+    break;
+  case CD_FILL:
+    poly[n].x = poly[0].x;
+    poly[n].y = poly[0].y;
+    n++;
+    fpoly = sPolyToFloat(poly, n);
+    if (ctxcanvas->canvas->new_region)
+    {
+      GraphicsPath path(ctxcanvas->canvas->fill_mode==CD_EVENODD?FillModeAlternate:FillModeWinding);
+      path.AddPolygon((PointF*)fpoly, n);
+      Region region(&path);
+      sCombineRegion(ctxcanvas, region);
+    }
+    else
+      ctxcanvas->graphics->FillPolygon(ctxcanvas->fillBrush, (PointF*)fpoly, n, ctxcanvas->canvas->fill_mode==CD_EVENODD?FillModeAlternate:FillModeWinding);
+    break;
+  case CD_CLIP:
+    poly[n].x = poly[0].x;
+    poly[n].y = poly[0].y;
+    n++;
+    
+    if (ctxcanvas->clip_fpoly)
+      delete[] ctxcanvas->clip_fpoly;
+    if (ctxcanvas->clip_poly)
+    {
+      delete[] ctxcanvas->clip_poly;
+      ctxcanvas->clip_poly = NULL;
+    }
+    
+    ctxcanvas->clip_fpoly = new PointF [n];
+
+    cdfPoint* pnt = poly;
+    int t = n;
+    int nc = 1;
+
+    ctxcanvas->clip_fpoly[0].X = (REAL)pnt->x;
+    ctxcanvas->clip_fpoly[0].Y = (REAL)pnt->y;
+    pnt++;
+
+    for (int i = 1; i < t-1; i++, pnt++)
+    {
+      if (!(((REAL)pnt->x == ctxcanvas->clip_fpoly[nc-1].X && pnt->x == (pnt + 1)->x) || 
+            ((REAL)pnt->y == ctxcanvas->clip_fpoly[nc-1].Y && pnt->y == (pnt + 1)->y)))
+      {
+        ctxcanvas->clip_fpoly[nc].X = (REAL)pnt->x;
+        ctxcanvas->clip_fpoly[nc].Y = (REAL)pnt->y;
+        nc++;
+      }
+    }
+
+    ctxcanvas->clip_poly_n = nc;
+    
+    if (ctxcanvas->canvas->clip_mode == CD_CLIPPOLYGON) 
+      sClipPoly(ctxcanvas);
+    
+    break;
+  }
+
+  if (fpoly)
+    delete[] fpoly;
 
   ctxcanvas->dirty = 1;
 }
@@ -1654,7 +2081,7 @@ static cdCtxImage *cdcreateimage(cdCtxCanvas* ctxcanvas, int width, int height)
   ctximage->h_mm = ctximage->h / ctximage->yres;
 
   Graphics imggraphics(ctximage->bitmap);
-  imggraphics.Clear(Color::White);
+  imggraphics.Clear(Color((ARGB)Color::White));
   
   return ctximage;
 }
@@ -2248,6 +2675,7 @@ cdCtxCanvas *cdwpCreateCanvas(cdCanvas* canvas, Graphics* graphics, int wtype)
   canvas->invert_yaxis = 1;
 
   ctxcanvas->clip_poly = NULL;
+  ctxcanvas->clip_fpoly = NULL;
   ctxcanvas->clip_poly_n = 0;
   ctxcanvas->clip_region = NULL;
   ctxcanvas->new_region = NULL;
@@ -2303,6 +2731,7 @@ void cdwpInitTable(cdCanvas* canvas)
 
   canvas->cxFlush = cdflush;
   canvas->cxPixel = cdpixel;
+
   canvas->cxLine = cdline;
   canvas->cxPoly = cdpoly;
   canvas->cxRect = cdrect;
@@ -2311,6 +2740,14 @@ void cdwpInitTable(cdCanvas* canvas)
   canvas->cxSector = cdsector;
   canvas->cxChord = cdchord;
   canvas->cxText = cdtext;
+
+  canvas->cxFLine = cdfline;
+  canvas->cxFPoly = cdfpoly;
+  canvas->cxFRect = cdfrect;
+  canvas->cxFBox = cdfbox;
+  canvas->cxFArc = cdfarc;
+  canvas->cxFSector = cdfsector;
+  canvas->cxFChord = cdfchord;
 
   canvas->cxNewRegion = cdnewregion;
   canvas->cxIsPointInRegion = cdispointinregion;

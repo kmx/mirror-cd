@@ -21,7 +21,8 @@
   <p>It is called &quot;server&quot; images because the data is stored in a system private 
   format, that the application (or the client) does not have access.</p>
   <p>To create a server image there must be an active canvas of a driver with 
-  server image support.</p>
+  server image support. Only the base drivers Win32, GDI+, X-Windows, XRender 
+	and Cairo, support server images.</p>
 
 <hr>
 <pre class="function"><span class="mainFunction">cdImage* <a name="cdCreateImage">cdCanvasCreateImage</a>(cdCanvas* canvas, int w, int h); [in C]</span>

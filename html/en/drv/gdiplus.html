@@ -61,7 +61,8 @@
 </ul>
 <h4>Primitives</h4>
 <ul>
-  <li><font face="Courier"><strong><a href="../func/marks.html#cdPixel">Pixel</a></strong></font>: 
+  <li>Floating point primitives are supported.</li>
+	<li><font face="Courier"><strong><a href="../func/marks.html#cdPixel">Pixel</a></strong></font>: 
   uses GDI. Excepting when the canvas is an image so it is done using GDI+.</li>
   <li><font face="Courier"><a href="../func/filled.html#cdSector"><b>Sector</b></a></font>: 
   it also draws an arc in the same position to complete the size of the sector.</li>
@@ -77,7 +78,8 @@
   <strong><tt>CD_FILLGRADIENT</tt></strong> defines the points of a filled polygon. It is filled with a gradient from 
   colors in each vertex to a color in its center. The colors are defined by the &quot;<strong><tt>GRADIENTCOLOR</tt></strong>&quot; 
   attribute, that must be set before each <strong><tt>cdVertex</tt></strong> call and before <strong><tt>cdEnd</tt></strong> 
-  for the center color. This will not affect the current interior style.</li>
+  for the center color. This will not affect the current interior style.<br>
+  <strong><tt>CD_PATH</tt></strong> is supported. </li>
 </ul>
 <h4>Attributes </h4>
 <ul>

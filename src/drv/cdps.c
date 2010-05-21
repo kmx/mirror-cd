@@ -64,6 +64,7 @@ struct _cdCtxCanvas
   int level1;            /* if true generates level 1 only function calls */
   int landscape;         /* page orientation */
   int debug;             /* print debug strings in the file */
+
   float  rotate_angle;
   int    rotate_center_x,
          rotate_center_y;
@@ -73,7 +74,6 @@ struct _cdCtxCanvas
 
   int poly_holes[500];
   int holes;
-
 };
 
 /*
@@ -396,7 +396,7 @@ static int cdhatch(cdCtxCanvas *ctxcanvas, int style);
 static void cdstipple(cdCtxCanvas *ctxcanvas, int n, int m, const unsigned char *stipple);
 static void cdpattern(cdCtxCanvas *ctxcanvas, int n, int m, const long int *pattern);
 
-static void update_fill(cdCtxCanvas *ctxcanvas, int fill)
+static void sUpdateFill(cdCtxCanvas *ctxcanvas, int fill)
 {
   if (fill == 0)
   {
@@ -504,7 +504,7 @@ static int cdclip(cdCtxCanvas *ctxcanvas, int mode)
 
 static void cdline(cdCtxCanvas *ctxcanvas, int x1, int y1, int x2, int y2)
 {
-  update_fill(ctxcanvas, 0);
+  sUpdateFill(ctxcanvas, 0);
 
   fprintf(ctxcanvas->file, "N %d %d %d %d LL\n", x1, y1, x2, y2);
 
@@ -517,7 +517,7 @@ static void cdline(cdCtxCanvas *ctxcanvas, int x1, int y1, int x2, int y2)
 
 static void cdfline(cdCtxCanvas *ctxcanvas, double x1, double y1, double x2, double y2)
 {
-  update_fill(ctxcanvas, 0);
+  sUpdateFill(ctxcanvas, 0);
 
   fprintf(ctxcanvas->file, "N %g %g %g %g LL\n", x1, y1, x2, y2);
 
@@ -530,7 +530,7 @@ static void cdfline(cdCtxCanvas *ctxcanvas, double x1, double y1, double x2, dou
 
 static void cdrect(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
 {
-  update_fill(ctxcanvas, 0);
+  sUpdateFill(ctxcanvas, 0);
 
   if (ctxcanvas->level1)
   {
@@ -553,7 +553,7 @@ static void cdrect(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int yma
 
 static void cdfrect(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
 {
-  update_fill(ctxcanvas, 0);
+  sUpdateFill(ctxcanvas, 0);
 
   if (ctxcanvas->level1)
   {
@@ -576,7 +576,7 @@ static void cdfrect(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymi
 
 static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
 {
-  update_fill(ctxcanvas, 1);
+  sUpdateFill(ctxcanvas, 1);
 
   if (ctxcanvas->level1)
   {
@@ -599,7 +599,7 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
 
 static void cdfbox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
 {
-  update_fill(ctxcanvas, 1);
+  sUpdateFill(ctxcanvas, 1);
 
   if (ctxcanvas->level1)
   {
@@ -622,7 +622,7 @@ static void cdfbox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin
 
 static void cdarc(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
 {
-  update_fill(ctxcanvas, 0);
+  sUpdateFill(ctxcanvas, 0);
 
   if (w==h) /* Circulo: PS implementa direto */
   {
@@ -654,7 +654,7 @@ static void cdarc(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a
 
 static void cdfarc(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
 {
-  update_fill(ctxcanvas, 0);
+  sUpdateFill(ctxcanvas, 0);
 
   if (w==h) /* Circulo: PS implementa direto */
   {
@@ -686,7 +686,7 @@ static void cdfarc(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, doubl
 
 static void cdsector(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
 {
-  update_fill(ctxcanvas, 1);
+  sUpdateFill(ctxcanvas, 1);
 
   if (w==h) /* Circulo: PS implementa direto */
   {
@@ -727,7 +727,7 @@ static void cdsector(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, doubl
 
 static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
 {
-  update_fill(ctxcanvas, 1);
+  sUpdateFill(ctxcanvas, 1);
 
   if (w==h) /* Circulo: PS implementa direto */
   {
@@ -768,7 +768,7 @@ static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, do
 
 static void cdchord(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
 {
-  update_fill(ctxcanvas, 1);
+  sUpdateFill(ctxcanvas, 1);
 
   if (w==h) /* Circulo: PS implementa direto */
   {
@@ -806,7 +806,7 @@ static void cdchord(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double
 
 static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
 {
-  update_fill(ctxcanvas, 1);
+  sUpdateFill(ctxcanvas, 1);
 
   if (w==h) /* Circulo: PS implementa direto */
   {
@@ -849,7 +849,7 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
   int i;
   int ascent, height, baseline;
   
-  update_fill(ctxcanvas, 0);
+  sUpdateFill(ctxcanvas, 0);
 
   cdCanvasGetFontDim(ctxcanvas->canvas, NULL, &height, &ascent, NULL);
   baseline = height - ascent;
@@ -960,16 +960,228 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
   if (ctxcanvas->debug) fprintf(ctxcanvas->file, "%%cdTextEnd\n");
 }
 
+static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, int len)
+{
+  int i;
+  int ascent, height, baseline;
+  
+  sUpdateFill(ctxcanvas, 0);
+
+  cdCanvasGetFontDim(ctxcanvas->canvas, NULL, &height, &ascent, NULL);
+  baseline = height - ascent;
+
+  if (ctxcanvas->debug) fprintf(ctxcanvas->file, "\n%%cdText Begin\n");
+
+  if (ctxcanvas->canvas->use_matrix || ctxcanvas->rotate_angle)
+    set_default_matrix(ctxcanvas);
+
+  fprintf(ctxcanvas->file, "N 0 0 M\n");
+  putc('(', ctxcanvas->file);
+
+  for (i=0; i<len; i++)
+  {
+    if (s[i]=='(' || s[i]==')')
+      putc('\\', ctxcanvas->file);
+    putc(s[i], ctxcanvas->file);
+  }
+
+  fprintf(ctxcanvas->file, ")\n");
+  fprintf(ctxcanvas->file, "dup true charpath\n");
+  fprintf(ctxcanvas->file, "flattenpath\n");
+  fprintf(ctxcanvas->file, "pathbbox\n");    /* bbox na pilha: llx lly urx ury */
+  fprintf(ctxcanvas->file, "exch\n");        /* troca o topo: llx lly ury urx */
+  fprintf(ctxcanvas->file, "4 1 roll\n");    /* roda: urx llx lly ury */
+  fprintf(ctxcanvas->file, "exch\n");        /* troca o topo: urx llx ury lly */
+  fprintf(ctxcanvas->file, "sub\n");         /* subtrai: urx llx h */
+  fprintf(ctxcanvas->file, "3 1 roll\n");    /* roda: h urx llx */
+  fprintf(ctxcanvas->file, "sub\n");         /* subtrai: h w */
+  fprintf(ctxcanvas->file, "0 0\n");         /* empilha: h w 0 0 */
+  fprintf(ctxcanvas->file, "4 -1 roll\n");   /* roda: w 0 0 h */
+
+  if (ctxcanvas->canvas->use_matrix || ctxcanvas->rotate_angle)
+    cdtransform(ctxcanvas, ctxcanvas->canvas->use_matrix? ctxcanvas->canvas->matrix: NULL);
+
+  fprintf(ctxcanvas->file, "gsave\n");   /* save to use local transform */
+  fprintf(ctxcanvas->file, "%g %g translate\n", x, y);
+
+  if (ctxcanvas->canvas->text_orientation != 0)
+    fprintf(ctxcanvas->file, "%g rotate\n", ctxcanvas->canvas->text_orientation);
+
+  switch (ctxcanvas->canvas->text_alignment) /* Operacao em Y. topo da pilha: w x y h */
+  {
+  case CD_NORTH:
+  case CD_NORTH_EAST:
+  case CD_NORTH_WEST:
+    fprintf(ctxcanvas->file, "%d sub sub\n", baseline);       /* empilha, subtrai, subtrai: w x y-(h-baseline) */
+    break;
+  case CD_EAST:
+  case CD_WEST:
+  case CD_CENTER:
+    fprintf(ctxcanvas->file, "2 div %d sub sub\n", baseline); /* empilha, divide, empilha, subtrai, subtrai: w x y-(h/2-baseline) */
+    break;
+  case CD_SOUTH_EAST:
+  case CD_SOUTH:
+  case CD_SOUTH_WEST:
+    fprintf(ctxcanvas->file, "pop %d add\n", baseline); /* desempilha, empilha, adiciona: w x y+baseline */
+    break;
+  case CD_BASE_RIGHT:
+  case CD_BASE_CENTER:
+  case CD_BASE_LEFT:
+    fprintf(ctxcanvas->file, "pop\n");       /* desempilha h: w x y */
+    break;
+  }
+
+  fprintf(ctxcanvas->file, "3 1 roll\n");    /* roda: y' w x */
+  fprintf(ctxcanvas->file, "exch\n");        /* inverte: y' x w */
+
+  switch (ctxcanvas->canvas->text_alignment) /* Operacao em X, topo da pilha: x w */
+  {
+  case CD_NORTH:
+  case CD_SOUTH:
+  case CD_CENTER:
+  case CD_BASE_CENTER:
+    fprintf(ctxcanvas->file, "2 div sub\n");  /* empilha, divide, subtrai: y' x-w/2 */
+    break;
+  case CD_NORTH_EAST:
+  case CD_EAST:
+  case CD_SOUTH_EAST:
+  case CD_BASE_RIGHT:
+    fprintf(ctxcanvas->file, "sub\n");        /* subtrai: y' x-w */
+    break;
+  case CD_SOUTH_WEST:
+  case CD_WEST:
+  case CD_NORTH_WEST:
+  case CD_BASE_LEFT:
+    fprintf(ctxcanvas->file, "pop\n");        /* desempilha: y' x */
+    break;
+  }
+
+  fprintf(ctxcanvas->file, "exch\n");         /* inverte: x' y' */
+  fprintf(ctxcanvas->file, "M\n");            /* moveto */
+
+  fprintf(ctxcanvas->file, "show\n");
+
+  if (ctxcanvas->eps)
+  {
+    int xmin, xmax, ymin, ymax;
+    s = cdStrDupN(s, len);
+    cdCanvasGetTextBox(ctxcanvas->canvas, (int)x, (int)y, s, &xmin, &xmax, &ymin, &ymax);
+    free((char*)s);
+    fbbox(ctxcanvas, (double)xmin, (double)ymin);
+    fbbox(ctxcanvas, (double)xmax, (double)ymax);
+  }
+
+  fprintf(ctxcanvas->file, "grestore\n");
+
+  if (ctxcanvas->debug) fprintf(ctxcanvas->file, "%%cdTextEnd\n");
+}
+
 static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
 {
   int i;
+
+  if (mode == CD_PATH)
+  {
+    int p;
+
+    /* if there is any current path, remove it */
+    fprintf(ctxcanvas->file, "newpath\n");
+
+    i = 0;
+    for (p=0; p<ctxcanvas->canvas->path_n; p++)
+    {
+      switch(ctxcanvas->canvas->path[p])
+      {
+      case CD_PATH_NEW:
+        fprintf(ctxcanvas->file, "newpath\n");
+        break;
+      case CD_PATH_MOVETO:
+        if (i+1 > n) return;
+        fprintf(ctxcanvas->file, "%d %d M\n", poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_LINETO:
+        if (i+1 > n) return;
+        fprintf(ctxcanvas->file, "%d %d L\n", poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_ARC:
+        {
+          double xc, yc, w, h, a1, a2;
+
+          if (i+3 > n) return;
+
+          xc = poly[i].x, 
+          yc = poly[i].y, 
+          w = poly[i+1].x, 
+          h = poly[i+1].y, 
+          a1 = poly[i+2].x/1000.0, 
+          a2 = poly[i+2].y/1000.0;
+
+          if (w==h) /* Circulo: PS implementa direto */
+          {
+            fprintf(ctxcanvas->file, "N %d %d %g %g %g arc\n", xc, yc, 0.5*w, a1, a2);
+          }
+          else /* Elipse: mudar a escala p/ criar a partir do circulo */
+          {
+            fprintf(ctxcanvas->file, "[0 0 0 0 0 0] currentmatrix\n"); /* fill new matrix from CTM */
+            fprintf(ctxcanvas->file, "%d %d translate\n", xc, yc);
+            fprintf(ctxcanvas->file, "1 %g scale\n", ((double)h)/w);
+            fprintf(ctxcanvas->file, "N\n");
+            fprintf(ctxcanvas->file, "0 0 %g %g %g arc\n", 0.5*w, a1, a2);
+            fprintf(ctxcanvas->file, "setmatrix\n"); /* back to CTM */
+          }
+
+          i += 3;
+        }
+        break;
+      case CD_PATH_CURVETO:
+        if (i+3 > n) return;
+        fprintf(ctxcanvas->file, "%d %d %d %d %d %d B\n", poly[i].x,   poly[i].y, 
+                                                          poly[i+1].x, poly[i+1].y, 
+                                                          poly[i+2].x, poly[i+2].y);
+        i += 3;
+        break;
+      case CD_PATH_CLOSE:
+        fprintf(ctxcanvas->file, "closepath\n");
+        break;
+      case CD_PATH_FILL:
+        sUpdateFill(ctxcanvas, 1);
+        if (ctxcanvas->holes || ctxcanvas->canvas->fill_mode==CD_EVENODD)
+          fprintf(ctxcanvas->file, "eofill\n");
+        else
+          fprintf(ctxcanvas->file, "fill\n");
+        break;
+      case CD_PATH_STROKE:
+        sUpdateFill(ctxcanvas, 0);
+        fprintf(ctxcanvas->file, "stroke\n");
+        break;
+      case CD_PATH_FILLSTROKE:
+        sUpdateFill(ctxcanvas, 1);
+        fprintf(ctxcanvas->file, "gsave\n");
+        if (ctxcanvas->holes || ctxcanvas->canvas->fill_mode==CD_EVENODD)
+          fprintf(ctxcanvas->file, "eofill\n");
+        else
+          fprintf(ctxcanvas->file, "fill\n");
+        fprintf(ctxcanvas->file, "grestore\n");
+        sUpdateFill(ctxcanvas, 0);
+        fprintf(ctxcanvas->file, "stroke\n");
+        break;
+      case CD_PATH_CLIP:
+        if (ctxcanvas->canvas->fill_mode==CD_EVENODD)
+          fprintf(ctxcanvas->file, "C eoclip\n");
+        else
+          fprintf(ctxcanvas->file, "C clip\n");
+        break;
+      }
+    }
+    return;
+  }
 
   if (mode == CD_CLIP)
   {
     if (ctxcanvas->eps) /* initclip not allowed in EPS */
       return;
-
-    if (ctxcanvas->debug) fprintf(ctxcanvas->file, "\n%%cdPoly %d Begin\n", mode);
 
     fprintf(ctxcanvas->file, "/clip_polygon {\n");
     fprintf(ctxcanvas->file, "initclip\n");
@@ -977,12 +1189,12 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
   else
   {
     if (mode == CD_FILL)
-      update_fill(ctxcanvas, 1);
+      sUpdateFill(ctxcanvas, 1);
     else
-      update_fill(ctxcanvas, 0);
-
-    if (ctxcanvas->debug) fprintf(ctxcanvas->file, "\n%%cdPoly %d Begin\n", mode);
+      sUpdateFill(ctxcanvas, 0);
   }
+
+  if (ctxcanvas->debug) fprintf(ctxcanvas->file, "\n%%cdPoly %d Begin\n", mode);
 
   fprintf(ctxcanvas->file, "N\n");
   fprintf(ctxcanvas->file, "%d %d M\n", poly[0].x, poly[0].y);
@@ -1061,12 +1273,108 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 {
   int i, hole_index = 0;
 
+  if (mode == CD_PATH)
+  {
+    int p;
+
+    /* if there is any current path, remove it */
+    fprintf(ctxcanvas->file, "newpath\n");
+
+    i = 0;
+    for (p=0; p<ctxcanvas->canvas->path_n; p++)
+    {
+      switch(ctxcanvas->canvas->path[p])
+      {
+      case CD_PATH_NEW:
+        fprintf(ctxcanvas->file, "newpath\n");
+        break;
+      case CD_PATH_MOVETO:
+        if (i+1 > n) return;
+        fprintf(ctxcanvas->file, "%g %g M\n", poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_LINETO:
+        if (i+1 > n) return;
+        fprintf(ctxcanvas->file, "%g %g L\n", poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_ARC:
+        {
+          double xc, yc, w, h, a1, a2;
+
+          if (i+3 > n) return;
+
+          xc = poly[i].x, 
+          yc = poly[i].y, 
+          w = poly[i+1].x, 
+          h = poly[i+1].y, 
+          a1 = poly[i+2].x, 
+          a2 = poly[i+2].y;
+
+          if (w==h) /* Circulo: PS implementa direto */
+          {
+            fprintf(ctxcanvas->file, "N %g %g %g %g %g arc\n", xc, yc, 0.5*w, a1, a2);
+          }
+          else /* Elipse: mudar a escala p/ criar a partir do circulo */
+          {
+            fprintf(ctxcanvas->file, "[0 0 0 0 0 0] currentmatrix\n"); /* fill new matrix from CTM */
+            fprintf(ctxcanvas->file, "%g %g translate\n", xc, yc);
+            fprintf(ctxcanvas->file, "1 %g scale\n", ((double)h)/w);
+            fprintf(ctxcanvas->file, "N\n");
+            fprintf(ctxcanvas->file, "0 0 %g %g %g arc\n", 0.5*w, a1, a2);
+            fprintf(ctxcanvas->file, "setmatrix\n"); /* back to CTM */
+          }
+
+          i += 3;
+        }
+        break;
+      case CD_PATH_CURVETO:
+        if (i+3 > n) return;
+        fprintf(ctxcanvas->file, "%g %g %g %g %g %g B\n", poly[i].x,   poly[i].y, 
+                                                          poly[i+1].x, poly[i+1].y, 
+                                                          poly[i+2].x, poly[i+2].y);
+        i += 3;
+        break;
+      case CD_PATH_CLOSE:
+        fprintf(ctxcanvas->file, "closepath\n");
+        break;
+      case CD_PATH_FILL:
+        sUpdateFill(ctxcanvas, 1);
+        if (ctxcanvas->holes || ctxcanvas->canvas->fill_mode==CD_EVENODD)
+          fprintf(ctxcanvas->file, "eofill\n");
+        else
+          fprintf(ctxcanvas->file, "fill\n");
+        break;
+      case CD_PATH_STROKE:
+        sUpdateFill(ctxcanvas, 0);
+        fprintf(ctxcanvas->file, "stroke\n");
+        break;
+      case CD_PATH_FILLSTROKE:
+        sUpdateFill(ctxcanvas, 1);
+        fprintf(ctxcanvas->file, "gsave\n");
+        if (ctxcanvas->holes || ctxcanvas->canvas->fill_mode==CD_EVENODD)
+          fprintf(ctxcanvas->file, "eofill\n");
+        else
+          fprintf(ctxcanvas->file, "fill\n");
+        fprintf(ctxcanvas->file, "grestore\n");
+        sUpdateFill(ctxcanvas, 0);
+        fprintf(ctxcanvas->file, "stroke\n");
+        break;
+      case CD_PATH_CLIP:
+        if (ctxcanvas->canvas->fill_mode==CD_EVENODD)
+          fprintf(ctxcanvas->file, "C eoclip\n");
+        else
+          fprintf(ctxcanvas->file, "C clip\n");
+        break;
+      }
+    }
+    return;
+  }
+
   if (mode == CD_CLIP)
   {
     if (ctxcanvas->eps) /* initclip not allowed in EPS */
       return;
-
-    if (ctxcanvas->debug) fprintf(ctxcanvas->file, "\n%%cdfPoly %d Begin\n", mode);
 
     fprintf(ctxcanvas->file, "/clip_polygon {\n");
     fprintf(ctxcanvas->file, "initclip\n");
@@ -1074,12 +1382,12 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
   else
   {
     if (mode == CD_FILL)
-      update_fill(ctxcanvas, 1);
+      sUpdateFill(ctxcanvas, 1);
     else
-      update_fill(ctxcanvas, 0);
-
-    if (ctxcanvas->debug) fprintf(ctxcanvas->file, "\n%%cdfPoly %d Begin\n", mode);
+      sUpdateFill(ctxcanvas, 0);
   }
+
+  if (ctxcanvas->debug) fprintf(ctxcanvas->file, "\n%%cdfPoly %d Begin\n", mode);
 
   fprintf(ctxcanvas->file, "N\n");
   fprintf(ctxcanvas->file, "%g %g M\n", poly[0].x, poly[0].y);
@@ -1752,7 +2060,9 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 static void cdinittable(cdCanvas* canvas)
 {
   canvas->cxFlush = cdflush;
+
   canvas->cxPixel = cdpixel;
+
   canvas->cxLine = cdline;
   canvas->cxPoly = cdpoly;
   canvas->cxRect = cdrect;
@@ -1761,8 +2071,10 @@ static void cdinittable(cdCanvas* canvas)
   canvas->cxSector = cdsector;
   canvas->cxChord = cdchord;
   canvas->cxText = cdtext;
+
   canvas->cxPutImageRectRGB = cdputimagerectrgb;
   canvas->cxPutImageRectMap = cdputimagerectmap;
+
   canvas->cxFLine = cdfline;
   canvas->cxFPoly = cdfpoly;
   canvas->cxFRect = cdfrect;
@@ -1770,6 +2082,8 @@ static void cdinittable(cdCanvas* canvas)
   canvas->cxFArc = cdfarc;
   canvas->cxFSector = cdfsector;
   canvas->cxFChord = cdfchord;
+  canvas->cxFText = cdftext;
+
   canvas->cxClip = cdclip;
   canvas->cxFClipArea = cdfcliparea;
   canvas->cxLineStyle = cdlinestyle;

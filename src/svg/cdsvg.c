@@ -101,11 +101,12 @@ static int cdclip(cdCtxCanvas *ctxcanvas, int clip_mode)
       if (ctxcanvas->clip_polygon)
       {
         /* open clipping container */
-        fprintf(ctxcanvas->file, "<g clip-path=\"url(#clippoly%d)\">\n", ctxcanvas->last_clip_poly);
+        fprintf(ctxcanvas->file, "<g clip-path=\"url(#clippoly%d)\" clip-rule:%s >\n", ctxcanvas->last_clip_poly, (ctxcanvas->canvas->fill_mode==CD_EVENODD)? "evenodd": "nonzero");
         ctxcanvas->clip_control = 1;
       }
       break;
   }
+
   return clip_mode;
 }
 
@@ -407,7 +408,7 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *text, int l
   cdftext(ctxcanvas, (double)x, (double)y, text, len);
 }
 
-static void write_points(cdCtxCanvas *ctxcanvas, cdfPoint* poly, int n, int close)
+static void sWritePointsF(cdCtxCanvas *ctxcanvas, cdfPoint* poly, int n, int close)
 {
   int i;
   for(i = 0; i<n; i++)
@@ -416,27 +417,153 @@ static void write_points(cdCtxCanvas *ctxcanvas, cdfPoint* poly, int n, int clos
     fprintf(ctxcanvas->file, "%g,%g ", poly[0].x, poly[0].y);
 }
 
+static void sWritePoints(cdCtxCanvas *ctxcanvas, cdPoint* poly, int n, int close)
+{
+  int i;
+  for(i = 0; i<n; i++)
+    fprintf(ctxcanvas->file, "%d,%d ", poly[i].x, poly[i].y);
+  if (close)
+    fprintf(ctxcanvas->file, "%d,%d ", poly[0].x, poly[0].y);
+}
+
 static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 {
   char* rule;
+
+  if (mode == CD_PATH)
+  {
+    int i, p, clip_path = 0, end_path;
+
+    for (p=0; p<ctxcanvas->canvas->path_n; p++)
+    {
+      if (ctxcanvas->canvas->path[p] == CD_PATH_CLIP)
+      {
+        clip_path = 1;
+        break;
+      }
+    }
+
+    if (clip_path)
+      fprintf(ctxcanvas->file, "<clipPath id=\"clippoly%d\">\n", ++ctxcanvas->last_clip_poly);
+
+    /* starts a new path */
+    fprintf(ctxcanvas->file, "<path d=\"");
+    end_path = 0;
+
+    i = 0;
+    for (p=0; p<ctxcanvas->canvas->path_n; p++)
+    {
+      switch(ctxcanvas->canvas->path[p])
+      {
+      case CD_PATH_NEW:
+        if (!end_path)
+          fprintf(ctxcanvas->file, "\" />\n");
+
+        fprintf(ctxcanvas->file, "<path d=\"");
+        end_path = 0;
+        break;
+      case CD_PATH_MOVETO:
+        if (i+1 > n) return;
+        fprintf(ctxcanvas->file, "M %g %g ", poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_LINETO:
+        if (i+1 > n) return;
+        fprintf(ctxcanvas->file, "L %g %g ", poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_ARC:
+        {
+          double xc, yc, w, h, a1, a2;
+          double arcStartX, arcStartY, arcEndX, arcEndY;
+          int largeArc = 0;
+
+          if (i+3 > n) return;
+
+          xc = poly[i].x, 
+          yc = poly[i].y, 
+          w = poly[i+1].x, 
+          h = poly[i+1].y, 
+          a1 = poly[i+2].x, 
+          a2 = poly[i+2].y;
+
+          if (ctxcanvas->canvas->use_matrix)  /* Transformation active */
+          {
+            double temp = 360 - a1;
+            a1 = 360 - a2;
+            a2 = temp;
+          }
+
+          arcStartX = (xc+(w/2)*cos(a1*CD_DEG2RAD));
+          arcStartY = (yc-(h/2)*sin(a1*CD_DEG2RAD));
+          arcEndX   = (xc+(w/2)*cos(a2*CD_DEG2RAD));
+          arcEndY   = (yc-(h/2)*sin(a2*CD_DEG2RAD));
+
+          if ((a2-a1) > 180.0)
+            largeArc = 1;
+
+          fprintf(ctxcanvas->file, "M %g %g A %g %g 0 %d 0 %g %g ",
+                  arcStartX, arcStartY, w/2, h/2, largeArc, arcEndX, arcEndY);
+
+          i += 3;
+        }
+        break;
+      case CD_PATH_CURVETO:
+        if (i+3 > n) return;
+        fprintf(ctxcanvas->file, "C %g %g %g %g %g %g ", poly[i].x,   poly[i].y, 
+                                                         poly[i+1].x, poly[i+1].y, 
+                                                         poly[i+2].x, poly[i+2].y);
+        i += 3;
+        break;
+      case CD_PATH_CLOSE:
+        fprintf(ctxcanvas->file, "Z ");
+        break;
+      case CD_PATH_FILL:
+        rule = (ctxcanvas->canvas->fill_mode==CD_EVENODD)? "evenodd": "nonzero";
+        fprintf(ctxcanvas->file, "\" style=\"fill:%s; fill-rule:%s; stroke:none; opacity:%g\" />\n",
+                (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor: ctxcanvas->pattern, rule, ctxcanvas->opacity);
+        end_path = 1;
+        break;
+      case CD_PATH_STROKE:
+        fprintf(ctxcanvas->file, "\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" />\n",
+                ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
+        end_path = 1;
+        break;
+      case CD_PATH_FILLSTROKE:
+        rule = (ctxcanvas->canvas->fill_mode==CD_EVENODD)? "evenodd": "nonzero";
+        fprintf(ctxcanvas->file, "\" style=\"fill:%s; fill-rule:%s; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" />\n",
+                (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor: ctxcanvas->pattern, rule, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
+        end_path = 1;
+        break;
+      case CD_PATH_CLIP:
+        fprintf(ctxcanvas->file, "\" />\n");
+        fprintf(ctxcanvas->file, "</clipPath>\n");
+        ctxcanvas->clip_polygon = 1;
+        cdclip(ctxcanvas, CD_CLIPPOLYGON);
+        end_path = 1;
+        break;
+      }
+    }
+    return;
+  }
 
   switch (mode)
   {
   case CD_CLOSED_LINES:
     fprintf(ctxcanvas->file, "<polygon style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" points=\"",
             ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
-    write_points(ctxcanvas, poly, n, 1);
+    sWritePointsF(ctxcanvas, poly, n, 1);
     fprintf(ctxcanvas->file, "\" />\n");
     break;
   case CD_OPEN_LINES:
     fprintf(ctxcanvas->file, "<polyline style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" points=\"",
             ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
-    write_points(ctxcanvas, poly, n, 0);
+    sWritePointsF(ctxcanvas, poly, n, 0);
     fprintf(ctxcanvas->file, "\" />\n");
     break;
   case CD_BEZIER:
     fprintf(ctxcanvas->file, "<path d=\"M%g,%g C", poly[0].x, poly[0].y);
-    write_points(ctxcanvas, poly+1, n-1, 0);
+    sWritePointsF(ctxcanvas, poly+1, n-1, 0);
     fprintf(ctxcanvas->file, "\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" />\n",
             ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
     break;
@@ -448,14 +575,14 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 
     fprintf(ctxcanvas->file, "<polygon style=\"fill:%s; fill-rule:%s; stroke:none; opacity:%g\" points=\"",
             (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor: ctxcanvas->pattern, rule, ctxcanvas->opacity);
-    write_points(ctxcanvas, poly, n, 0);
+    sWritePointsF(ctxcanvas, poly, n, 0);
     fprintf(ctxcanvas->file, "\" />\n");
     break;
   case CD_CLIP:
     fprintf(ctxcanvas->file, "<clipPath id=\"clippoly%d\">\n", ++ctxcanvas->last_clip_poly);
 
     fprintf(ctxcanvas->file, "<polygon points=\"");
-    write_points(ctxcanvas, poly, n, 0);
+    sWritePointsF(ctxcanvas, poly, n, 0);
     fprintf(ctxcanvas->file, "\" />\n");
 
     fprintf(ctxcanvas->file, "</clipPath>\n");
@@ -472,20 +599,174 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 
 static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
 {
-  int i;
-  cdfPoint* newPoly = NULL;
-  
-  newPoly = (cdfPoint*)malloc(sizeof(cdfPoint)*(n+1));
+  char* rule;
 
-  for(i = 0; i < n; i++)
+  if (mode == CD_PATH)
   {
-    newPoly[i].x = (double)poly[i].x;
-    newPoly[i].y = (double)poly[i].y;
+    int i, p, clip_path = 0, end_path;
+
+    for (p=0; p<ctxcanvas->canvas->path_n; p++)
+    {
+      if (ctxcanvas->canvas->path[p] == CD_PATH_CLIP)
+      {
+        clip_path = 1;
+        break;
+      }
+    }
+
+    if (clip_path)
+      fprintf(ctxcanvas->file, "<clipPath id=\"clippoly%d\">\n", ++ctxcanvas->last_clip_poly);
+
+    /* starts a new path */
+    fprintf(ctxcanvas->file, "<path d=\"");
+    end_path = 0;
+
+    i = 0;
+    for (p=0; p<ctxcanvas->canvas->path_n; p++)
+    {
+      switch(ctxcanvas->canvas->path[p])
+      {
+      case CD_PATH_NEW:
+        if (!end_path)
+          fprintf(ctxcanvas->file, "\" />\n");
+
+        fprintf(ctxcanvas->file, "<path d=\"");
+        end_path = 0;
+        break;
+      case CD_PATH_MOVETO:
+        if (i+1 > n) return;
+        fprintf(ctxcanvas->file, "M %d %d ", poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_LINETO:
+        if (i+1 > n) return;
+        fprintf(ctxcanvas->file, "L %d %d ", poly[i].x, poly[i].y);
+        i++;
+        break;
+      case CD_PATH_ARC:
+        {
+          int xc, yc, w, h;
+          double a1, a2;
+          int arcStartX, arcStartY, arcEndX, arcEndY;
+          int largeArc = 0;
+
+          if (i+3 > n) return;
+
+          xc = poly[i].x, 
+          yc = poly[i].y, 
+          w = poly[i+1].x, 
+          h = poly[i+1].y, 
+          a1 = poly[i+2].x/1000.0, 
+          a2 = poly[i+2].y/1000.0;
+
+          if (ctxcanvas->canvas->use_matrix)  /* Transformation active */
+          {
+            double temp = 360 - a1;
+            a1 = 360 - a2;
+            a2 = temp;
+          }
+
+          arcStartX = (int)(xc+(w/2)*cos(a1*CD_DEG2RAD));
+          arcStartY = (int)(yc-(h/2)*sin(a1*CD_DEG2RAD));
+          arcEndX   = (int)(xc+(w/2)*cos(a2*CD_DEG2RAD));
+          arcEndY   = (int)(yc-(h/2)*sin(a2*CD_DEG2RAD));
+
+          if ((a2-a1) > 180.0)
+            largeArc = 1;
+
+          fprintf(ctxcanvas->file, "M %d %d A %d %d 0 %d 0 %d %d ",
+                  arcStartX, arcStartY, w/2, h/2, largeArc, arcEndX, arcEndY);
+
+          i += 3;
+        }
+        break;
+      case CD_PATH_CURVETO:
+        if (i+3 > n) return;
+        fprintf(ctxcanvas->file, "C %d %d %d %d %d %d ", poly[i].x,   poly[i].y, 
+                                                         poly[i+1].x, poly[i+1].y, 
+                                                         poly[i+2].x, poly[i+2].y);
+        i += 3;
+        break;
+      case CD_PATH_CLOSE:
+        fprintf(ctxcanvas->file, "Z ");
+        break;
+      case CD_PATH_FILL:
+        rule = (ctxcanvas->canvas->fill_mode==CD_EVENODD)? "evenodd": "nonzero";
+        fprintf(ctxcanvas->file, "\" style=\"fill:%s; fill-rule:%s; stroke:none; opacity:%g\" />\n",
+                (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor: ctxcanvas->pattern, rule, ctxcanvas->opacity);
+        end_path = 1;
+        break;
+      case CD_PATH_STROKE:
+        fprintf(ctxcanvas->file, "\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" />\n",
+                ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
+        end_path = 1;
+        break;
+      case CD_PATH_FILLSTROKE:
+        rule = (ctxcanvas->canvas->fill_mode==CD_EVENODD)? "evenodd": "nonzero";
+        fprintf(ctxcanvas->file, "\" style=\"fill:%s; fill-rule:%s; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" />\n",
+                (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor: ctxcanvas->pattern, rule, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
+        end_path = 1;
+        break;
+      case CD_PATH_CLIP:
+        fprintf(ctxcanvas->file, "\" />\n");
+        fprintf(ctxcanvas->file, "</clipPath>\n");
+        ctxcanvas->clip_polygon = 1;
+        cdclip(ctxcanvas, CD_CLIPPOLYGON);
+        end_path = 1;
+        break;
+      }
+    }
+    return;
   }
 
-  cdfpoly(ctxcanvas, mode, (cdfPoint*)newPoly, n);
+  switch (mode)
+  {
+  case CD_CLOSED_LINES:
+    fprintf(ctxcanvas->file, "<polygon style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" points=\"",
+            ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
+    sWritePoints(ctxcanvas, poly, n, 1);
+    fprintf(ctxcanvas->file, "\" />\n");
+    break;
+  case CD_OPEN_LINES:
+    fprintf(ctxcanvas->file, "<polyline style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" points=\"",
+            ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
+    sWritePoints(ctxcanvas, poly, n, 0);
+    fprintf(ctxcanvas->file, "\" />\n");
+    break;
+  case CD_BEZIER:
+    fprintf(ctxcanvas->file, "<path d=\"M%g,%g C", poly[0].x, poly[0].y);
+    sWritePoints(ctxcanvas, poly+1, n-1, 0);
+    fprintf(ctxcanvas->file, "\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" />\n",
+            ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
+    break;
+  case CD_FILL:
+    if(ctxcanvas->canvas->fill_mode==CD_EVENODD)
+      rule = "evenodd";
+    else
+      rule = "nonzero";
 
-  free(newPoly);
+    fprintf(ctxcanvas->file, "<polygon style=\"fill:%s; fill-rule:%s; stroke:none; opacity:%g\" points=\"",
+            (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor: ctxcanvas->pattern, rule, ctxcanvas->opacity);
+    sWritePoints(ctxcanvas, poly, n, 0);
+    fprintf(ctxcanvas->file, "\" />\n");
+    break;
+  case CD_CLIP:
+    fprintf(ctxcanvas->file, "<clipPath id=\"clippoly%d\">\n", ++ctxcanvas->last_clip_poly);
+
+    fprintf(ctxcanvas->file, "<polygon points=\"");
+    sWritePoints(ctxcanvas, poly, n, 0);
+    fprintf(ctxcanvas->file, "\" />\n");
+
+    fprintf(ctxcanvas->file, "</clipPath>\n");
+    
+    ctxcanvas->clip_polygon = 1;
+
+    if (ctxcanvas->canvas->clip_mode == CD_CLIPPOLYGON)
+      cdclip(ctxcanvas, CD_CLIPPOLYGON);
+
+    break;
+
+  }
 }
 
 static int cdlinestyle(cdCtxCanvas *ctxcanvas, int style)
