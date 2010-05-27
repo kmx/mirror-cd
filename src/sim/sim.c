@@ -89,7 +89,7 @@ void simFillHorizLine(cdSimulation* simulation, int xmin, int y, int xmax)
   switch(canvas->interior_style)                                             
   {                                                                                    
   case CD_SOLID:                                                                     
-    simulation->SolidLine(canvas, xmin,y,xmax);  
+    simulation->SolidLine(canvas, xmin,y,xmax, canvas->foreground);  
     break;
   case CD_PATTERN:                                      
     simulation->PatternLine(canvas, xmin,xmax,y,canvas->pattern_w,
@@ -107,10 +107,22 @@ void simFillHorizLine(cdSimulation* simulation, int xmin, int y, int xmax)
   }
 }
 
-static void simSolidLine(cdCanvas* canvas, int xmin, int y, int xmax)
+void simFillHorizBox(cdSimulation* simulation, int xmin, int xmax, int ymin, int ymax)
 {
-  /* cdpolySIM and cdboxSIM will set line attributes so this can work */
-  canvas->cxLine(canvas->ctxcanvas, xmin, y, xmax, y);
+  cdCanvas* canvas = ((cdCtxCanvasBase*)ctxcanvas)->canvas;
+  cdSimulation* simulation = canvas->simulation;
+  int y;
+  for(y=ymin;y<=ymax;y++)
+    simFillHorizLine(simulation, xmin, y, xmax);
+}
+
+static void simSolidLine(cdCanvas* canvas, int xmin, int y, int xmax, long color)
+{
+  int x;
+  for (x = xmin; x <= xmax; x++)
+  {
+    canvas->cxPixel(canvas->ctxcanvas, x,y,color);
+  }
 }
 
 static void simPatternLine(cdCanvas* canvas, int xmin, int xmax, int y, int pw, const long *pattern)
@@ -118,12 +130,10 @@ static void simPatternLine(cdCanvas* canvas, int xmin, int xmax, int y, int pw, 
   cdSimulation* simulation = canvas->simulation;
   int x,i;
   int xb;
-  long curColor, old_color;
+  long curColor;
   
   i = xmin % pw;
-  
-  old_color = canvas->foreground;
-  
+ 
   for (x = xmin; x <= xmax;)
   {
     if (i == pw) 
@@ -143,13 +153,8 @@ static void simPatternLine(cdCanvas* canvas, int xmin, int xmax, int y, int pw, 
     if(xb==x-1)
       canvas->cxPixel(canvas->ctxcanvas, xb,y,curColor);
     else
-    {
-      cdCanvasSetForeground(canvas, curColor);
-      simulation->SolidLine(canvas, xb,y,x-1);  
-    }
+      simulation->SolidLine(canvas, xb,y,x-1, curColor);  
   }
-  
-  cdCanvasSetForeground(canvas, old_color);
 }
 
 static void simStippleLine(cdCanvas* canvas, int xmin, int xmax, int y, int pw, const unsigned char *stipple)
@@ -166,7 +171,7 @@ static void simStippleLine(cdCanvas* canvas, int xmin, int xmax, int y, int pw, 
   if(opacity==CD_OPAQUE)
   {
     bgColor=canvas->background;
-    cdCanvasSetForeground(canvas, fgColor);
+
     for (x = xmin, i=xmin%pw ; x <= xmax;)
     {
       if(i==pw) 
@@ -185,10 +190,10 @@ static void simStippleLine(cdCanvas* canvas, int xmin, int xmax, int y, int pw, 
         if(xb==x-1)
           canvas->cxPixel(canvas->ctxcanvas, xb,y,fgColor);
         else
-          simulation->SolidLine(canvas, xb,y,x-1);  
+          simulation->SolidLine(canvas, xb,y,x-1,fgColor);  
       }
     }
-    cdCanvasSetForeground(canvas, bgColor);
+
     for (x = xmin, i=xmin%pw ; x <= xmax;)
     {
       if(i==pw) 
@@ -207,13 +212,12 @@ static void simStippleLine(cdCanvas* canvas, int xmin, int xmax, int y, int pw, 
         if(xb==x-1)
           canvas->cxPixel(canvas->ctxcanvas, xb,y,bgColor);
         else
-          simulation->SolidLine(canvas, xb,y,x-1);  
+          simulation->SolidLine(canvas, xb,y,x-1,bgColor);  
       }
     }
   } 
   else
   {
-    cdCanvasSetForeground(canvas, fgColor);
     for (x = xmin,i=xmin%pw; x <= xmax;)
     {        
       xb=x;
@@ -230,11 +234,10 @@ static void simStippleLine(cdCanvas* canvas, int xmin, int xmax, int y, int pw, 
         if(xb==x-1)
           canvas->cxPixel(canvas->ctxcanvas, xb,y,fgColor);
         else
-          simulation->SolidLine(canvas, xb,y,x-1);  
+          simulation->SolidLine(canvas, xb,y,x-1,fgColor);  
       }
     }
   }
-  cdCanvasSetForeground(canvas, fgColor);
 }
 
 static void simHatchLine(cdCanvas* canvas, int xmin, int xmax, int y, unsigned char hatch)
@@ -269,15 +272,11 @@ static void simHatchLine(cdCanvas* canvas, int xmin, int xmax, int y, unsigned c
       if(xb==x)
         canvas->cxPixel(canvas->ctxcanvas, xb,y,curColor);
       else
-      {
-        cdCanvasSetForeground(canvas, curColor);
-        simulation->SolidLine(canvas, xb,y,x);  
-      }
+        simulation->SolidLine(canvas, xb,y,x, curColor);  
     }
   }
   else
   {
-    cdCanvasSetForeground(canvas, fgColor);
     for (x = xmin; x <= xmax; x++)
     {
       mask=(hatch&0x80)?1:0;
@@ -296,12 +295,10 @@ static void simHatchLine(cdCanvas* canvas, int xmin, int xmax, int y, unsigned c
         if(xb==x)
           canvas->cxPixel(canvas->ctxcanvas, xb,y,fgColor);
         else
-          simulation->SolidLine(canvas, xb,y,x);  
+          simulation->SolidLine(canvas, xb,y,x,fgColor);  
       }
     }
   }
-  
-  cdCanvasSetForeground(canvas, fgColor);
 }
 
 cdSimulation* cdCreateSimulation(cdCanvas* canvas)

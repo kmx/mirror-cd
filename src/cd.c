@@ -53,7 +53,7 @@ static void cd_setdefaultfunc(cdCanvas* canvas)
 {
   canvas->cxGetTextSize = cdgettextsizeEX;
   canvas->cxGetFontDim = cdgetfontdimEX;
-  canvas->cxRect = cdrectSIM;
+  canvas->cxRect = cdSimRect;
 }
 
 static void cd_setdefaultattrib(cdCanvas* canvas)
@@ -276,48 +276,48 @@ int cdCanvasSimulate(cdCanvas* canvas, int mode)
 
   if (mode & CD_SIM_LINE)
   {
-    canvas->cxLine = cdlineSIM;
+    canvas->cxLine = cdSimLine;
     canvas->cxFLine = NULL;
   }
 
   if (mode & CD_SIM_RECT)
   {
-    canvas->cxRect = cdrectSIM;
+    canvas->cxRect = cdSimRect;
     canvas->cxFRect = NULL;
   }
 
   if (mode & CD_SIM_BOX)
   {
-    canvas->cxBox = cdboxSIM;
+    canvas->cxBox = cdSimBox;
     canvas->cxFBox = NULL;
   }
 
   if (mode & CD_SIM_ARC)
   {
-    canvas->cxArc = cdarcSIM;
+    canvas->cxArc = cdSimArc;
     canvas->cxFArc = NULL;
   }
 
   if (mode & CD_SIM_SECTOR)
   {
-    canvas->cxSector = cdsectorSIM;
+    canvas->cxSector = cdSimSector;
     canvas->cxFSector = NULL;
   }
 
   if (mode & CD_SIM_CHORD)
   {
-    canvas->cxChord = cdchordSIM;
+    canvas->cxChord = cdSimChord;
     canvas->cxFChord = NULL;
   }
 
   if (mode & CD_SIM_TEXT)
   {
-    canvas->cxText = cdtextSIM;
+    canvas->cxText = cdSimTextFT;
     canvas->cxFText = NULL;
     canvas->cxNativeFont = NULL;
-    canvas->cxFont = cdfontSIM;
-    canvas->cxGetFontDim = cdgetfontdimSIM;
-    canvas->cxGetTextSize = cdgettextsizeSIM;
+    canvas->cxFont = cdSimFontFT;
+    canvas->cxGetFontDim = cdSimGetFontDimFT;
+    canvas->cxGetTextSize = cdSimGetTextSizeFT;
     canvas->cxTextOrientation = NULL;
 
     cdSimInitText(canvas->simulation);

@@ -20,7 +20,7 @@ struct _cdSimulation
   int font_map_n;
 
   /* horizontal line draw functions */
-  void (*SolidLine)(cdCanvas* canvas, int xmin, int y, int xmax);
+  void (*SolidLine)(cdCanvas* canvas, int xmin, int y, int xmax, long color);
   void (*PatternLine)(cdCanvas* canvas, int xmin, int xmax, int y, int pw, const long *pattern);
   void (*StippleLine)(cdCanvas* canvas, int xmin, int xmax, int y, int pw, const unsigned char *stipple);
   void (*HatchLine)(cdCanvas* canvas, int xmin, int xmax, int y, unsigned char hatch);
@@ -30,6 +30,7 @@ struct _cdSimulation
 
 void simFillDrawAAPixel(cdCanvas *canvas, int x, int y, unsigned short alpha_weigth);
 void simFillHorizLine(cdSimulation* simulation, int xmin, int y, int xmax);
+void simFillHorizBox(cdSimulation* simulation, int xmin, int xmax, int ymin, int ymax);
 void simGetPenPos(cdCanvas* canvas, int x, int y, const char* s, int len, FT_Matrix *matrix, FT_Vector *pen);
 int simIsPointInPolyWind(cdPoint* poly, int n, int x, int y);
 
@@ -52,10 +53,9 @@ void simPolyMakeSegments(simLineSegment *segments, int *n_seg, cdPoint* poly, in
 void simPolyFill(cdSimulation* simulation, cdPoint* poly, int n);
 void simLineThin(cdCanvas* canvas, int x1, int y1, int x2, int y2);
 void simLineThick(cdCanvas* canvas, int x1, int y1, int x2, int y2);
+void simfLineThick(cdCanvas* canvas, double x1, double y1, double x2, double y2);
 void simfLineThin(cdCanvas* canvas, double x1, double y1, double x2, double y2, int *last_xi_a, int *last_yi_a, int *last_xi_b, int *last_yi_b);
 extern int simLineStyleNoReset;
-
-int simCalcEllipseNumSegments(cdCanvas* canvas, int xc, int yc, int width, int height);
 
 #endif
 

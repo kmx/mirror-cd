@@ -713,6 +713,60 @@ void simLineThick(cdCanvas* canvas, int x1, int y1, int x2, int y2)
   cdCanvasLineStyle(canvas, style);
 }
 
+void simfLineThick(cdCanvas* canvas, double x1, double y1, double x2, double y2)
+{
+  const int interior = canvas->interior_style;
+  const int width = canvas->line_width;
+  const int style = canvas->line_style;
+
+  const double dx = x2-x1;
+  const double dy = y2-y1;
+
+  const double len = hypot(dx,dy);
+
+  const double dnx = dx/len;
+  const double dny = dy/len;
+
+  const double w1 = width/2.0;
+  const double w2 = width-w1;
+
+  const double n1x =  w1*dny;
+  const double n1y = -w1*dnx;
+
+  const double n2x = -w2*dny;
+  const double n2y =  w2*dnx;
+
+  const double p1x = x1 + n1x;
+  const double p1y = y1 + n1y;
+  const double p2x = x1 + n2x;
+  const double p2y = y1 + n2y;
+  const double p3x = p2x + dx;
+  const double p3y = p2y + dy;
+  const double p4x = p1x + dx;
+  const double p4y = p1y + dy;
+
+  cdPoint poly[4];
+
+  cdCanvasLineWidth(canvas, 1);
+  cdCanvasInteriorStyle(canvas, CD_SOLID);
+  cdCanvasLineStyle(canvas, CD_CONTINUOUS);
+
+  poly[0].x = _cdRound(p1x);
+  poly[0].y = _cdRound(p1y);
+  poly[1].x = _cdRound(p2x);
+  poly[1].y = _cdRound(p2y);
+  poly[2].x = _cdRound(p3x);
+  poly[2].y = _cdRound(p3y);
+  poly[3].x = _cdRound(p4x);
+  poly[3].y = _cdRound(p4y);
+
+  simPolyFill(canvas->simulation, poly, 4);
+
+  cdCanvasLineWidth(canvas, width);
+  cdCanvasInteriorStyle(canvas, interior);
+  cdCanvasLineStyle(canvas, style);
+}
+
 void simLineThin(cdCanvas* canvas, int x1, int y1, int x2, int y2)
 {
   unsigned short ErrorInc, ErrorAcc;

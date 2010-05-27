@@ -196,52 +196,6 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
   cdfSimBox(ctxcanvas, (double)xmin, (double)xmax, (double)ymin, (double)ymax);
 }
 
-static void xrFixAngles(cdCtxCanvas *ctxcanvas, double *angle1, double *angle2)
-{
-  if (ctxcanvas->canvas->invert_yaxis)
-  {
-    double temp = 360 - *angle1;
-    *angle1 = 360 - *angle2;
-    *angle2 = temp;
-  }
-}
-
-static void cdarc(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
-{
-  xrFixAngles(ctxcanvas, &a1, &a2);
-  cdfSimArc(ctxcanvas, (double)xc, (double)yc, (double)w, (double)h, a1, a2);
-}
-
-static void cdfarc(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
-{
-  xrFixAngles(ctxcanvas, &a1, &a2);
-  cdfSimArc(ctxcanvas, xc, yc, w, h, a1, a2);
-}
-
-static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
-{
-  xrFixAngles(ctxcanvas, &a1, &a2);
-  cdfSimElipse(ctxcanvas, xc, yc, w, h, a1, a2, 1);
-}
-
-static void cdsector(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
-{
-  xrFixAngles(ctxcanvas, &a1, &a2);
-  cdfSimElipse(ctxcanvas, (double)xc, (double)yc, (double)w, (double)h, a1, a2, 1);
-}
-
-static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
-{
-  xrFixAngles(ctxcanvas, &a1, &a2);
-  cdfSimElipse(ctxcanvas, xc, yc, w, h, a1, a2, 0);
-}
-
-static void cdchord(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
-{
-  xrFixAngles(ctxcanvas, &a1, &a2);
-  cdfSimElipse(ctxcanvas, (double)xc, (double)yc, (double)w, (double)h, a1, a2, 0);
-}
-
 static void cdfpoly(cdCtxCanvas* ctxcanvas, int mode, cdfPoint* fpoly, int n)
 {
   int i;
@@ -254,7 +208,10 @@ static void cdfpoly(cdCtxCanvas* ctxcanvas, int mode, cdfPoint* fpoly, int n)
     /* continue */
   case CD_OPEN_LINES:
     for (i = 0; i< n - 1; i++)
+    {
+      /* because line styles are not supported, this is not a problem */
       cdfline(ctxcanvas, fpoly[i].x, fpoly[i].y, fpoly[i+1].x, fpoly[i+1].y);
+    }
     break;
   case CD_BEZIER:
     cdfSimPolyBezier(ctxcanvas->canvas, fpoly, n);
@@ -330,7 +287,10 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
     /* continue */
   case CD_OPEN_LINES:
     for (i = 0; i<n-1; i++)
+    {
+      /* because line styles are not supported, this is not a problem */
       cdfline(ctxcanvas, (double)poly[i].x, (double)poly[i].y, (double)poly[i+1].x, (double)poly[i+1].y);
+    }
     break;
   case CD_PATH:
   case CD_BEZIER:
@@ -985,19 +945,21 @@ static void xrInitTable(cdCanvas* canvas)
 
   canvas->cxPixel = cdpixel;
   canvas->cxClear = cdclear;
+
   canvas->cxLine = cdline;
-  canvas->cxFLine = cdfline;
   canvas->cxRect = cdrect;
-  canvas->cxFRect = cdfSimRect;
   canvas->cxBox = cdbox;
-  canvas->cxFBox = cdfSimBox;
-  canvas->cxArc = cdarc;
-  canvas->cxFArc = cdfarc;
-  canvas->cxSector = cdsector;
-  canvas->cxFSector = cdfsector;
-  canvas->cxChord = cdchord;
-  canvas->cxFChord = cdfchord;
+  canvas->cxArc = cdSimArc;
+  canvas->cxSector = cdSimSector;
+  canvas->cxChord = cdSimChord;
   canvas->cxPoly = cdpoly;
+
+  canvas->cxFLine = cdfline;
+  canvas->cxFRect = cdfSimRect;
+  canvas->cxFBox = cdfSimBox;
+  canvas->cxFArc = cdfSimArc;
+  canvas->cxFSector = cdfSimSector;
+  canvas->cxFChord = cdfSimChord;
   canvas->cxFPoly = cdfpoly;
 
   /* TODO: canvas->cxPutImageRectRGBA = cdputimagerectrgba; */

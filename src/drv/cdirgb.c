@@ -276,7 +276,7 @@ static void sCombineRGBALine(cdCtxCanvas* ctxcanvas, int offset, const unsigned 
   }
 }
 
-static void irgbSolidLine(cdCanvas* canvas, int xmin, int y, int xmax)
+static void irgbSolidLine(cdCanvas* canvas, int xmin, int y, int xmax, long color)
 {
   int x;
   unsigned long offset = y * canvas->w;
@@ -293,7 +293,7 @@ static void irgbSolidLine(cdCanvas* canvas, int xmin, int y, int xmax)
     xmax = (canvas->w-1);
 
   for (x = xmin; x <= xmax; x++)
-    sCombineRGBColor(canvas->ctxcanvas, offset + x, canvas->foreground);
+    sCombineRGBColor(canvas->ctxcanvas, offset + x, color);
 }
 
 static void irgbPatternLine(cdCanvas* canvas, int xmin, int xmax, int y, int pw, const long *pattern)
@@ -650,7 +650,7 @@ static void irgbClipElipse(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, in
   cdPoint* poly;
 
   /* number of segments of equivalent poligonal for a full ellipse */
-  int n = simCalcEllipseNumSegments(ctxcanvas->canvas, xc, yc, width, height);
+  int n = cdSimCalcEllipseNumSegments(ctxcanvas->canvas, xc, yc, width, height);
 
   /* number of segments for the arc */
   n = cdRound((fabs(angle2-angle1)*n)/360);
@@ -932,50 +932,91 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
 {
   if (ctxcanvas->canvas->new_region)
   {
+    /* matrix transformation is done inside irgbClip* if necessary */
     irgbClipBox(ctxcanvas, xmin, xmax, ymin, ymax);
     return;
   }
 
-  cdboxSIM(ctxcanvas, xmin, xmax, ymin, ymax);
+  cdSimBox(ctxcanvas, xmin, xmax, ymin, ymax);
+}
+
+static void cdfbox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
+{
+  if (ctxcanvas->canvas->new_region)
+  {
+    /* matrix transformation is done inside irgbClip* if necessary */
+    irgbClipBox(ctxcanvas, _cdRound(xmin), _cdRound(xmax), _cdRound(ymin), _cdRound(ymax));
+    return;
+  }
+
+  cdfSimBox(ctxcanvas, xmin, xmax, ymin, ymax);
 }
 
 static void cdsector(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
 {
   if (ctxcanvas->canvas->new_region)
   {
+    /* matrix transformation is done inside irgbClip* if necessary */
     irgbClipElipse(ctxcanvas, xc, yc, w, h, a1, a2, 1);
     return;
   }
 
-  cdsectorSIM(ctxcanvas, xc, yc, w, h, a1, a2);
+  cdSimSector(ctxcanvas, xc, yc, w, h, a1, a2);
 }
 
 static void cdchord(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
 {
   if (ctxcanvas->canvas->new_region)
   {
+    /* matrix transformation is done inside irgbClip* if necessary */
     irgbClipElipse(ctxcanvas, xc, yc, w, h, a1, a2, 0);
     return;
   }
 
-  cdchordSIM(ctxcanvas, xc, yc, w, h, a1, a2);
+  cdSimChord(ctxcanvas, xc, yc, w, h, a1, a2);
+}
+
+static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
+{
+  if (ctxcanvas->canvas->new_region)
+  {
+    /* matrix transformation is done inside irgbClip* if necessary */
+    irgbClipElipse(ctxcanvas, _cdRound(xc), _cdRound(yc), _cdRound(w), _cdRound(h), a1, a2, 1);
+    return;
+  }
+
+  cdfSimSector(ctxcanvas, xc, yc, w, h, a1, a2);
+}
+
+static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
+{
+  if (ctxcanvas->canvas->new_region)
+  {
+    /* matrix transformation is done inside irgbClip* if necessary */
+    irgbClipElipse(ctxcanvas, _cdRound(xc), _cdRound(yc), _cdRound(w), _cdRound(h), a1, a2, 0);
+    return;
+  }
+
+  cdfSimChord(ctxcanvas, xc, yc, w, h, a1, a2);
 }
 
 static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
 {
   if (ctxcanvas->canvas->new_region)
   {
+    /* matrix transformation is done inside irgbClip* if necessary */
     irgbClipText(ctxcanvas, x, y, s, len);
     return;
   }
 
-  cdtextSIM(ctxcanvas, x, y, s, len);
+  cdSimTextFT(ctxcanvas, x, y, s, len);
 }
 
 static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
 {
   if (ctxcanvas->canvas->new_region)
   {
+    /* matrix transformation is done inside irgbClip* if necessary */
     irgbClipPoly(ctxcanvas, ctxcanvas->clip_region, poly, n, ctxcanvas->canvas->combine_mode);
     return;
   }
@@ -983,11 +1024,68 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
   if (mode == CD_CLIP)
   {
     /* set directly to clip */
-    memset(ctxcanvas->clip, 1, ctxcanvas->canvas->w * ctxcanvas->canvas->h);  /* CD_CLIPOFF */
+
+    /* CD_CLIPOFF */
+    memset(ctxcanvas->clip, 1, ctxcanvas->canvas->w * ctxcanvas->canvas->h);  
+
+    /* matrix transformation is done inside irgbClip* if necessary */
     irgbClipPoly(ctxcanvas, ctxcanvas->clip, poly, n, CD_UNION);
   }
   else
-    cdpolySIM(ctxcanvas, mode, poly, n);
+    cdSimPoly(ctxcanvas, mode, poly, n);
+}
+
+static void cdfpoly(cdCtxCanvas* ctxcanvas, int mode, cdfPoint* fpoly, int n)
+{
+  int i;
+
+  switch(mode) 
+  {
+  case CD_CLOSED_LINES:
+    fpoly[n] = fpoly[0];
+    n++;
+    /* continue */
+  case CD_OPEN_LINES:
+    cdfSimPolyLine(ctxcanvas->canvas, fpoly, n);
+    break;
+  case CD_BEZIER:
+    cdfSimPolyBezier(ctxcanvas->canvas, fpoly, n);
+    break;
+  case CD_PATH:
+    cdfSimPolyPath(ctxcanvas->canvas, fpoly, n);
+    break;
+  case CD_FILL:
+    {
+      cdPoint* poly = malloc(sizeof(cdPoint)*n);
+
+      for (i = 0; i<n; i++)
+      {
+        poly[i].x = _cdRound(fpoly[i].x);
+        poly[i].y = _cdRound(fpoly[i].y);
+      }
+
+      cdpoly(ctxcanvas, CD_FILL, poly, n);
+
+      free(poly);
+    }
+    break;
+  case CD_CLIP:
+    {
+      cdPoint* poly = malloc(sizeof(cdPoint)*n);
+
+      for (i = 0; i<n; i++)
+      {
+        poly[i].x = _cdRound(fpoly[i].x);
+        poly[i].y = _cdRound(fpoly[i].y);
+      }
+
+      cdpoly(ctxcanvas, CD_CLIP, poly, n);
+
+      free(poly);
+      if (ctxcanvas->canvas->clip_mode == CD_CLIPPOLYGON) cdclip(ctxcanvas, CD_CLIPPOLYGON);
+    }
+    break;
+  }
 }
 
 static void cdgetimagergb(cdCtxCanvas* ctxcanvas, unsigned char *r, unsigned char *g, unsigned char *b, int x, int y, int w, int h)
@@ -1929,21 +2027,29 @@ static void cdinittable(cdCanvas* canvas)
   canvas->cxClear = cdclear;
   canvas->cxPixel = cdpixel;
 
-  canvas->cxLine = cdlineSIM;
-  canvas->cxRect = cdrectSIM;
+  canvas->cxLine = cdSimLine;
+  canvas->cxRect = cdSimRect;
   canvas->cxBox = cdbox;
-  canvas->cxArc = cdarcSIM;
+  canvas->cxArc = cdSimArc;
   canvas->cxSector = cdsector;
   canvas->cxChord = cdchord;
   canvas->cxPoly = cdpoly;
   canvas->cxText = cdtext;
 
+  canvas->cxFLine = cdfSimLine;
+  canvas->cxFRect = cdfSimRect;
+  canvas->cxFBox = cdfbox;
+  canvas->cxFArc = cdfSimArc;
+  canvas->cxFSector = cdfsector;
+  canvas->cxFChord = cdfchord;
+  canvas->cxFPoly = cdfpoly;
+
   canvas->cxKillCanvas = cdkillcanvas;
 
   /* use simulation */
-  canvas->cxFont = cdfontSIM;
-  canvas->cxGetFontDim = cdgetfontdimSIM;
-  canvas->cxGetTextSize = cdgettextsizeSIM;
+  canvas->cxFont = cdSimFontFT;
+  canvas->cxGetFontDim = cdSimGetFontDimFT;
+  canvas->cxGetTextSize = cdSimGetTextSizeFT;
 
   sim = canvas->simulation;
 
@@ -1955,7 +2061,7 @@ static void cdinittable(cdCanvas* canvas)
 
 static cdContext cdImageRGBContext =
 {
-  CD_CAP_ALL & ~(CD_CAP_FLUSH | CD_CAP_PLAY | CD_CAP_FPRIMTIVES |
+  CD_CAP_ALL & ~(CD_CAP_FLUSH | CD_CAP_PLAY | 
                  CD_CAP_LINECAP | CD_CAP_LINEJOIN | 
                  CD_CAP_PALETTE ),
   0,
@@ -2073,7 +2179,7 @@ static void cdinittableDB(cdCanvas* canvas)
 
 static cdContext cdDBufferRGBContext =
 {
-  CD_CAP_ALL & ~(CD_CAP_PLAY | CD_CAP_FPRIMTIVES | 
+  CD_CAP_ALL & ~(CD_CAP_PLAY |  
                  CD_CAP_LINECAP | CD_CAP_LINEJOIN | 
                  CD_CAP_PALETTE ),
   0,

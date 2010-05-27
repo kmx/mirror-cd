@@ -298,7 +298,7 @@ void cdCanvasEnd(cdCanvas* canvas)
   }
 
   if (canvas->sim_poly)
-    cdpolySIM(canvas->ctxcanvas, canvas->poly_mode, canvas->poly, canvas->poly_n);
+    cdSimPoly(canvas->ctxcanvas, canvas->poly_mode, canvas->poly, canvas->poly_n);
   else
   {
     if (canvas->use_fpoly)

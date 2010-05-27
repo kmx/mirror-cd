@@ -12,7 +12,7 @@ SRCINTCGM = circle.c ellipse.c intcgm1.c \
   sism.c tparse.c bparse.c 
 SRCINTCGM  := $(addprefix intcgm/, $(SRCINTCGM))
 
-SRCSIM := cdfontex.c sim.c cd_truetype.c sim_other.c sim_primitives.c sim_text.c sim_linepolyfill.c
+SRCSIM := cdfontex.c sim.c cd_truetype.c sim_primitives.c sim_text.c sim_linepolyfill.c
 SRCSIM  := $(addprefix sim/, $(SRCSIM))
 
 SRCWIN32 = cdwclp.c cdwemf.c cdwimg.c cdwin.c cdwnative.c cdwprn.c cdwwmf.c wmf_emf.c cdwdbuf.c cdwdib.c

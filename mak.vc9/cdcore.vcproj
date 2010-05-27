@@ -188,6 +188,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\src\sim\cd_truetype.h"
+				>
+			</File>
+			<File
 				RelativePath="..\src\sim\cdfontex.c"
 				>
 				<FileConfiguration
@@ -220,19 +224,11 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\sim\sim_other.c"
-				>
-			</File>
-			<File
 				RelativePath="..\src\sim\sim_primitives.c"
 				>
 			</File>
 			<File
 				RelativePath="..\src\sim\sim_text.c"
-				>
-			</File>
-			<File
-				RelativePath="..\src\sim\truetype.h"
 				>
 			</File>
 		</Filter>

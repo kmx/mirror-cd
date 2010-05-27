@@ -113,11 +113,12 @@ int  cdCanvasRegionCombineMode(cdCanvas* canvas, int mode);
 void cdCanvasPixel(cdCanvas* canvas, int x, int y, long color);
 void cdCanvasMark(cdCanvas* canvas, int x, int y);
 
-void cdCanvasLine(cdCanvas* canvas, int x1, int y1, int x2, int y2);
 void cdCanvasBegin(cdCanvas* canvas, int mode);
-void cdCanvasVertex(cdCanvas* canvas, int x, int y);
 void cdCanvasPathSet(cdCanvas* canvas, int action);
 void cdCanvasEnd(cdCanvas* canvas);
+
+void cdCanvasLine(cdCanvas* canvas, int x1, int y1, int x2, int y2);
+void cdCanvasVertex(cdCanvas* canvas, int x, int y);
 void cdCanvasRect(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax);
 void cdCanvasBox(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax);
 void cdCanvasArc(cdCanvas* canvas, int xc, int yc, int w, int h, double angle1, double angle2);
@@ -153,7 +154,7 @@ unsigned char* cdCanvasGetStipple(cdCanvas* canvas, int *n, int *m);
 void   cdCanvasPattern(cdCanvas* canvas, int w, int h, long const int *pattern);
 long*  cdCanvasGetPattern(cdCanvas* canvas, int* n, int* m);
 int    cdCanvasFillMode(cdCanvas* canvas, int mode);
-int   cdCanvasFont(cdCanvas* canvas, const char* type_face, int style, int size);
+int    cdCanvasFont(cdCanvas* canvas, const char* type_face, int style, int size);
 void   cdCanvasGetFont(cdCanvas* canvas, char *type_face, int *style, int *size);
 char*  cdCanvasNativeFont(cdCanvas* canvas, const char* font);
 int    cdCanvasTextAlignment(cdCanvas* canvas, int alignment);
@@ -166,13 +167,13 @@ void cdCanvasVectorText(cdCanvas* canvas, int x, int y, const char* s);
 void cdCanvasMultiLineVectorText(cdCanvas* canvas, int x, int y, const char* s);
 
 /* vector text attributes */
-char *cdCanvasVectorFont(cdCanvas* canvas, const char *filename);
-void cdCanvasVectorTextDirection(cdCanvas* canvas, int x1, int y1, int x2, int y2);
+char* cdCanvasVectorFont(cdCanvas* canvas, const char *filename);
+void  cdCanvasVectorTextDirection(cdCanvas* canvas, int x1, int y1, int x2, int y2);
 double* cdCanvasVectorTextTransform(cdCanvas* canvas, const double* matrix);
-void cdCanvasVectorTextSize(cdCanvas* canvas, int size_x, int size_y, const char* s);
-int  cdCanvasVectorCharSize(cdCanvas* canvas, int size);
-void cdCanvasVectorFontSize(cdCanvas* canvas, double size_x, double size_y);
-void cdCanvasGetVectorFontSize(cdCanvas* canvas, double *size_x, double *size_y);
+void  cdCanvasVectorTextSize(cdCanvas* canvas, int size_x, int size_y, const char* s);
+int   cdCanvasVectorCharSize(cdCanvas* canvas, int size);
+void  cdCanvasVectorFontSize(cdCanvas* canvas, double size_x, double size_y);
+void  cdCanvasGetVectorFontSize(cdCanvas* canvas, double *size_x, double *size_y);
 
 /* vector text properties */
 void cdCanvasGetVectorTextSize(cdCanvas* canvas, const char* s, int *x, int *y);

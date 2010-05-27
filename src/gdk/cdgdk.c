@@ -688,7 +688,7 @@ static void cdarc(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a
 {
   if (ctxcanvas->canvas->use_matrix)
   {
-    cdarcSIM(ctxcanvas, xc, yc, w, h, a1, a2);
+    cdSimArc(ctxcanvas, xc, yc, w, h, a1, a2);
     return;
   }
 
@@ -701,13 +701,13 @@ static void cdsector(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, doubl
 {
   if (ctxcanvas->canvas->use_matrix)
   {
-    cdsectorSIM(ctxcanvas, xc, yc, w, h, a1, a2);
+    cdSimSector(ctxcanvas, xc, yc, w, h, a1, a2);
     return;
   }
 
   if (ctxcanvas->canvas->new_region)
   {
-    cdsectorSIM(ctxcanvas, xc, yc, w, h, a1, a2);
+    cdSimSector(ctxcanvas, xc, yc, w, h, a1, a2);
   }
   else
   {
@@ -720,7 +720,7 @@ static void cdrect(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int yma
 {
   if (ctxcanvas->canvas->use_matrix)
   {
-    cdrectSIM(ctxcanvas, xmin, xmax, ymin, ymax);
+    cdSimRect(ctxcanvas, xmin, xmax, ymin, ymax);
     return;
   }
 
@@ -733,7 +733,7 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
 {
   if (ctxcanvas->canvas->use_matrix)
   {
-    cdboxSIM(ctxcanvas, xmin, xmax, ymin, ymax);
+    cdSimBox(ctxcanvas, xmin, xmax, ymin, ymax);
     return;
   }
 
@@ -1651,7 +1651,7 @@ void cdgdkInitTable(cdCanvas* canvas)
   canvas->cxBox    = cdbox;
   canvas->cxArc    = cdarc;
   canvas->cxSector = cdsector;
-  canvas->cxChord  = cdchordSIM;
+  canvas->cxChord  = cdSimChord;
   canvas->cxText   = cdtext;
 
   canvas->cxNewRegion = cdnewregion;

@@ -766,6 +766,11 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
   int i;
   tPrimNode *prim;
   if (mode == CD_CLIP || mode == CD_REGION) return;
+  if (mode == CD_PATH)
+  {
+    cdfpath(ctxcanvas, poly, n);
+    return;
+  }
   prim = primCreate(CDPIC_FPOLY);
   if (mode == CD_FILL)
     primAddAttrib_Fill(prim, ctxcanvas->canvas);

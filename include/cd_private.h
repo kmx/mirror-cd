@@ -310,6 +310,11 @@ int cdParseXWinFont(const char *nativefont, char *type_face, int *style, int *si
 int cdGetFontSizePixels(cdCanvas* canvas, int size);
 int cdGetFontSizePoints(cdCanvas* canvas, int size);
 
+/* Replacements for Font using estimation */
+/* cdfontex.c */
+void cdgetfontdimEX(cdCtxCanvas* ctxcanvas, int *max_width, int *height, int *ascent, int *descent);
+void cdgettextsizeEX(cdCtxCanvas* ctxcanvas, const char *s, int len, int *width, int *height);
+
 /****************/
 /*  For Images  */
 /****************/
@@ -331,44 +336,55 @@ int cdCalcZoom(int canvas_size, int cnv_rect_pos, int cnv_rect_size,
 /**************/
 /* simulation */
 /**************/
+
+/* sim.c */
 cdSimulation* cdCreateSimulation(cdCanvas* canvas);
 void cdKillSimulation(cdSimulation* simulation);
 void cdSimInitText(cdSimulation* simulation);
 
-/* Replacements for cdCanvas function pointers */
-void cdrectSIM(cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, int ymax);
-void cdboxSIM(cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, int ymax);
-void cdlineSIM(cdCtxCanvas* ctxcanvas, int x1, int y1, int x2, int y2);
-void cdarcSIM(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, int height, double angle1, double angle2);
-void cdsectorSIM(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, int height, double angle1, double angle2);
-void cdchordSIM(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, int height, double angle1, double angle2);
-void cdpolySIM(cdCtxCanvas* ctxcanvas, int mode, cdPoint* points, int n);
-
 /* Replacements for Text and Font using FreeType library */
-void cdtextSIM(cdCtxCanvas* ctxcanvas, int x, int y, const char *s, int len);
-int cdfontSIM(cdCtxCanvas* ctxcanvas, const char *type_face, int style, int size);
-void cdgetfontdimSIM(cdCtxCanvas* ctxcanvas, int *max_width, int *height, int *ascent, int *descent);
-void cdgettextsizeSIM(cdCtxCanvas* ctxcanvas, const char *s, int len, int *width, int *height);
+/* sim_text.c */
+void cdSimTextFT(cdCtxCanvas* ctxcanvas, int x, int y, const char *s, int len);
+int  cdSimFontFT(cdCtxCanvas* ctxcanvas, const char *type_face, int style, int size);
+void cdSimGetFontDimFT(cdCtxCanvas* ctxcanvas, int *max_width, int *height, int *ascent, int *descent);
+void cdSimGetTextSizeFT(cdCtxCanvas* ctxcanvas, const char *s, int len, int *width, int *height);
 
-/* Simulation functions that are independent of the simulation base driver */
+/* sim_primitives.c */
+
+/* Simulation functions that depend on the simulation base driver. */
+void cdSimPolyFill(cdCanvas* canvas, cdPoint* poly, int n);
+void cdSimPolyLine(cdCanvas* canvas, const cdPoint* poly, int n);
+void cdfSimPolyLine(cdCanvas* canvas, const cdfPoint* poly, int n);
+
+/* Simulation functions that are >> independent << of the simulation base driver. */
 void cdSimMark(cdCanvas* canvas, int x, int y);
-void cdSimPolyBezier(cdCanvas* canvas, const cdPoint* points, int n);
-void cdSimPolyPath(cdCanvas* canvas, const cdPoint* points, int n);
 void cdSimPutImageRectRGBA(cdCanvas* canvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax);
 
-/* Simulation functions that are independent of the simulation base driver,
-   and does not checks for axis and matrix. 
+/* Simulation functions that are >> independent << of the simulation base driver.
+   All use the polygon method ->cxPoly only. */
+void cdSimLine(cdCtxCanvas* ctxcanvas, int x1, int y1, int x2, int y2);
+void cdSimRect(cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, int ymax);
+void cdSimBox(cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, int ymax);
+void cdSimArc(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, int height, double angle1, double angle2);
+void cdSimSector(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, int height, double angle1, double angle2);
+void cdSimChord(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, int height, double angle1, double angle2);
+void cdSimPolyBezier(cdCanvas* canvas, const cdPoint* points, int n);
+void cdSimPolyPath(cdCanvas* canvas, const cdPoint* points, int n);
+
+/* Simulation functions that are >> independent << of the simulation base driver.
    All use the polygon method ->cxFPoly only. */
-void cdfSimPolyBezier(cdCanvas* canvas, const cdfPoint* points, int n);
-void cdfSimPolyPath(cdCanvas* canvas, const cdfPoint* points, int n);
+void cdfSimLine(cdCtxCanvas* ctxcanvas, double x1, double y1, double x2, double y2);
 void cdfSimRect(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax);
 void cdfSimBox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax);
-void cdfSimElipse(cdCtxCanvas* ctxcanvas, double xc, double yc, double width, double height, double angle1, double angle2, int sector);
 void cdfSimArc(cdCtxCanvas *ctxcanvas, double xc, double yc, double width, double height, double angle1, double angle2);
+void cdfSimSector(cdCtxCanvas *ctxcanvas, double xc, double yc, double width, double height, double angle1, double angle2);
+void cdfSimChord(cdCtxCanvas *ctxcanvas, double xc, double yc, double width, double height, double angle1, double angle2);
+void cdfSimPolyBezier(cdCanvas* canvas, const cdfPoint* points, int n);
+void cdfSimPolyPath(cdCanvas* canvas, const cdfPoint* points, int n);
 
-/* Replacements for Font using estimation */
-void cdgetfontdimEX(cdCtxCanvas* ctxcanvas, int *max_width, int *height, int *ascent, int *descent);
-void cdgettextsizeEX(cdCtxCanvas* ctxcanvas, const char *s, int len, int *width, int *height);
+/* Utilities */
+void cdSimPoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* points, int n);
+int cdSimCalcEllipseNumSegments(cdCanvas* canvas, int xc, int yc, int width, int height);
 
 
 #ifdef __cplusplus
