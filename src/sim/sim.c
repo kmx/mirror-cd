@@ -109,8 +109,6 @@ void simFillHorizLine(cdSimulation* simulation, int xmin, int y, int xmax)
 
 void simFillHorizBox(cdSimulation* simulation, int xmin, int xmax, int ymin, int ymax)
 {
-  cdCanvas* canvas = ((cdCtxCanvasBase*)ctxcanvas)->canvas;
-  cdSimulation* simulation = canvas->simulation;
   int y;
   for(y=ymin;y<=ymax;y++)
     simFillHorizLine(simulation, xmin, y, xmax);
