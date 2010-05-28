@@ -328,6 +328,8 @@ static void cdfarc(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, doubl
 {
   sUpdateFill(ctxcanvas, 0);
 
+  /* angles in degrees counterclockwise, same as CD */
+
   if (w==h)
   {
     PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*w, a1, a2);

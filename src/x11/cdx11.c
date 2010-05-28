@@ -1141,6 +1141,8 @@ static void cdarc(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a
     return;
   }
 
+  /* angles in 1/64ths of degrees counterclockwise, similar to CD */
+
   cdxCheckSolidStyle(ctxcanvas, 1);
   XDrawArc(ctxcanvas->dpy, ctxcanvas->wnd, ctxcanvas->gc, xc-w/2, yc-h/2, w, h, cdRound(a1*64), cdRound((a2 - a1)*64));
   cdxCheckSolidStyle(ctxcanvas, 0);

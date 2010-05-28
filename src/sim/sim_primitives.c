@@ -119,25 +119,33 @@ static void sFixAngles(cdCanvas* canvas, double *angle1, double *angle2)
 {
   if (canvas->invert_yaxis)
   {
-    double temp = 360 - *angle1;  // TO CHECK
-    *angle1 = 360 - *angle2;
-    *angle2 = temp;
+    double t;
 
-    *angle1 *= CD_DEG2RAD;
-    *angle2 *= CD_DEG2RAD;
+    /* computation is done as if the angles are counterclockwise, 
+       and yaxis is NOT inverted. */
+
+    /* if yaxis is inverted then must orient clockwise */
+    /* change angle orientation */
+    *angle1 = 360 - *angle1;
+    *angle2 = 360 - *angle2;
+
+    /* swap, so the start angle is the smaller */
+    t = *angle1;
+    *angle1 = *angle2;
+    *angle2 = t;
   }
-  else
-  {
-    *angle1 *= CD_DEG2RAD;
-    *angle2 *= CD_DEG2RAD;
-  }
+
+  /* convert to radians */
+  *angle1 *= CD_DEG2RAD;
+  *angle2 *= CD_DEG2RAD;
 }
 
-static cdPoint* sPolyAddArc(cdCanvas* canvas, cdPoint* poly, int *n, int xc, int yc, int width, int height, double angle1, double angle2)
+static cdPoint* sPolyAddArc(cdCanvas* canvas, cdPoint* poly, int *n, int xc, int yc, int width, int height, double angle1, double angle2, cdPoint* current)
 {
   double c, s, sx, sy, x, y, prev_x, prev_y;
   double da;
-  int i, K, k, yc2 = 2*yc, p = 0, new_n;
+  int i, K, k, p, new_n;
+//  yc2 = 2*yc, 
 
   /* number of segments of equivalent poligonal for a full ellipse */
   K = cdSimCalcEllipseNumSegments(canvas, xc, yc, width, height);
@@ -149,7 +157,7 @@ static cdPoint* sPolyAddArc(cdCanvas* canvas, cdPoint* poly, int *n, int xc, int
   if (K < 1) K = 1;
 
   new_n = *n + K+1;  /* add room for K+1 samples */
-  poly = (cdPoint*)realloc(poly, sizeof(cdPoint)*new_n);  
+  poly = (cdPoint*)realloc(poly, sizeof(cdPoint)*(new_n+2));  /* add room also for points at start and end */
   if (!poly) return NULL;
   i = *n;
 
@@ -166,11 +174,18 @@ static cdPoint* sPolyAddArc(cdCanvas* canvas, cdPoint* poly, int *n, int xc, int
   prev_x = x;
   prev_y = y;
 
+  if (current)
+  {
+    poly[i] = *current;
+    i++;
+    new_n++;  /* no need to reallocate */
+  }
+
   poly[i].x = _cdRound(x)+xc;
   poly[i].y = _cdRound(y)+yc;
 
-  if (canvas->invert_yaxis)  /* must invert because of the angle orientation */
-    poly[i].y = yc2 - poly[i].y;
+//  if (canvas->invert_yaxis)  /* must invert because of the angle orientation */
+//    poly[i].y = yc2 - poly[i].y;
 
   p = i+1;
   for (k = 1; k < K+1; k++)
@@ -181,8 +196,8 @@ static cdPoint* sPolyAddArc(cdCanvas* canvas, cdPoint* poly, int *n, int xc, int
     poly[p].x = _cdRound(x)+xc;
     poly[p].y = _cdRound(y)+yc;
 
-    if (canvas->invert_yaxis)   /* must invert because of the angle orientation */
-      poly[p].y = yc2 - poly[p].y;
+//    if (canvas->invert_yaxis)   /* must invert because of the angle orientation */
+//      poly[p].y = yc2 - poly[p].y;
 
     if (poly[p-1].x != poly[p].x || 
         poly[p-1].y != poly[p].y)
@@ -196,7 +211,7 @@ static cdPoint* sPolyAddArc(cdCanvas* canvas, cdPoint* poly, int *n, int xc, int
   return poly;
 }
 
-static cdfPoint* sfPolyAddArc(cdCanvas* canvas, cdfPoint* poly, int *n, double xc, double yc, double width, double height, double angle1, double angle2)
+static cdfPoint* sfPolyAddArc(cdCanvas* canvas, cdfPoint* poly, int *n, double xc, double yc, double width, double height, double angle1, double angle2, cdfPoint* current)
 {
   double c, s, sx, sy, x, y, prev_x, prev_y, da;
   int i, k, p, new_n;
@@ -211,7 +226,7 @@ static cdfPoint* sfPolyAddArc(cdCanvas* canvas, cdfPoint* poly, int *n, double x
   if (K < 1) K = 1;
 
   new_n = *n + K+1;  /* add room for K+1 samples */
-  poly = (cdfPoint*)realloc(poly, sizeof(cdfPoint)*new_n);  
+  poly = (cdfPoint*)realloc(poly, sizeof(cdfPoint)*(new_n+2));  /* add room also for points at start and end */
   if (!poly) return NULL;
   i = *n;
 
@@ -226,11 +241,18 @@ static cdfPoint* sfPolyAddArc(cdCanvas* canvas, cdfPoint* poly, int *n, double x
   y = (height/2.0f)*sin(angle1);
   prev_x = x;
   prev_y = y;
+
+  if (current)
+  {
+    poly[i] = *current;
+    i++;
+    new_n++;  /* no need to reallocate */
+  }
+
   poly[i].x = x+xc;
   poly[i].y = y+yc;
 
   p = i+1;
-
   for (k = 1; k < K+1; k++)  /* K+1 points */
   {
     x =  c*prev_x + sx*prev_y;
@@ -263,7 +285,7 @@ void cdSimArc(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, int height, dou
     return;
   }
 
-  poly = sPolyAddArc(canvas, poly, &n, xc, yc, width, height, angle1, angle2);
+  poly = sPolyAddArc(canvas, poly, &n, xc, yc, width, height, angle1, angle2, NULL);
 
   if (poly)
   {
@@ -279,7 +301,7 @@ void cdfSimArc(cdCtxCanvas *ctxcanvas, double xc, double yc, double width, doubl
   int n;
   cdfPoint* poly = NULL;
 
-  poly = sfPolyAddArc(canvas, poly, &n, xc, yc, width, height, angle1, angle2);
+  poly = sfPolyAddArc(canvas, poly, &n, xc, yc, width, height, angle1, angle2, NULL);
 
   if (poly)
   {
@@ -294,14 +316,12 @@ static void sElipse(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, int heigh
   int n;
   cdPoint* poly = NULL;
 
-  poly = sPolyAddArc(canvas, poly, &n, xc, yc, width, height, angle1, angle2);
+  poly = sPolyAddArc(canvas, poly, &n, xc, yc, width, height, angle1, angle2, NULL);
 
   if (poly[n-1].x != poly[0].x || 
       poly[n-1].y != poly[0].y)
   {
-    n++;
-    poly = (cdPoint*)realloc(poly, sizeof(cdPoint)*n);  
-    if (!poly) return;
+    n++; /* no need to reallocate */
 
     if (sector)  /* cdSector */
     {
@@ -331,14 +351,12 @@ static void sfElipse(cdCtxCanvas* ctxcanvas, double xc, double yc, double width,
   int n;
   cdfPoint* poly = NULL;
 
-  poly = sfPolyAddArc(canvas, poly, &n, xc, yc, width, height, angle1, angle2);
+  poly = sfPolyAddArc(canvas, poly, &n, xc, yc, width, height, angle1, angle2, NULL);
 
   if (poly[n-1].x != poly[0].x || 
       poly[n-1].y != poly[0].y)
   {
-    n++;
-    poly = (cdfPoint*)realloc(poly, sizeof(cdfPoint)*n);  
-    if (!poly) return;
+    n++; /* no need to reallocate */
 
     if (sector)  /* cdSector */
     {
@@ -561,14 +579,17 @@ static cdPoint* sPolyAddBezier(cdCanvas* canvas, cdPoint* poly, int *n, cdPoint 
   return poly;
 }
 
-static cdfPoint* sPolyFAddBezier(cdCanvas* canvas, cdfPoint* poly, int *n, cdPoint start, const cdPoint* points)
+static cdfPoint* sPolyFAddBezier(cdCanvas* canvas, cdfPoint* poly, int *n, cdfPoint start, const cdPoint* points)
 {
   int k, K, new_n, i;
   cdfPoint pt;
-  cdfPoint bezier_control[4];
+  cdfPoint bezier_control[4], bezier[3];
 
-  sBezierForm(start, points, bezier_control);
-  K = sBezierNumSegments(canvas, start, points);
+  bezier[0].x = points[0].x;  bezier[1].x = points[1].x;  bezier[2].x = points[2].x;
+  bezier[0].y = points[0].y;  bezier[1].y = points[1].y;  bezier[2].y = points[2].y;
+
+  sfBezierForm(start, bezier, bezier_control);
+  K = sfBezierNumSegments(canvas, start, bezier);
 
   new_n = *n + K+1;  /* add room for K+1 samples */
   poly = realloc(poly, sizeof(cdfPoint)*new_n);
@@ -622,12 +643,16 @@ static cdfPoint* sfPolyAddBezier(cdCanvas* canvas, cdfPoint* poly, int *n, cdfPo
 static void sPolyFBezier(cdCanvas* canvas, const cdPoint* points, int n)
 {
   int i = 0, poly_n = 0;
-  cdfPoint* fpoly = NULL;
+  cdfPoint* fpoly = NULL, start;
+
+  start.x = points[0].x;
+  start.y = points[0].y;
 
   n--; /* first n is 4 */
   while (n >= 3)
   {
-    fpoly = sPolyFAddBezier(canvas, fpoly, &poly_n, points[i], points+i+1);
+    fpoly = sPolyFAddBezier(canvas, fpoly, &poly_n, start, points+i+1);
+    start = fpoly[poly_n-1];
     n -= 3; i += 3;
   }
 
@@ -765,28 +790,13 @@ void cdfSimPolyPath(cdCanvas* canvas, const cdfPoint* poly, int n)
         yc = poly[i].y, 
         w = poly[i+1].x, 
         h = poly[i+1].y, 
-        a1 = poly[i+2].x/1000.0, 
-        a2 = poly[i+2].y/1000.0;
+        a1 = poly[i+2].x, 
+        a2 = poly[i+2].y;
 
         if (current_set)
-        {
-          cdfPoint start_angle;
-
-          if (canvas->invert_yaxis)
-          {
-            start_angle.x = xc + cdRound(w * cos(CD_DEG2RAD * a1) / 2.0);
-            start_angle.y = yc - cdRound(h * sin(CD_DEG2RAD * a1) / 2.0);
-          }
-          else
-          {
-            start_angle.x = xc + cdRound(w * cos(CD_DEG2RAD * a2) / 2.0);
-            start_angle.y = yc + cdRound(h * sin(CD_DEG2RAD * a2) / 2.0);
-          }
-
-          path_poly = sfPolyAddLine(path_poly, &path_poly_n, current, start_angle);
-        }
-
-        path_poly = sfPolyAddArc(canvas, path_poly, &path_poly_n, xc, yc, w, h, a1, a2);
+          path_poly = sfPolyAddArc(canvas, path_poly, &path_poly_n, xc, yc, w, h, a1, a2, &current);
+        else
+          path_poly = sfPolyAddArc(canvas, path_poly, &path_poly_n, xc, yc, w, h, a1, a2, NULL);
 
         current = path_poly[path_poly_n-1];
         current_set = 1;
@@ -802,8 +812,126 @@ void cdfSimPolyPath(cdCanvas* canvas, const cdfPoint* poly, int n)
         current.y = poly[i].y;
       }
       path_poly = sfPolyAddBezier(canvas, path_poly, &path_poly_n, current, poly+i);
-      current.x = poly[i+2].x;
-      current.y = poly[i+2].y;
+      current = path_poly[path_poly_n-1];
+      current_set = 1;
+      i += 3;
+      break;
+    case CD_PATH_CLOSE:
+      if (path_poly[path_poly_n-1].x != path_poly[0].x || 
+          path_poly[path_poly_n-1].y != path_poly[0].y)
+      {
+        path_poly_n++;
+        path_poly = (cdfPoint*)realloc(path_poly, sizeof(cdfPoint)*path_poly_n);  
+        if (!path_poly) return;
+
+        /* add initial point */
+        path_poly[path_poly_n-1].x = path_poly[0].x;
+        path_poly[path_poly_n-1].y = path_poly[0].y;
+      }
+      break;
+    case CD_PATH_FILL:
+      if (poly)
+        canvas->cxFPoly(canvas->ctxcanvas, CD_FILL, path_poly, path_poly_n);
+      break;
+    case CD_PATH_STROKE:
+      if (poly)
+        canvas->cxFPoly(canvas->ctxcanvas, CD_OPEN_LINES, path_poly, path_poly_n);
+      break;
+    case CD_PATH_FILLSTROKE:
+      if (poly)
+      {
+        canvas->cxFPoly(canvas->ctxcanvas, CD_FILL, path_poly, path_poly_n);
+        canvas->cxFPoly(canvas->ctxcanvas, CD_OPEN_LINES, path_poly, path_poly_n);
+      }
+      break;
+    case CD_PATH_CLIP:
+      if (poly)
+        canvas->cxFPoly(canvas->ctxcanvas, CD_CLIP, path_poly, path_poly_n);
+      break;
+    }
+  }
+
+  if (path_poly)
+    free(path_poly);
+}
+
+static void sSimPolyFPath(cdCanvas* canvas, const cdPoint* poly, int n)
+{
+  int p, i, current_set = 0, path_poly_n;
+  cdfPoint current, pt;
+  cdfPoint* path_poly;
+
+  current.x = 0; 
+  current.y = 0; 
+  current_set = 0;
+
+  /* starts a new path */
+  path_poly = NULL;
+  path_poly_n = 0;
+
+  i = 0;
+  for (p=0; p<canvas->path_n; p++)
+  {
+    switch(canvas->path[p])
+    {
+    case CD_PATH_NEW:
+      if (path_poly)
+        free(path_poly);
+      path_poly = NULL;
+      path_poly_n = 0;
+      current_set = 0;
+      break;
+    case CD_PATH_MOVETO:
+      if (i+1 > n) break;
+      current.x = poly[i].x;
+      current.y = poly[i].y;
+      current_set = 1;
+      i++;
+      break;
+    case CD_PATH_LINETO:
+      if (i+1 > n) break;
+      pt.x = poly[i].x;
+      pt.y = poly[i].y;
+      path_poly = sfPolyAddLine(path_poly, &path_poly_n, current, pt);
+      current.x = poly[i].x;
+      current.y = poly[i].y;
+      current_set = 1;
+      i++;
+      break;
+    case CD_PATH_ARC:
+      {
+        double xc, yc, w, h;
+        double a1, a2;
+
+        if (i+3 > n) break;
+
+        xc = poly[i].x, 
+        yc = poly[i].y, 
+        w = poly[i+1].x, 
+        h = poly[i+1].y, 
+        a1 = poly[i+2].x/1000.0, 
+        a2 = poly[i+2].y/1000.0;
+
+        if (current_set)
+          path_poly = sfPolyAddArc(canvas, path_poly, &path_poly_n, xc, yc, w, h, a1, a2, &current);
+        else
+          path_poly = sfPolyAddArc(canvas, path_poly, &path_poly_n, xc, yc, w, h, a1, a2, NULL);
+
+        current = path_poly[path_poly_n-1];
+        current_set = 1;
+
+        i += 3;
+      }
+      break;
+    case CD_PATH_CURVETO:
+      if (i+3 > n) break;
+      if (!current_set)
+      {
+        current.x = poly[i].x;
+        current.y = poly[i].y;
+      }
+      path_poly = sPolyFAddBezier(canvas, path_poly, &path_poly_n, current, poly+i);
+      current = path_poly[path_poly_n-1];
       current_set = 1;
       i += 3;
       break;
@@ -851,6 +979,23 @@ void cdSimPolyPath(cdCanvas* canvas, const cdPoint* poly, int n)
   int p, i, current_set = 0, path_poly_n;
   cdPoint current;
   cdPoint* path_poly;
+
+  if (canvas->line_width == 1 && canvas->cxFPoly)
+  {
+    int has_curve = 0;
+    for (p=0; p<canvas->path_n; p++)
+    {
+      if (canvas->path[p] == CD_PATH_ARC ||
+          canvas->path[p] == CD_PATH_CURVETO)
+        has_curve = 1;
+      if (canvas->path[p] == CD_PATH_STROKE &&
+          has_curve == 1)
+      {
+        sSimPolyFPath(canvas, poly, n);
+        return;
+      }
+    }
+  }
 
   current.x = 0; 
   current.y = 0; 
@@ -900,24 +1045,9 @@ void cdSimPolyPath(cdCanvas* canvas, const cdPoint* poly, int n)
         a2 = poly[i+2].y/1000.0;
 
         if (current_set)
-        {
-          cdPoint start_angle;
-
-          if (canvas->invert_yaxis)
-          {
-            start_angle.x = xc + cdRound(w * cos(CD_DEG2RAD * a1) / 2.0);
-            start_angle.y = yc - cdRound(h * sin(CD_DEG2RAD * a1) / 2.0);
-          }
-          else
-          {
-            start_angle.x = xc + cdRound(w * cos(CD_DEG2RAD * a2) / 2.0);
-            start_angle.y = yc + cdRound(h * sin(CD_DEG2RAD * a2) / 2.0);
-          }
-
-          path_poly = sPolyAddLine(path_poly, &path_poly_n, current, start_angle);
-        }
-
-        path_poly = sPolyAddArc(canvas, path_poly, &path_poly_n, xc, yc, w, h, a1, a2);
+          path_poly = sPolyAddArc(canvas, path_poly, &path_poly_n, xc, yc, w, h, a1, a2, &current);
+        else
+          path_poly = sPolyAddArc(canvas, path_poly, &path_poly_n, xc, yc, w, h, a1, a2, NULL);
 
         current = path_poly[path_poly_n-1];
         current_set = 1;
@@ -933,8 +1063,7 @@ void cdSimPolyPath(cdCanvas* canvas, const cdPoint* poly, int n)
         current.y = poly[i].y;
       }
       path_poly = sPolyAddBezier(canvas, path_poly, &path_poly_n, current, poly+i);
-      current.x = poly[i+2].x;
-      current.y = poly[i+2].y;
+      current = path_poly[path_poly_n-1];
       current_set = 1;
       i += 3;
       break;

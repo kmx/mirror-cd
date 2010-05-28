@@ -526,6 +526,7 @@ static void cdpattern(cdCtxCanvas* ctxcanvas, int w, int h, const long int *colo
   {
     int line_offset_colors;
     int line_offset = j*stride;
+    /* internal transform, affects also pattern orientation */
     if (ctxcanvas->canvas->invert_yaxis)
       line_offset_colors = ((h - 1) - j)*w;  // Fix up side down
     else
@@ -629,9 +630,11 @@ static void cdwpFixAngles(cdCtxCanvas* ctxcanvas, double *angle1, double *angle2
 {
   if (ctxcanvas->canvas->invert_yaxis)
   {
-    // GDI+ angles are clock-wise by default
+    // GDI+ angles are clock-wise by default, in degrees
     *angle1 *= -1;
     *angle2 *= -1;
+
+    // no need to swap, because we will use (angle2-angle1)
   }
 }
 

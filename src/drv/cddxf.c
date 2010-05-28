@@ -683,6 +683,7 @@ static void cdarc (cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double 
     bulge = calc_bulge (a, b, t, t+seg_angle); /* and t+seg_angle and write */
     writevertex (ctxcanvas, xc, yc, a, b, t, bulge);      /* vertex at t               */
   }
+
   writevertex (ctxcanvas, xc, yc, a, b, t2, 0);     /* bulge of last vertex is useless */
 
   fprintf ( ctxcanvas->file, "0\n" );
@@ -731,12 +732,15 @@ static void cdsector (cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, doub
 
   if ((a2-a1) != 360)
     writevertex (ctxcanvas, xc, yc, 0, 0, 0, 0);    /* center */
+
   for (i=0, t=t1; i<nseg; i++, t+=seg_angle)
   {                                            /* calculate bulge between t */
     bulge = calc_bulge (a, b, t, t+seg_angle); /* and t+seg_angle and write */
     writevertex (ctxcanvas, xc, yc, a, b, t, bulge);      /* vertex at t               */
   }
+
   writevertex (ctxcanvas, xc, yc, a, b, t2, 0);     /* bulge of last vertex is useless */
+
   if ((a2-a1) != 360)
     writevertex (ctxcanvas, xc, yc, 0, 0, 0, 0);    /* center */
 

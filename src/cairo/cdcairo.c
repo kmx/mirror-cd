@@ -228,7 +228,7 @@ static unsigned long sEncodeRGBA(unsigned char r, unsigned char g, unsigned char
 
 static void make_pattern(cdCtxCanvas *ctxcanvas, int n, int m, void* userdata, int (*data2rgb)(cdCtxCanvas *ctxcanvas, int n, int i, int j, void* userdata, unsigned char*r, unsigned char*g, unsigned char*b, unsigned char*a))
 {
-  int i, j, offset;
+  int i, j, offset, ret;
   unsigned char r, g, b, a;
   cairo_surface_t* pattern_surface;
   unsigned long* data;
@@ -242,7 +242,12 @@ static void make_pattern(cdCtxCanvas *ctxcanvas, int n, int m, void* userdata, i
   {
     for (i = 0; i < n; i++)
     {
-      int ret = data2rgb(ctxcanvas, n, i, m-1-j, userdata, &r, &g, &b, &a);
+      /* internal transform, affects also pattern orientation */
+      if (ctxcanvas->canvas->invert_yaxis)
+        ret = data2rgb(ctxcanvas, n, i, m-1-j, userdata, &r, &g, &b, &a);
+      else
+        ret = data2rgb(ctxcanvas, n, i, j, userdata, &r, &g, &b, &a);
+
       if (ret == -1)
       {
         data++;  /* already transparent */
@@ -587,22 +592,28 @@ static void cdline(cdCtxCanvas *ctxcanvas, int x1, int y1, int x2, int y2)
   cdfline(ctxcanvas, (double)x1, (double)y1, (double)x2, (double)y2);
 }
 
-static void sFixAngles(cdCtxCanvas* ctxcanvas, double *angle1, double *angle2)
+static void sFixAngles(cdCtxCanvas* ctxcanvas, double *a1, double *a2)
 {
   if (ctxcanvas->canvas->invert_yaxis)
   {
+    double t;
+
     /* Cairo angles are clock-wise by default */
-    double t = *angle1;
-    *angle1 = *angle2;
-    *angle2 = t;
-    *angle1 *= -CD_DEG2RAD;
-    *angle2 *= -CD_DEG2RAD;
+    *a1 *= -1;
+    *a2 *= -1;
+
+    /* swap, so the start angle is the smaller */
+    t = *a1;
+    *a1 = *a2;
+    *a2 = t;
   }
-  else
-  {
-    *angle1 *= CD_DEG2RAD;
-    *angle2 *= CD_DEG2RAD;
-  }
+  /* if NOT inverted means a transformation is set, 
+     so the angle will follow the transformation that includes the axis invertion,
+     then it is counter-clockwise */
+
+  /* convert to radians */
+  *a1 *= CD_DEG2RAD;
+  *a2 *= CD_DEG2RAD;
 }
 
 static void cdfarc(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)

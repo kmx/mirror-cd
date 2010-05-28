@@ -215,10 +215,46 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
   cdfbox(ctxcanvas, (double)xmin, (double)xmax, (double)ymin, (double)ymax);
 }
 
+static void sCalcArc(cdCtxCanvas* ctxcanvas, double xc, double yc, double w, double h, double a1, double a2, double *arcStartX, double *arcStartY, double *arcEndX, double *arcEndY, int *largeArc)
+{
+  if (ctxcanvas->canvas->invert_yaxis==0)
+  {
+    double t;
+
+    /* if NOT inverted means a transformation is set, 
+       so the angle will follow the transformation that includes the axis invertion,
+       then it is clockwise. */
+
+    /* this situation is inverted compared to the Cairo driver */
+
+    /* change angle orientation */
+    a1 = 360 - a1;
+    a2 = 360 - a2;
+
+    /* swap, so the start angle is the smaller */
+    t = a1;
+    a1 = a2;
+    a2 = t;
+  }
+
+  /* computation is done as if the angles are counterclockwise, 
+     and yaxis is inverted. */
+
+  *arcStartX = xc + (w/2.0)*cos(a1*CD_DEG2RAD);
+  *arcStartY = yc - (h/2.0)*sin(a1*CD_DEG2RAD);
+  *arcEndX   = xc + (w/2.0)*cos(a2*CD_DEG2RAD);
+  *arcEndY   = yc - (h/2.0)*sin(a2*CD_DEG2RAD);
+
+  if (fabs(a2-a1) > 180.0)
+    *largeArc = 1;
+  else
+    *largeArc = 0;
+}
+
 static void cdfarc(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
 {
   double arcStartX, arcStartY, arcEndX, arcEndY;
-  int largeArc = 0;
+  int largeArc;
 
   if((a1 == 0.0) && (a2 == 360.0)) /* an ellipse/circle */
   {
@@ -227,20 +263,7 @@ static void cdfarc(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, doubl
     return;
   }
 
-  if (ctxcanvas->canvas->use_matrix)  /* Transformation active */
-  {
-    double temp = 360 - a1;
-    a1 = 360 - a2;
-    a2 = temp;
-  }
-
-  arcStartX = (xc+(w/2)*cos(a1*CD_DEG2RAD));
-  arcStartY = (yc-(h/2)*sin(a1*CD_DEG2RAD));
-  arcEndX   = (xc+(w/2)*cos(a2*CD_DEG2RAD));
-  arcEndY   = (yc-(h/2)*sin(a2*CD_DEG2RAD));
-
-  if((a2-a1) > 180.0)
-    largeArc = 1;
+  sCalcArc(ctxcanvas, xc, yc, w, h, a1, a2, &arcStartX, &arcStartY, &arcEndX, &arcEndY, &largeArc);
 
   fprintf(ctxcanvas->file, "<path d=\"M%g,%g A%g,%g 0 %d,0 %g,%g\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" />\n",
     arcStartX, arcStartY, w/2, h/2, largeArc, arcEndX, arcEndY, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
@@ -254,7 +277,7 @@ static void cdarc(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a
 static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
 {
   double arcStartX, arcStartY, arcEndX, arcEndY;
-  int largeArc = 0;
+  int largeArc;
 
   if((a1 == 0.0) && (a2 == 360.0)) /* an ellipse/circle */
   {
@@ -263,20 +286,7 @@ static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, do
     return;
   }
 
-  if (ctxcanvas->canvas->use_matrix)  /* Transformation active */
-  {
-    double temp = 360 - a1;
-    a1 = 360 - a2;
-    a2 = temp;
-  }
-
-  arcStartX = (xc+(w/2)*cos(a1*CD_DEG2RAD));
-  arcStartY = (yc-(h/2)*sin(a1*CD_DEG2RAD));
-  arcEndX   = (xc+(w/2)*cos(a2*CD_DEG2RAD));
-  arcEndY   = (yc-(h/2)*sin(a2*CD_DEG2RAD));
-
-  if((a2-a1) > 180.0)
-    largeArc = 1;
+  sCalcArc(ctxcanvas, xc, yc, w, h, a1, a2, &arcStartX, &arcStartY, &arcEndX, &arcEndY, &largeArc);
 
   fprintf(ctxcanvas->file, "<path d=\"M%g,%g L%g,%g A%g,%g 0 %d,0 %g,%g Z\" style=\"fill:%s; stroke:none; opacity:%g\" />\n",
           xc, yc, arcStartX, arcStartY, w/2, h/2, largeArc, arcEndX, arcEndY, (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor: ctxcanvas->pattern, ctxcanvas->opacity);
@@ -290,22 +300,9 @@ static void cdsector(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, doubl
 static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
 {
   double arcStartX, arcStartY, arcEndX, arcEndY;
-  int largeArc = 0;
+  int largeArc;
 
-  if (ctxcanvas->canvas->use_matrix)  /* Transformation active */
-  {
-    double temp = 360 - a1;
-    a1 = 360 - a2;
-    a2 = temp;
-  }
-
-  arcStartX = (xc+(w/2)*cos(a1*CD_DEG2RAD));
-  arcStartY = (yc-(h/2)*sin(a1*CD_DEG2RAD));
-  arcEndX   = (xc+(w/2)*cos(a2*CD_DEG2RAD));
-  arcEndY   = (yc-(h/2)*sin(a2*CD_DEG2RAD));
-
-  if((a2-a1) > 180.0)
-    largeArc = 1;
+  sCalcArc(ctxcanvas, xc, yc, w, h, a1, a2, &arcStartX, &arcStartY, &arcEndX, &arcEndY, &largeArc);
 
   fprintf(ctxcanvas->file, "<path d=\"M%g,%g A%g,%g 0 %d,0 %g,%g Z\" style=\"fill:%s; stroke:none; opacity:%g\" />\n",
           arcStartX, arcStartY, w/2, h/2, largeArc, arcEndX, arcEndY, (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor: ctxcanvas->pattern, ctxcanvas->opacity);
@@ -476,7 +473,7 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
         {
           double xc, yc, w, h, a1, a2;
           double arcStartX, arcStartY, arcEndX, arcEndY;
-          int largeArc = 0;
+          int largeArc;
 
           if (i+3 > n) return;
 
@@ -487,20 +484,7 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
           a1 = poly[i+2].x, 
           a2 = poly[i+2].y;
 
-          if (ctxcanvas->canvas->use_matrix)  /* Transformation active */
-          {
-            double temp = 360 - a1;
-            a1 = 360 - a2;
-            a2 = temp;
-          }
-
-          arcStartX = (xc+(w/2)*cos(a1*CD_DEG2RAD));
-          arcStartY = (yc-(h/2)*sin(a1*CD_DEG2RAD));
-          arcEndX   = (xc+(w/2)*cos(a2*CD_DEG2RAD));
-          arcEndY   = (yc-(h/2)*sin(a2*CD_DEG2RAD));
-
-          if ((a2-a1) > 180.0)
-            largeArc = 1;
+          sCalcArc(ctxcanvas, xc, yc, w, h, a1, a2, &arcStartX, &arcStartY, &arcEndX, &arcEndY, &largeArc);
 
           fprintf(ctxcanvas->file, "M %g %g A %g %g 0 %d 0 %g %g ",
                   arcStartX, arcStartY, w/2, h/2, largeArc, arcEndX, arcEndY);
@@ -647,8 +631,8 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
         {
           int xc, yc, w, h;
           double a1, a2;
-          int arcStartX, arcStartY, arcEndX, arcEndY;
-          int largeArc = 0;
+          double arcStartX, arcStartY, arcEndX, arcEndY;
+          int largeArc;
 
           if (i+3 > n) return;
 
@@ -659,22 +643,9 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
           a1 = poly[i+2].x/1000.0, 
           a2 = poly[i+2].y/1000.0;
 
-          if (ctxcanvas->canvas->use_matrix)  /* Transformation active */
-          {
-            double temp = 360 - a1;
-            a1 = 360 - a2;
-            a2 = temp;
-          }
+          sCalcArc(ctxcanvas, xc, yc, w, h, a1, a2, &arcStartX, &arcStartY, &arcEndX, &arcEndY, &largeArc);
 
-          arcStartX = (int)(xc+(w/2)*cos(a1*CD_DEG2RAD));
-          arcStartY = (int)(yc-(h/2)*sin(a1*CD_DEG2RAD));
-          arcEndX   = (int)(xc+(w/2)*cos(a2*CD_DEG2RAD));
-          arcEndY   = (int)(yc-(h/2)*sin(a2*CD_DEG2RAD));
-
-          if ((a2-a1) > 180.0)
-            largeArc = 1;
-
-          fprintf(ctxcanvas->file, "M %d %d A %d %d 0 %d 0 %d %d ",
+          fprintf(ctxcanvas->file, "M %g %g A %d %d 0 %d 0 %g %g ",
                   arcStartX, arcStartY, w/2, h/2, largeArc, arcEndX, arcEndY);
 
           i += 3;
@@ -889,6 +860,7 @@ static void make_pattern(cdCtxCanvas *ctxcanvas, int n, int m, void* data, int (
   {
     for (i = 0; i < n; i++)
     {
+      /* internal transform, affects also pattern orientation */
       if (ctxcanvas->canvas->invert_yaxis)
         ret = data2rgb(ctxcanvas, n, i, m-1 - j, data, &r, &g, &b);
       else

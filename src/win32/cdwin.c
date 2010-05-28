@@ -643,10 +643,26 @@ static int cdinteriorstyle (cdCtxCanvas* ctxcanvas, int style)
   return style;
 }
 
+static void sUpdateFill(cdCtxCanvas* ctxcanvas, int fill)
+{
+  if (fill)
+  {
+    if ((ctxcanvas->logBrush.lbColor != ctxcanvas->fg) && 
+      (ctxcanvas->canvas->interior_style != CD_PATTERN)) 
+      cdinteriorstyle(ctxcanvas, ctxcanvas->canvas->interior_style);
+  }
+  else
+  {
+    if (ctxcanvas->rebuild_pen) 
+      sCreatePen(ctxcanvas);
+  }
+}
+
+/*******************************************************************************/
+
 static void cdline (cdCtxCanvas* ctxcanvas, int x1, int y1, int x2, int y2)
 {
-  if (ctxcanvas->rebuild_pen) 
-    sCreatePen(ctxcanvas);
+  sUpdateFill(ctxcanvas, 0);
   
   MoveToEx( ctxcanvas->hDC, x1, y1, NULL );
   LineTo( ctxcanvas->hDC, x2, y2 );
@@ -657,8 +673,7 @@ static void cdrect (cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, int ym
 {
   HBRUSH oldBrush;
   
-  if (ctxcanvas->rebuild_pen) 
-    sCreatePen(ctxcanvas);
+  sUpdateFill(ctxcanvas, 0);
   
   oldBrush = SelectObject(ctxcanvas->hDC, GetStockObject(NULL_BRUSH));  /* tira o desenho do interior */
   Rectangle(ctxcanvas->hDC, xmin, ymin, xmax+1, ymax+1);     /* +1 porque nao inclue right/bottom */
@@ -667,9 +682,7 @@ static void cdrect (cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, int ym
 
 static void cdbox (cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, int ymax)
 {
-  if ((ctxcanvas->logBrush.lbColor != ctxcanvas->fg) && 
-    (ctxcanvas->canvas->interior_style != CD_PATTERN) ) 
-    cdinteriorstyle(ctxcanvas, ctxcanvas->canvas->interior_style);
+  sUpdateFill(ctxcanvas, 1);
   
   if (ctxcanvas->canvas->new_region)
   {
@@ -699,26 +712,30 @@ typedef struct _winArcParam
 
 static void sCalcArc(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double angle1, double angle2, winArcParam* arc)
 {
+  /* convert to radians */
+  angle1 *= CD_DEG2RAD;
+  angle2 *= CD_DEG2RAD;
+
   arc->LeftRect = xc - w/2;
   arc->RightRect = xc + w/2 + 1;
-  arc->XStartArc = xc + cdRound(w * cos(CD_DEG2RAD * angle1) / 2.0);
-  arc->XEndArc = xc + cdRound(w * cos(CD_DEG2RAD * angle2) / 2.0);
+  arc->XStartArc = xc + cdRound(w * cos(angle1) / 2.0);
+  arc->XEndArc = xc + cdRound(w * cos(angle2) / 2.0);
 
   if (ctxcanvas->canvas->invert_yaxis)
   {
     arc->TopRect = yc - h/2;
     arc->BottomRect = yc + h/2 + 1;
-    arc->YStartArc = yc - cdRound(h * sin(CD_DEG2RAD * angle1) / 2.0);
-    arc->YEndArc = yc - cdRound(h * sin(CD_DEG2RAD * angle2) / 2.0);
+    arc->YStartArc = yc - cdRound(h * sin(angle1) / 2.0);
+    arc->YEndArc = yc - cdRound(h * sin(angle2) / 2.0);
   }
   else
   {
     arc->BottomRect = yc - h/2;
     arc->TopRect = yc + h/2 + 1;
-    arc->YStartArc = yc + cdRound(h * sin(CD_DEG2RAD * angle1) / 2.0);
-    arc->YEndArc = yc + cdRound(h * sin(CD_DEG2RAD * angle2) / 2.0);
+    arc->YStartArc = yc + cdRound(h * sin(angle1) / 2.0);
+    arc->YEndArc = yc + cdRound(h * sin(angle2) / 2.0);
 
-    /* it is clock-wise when axis inverted */
+    /* it is clock-wise when axis NOT inverted */
     _cdSwapInt(arc->XStartArc, arc->XEndArc);
     _cdSwapInt(arc->YStartArc, arc->YEndArc);
   }
@@ -729,8 +746,7 @@ static void cdarc(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double a
   winArcParam arc;
   sCalcArc(ctxcanvas, xc, yc, w, h, angle1, angle2, &arc);
   
-  if (ctxcanvas->rebuild_pen) 
-    sCreatePen(ctxcanvas);
+  sUpdateFill(ctxcanvas, 0);
   
   Arc(ctxcanvas->hDC, arc.LeftRect, arc.TopRect, arc.RightRect, arc.BottomRect, arc.XStartArc, arc.YStartArc, arc.XEndArc, arc.YEndArc);
 }
@@ -740,9 +756,7 @@ static void cdsector(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, doubl
   winArcParam arc;
   sCalcArc(ctxcanvas, xc, yc, w, h, angle1, angle2, &arc);
 
-  if ((ctxcanvas->logBrush.lbColor != ctxcanvas->fg) && 
-    (ctxcanvas->canvas->interior_style != CD_PATTERN) ) 
-    cdinteriorstyle(ctxcanvas, ctxcanvas->canvas->interior_style);
+  sUpdateFill(ctxcanvas, 1);
   
   if (angle1==0 && angle2==360)
   {
@@ -784,9 +798,7 @@ static void cdchord(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double
   winArcParam arc;
   sCalcArc(ctxcanvas, xc, yc, w, h, angle1, angle2, &arc);
 
-  if ((ctxcanvas->logBrush.lbColor != ctxcanvas->fg) && 
-    (ctxcanvas->canvas->interior_style != CD_PATTERN) ) 
-    cdinteriorstyle(ctxcanvas, ctxcanvas->canvas->interior_style);
+  sUpdateFill(ctxcanvas, 1);
   
   if (angle1==0 && angle2==360)
   {
@@ -895,6 +907,7 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
         break;
       case CD_PATH_FILLSTROKE:
         sUpdateFill(ctxcanvas, 1);
+        sUpdateFill(ctxcanvas, 0);
         SetPolyFillMode(ctxcanvas->hDC, ctxcanvas->canvas->fill_mode==CD_EVENODD?ALTERNATE:WINDING);
         StrokeAndFillPath(ctxcanvas->hDC);
         break;
@@ -915,13 +928,11 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
     n++;
     /* continua */
   case CD_OPEN_LINES:
-    if (ctxcanvas->rebuild_pen) 
-      sCreatePen(ctxcanvas);
+    sUpdateFill(ctxcanvas, 0);
     Polyline(ctxcanvas->hDC, (POINT*)poly, n);
     break;
   case CD_BEZIER:
-    if (ctxcanvas->rebuild_pen) 
-      sCreatePen(ctxcanvas);
+    sUpdateFill(ctxcanvas, 0);
     PolyBezier(ctxcanvas->hDC, (POINT*)poly, n);
     break;
   case CD_FILL:
@@ -936,14 +947,10 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
     }
     else 
     {
-      if ((ctxcanvas->logBrush.lbColor != ctxcanvas->fg) && 
-        (ctxcanvas->canvas->interior_style != CD_PATTERN)) 
-        cdinteriorstyle(ctxcanvas, ctxcanvas->canvas->interior_style);
+      sUpdateFill(ctxcanvas, 1);
       
       if (ctxcanvas->canvas->interior_style != CD_SOLID || ctxcanvas->fill_attrib[0] == '0') 
-      {
         SelectObject(ctxcanvas->hDC, ctxcanvas->hNullPen);  /* tira o desenho da borda */
-      }
       else
       {
         Pen = CreatePen(PS_SOLID, 1, ctxcanvas->fg);
@@ -954,9 +961,7 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
       Polygon(ctxcanvas->hDC, (POINT*)poly, n);
 
       if (ctxcanvas->canvas->interior_style != CD_SOLID || ctxcanvas->fill_attrib[0] == '0')
-      {
         SelectObject(ctxcanvas->hDC, ctxcanvas->hPen);      /* restaura a Pen corrente */
-      }
       else
       {
         SelectObject(ctxcanvas->hDC, oldPen);

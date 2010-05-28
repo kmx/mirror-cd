@@ -624,6 +624,8 @@ static void cdarc(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a
 {
   sUpdateFill(ctxcanvas, 0);
 
+  /* angles in degrees counterclockwise, same as CD */
+
   if (w==h) /* Circulo: PS implementa direto */
   {
     fprintf(ctxcanvas->file, "N %d %d %g %g %g arc S\n", xc, yc, 0.5*w, a1, a2);
