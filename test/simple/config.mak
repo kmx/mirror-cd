@@ -30,8 +30,21 @@ USE_STATIC = Yes
 #USE_IM = Yes
 
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )
-  LIBS = cdpdf pdflib cdcontextplus gdiplus
+  LIBS = cdpdf pdflib
+  ifndef USE_GDK
+    LIBS += cdcontextplus gdiplus
+  endif
 else
-  SLIB = $(CD)/lib/$(TEC_UNAME)/libcdpdf.a $(CD)/lib/$(TEC_UNAME)/libpdflib.a $(CD)/lib/$(TEC_UNAME)/libcdcontextplus.a
-  LIBS = Xrender Xft
+  ifdef DBG_DIR
+    CDLIB = $(CD)/lib/$(TEC_UNAME)d
+  else
+    CDLIB = $(CD)/lib/$(TEC_UNAME)
+  endif  
+
+  SLIB = $(CDLIB)/libcdpdf.a $(CDLIB)/libpdflib.a 
+  ifndef USE_GDK
+    SLIB += $(CDLIB)/libcdcontextplus.a
+    LIBS = Xrender Xft
+  else  
+  endif
 endif

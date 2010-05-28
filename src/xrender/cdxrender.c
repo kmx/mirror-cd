@@ -920,11 +920,11 @@ static void cdkillcanvas(cdCtxCanvas *ctxcanvas)
   if (ctxcanvas->ctxplus->font)
     XftFontClose(ctxcanvas->dpy, ctxcanvas->ctxplus->font);
 
-  XftDrawDestroy(ctxcanvas->ctxplus->draw);
-  free(ctxcanvas->ctxplus);
-
   /* call original method */
   ctxcanvas->ctxplus->cxKillCanvas(ctxcanvas);
+
+  XftDrawDestroy(ctxcanvas->ctxplus->draw);
+  free(ctxcanvas->ctxplus);
 }
 
 static void xrInitTable(cdCanvas* canvas)
@@ -1014,13 +1014,13 @@ static void xrCreateCanvasDBUFFER(cdCanvas* canvas, void *data)
 {
   cdcreatecanvasDBUFFER(canvas, data);  /* call original first */
   xrCreateContextPlus(canvas->ctxcanvas);
-  canvas->ctxcanvas->ctxplus->cxKillCanvas = cdkillcanvasDBUFFER; /* must set it here since CreateContext clears the structure */
 }
 
 static void xrInitTableDBUFFER(cdCanvas* canvas)
 {
-  if (!cdkillcanvasDBUFFER) cdkillcanvasDBUFFER = canvas->cxKillCanvas;  /* save original method */
   cdinittableDBUFFER(canvas);
+  if (!cdkillcanvasDBUFFER) cdkillcanvasDBUFFER = canvas->cxKillCanvas;
+  canvas->ctxcanvas->ctxplus->cxKillCanvas = cdkillcanvasDBUFFER;
   xrInitTable(canvas);
 }
 
@@ -1050,13 +1050,13 @@ static void xrCreateCanvasNATIVE(cdCanvas* canvas, void *data)
 {
   cdcreatecanvasNATIVE(canvas, data);
   xrCreateContextPlus(canvas->ctxcanvas);
-  canvas->ctxcanvas->ctxplus->cxKillCanvas = cdkillcanvasNATIVE;
 }
 
 static void xrInitTableNATIVE(cdCanvas* canvas)
 {
-  if (!cdkillcanvasNATIVE) cdkillcanvasNATIVE = canvas->cxKillCanvas;
   cdinittableNATIVE(canvas);
+  if (!cdkillcanvasNATIVE) cdkillcanvasNATIVE = canvas->cxKillCanvas;
+  canvas->ctxcanvas->ctxplus->cxKillCanvas = cdkillcanvasNATIVE;
   xrInitTable(canvas);
 }
 
@@ -1081,13 +1081,13 @@ static void xrCreateCanvasIMAGE(cdCanvas* canvas, void *data)
 {
   cdcreatecanvasIMAGE(canvas, data);
   xrCreateContextPlus(canvas->ctxcanvas);
-  canvas->ctxcanvas->ctxplus->cxKillCanvas = cdkillcanvasIMAGE;
 }
 
 static void xrInitTableIMAGE(cdCanvas* canvas)
 {
-  if (!cdkillcanvasIMAGE) cdkillcanvasIMAGE = canvas->cxKillCanvas;
   cdinittableIMAGE(canvas);
+  if (!cdkillcanvasIMAGE) cdkillcanvasIMAGE = canvas->cxKillCanvas;
+  canvas->ctxcanvas->ctxplus->cxKillCanvas = cdkillcanvasIMAGE;
   xrInitTable(canvas);
 }
 
