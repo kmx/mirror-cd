@@ -509,6 +509,7 @@ void SimpleDraw(void)
 int SimpleDrawAll(void)
 {
   int w, h;
+  cdCanvas* canvas = cdActiveCanvas();
   cdGetCanvasSize(&w, &h, 0, 0);
   
   simple_draw = DRAW_ALL;
@@ -609,11 +610,11 @@ int SimpleDrawAll(void)
 
   if (use_transform)
   {
-    cdCanvasTransform(cdActiveCanvas(), NULL);
-    cdCanvasTransformTranslate(cdActiveCanvas(), w/2, h/2);
-    cdCanvasTransformRotate(cdActiveCanvas(), 30);
-    cdCanvasTransformScale(cdActiveCanvas(), 0.5, 0.5);
-    cdCanvasTransformTranslate(cdActiveCanvas(), -w/2, -h/2);
+    cdCanvasTransform(canvas, NULL);
+    cdCanvasTransformTranslate(canvas, w/2, h/2);
+    cdCanvasTransformRotate(canvas, 30);
+    cdCanvasTransformScale(canvas, 0.5, 0.5);
+    cdCanvasTransformTranslate(canvas, -w/2, -h/2);
   }
 
 //  cdSetfAttribute("ROTATE", "15 %d %d", w/2, h/2);
@@ -698,6 +699,27 @@ int SimpleDrawAll(void)
     wdVertex(rect[6], rect[7]);
     cdEnd();
   }
+
+  cdForeground(CD_GREEN);
+  cdBegin(CD_PATH);
+  cdCanvasPathSet(canvas, CD_PATH_MOVETO);
+  cdVertex(w/2 + 200, h/2);
+  cdCanvasPathSet(canvas, CD_PATH_LINETO);
+  cdVertex(w/2 + 250, h/2 + 50);
+  cdCanvasPathSet(canvas, CD_PATH_CURVETO);
+  cdVertex(w/2+150+150, h/2+200-50); 
+  cdVertex(w/2+150+180, h/2+250-50); 
+  cdVertex(w/2+150+180, h/2+200-50); 
+  cdCanvasPathSet(canvas, CD_PATH_CURVETO);
+  cdVertex(w/2+150+180, h/2+150-50); 
+  cdVertex(w/2+150+150, h/2+100-50); 
+  cdVertex(w/2+150+300, h/2+100-50); 
+  cdCanvasPathSet(canvas, CD_PATH_CLOSE);
+//  cdCanvasPathSet(canvas, CD_PATH_STROKE);
+  cdCanvasPathSet(canvas, CD_PATH_FILL);
+//  cdCanvasPathSet(canvas, CD_PATH_FILLSTROKE);
+  cdEnd();
+
 
   cdPixel(10, h/2+0, CD_RED);
   cdPixel(11, h/2+1, CD_GREEN);
@@ -835,7 +857,7 @@ int SimpleDrawAll(void)
 
   cdSetAttribute("ROTATE", NULL);
   if (use_transform)
-    cdCanvasTransform(cdActiveCanvas(), NULL);
+    cdCanvasTransform(canvas, NULL);
   cdClip(CD_CLIPOFF);
   cdFlush();
 
@@ -1101,8 +1123,8 @@ int SimpleDrawTextFonts(void)
   return 0;
 }
 
-//void SimpleDrawTest(void)
-void SimpleDrawMainTest(void)
+void SimpleDrawTest(void)
+//void SimpleDrawMainTest(void)
 {
   long pattern[16];  /* 4x4 pattern */
   int w, h;
@@ -1326,8 +1348,8 @@ void SimpleDrawVectorFont(void)
   cdFlush();
 }
 
-void SimpleDrawTest(void)
-//void SimpleDrawPoly(void)
+//void SimpleDrawTest(void)
+void SimpleDrawPoly(void)
 {
   int w, h;
   cdGetCanvasSize(&w, &h, 0, 0);

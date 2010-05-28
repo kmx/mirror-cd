@@ -854,6 +854,7 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
       switch(ctxcanvas->canvas->path[p])
       {
       case CD_PATH_NEW:
+        EndPath(ctxcanvas->hDC);
         BeginPath(ctxcanvas->hDC);
         break;
       case CD_PATH_MOVETO:
@@ -899,20 +900,24 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
       case CD_PATH_FILL:
         sUpdateFill(ctxcanvas, 1);
         SetPolyFillMode(ctxcanvas->hDC, ctxcanvas->canvas->fill_mode==CD_EVENODD?ALTERNATE:WINDING);
+        EndPath(ctxcanvas->hDC);
         FillPath(ctxcanvas->hDC);
         break;
       case CD_PATH_STROKE:
         sUpdateFill(ctxcanvas, 0);
+        EndPath(ctxcanvas->hDC);
         StrokePath(ctxcanvas->hDC);
         break;
       case CD_PATH_FILLSTROKE:
         sUpdateFill(ctxcanvas, 1);
         sUpdateFill(ctxcanvas, 0);
         SetPolyFillMode(ctxcanvas->hDC, ctxcanvas->canvas->fill_mode==CD_EVENODD?ALTERNATE:WINDING);
+        EndPath(ctxcanvas->hDC);
         StrokeAndFillPath(ctxcanvas->hDC);
         break;
       case CD_PATH_CLIP:
         SetPolyFillMode(ctxcanvas->hDC, ctxcanvas->canvas->fill_mode==CD_EVENODD?ALTERNATE:WINDING);
+        EndPath(ctxcanvas->hDC);
         SelectClipPath(ctxcanvas->hDC, RGN_AND);
         break;
       }
