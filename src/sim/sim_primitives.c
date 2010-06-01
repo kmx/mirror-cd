@@ -19,7 +19,7 @@ void cdSimLine(cdCtxCanvas* ctxcanvas, int x1, int y1, int x2, int y2)
   cdPoint poly[2];
   poly[0].x = x1; poly[0].y = y1;
   poly[1].x = x2; poly[1].y = y2;
-  canvas->cxPoly(canvas->ctxcanvas, CD_OPEN_LINES, poly, 2);
+  cdCanvasPoly(canvas, CD_OPEN_LINES, poly, 2);
 }
 
 void cdfSimLine(cdCtxCanvas* ctxcanvas, double x1, double y1, double x2, double y2)
@@ -39,7 +39,7 @@ void cdSimRect(cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, int ymax)
   poly[1].x = xmin; poly[1].y = ymax;
   poly[2].x = xmax; poly[2].y = ymax;
   poly[3].x = xmax; poly[3].y = ymin;
-  canvas->cxPoly(canvas->ctxcanvas, CD_CLOSED_LINES, poly, 4);
+  cdCanvasPoly(canvas, CD_CLOSED_LINES, poly, 4);
 }
 
 void cdfSimRect(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
@@ -62,7 +62,7 @@ void cdSimBox(cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, int ymax)
   poly[1].x = xmin; poly[1].y = ymax;
   poly[2].x = xmax; poly[2].y = ymax;
   poly[3].x = xmax; poly[3].y = ymin;
-  canvas->cxPoly(canvas->ctxcanvas, CD_FILL, poly, 4);
+  cdCanvasPoly(canvas, CD_FILL, poly, 4);
 }
 
 void cdfSimBox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
@@ -77,9 +77,9 @@ void cdfSimBox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, do
   canvas->cxFPoly(canvas->ctxcanvas, CD_FILL, poly, 4);
 }
 
-int cdSimCalcEllipseNumSegments(cdCanvas* canvas, int xc, int yc, int width, int height)
+static int sCalcEllipseNumSegments(cdCanvas* canvas, int xc, int yc, int width, int height, double angle1, double angle2)
 {
-  int n, dx, dy, hd;
+  int K, dx, dy, hd;
   int w2 = width/2;
   int h2 = height/2;
   int x1 = xc-w2, 
@@ -93,6 +93,8 @@ int cdSimCalcEllipseNumSegments(cdCanvas* canvas, int xc, int yc, int width, int
     cdMatrixTransformPoint(canvas->matrix, x2, y2, &x2, &y2);
   }
 
+  /* first calculate the number of segments of equivalent poligonal for a full ellipse */
+
   dx = (x1-x2);
   dy = (y1-y2);
   hd = (int)(sqrt(dx*dx + dy*dy)/2);
@@ -104,40 +106,39 @@ int cdSimCalcEllipseNumSegments(cdCanvas* canvas, int xc, int yc, int width, int
   The number of segments will be 360 / min_angle.
   */
 
-  n = (int)((360.0*CD_DEG2RAD) / acos((double)hd / (hd + 1.0)) + 0.5); /* round up */
+  K = (int)((360.0*CD_DEG2RAD) / acos((double)hd / (hd + 1.0)) + 0.5); /* round up */
 
   /* multiple of 4 */
-  n = ((n + 3)/4)*4;
+  K = ((K + 3)/4)*4;
 
   /* minimum number is 4 */
-  if (n < 4) n = 4;
+  if (K < 4) K = 4;
 
-  return n;
+
+  /* finally, calculate the number of segments for the arc */
+  K = cdRound((fabs(angle2-angle1)*K)/(360*CD_DEG2RAD));
+  if (K < 1) K = 1;
+
+  return K;
 }
 
-static void sFixAngles(cdCanvas* canvas, double *angle1, double *angle2)
+static void sFixAngles(cdCanvas* canvas, double *a1, double *a2)
 {
+  /* computation in PolyAddArc is done as if the angles are counterclockwise, 
+     and yaxis is NOT inverted. */
+
   if (canvas->invert_yaxis)
   {
-    double t;
+    /* change orientation */
+    *a1 *= -1;
+    *a2 *= -1;
 
-    /* computation is done as if the angles are counterclockwise, 
-       and yaxis is NOT inverted. */
-
-    /* if yaxis is inverted then must orient clockwise */
-    /* change angle orientation */
-    *angle1 = 360 - *angle1;
-    *angle2 = 360 - *angle2;
-
-    /* swap, so the start angle is the smaller */
-    t = *angle1;
-    *angle1 = *angle2;
-    *angle2 = t;
+    /* no need to swap, because we will use (angle2-angle1) */
   }
 
   /* convert to radians */
-  *angle1 *= CD_DEG2RAD;
-  *angle2 *= CD_DEG2RAD;
+  *a1 *= CD_DEG2RAD;
+  *a2 *= CD_DEG2RAD;
 }
 
 static cdPoint* sPolyAddArc(cdCanvas* canvas, cdPoint* poly, int *n, int xc, int yc, int width, int height, double angle1, double angle2, cdPoint* current)
@@ -147,14 +148,10 @@ static cdPoint* sPolyAddArc(cdCanvas* canvas, cdPoint* poly, int *n, int xc, int
   int i, K, k, p, new_n;
   cdPoint* old_poly = poly;
 
-  /* number of segments of equivalent poligonal for a full ellipse */
-  K = cdSimCalcEllipseNumSegments(canvas, xc, yc, width, height);
-
   sFixAngles(canvas, &angle1, &angle2);
 
   /* number of segments for the arc */
-  K = cdRound((fabs(angle2-angle1)*K)/(360*CD_DEG2RAD));
-  if (K < 1) K = 1;
+  K = sCalcEllipseNumSegments(canvas, xc, yc, width, height, angle1, angle2);
 
   new_n = *n + K+1;  /* add room for K+1 samples */
   poly = (cdPoint*)realloc(poly, sizeof(cdPoint)*(new_n+2));  /* add room also for points at start and end */
@@ -208,17 +205,13 @@ static cdPoint* sPolyAddArc(cdCanvas* canvas, cdPoint* poly, int *n, int xc, int
 static cdfPoint* sfPolyAddArc(cdCanvas* canvas, cdfPoint* poly, int *n, double xc, double yc, double width, double height, double angle1, double angle2, cdfPoint* current)
 {
   double c, s, sx, sy, x, y, prev_x, prev_y, da;
-  int i, k, p, new_n;
+  int i, k, K, p, new_n;
   cdfPoint* old_poly = poly;
-
-  /* number of segments of equivalent poligonal for a full ellipse */
-  int K = cdSimCalcEllipseNumSegments(canvas, (int)xc, (int)yc, (int)width, (int)height);
 
   sFixAngles(canvas, &angle1, &angle2);
 
   /* number of segments for the arc */
-  K = cdRound((fabs(angle2-angle1)*K)/(360*CD_DEG2RAD));
-  if (K < 1) K = 1;
+  K = sCalcEllipseNumSegments(canvas, (int)xc, (int)yc, (int)width, (int)height, angle1, angle2);
 
   new_n = *n + K+1;  /* add room for K+1 samples */
   poly = (cdfPoint*)realloc(poly, sizeof(cdfPoint)*(new_n+2));  /* add room also for points at start and end */
@@ -284,7 +277,7 @@ void cdSimArc(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, int height, dou
 
   if (poly)
   {
-    canvas->cxPoly(canvas->ctxcanvas, CD_OPEN_LINES, poly, n);
+    cdCanvasPoly(canvas, CD_OPEN_LINES, poly, n);
     free(poly);
   }
 }
@@ -336,7 +329,7 @@ static void sElipse(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, int heigh
 
   if (poly)
   {
-    canvas->cxPoly(canvas->ctxcanvas, CD_FILL, poly, n);
+    cdCanvasPoly(canvas, CD_FILL, poly, n);
     free(poly);
   }
 }
@@ -684,7 +677,7 @@ void cdSimPolyBezier(cdCanvas* canvas, const cdPoint* points, int n)
 
   if (poly)
   {
-    canvas->cxPoly(canvas->ctxcanvas, CD_OPEN_LINES, poly, poly_n);
+    cdCanvasPoly(canvas, CD_OPEN_LINES, poly, poly_n);
     free(poly);
   }
 }
@@ -789,12 +782,8 @@ void cdfSimPolyPath(cdCanvas* canvas, const cdfPoint* poly, int n)
 
         if (i+3 > n) break;
 
-        xc = poly[i].x, 
-        yc = poly[i].y, 
-        w = poly[i+1].x, 
-        h = poly[i+1].y, 
-        a1 = poly[i+2].x, 
-        a2 = poly[i+2].y;
+        if (!cdfCanvasGetArcPath(canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+            return;
 
         if (current_set)
           path_poly = sfPolyAddArc(canvas, path_poly, &path_poly_n, xc, yc, w, h, a1, a2, &current);
@@ -909,12 +898,8 @@ static void sSimPolyFPath(cdCanvas* canvas, const cdPoint* poly, int n)
 
         if (i+3 > n) break;
 
-        xc = poly[i].x, 
-        yc = poly[i].y, 
-        w = poly[i+1].x, 
-        h = poly[i+1].y, 
-        a1 = poly[i+2].x/1000.0, 
-        a2 = poly[i+2].y/1000.0;
+        if (!cdCanvasGetArcPathF(canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+          return;
 
         if (current_set)
           path_poly = sfPolyAddArc(canvas, path_poly, &path_poly_n, xc, yc, w, h, a1, a2, &current);
@@ -1043,12 +1028,8 @@ void cdSimPolyPath(cdCanvas* canvas, const cdPoint* poly, int n)
 
         if (i+3 > n) break;
 
-        xc = poly[i].x, 
-        yc = poly[i].y, 
-        w = poly[i+1].x, 
-        h = poly[i+1].y, 
-        a1 = poly[i+2].x/1000.0, 
-        a2 = poly[i+2].y/1000.0;
+        if (!cdCanvasGetArcPath(canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+          return;
 
         if (current_set)
           path_poly = sPolyAddArc(canvas, path_poly, &path_poly_n, xc, yc, w, h, a1, a2, &current);
@@ -1091,22 +1072,22 @@ void cdSimPolyPath(cdCanvas* canvas, const cdPoint* poly, int n)
       break;
     case CD_PATH_FILL:
       if (poly)
-        canvas->cxPoly(canvas->ctxcanvas, CD_FILL, path_poly, path_poly_n);
+        cdCanvasPoly(canvas, CD_FILL, path_poly, path_poly_n);
       break;
     case CD_PATH_STROKE:
       if (poly)
-        canvas->cxPoly(canvas->ctxcanvas, CD_OPEN_LINES, path_poly, path_poly_n);
+        cdCanvasPoly(canvas, CD_OPEN_LINES, path_poly, path_poly_n);
       break;
     case CD_PATH_FILLSTROKE:
       if (poly)
       {
-        canvas->cxPoly(canvas->ctxcanvas, CD_FILL, path_poly, path_poly_n);
-        canvas->cxPoly(canvas->ctxcanvas, CD_OPEN_LINES, path_poly, path_poly_n);
+        cdCanvasPoly(canvas, CD_FILL, path_poly, path_poly_n);
+        cdCanvasPoly(canvas, CD_OPEN_LINES, path_poly, path_poly_n);
       }
       break;
     case CD_PATH_CLIP:
       if (poly)
-        canvas->cxPoly(canvas->ctxcanvas, CD_CLIP, path_poly, path_poly_n);
+        cdCanvasPoly(canvas, CD_CLIP, path_poly, path_poly_n);
       break;
     }
   }
@@ -1116,6 +1097,11 @@ void cdSimPolyPath(cdCanvas* canvas, const cdPoint* poly, int n)
 }
 
 /************************************************************************/
+
+/* Simulation functions that depend on the simulation base driver. */
+static void cdSimPolyFill(cdCanvas* canvas, cdPoint* poly, int n);
+static void cdSimPolyLine(cdCanvas* canvas, const cdPoint* poly, int n);
+static void cdfSimPolyLine(cdCanvas* canvas, const cdfPoint* poly, int n);
 
 void cdSimPoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
 {
@@ -1138,6 +1124,45 @@ void cdSimPoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
     break;
   case CD_FILL:
     cdSimPolyFill(canvas, poly, n);
+    break;
+  }
+}
+
+void cdfSimPoly(cdCtxCanvas* ctxcanvas, int mode, cdfPoint* fpoly, int n)
+{
+  cdCanvas* canvas = ((cdCtxCanvasBase*)ctxcanvas)->canvas;
+
+  switch(mode) 
+  {
+  case CD_CLOSED_LINES:
+    fpoly[n] = fpoly[0];
+    n++;
+    /* continue */
+  case CD_OPEN_LINES:
+    cdfSimPolyLine(canvas, fpoly, n);
+    break;
+  case CD_BEZIER:
+    cdfSimPolyBezier(canvas, fpoly, n);
+    break;
+  case CD_PATH:
+    cdfSimPolyPath(canvas, fpoly, n);
+    break;
+  case CD_CLIP:
+  case CD_FILL:
+    {
+      cdPoint* poly = malloc(sizeof(cdPoint)*n);
+      int i;
+
+      for (i = 0; i<n; i++)
+      {
+        poly[i].x = _cdRound(fpoly[i].x);
+        poly[i].y = _cdRound(fpoly[i].y);
+      }
+
+      cdCanvasPoly(canvas, mode, poly, n);
+
+      free(poly);
+    }
     break;
   }
 }
@@ -1218,9 +1243,9 @@ void cdSimMark(cdCanvas* canvas, int x, int y)
       poly[3].y = bottom;
 
       if (canvas->mark_type == CD_DIAMOND)
-        canvas->cxPoly(canvas->ctxcanvas, CD_FILL, poly, 4);
+        cdCanvasPoly(canvas, CD_FILL, poly, 4);
       else
-        canvas->cxPoly(canvas->ctxcanvas, CD_CLOSED_LINES, poly, 4);
+        cdCanvasPoly(canvas, CD_CLOSED_LINES, poly, 4);
     }
     break;
   }
@@ -1296,7 +1321,7 @@ void cdSimPutImageRectRGBA(cdCanvas* canvas, int iw, int ih, const unsigned char
 #include "cd_truetype.h"
 #include "sim.h"
 
-void cdSimPolyLine(cdCanvas* canvas, const cdPoint* poly, int n)
+static void cdSimPolyLine(cdCanvas* canvas, const cdPoint* poly, int n)
 {
   int i, reset = 1, transform = 0;
   int old_use_matrix = canvas->use_matrix;
@@ -1342,7 +1367,7 @@ void cdSimPolyLine(cdCanvas* canvas, const cdPoint* poly, int n)
   canvas->use_matrix = old_use_matrix;
 }
 
-void cdfSimPolyLine(cdCanvas* canvas, const cdfPoint* poly, int n)
+static void cdfSimPolyLine(cdCanvas* canvas, const cdfPoint* poly, int n)
 {
   int i, reset = 1, transform = 0;
   int old_use_matrix = canvas->use_matrix;
@@ -1429,14 +1454,14 @@ static void sGetBox(cdPoint* poly, int *xmin, int *xmax, int *ymin, int *ymax)
   }
 }
 
-void cdSimPolyFill(cdCanvas* canvas, cdPoint* poly, int n)
+static void cdSimPolyFill(cdCanvas* canvas, cdPoint* poly, int n)
 {
   int old_use_matrix = canvas->use_matrix;
 
   if (canvas->use_matrix)
   {
     int i;
-    for(i = 0; i < n; i++)    /* can do that because poly is internal of the CD */
+    for(i = 0; i < n; i++)    /* can do that because poly is internal of the CD, and it will NOT be stored */
       cdMatrixTransformPoint(canvas->matrix, poly[i].x, poly[i].y, &poly[i].x, &poly[i].y);
   }
 

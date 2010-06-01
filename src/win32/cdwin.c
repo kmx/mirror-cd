@@ -710,41 +710,45 @@ typedef struct _winArcParam
     YEndArc; 	   /* second radial ending point */
 } winArcParam;
 
-static void sCalcArc(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double angle1, double angle2, winArcParam* arc)
+static void sCalcArc(cdCanvas* canvas, int xc, int yc, int w, int h, double a1, double a2, winArcParam* arc, int swap)
 {
-  /* convert to radians */
-  angle1 *= CD_DEG2RAD;
-  angle2 *= CD_DEG2RAD;
+  /* computation is done as if the angles are counter-clockwise, 
+     and yaxis is NOT inverted. */
 
-  arc->LeftRect = xc - w/2;
-  arc->RightRect = xc + w/2 + 1;
-  arc->XStartArc = xc + cdRound(w * cos(angle1) / 2.0);
-  arc->XEndArc = xc + cdRound(w * cos(angle2) / 2.0);
+  arc->LeftRect   = xc - w/2;
+  arc->TopRect    = yc - h/2;
+  arc->RightRect  = xc + w/2 + 1;
+  arc->BottomRect = yc + h/2 + 1;
 
-  if (ctxcanvas->canvas->invert_yaxis)
+  /* GDI orientation is the same as CD */
+
+  if (!canvas->invert_yaxis)
+    _cdSwapInt(arc->BottomRect, arc->TopRect);  /* not necessary, but done for clarity */
+
+  cdCanvasGetArcStartEnd(xc, yc, w, h, a1, a2, &(arc->XStartArc), &(arc->YStartArc), &(arc->XEndArc), &(arc->YEndArc));
+
+  if (canvas->invert_yaxis)
   {
-    arc->TopRect = yc - h/2;
-    arc->BottomRect = yc + h/2 + 1;
-    arc->YStartArc = yc - cdRound(h * sin(angle1) / 2.0);
-    arc->YEndArc = yc - cdRound(h * sin(angle2) / 2.0);
+    /* fix axis orientation only, because angle orientation is the same */
+    arc->YStartArc = 2*yc - arc->YStartArc;
+    arc->YEndArc = 2*yc - arc->YEndArc;
   }
   else
   {
-    arc->BottomRect = yc - h/2;
-    arc->TopRect = yc + h/2 + 1;
-    arc->YStartArc = yc + cdRound(h * sin(angle1) / 2.0);
-    arc->YEndArc = yc + cdRound(h * sin(angle2) / 2.0);
-
+    /* Arc behave diferent when GM_ADVANCED is set */
     /* it is clock-wise when axis NOT inverted */
-    _cdSwapInt(arc->XStartArc, arc->XEndArc);
-    _cdSwapInt(arc->YStartArc, arc->YEndArc);
+    if (swap)
+    {
+      _cdSwapInt(arc->XStartArc, arc->XEndArc);
+      _cdSwapInt(arc->YStartArc, arc->YEndArc);
+    }
   }
 }
 
 static void cdarc(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double angle1, double angle2)
 {
   winArcParam arc;
-  sCalcArc(ctxcanvas, xc, yc, w, h, angle1, angle2, &arc);
+  sCalcArc(ctxcanvas->canvas, xc, yc, w, h, angle1, angle2, &arc, 1);
   
   sUpdateFill(ctxcanvas, 0);
   
@@ -754,7 +758,7 @@ static void cdarc(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double a
 static void cdsector(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double angle1, double angle2)
 {
   winArcParam arc;
-  sCalcArc(ctxcanvas, xc, yc, w, h, angle1, angle2, &arc);
+  sCalcArc(ctxcanvas->canvas, xc, yc, w, h, angle1, angle2, &arc, 1);
 
   sUpdateFill(ctxcanvas, 1);
   
@@ -796,7 +800,7 @@ static void cdsector(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, doubl
 static void cdchord(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double angle1, double angle2)
 {
   winArcParam arc;
-  sCalcArc(ctxcanvas, xc, yc, w, h, angle1, angle2, &arc);
+  sCalcArc(ctxcanvas->canvas, xc, yc, w, h, angle1, angle2, &arc, 1);
 
   sUpdateFill(ctxcanvas, 1);
   
@@ -843,10 +847,11 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
 
   if (mode == CD_PATH)
   {
-    int p;
+    int p, current_set;
 
     /* if there is any current path, remove it */
     BeginPath(ctxcanvas->hDC);
+    current_set = 0;
 
     i = 0;
     for (p=0; p<ctxcanvas->canvas->path_n; p++)
@@ -856,35 +861,49 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
       case CD_PATH_NEW:
         EndPath(ctxcanvas->hDC);
         BeginPath(ctxcanvas->hDC);
+        current_set = 0;
         break;
       case CD_PATH_MOVETO:
         if (i+1 > n) return;
         MoveToEx(ctxcanvas->hDC, poly[i].x, poly[i].y, NULL);
+        current_set = 1;
         i++;
         break;
       case CD_PATH_LINETO:
         if (i+1 > n) return;
         LineTo(ctxcanvas->hDC, poly[i].x, poly[i].y);
+        current_set = 1;
         i++;
         break;
       case CD_PATH_ARC:
         {
-          int xc, yc, w, h;
+          int xc, yc, w, h, old_arcmode = 0;
           double a1, a2;
           winArcParam arc;
 
           if (i+3 > n) return;
 
-          xc = poly[i].x, 
-          yc = poly[i].y, 
-          w = poly[i+1].x, 
-          h = poly[i+1].y, 
-          a1 = poly[i+2].x/1000.0, 
-          a2 = poly[i+2].y/1000.0;
+          if (!cdCanvasGetArcPath(ctxcanvas->canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2)) 
+            return;
 
-          sCalcArc(ctxcanvas, xc, yc, w, h, a1, a2, &arc);
+          sCalcArc(ctxcanvas->canvas, xc, yc, w, h, a1, a2, &arc, 0);
+
+          if (current_set)
+            LineTo(ctxcanvas->hDC, arc.XStartArc, arc.YStartArc);
           
+          if ((a2-a1)<0) /* can be clockwise */
+          {
+            /* Arc behave diferent when GM_ADVANCED is set */
+            old_arcmode = SetArcDirection(ctxcanvas->hDC, ctxcanvas->canvas->invert_yaxis? AD_CLOCKWISE: AD_COUNTERCLOCKWISE);
+          }
+
           Arc(ctxcanvas->hDC, arc.LeftRect, arc.TopRect, arc.RightRect, arc.BottomRect, arc.XStartArc, arc.YStartArc, arc.XEndArc, arc.YEndArc);
+
+          if (old_arcmode) /* restore */
+            SetArcDirection(ctxcanvas->hDC, old_arcmode);
+
+          MoveToEx(ctxcanvas->hDC, arc.XEndArc, arc.YEndArc, NULL);
+          current_set = 1;
 
           i += 3;
         }
@@ -892,6 +911,7 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
       case CD_PATH_CURVETO:
         if (i+3 > n) return;
         PolyBezierTo(ctxcanvas->hDC, (POINT*)(poly + i), 3);
+        current_set = 1;
         i += 3;
         break;
       case CD_PATH_CLOSE:

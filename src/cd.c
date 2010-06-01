@@ -327,7 +327,11 @@ int cdCanvasSimulate(cdCanvas* canvas, int mode)
     canvas->cxFont(canvas->ctxcanvas, canvas->font_type_face, canvas->font_style, canvas->font_size);
 
   if (mode & CD_SIM_POLYLINE || mode & CD_SIM_POLYGON)
+  {
+    /* can NOT replace canvas->cxPoly because it will be used by the simulation,
+       handle polygon simulation in Begin/End */
     canvas->cxFPoly = NULL;
+  }
 
   return sim_mode;
 }

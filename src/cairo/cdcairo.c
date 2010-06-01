@@ -592,24 +592,28 @@ static void cdline(cdCtxCanvas *ctxcanvas, int x1, int y1, int x2, int y2)
   cdfline(ctxcanvas, (double)x1, (double)y1, (double)x2, (double)y2);
 }
 
-static void sFixAngles(cdCtxCanvas* ctxcanvas, double *a1, double *a2)
+static void sFixAngles(cdCanvas* canvas, double *a1, double *a2, int swap)
 {
-  if (ctxcanvas->canvas->invert_yaxis)
-  {
-    double t;
+  /* Cairo angles are clock-wise by default, in radians */
 
-    /* Cairo angles are clock-wise by default */
+  /* if NOT inverted means a transformation is set, 
+     so the angle will follow the transformation that includes the axis invertion,
+     then it is already counter-clockwise */
+
+  if (canvas->invert_yaxis)
+  {
+    /* change orientation */
     *a1 *= -1;
     *a2 *= -1;
 
     /* swap, so the start angle is the smaller */
-    t = *a1;
-    *a1 = *a2;
-    *a2 = t;
+    if (swap)
+    {
+      double t = *a1;
+      *a1 = *a2;
+      *a2 = t;
+    }
   }
-  /* if NOT inverted means a transformation is set, 
-     so the angle will follow the transformation that includes the axis invertion,
-     then it is counter-clockwise */
 
   /* convert to radians */
   *a1 *= CD_DEG2RAD;
@@ -620,7 +624,7 @@ static void cdfarc(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, doubl
 {
   sUpdateFill(ctxcanvas, 0);
 
-  sFixAngles(ctxcanvas, &a1, &a2);
+  sFixAngles(ctxcanvas->canvas, &a1, &a2, 1);
 
   if (w == h)
   {
@@ -651,7 +655,7 @@ static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, do
 {
   sUpdateFill(ctxcanvas, 1);
 
-  sFixAngles(ctxcanvas, &a1, &a2);
+  sFixAngles(ctxcanvas->canvas, &a1, &a2, 1);
 
   if (w == h)
   {
@@ -685,7 +689,7 @@ static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, dou
 {
   sUpdateFill(ctxcanvas, 1);
 
-  sFixAngles(ctxcanvas, &a1, &a2);
+  sFixAngles(ctxcanvas->canvas, &a1, &a2, 1);
 
   if (w == h)
   {
@@ -883,18 +887,17 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
 
           if (i+3 > n) return;
 
-          xc = poly[i].x, 
-          yc = poly[i].y, 
-          w = poly[i+1].x, 
-          h = poly[i+1].y, 
-          a1 = poly[i+2].x/1000.0, 
-          a2 = poly[i+2].y/1000.0;
+          if (!cdCanvasGetArcPathF(ctxcanvas->canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+            return;
 
-          sFixAngles(ctxcanvas, &a1, &a2);
+          sFixAngles(ctxcanvas->canvas, &a1, &a2, 0);  /* do not swap because we handle negative arcs here */
 
           if (w == h)
           {
-            cairo_arc(ctxcanvas->cr, xc, yc, 0.5*w, a1, a2);
+            if ((a2-a1)<0)
+              cairo_arc_negative(ctxcanvas->cr, xc, yc, 0.5*w, a1, a2);
+            else
+              cairo_arc(ctxcanvas->cr, xc, yc, 0.5*w, a1, a2);
           }
           else  /* Ellipse: change the scale to create from the circle */
           {
@@ -904,7 +907,10 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
             cairo_scale(ctxcanvas->cr, w/h, 1.0);
             cairo_translate(ctxcanvas->cr, -xc, -yc);
 
-            cairo_arc(ctxcanvas->cr, xc, yc, 0.5*h, a1, a2);
+            if ((a2-a1)<0)
+              cairo_arc_negative(ctxcanvas->cr, xc, yc, 0.5*h, a1, a2);
+            else
+              cairo_arc(ctxcanvas->cr, xc, yc, 0.5*h, a1, a2);
 
             cairo_restore(ctxcanvas->cr);  /* restore from local */
           }
@@ -1036,18 +1042,17 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 
           if (i+3 > n) return;
 
-          xc = poly[i].x, 
-          yc = poly[i].y, 
-          w = poly[i+1].x, 
-          h = poly[i+1].y, 
-          a1 = poly[i+2].x, 
-          a2 = poly[i+2].y;
+          if (!cdfCanvasGetArcPath(ctxcanvas->canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+            return;
 
-          sFixAngles(ctxcanvas, &a1, &a2);
+          sFixAngles(ctxcanvas->canvas, &a1, &a2, 0);  /* do not swap because we handle negative arcs here */
 
           if (w == h)
           {
-            cairo_arc(ctxcanvas->cr, xc, yc, 0.5*w, a1, a2);
+            if ((a2-a1)<0)
+              cairo_arc_negative(ctxcanvas->cr, xc, yc, 0.5*w, a1, a2);
+            else
+              cairo_arc(ctxcanvas->cr, xc, yc, 0.5*w, a1, a2);
           }
           else  /* Ellipse: change the scale to create from the circle */
           {
@@ -1057,7 +1062,10 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
             cairo_scale(ctxcanvas->cr, w/h, 1.0);
             cairo_translate(ctxcanvas->cr, -xc, -yc);
 
-            cairo_arc(ctxcanvas->cr, xc, yc, 0.5*h, a1, a2);
+            if ((a2-a1)<0)
+              cairo_arc_negative(ctxcanvas->cr, xc, yc, 0.5*h, a1, a2);
+            else
+              cairo_arc(ctxcanvas->cr, xc, yc, 0.5*h, a1, a2);
 
             cairo_restore(ctxcanvas->cr);  /* restore from local */
           }

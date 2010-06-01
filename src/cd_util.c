@@ -397,3 +397,4 @@ void cdSetPaperSize(int size, double *w_pt, double *h_pt)
   *w_pt = (double)paper[size].w_pt;
   *h_pt = (double)paper[size].h_pt;
 }
+

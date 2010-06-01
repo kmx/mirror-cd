@@ -570,15 +570,16 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
 
           if (i+3 > n) return;
 
-          xc = poly[i].x, 
-          yc = poly[i].y, 
-          w = poly[i+1].x, 
-          h = poly[i+1].y, 
-          a1 = poly[i+2].x/1000.0, 
-          a2 = poly[i+2].y/1000.0;
+          if (!cdCanvasGetArcPathF(ctxcanvas->canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+            return;
 
           if (w==h)
-            PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*w, a1, a2);
+          {
+            if ((a2-a1)<0)
+              PDF_arcn(ctxcanvas->pdf, xc, yc, 0.5*w, a1, a2);
+            else
+              PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*w, a1, a2);
+          }
           else /* Ellipse: change the scale to create from the circle */
           {
             PDF_save(ctxcanvas->pdf);  /* save to use the local transform */
@@ -587,7 +588,10 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
             PDF_scale(ctxcanvas->pdf, w/h, 1);
             PDF_translate(ctxcanvas->pdf, -xc, -yc);
 
-            PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*h, a1, a2);
+            if ((a2-a1)<0)
+              PDF_arcn(ctxcanvas->pdf, xc, yc, 0.5*h, a1, a2);
+            else
+              PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*h, a1, a2);
 
             PDF_restore(ctxcanvas->pdf);  /* restore from local */
           }
@@ -716,12 +720,8 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 
           if (i+3 > n) return;
 
-          xc = poly[i].x, 
-          yc = poly[i].y, 
-          w = poly[i+1].x, 
-          h = poly[i+1].y, 
-          a1 = poly[i+2].x, 
-          a2 = poly[i+2].y;
+          if (!cdfCanvasGetArcPath(ctxcanvas->canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+            return;
 
           if (w==h)
             PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*w, a1, a2);

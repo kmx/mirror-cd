@@ -136,19 +136,8 @@ void cdCanvasBegin(cdCanvas* canvas, int mode)
     return;
   }
 
-  canvas->sim_poly = 0;
-
   if (canvas->interior_style == CD_HOLLOW && mode == CD_FILL)
     mode = CD_CLOSED_LINES;
-
-  /* simulacao de linhas */
-  if ((mode == CD_CLOSED_LINES || mode == CD_OPEN_LINES || mode == CD_BEZIER) && 
-      canvas->sim_mode & CD_SIM_POLYLINE)
-    canvas->sim_poly = 1;
-
-  /* simulacao de poligonos preenchidos */
-  if (mode == CD_FILL && canvas->sim_mode & CD_SIM_POLYGON)
-    canvas->sim_poly = 1;
 
   canvas->poly_mode = mode;
 }
@@ -182,7 +171,7 @@ void cdCanvasVertex(cdCanvas* canvas, int x, int y)
     canvas->poly = (cdPoint*)realloc(canvas->poly, sizeof(cdPoint) * (canvas->poly_size+1));
   }
 
-  if (canvas->poly_mode != CD_BEZIER &&
+  if (canvas->poly_mode != CD_BEZIER && canvas->poly_mode != CD_PATH &&
       canvas->poly_n > 0 && 
       canvas->poly[canvas->poly_n-1].x == x && 
       canvas->poly[canvas->poly_n-1].y == y)
@@ -258,6 +247,27 @@ void cdCanvasPathSet(cdCanvas* canvas, int action)
   canvas->path_n++;
 }
 
+void cdCanvasPoly(cdCanvas* canvas, int mode, cdPoint* points, int n)
+{
+  int sim_poly = 0;
+
+  /* simulacao de linhas */
+  if ((mode == CD_CLOSED_LINES || mode == CD_OPEN_LINES || 
+       mode == CD_BEZIER || mode == CD_PATH) && 
+      canvas->sim_mode & CD_SIM_POLYLINE)
+    sim_poly = 1;
+
+  /* simulacao de poligonos preenchidos */
+  if ((mode == CD_FILL || mode == CD_PATH) && 
+      canvas->sim_mode & CD_SIM_POLYGON)
+    sim_poly = 1;
+
+  if (sim_poly)
+    cdSimPoly(canvas->ctxcanvas, mode, points, n);
+  else
+    canvas->cxPoly(canvas->ctxcanvas, mode, points, n);
+}
+
 void cdCanvasEnd(cdCanvas* canvas)
 {
   assert(canvas);
@@ -297,15 +307,10 @@ void cdCanvasEnd(cdCanvas* canvas)
     return;
   }
 
-  if (canvas->sim_poly)
-    cdSimPoly(canvas->ctxcanvas, canvas->poly_mode, canvas->poly, canvas->poly_n);
+  if (canvas->use_fpoly)
+    canvas->cxFPoly(canvas->ctxcanvas, canvas->poly_mode, canvas->fpoly, canvas->poly_n);
   else
-  {
-    if (canvas->use_fpoly)
-      canvas->cxFPoly(canvas->ctxcanvas, canvas->poly_mode, canvas->fpoly, canvas->poly_n);
-    else
-      canvas->cxPoly(canvas->ctxcanvas, canvas->poly_mode, canvas->poly, canvas->poly_n);
-  }
+    cdCanvasPoly(canvas, canvas->poly_mode, canvas->poly, canvas->poly_n);
 
   if (canvas->poly_mode == CD_CLIP)
   {
@@ -462,7 +467,7 @@ void cdfCanvasBox(cdCanvas* canvas, double xmin, double xmax, double ymin, doubl
     canvas->cxBox(canvas->ctxcanvas, _cdRound(xmin), _cdRound(xmax), _cdRound(ymin), _cdRound(ymax));
 }
 
-static void normAngles(double *angle1, double *angle2)
+static void sNormAngles(double *angle1, double *angle2)
 {
   *angle1 = fmod(*angle1,360);
   *angle2 = fmod(*angle2,360);
@@ -477,7 +482,7 @@ void cdCanvasArc(cdCanvas* canvas, int xc, int yc, int w, int h, double angle1, 
   if (angle1 == angle2 || w == 0 || h == 0)
     return;
 
-  normAngles(&angle1, &angle2);
+  sNormAngles(&angle1, &angle2);
 
   if (canvas->use_origin)
   {
@@ -499,7 +504,7 @@ void cdfCanvasArc(cdCanvas* canvas, double xc, double yc, double w, double h, do
   if (angle1 == angle2 || w == 0 || h == 0)
     return;
 
-  normAngles(&angle1, &angle2);
+  sNormAngles(&angle1, &angle2);
 
   if (canvas->use_origin)
   {
@@ -525,7 +530,7 @@ void cdCanvasSector(cdCanvas* canvas, int xc, int yc, int w, int h, double angle
   if (angle1 == angle2 || w == 0 || h == 0)
     return;
 
-  normAngles(&angle1, &angle2);
+  sNormAngles(&angle1, &angle2);
 
   if (canvas->interior_style == CD_HOLLOW)
   {
@@ -568,7 +573,7 @@ void cdfCanvasSector(cdCanvas* canvas, double xc, double yc, double w, double h,
   if (angle1 == angle2 || w == 0 || h == 0)
     return;
 
-  normAngles(&angle1, &angle2);
+  sNormAngles(&angle1, &angle2);
 
   if (canvas->interior_style == CD_HOLLOW)
   {
@@ -614,7 +619,7 @@ void cdCanvasChord(cdCanvas* canvas, int xc, int yc, int w, int h, double angle1
   if (angle1 == angle2 || w == 0 || h == 0)
     return;
 
-  normAngles(&angle1, &angle2);
+  sNormAngles(&angle1, &angle2);
 
   if (canvas->interior_style == CD_HOLLOW)
   {
@@ -654,7 +659,7 @@ void cdfCanvasChord(cdCanvas* canvas, double xc, double yc, double w, double h, 
   if (angle1 == angle2 || w == 0 || h == 0)
     return;
 
-  normAngles(&angle1, &angle2);
+  sNormAngles(&angle1, &angle2);
 
   if (canvas->interior_style == CD_HOLLOW)
   {
@@ -689,23 +694,43 @@ void cdfCanvasChord(cdCanvas* canvas, double xc, double yc, double w, double h, 
     canvas->cxChord(canvas->ctxcanvas, _cdRound(xc), _cdRound(yc), _cdRound(w), _cdRound(h), angle1, angle2);
 }
 
-void cdCanvasGetEllipseBox(int xc, int yc, int w, int h, double a1, double a2, int *xmin, int *xmax, int *ymin, int *ymax)
+void cdCanvasGetArcStartEnd(int xc, int yc, int w, int h, double a1, double a2, int *x1, int *y1, int *x2, int *y2)
 {
+  /* computation is done as if the angles are counterclockwise, 
+     and yaxis is NOT inverted. */
+
+  /* leave xc and yc outside the round, so the center will be always the same */
+
+  if (x1) *x1 = xc + cdRound((w/2.0)*cos(a1*CD_DEG2RAD));
+  if (y1) *y1 = yc + cdRound((h/2.0)*sin(a1*CD_DEG2RAD));
+  if (x2) *x2 = xc + cdRound((w/2.0)*cos(a2*CD_DEG2RAD));
+  if (y2) *y2 = yc + cdRound((h/2.0)*sin(a2*CD_DEG2RAD));
+}
+
+void cdfCanvasGetArcStartEnd(double xc, double yc, double w, double h, double a1, double a2, double *x1, double *y1, double *x2, double *y2)
+{
+  if (x1) *x1 = xc + (w/2.0)*cos(a1*CD_DEG2RAD);
+  if (y1) *y1 = yc + (h/2.0)*sin(a1*CD_DEG2RAD);
+  if (x2) *x2 = xc + (w/2.0)*cos(a2*CD_DEG2RAD);
+  if (y2) *y2 = yc + (h/2.0)*sin(a2*CD_DEG2RAD);
+}
+
+void cdCanvasGetArcBox(int xc, int yc, int w, int h, double a1, double a2, int *xmin, int *xmax, int *ymin, int *ymax)
+{
+  int x, y;
+
+  /* computation is done as if the angles are counterclockwise, 
+     and yaxis is NOT inverted. */
+
 #define _BBOX()               \
   if (x > *xmax) *xmax = x;   \
   if (y > *ymax) *ymax = y;   \
   if (x < *xmin) *xmin = x;   \
   if (y < *ymin) *ymin = y;
 
-  int x, y;
-
-  *xmin = (int)(xc+w/2*cos(a1*CD_DEG2RAD));
-  *ymin = (int)(yc+h/2*sin(a1*CD_DEG2RAD));
+  cdCanvasGetArcStartEnd(xc, yc, w, h, a1, a2, xmin, ymin, &x, &y);
   *xmax = *xmin;
   *ymax = *ymin;
-
-  x = (int)(xc+w/2*cos(a2*CD_DEG2RAD));
-  y = (int)(yc+h/2*sin(a2*CD_DEG2RAD));
   _BBOX()
 
   if (a1 > a2)
@@ -732,4 +757,78 @@ void cdCanvasGetEllipseBox(int xc, int yc, int w, int h, double a1, double a2, i
     y = yc-h/2;
     _BBOX()
   }
+}
+
+int cdCanvasGetArcPath(cdCanvas* canvas, const cdPoint* poly, int *xc, int *yc, int *w, int *h, double *a1, double *a2)
+{
+  *xc = poly[0].x; 
+  *yc = poly[0].y; 
+  *w = poly[1].x; 
+  *h = poly[1].y; 
+  *a1 = poly[2].x; 
+  *a2 = poly[2].y;
+
+  if (canvas->invert_yaxis) /* undo axis invertion */
+  {
+    *h = _cdInvertYAxis(canvas, *h);
+    *a2 = _cdInvertYAxis(canvas, *a2);
+  }
+
+  /* fix integer scale */
+  *a1 /= 1000.0; 
+  *a2 /= 1000.0;
+
+  if (*a1 == *a2 || *w == 0 || *h == 0)
+    return 0;
+
+  /* path angles can be counter-clockwise (a1<a2) or clockwise (a1>a2) */
+  return 1;
+}
+
+int cdfCanvasGetArcPath(cdCanvas* canvas, const cdfPoint* poly, double *xc, double *yc, double *w, double *h, double *a1, double *a2)
+{
+  *xc = poly[0].x; 
+  *yc = poly[0].y; 
+  *w = poly[1].x; 
+  *h = poly[1].y; 
+  *a1 = poly[2].x; 
+  *a2 = poly[2].y;
+
+  if (canvas->invert_yaxis) /* undo axis invertion */
+  {
+    *h = _cdInvertYAxis(canvas, *h);
+    *a2 = _cdInvertYAxis(canvas, *a2);
+  }
+
+  if (*a1 == *a2 || *w == 0 || *h == 0)
+    return 0;
+
+  /* path angles can be counter-clockwise (a1<a2) or clockwise (a1>a2) */
+  return 1;
+}
+
+int cdCanvasGetArcPathF(cdCanvas* canvas, const cdPoint* poly, double *xc, double *yc, double *w, double *h, double *a1, double *a2)
+{
+  *xc = poly[0].x; 
+  *yc = poly[0].y; 
+  *w = poly[1].x; 
+  *h = poly[1].y; 
+  *a1 = poly[2].x; 
+  *a2 = poly[2].y;
+
+  if (canvas->invert_yaxis) /* undo axis invertion */
+  {
+    *h = _cdInvertYAxis(canvas, *h);
+    *a2 = _cdInvertYAxis(canvas, *a2);
+  }
+
+  /* fix integer scale */
+  *a1 /= 1000.0; 
+  *a2 /= 1000.0;
+
+  if (*a1 == *a2 || *w == 0 || *h == 0)
+    return 0;
+
+  /* path angles can be counter-clockwise (a1<a2) or clockwise (a1>a2) */
+  return 1;
 }

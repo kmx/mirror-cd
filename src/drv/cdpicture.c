@@ -508,7 +508,7 @@ static void cdarc(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a
   prim->param.arcsectorchord.angle1 = a1;
   prim->param.arcsectorchord.angle2 = a2;
   picAddPrim(ctxcanvas, prim);
-  cdCanvasGetEllipseBox(xc, yc, w, h, a1, a2, &xmin, &xmax, &ymin, &ymax);
+  cdCanvasGetArcBox(xc, yc, w, h, a1, a2, &xmin, &xmax, &ymin, &ymax);
   picUpdateBBox(ctxcanvas, xmin, ymin, ctxcanvas->canvas->line_width);
   picUpdateBBox(ctxcanvas, xmax, ymax, ctxcanvas->canvas->line_width);
 }
@@ -525,7 +525,7 @@ static void cdfarc(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, doubl
   prim->param.arcsectorchordf.angle1 = a1;
   prim->param.arcsectorchordf.angle2 = a2;
   picAddPrim(ctxcanvas, prim);
-  cdCanvasGetEllipseBox(_cdRound(xc), _cdRound(yc), _cdRound(w), _cdRound(h), a1, a2, &xmin, &xmax, &ymin, &ymax);
+  cdCanvasGetArcBox(_cdRound(xc), _cdRound(yc), _cdRound(w), _cdRound(h), a1, a2, &xmin, &xmax, &ymin, &ymax);
   picUpdateBBox(ctxcanvas, xmin, ymin, ctxcanvas->canvas->line_width);
   picUpdateBBox(ctxcanvas, xmax, ymax, ctxcanvas->canvas->line_width);
 }
@@ -542,7 +542,7 @@ static void cdsector(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, doubl
   prim->param.arcsectorchord.angle1 = a1;
   prim->param.arcsectorchord.angle2 = a2;
   picAddPrim(ctxcanvas, prim);
-  cdCanvasGetEllipseBox(xc, yc, w, h, a1, a2, &xmin, &xmax, &ymin, &ymax);
+  cdCanvasGetArcBox(xc, yc, w, h, a1, a2, &xmin, &xmax, &ymin, &ymax);
   picUpdateBBox(ctxcanvas, xmin, ymin, 0);
   picUpdateBBox(ctxcanvas, xmax, ymax, 0);
   picUpdateBBox(ctxcanvas, xc, yc, 0);
@@ -560,7 +560,7 @@ static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, do
   prim->param.arcsectorchordf.angle1 = a1;
   prim->param.arcsectorchordf.angle2 = a2;
   picAddPrim(ctxcanvas, prim);
-  cdCanvasGetEllipseBox(_cdRound(xc), _cdRound(yc), _cdRound(w), _cdRound(h), a1, a2, &xmin, &xmax, &ymin, &ymax);
+  cdCanvasGetArcBox(_cdRound(xc), _cdRound(yc), _cdRound(w), _cdRound(h), a1, a2, &xmin, &xmax, &ymin, &ymax);
   picUpdateBBox(ctxcanvas, xmin, ymin, 0);
   picUpdateBBox(ctxcanvas, xmax, ymax, 0);
   picUpdateBBox(ctxcanvas, _cdRound(xc), _cdRound(yc), 0);
@@ -578,7 +578,7 @@ static void cdchord(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double
   prim->param.arcsectorchord.angle1 = a1;
   prim->param.arcsectorchord.angle2 = a2;
   picAddPrim(ctxcanvas, prim);
-  cdCanvasGetEllipseBox(xc, yc, w, h, a1, a2, &xmin, &xmax, &ymin, &ymax);
+  cdCanvasGetArcBox(xc, yc, w, h, a1, a2, &xmin, &xmax, &ymin, &ymax);
   picUpdateBBox(ctxcanvas, xmin, ymin, 0);
   picUpdateBBox(ctxcanvas, xmax, ymax, 0);
 }
@@ -595,7 +595,7 @@ static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, dou
   prim->param.arcsectorchordf.angle1 = a1;
   prim->param.arcsectorchordf.angle2 = a2;
   picAddPrim(ctxcanvas, prim);
-  cdCanvasGetEllipseBox(_cdRound(xc), _cdRound(yc), _cdRound(w), _cdRound(h), a1, a2, &xmin, &xmax, &ymin, &ymax);
+  cdCanvasGetArcBox(_cdRound(xc), _cdRound(yc), _cdRound(w), _cdRound(h), a1, a2, &xmin, &xmax, &ymin, &ymax);
   picUpdateBBox(ctxcanvas, xmin, ymin, 0);
   picUpdateBBox(ctxcanvas, xmax, ymax, 0);
 }

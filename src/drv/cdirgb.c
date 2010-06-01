@@ -580,7 +580,7 @@ static void irgbClipPoly(cdCtxCanvas* ctxcanvas, unsigned char* clip_region, cdP
     memcpy(t_poly, poly, sizeof(cdPoint)*n);
     poly = t_poly;
 
-    for(i = 0; i < n; i++)
+    for(i = 0; i < n; i++)   /* must duplicate because clip poly is stored */
       cdMatrixTransformPoint(canvas->matrix, poly[i].x, poly[i].y, &poly[i].x, &poly[i].y);
   }
 
@@ -640,79 +640,6 @@ static void irgbClipPoly(cdCtxCanvas* ctxcanvas, unsigned char* clip_region, cdP
 
   if (combine_mode == CD_INTERSECT)
     irgPostProcessIntersect(ctxcanvas->clip_region, ctxcanvas->canvas->w * ctxcanvas->canvas->h);
-}
-
-static void irgbClipElipse(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, int height, double angle1, double angle2, int sector)
-{
-  float c, s, sx, sy, x, y, prev_x, prev_y;
-  double da;
-  int i, p;
-  cdPoint* poly;
-
-  /* number of segments of equivalent poligonal for a full ellipse */
-  int n = cdSimCalcEllipseNumSegments(ctxcanvas->canvas, xc, yc, width, height);
-
-  /* number of segments for the arc */
-  n = cdRound((fabs(angle2-angle1)*n)/360);
-  if (n < 1) n = 1;
-
-  poly = (cdPoint*)malloc(sizeof(cdPoint)*(n+2+1));  /* n+1 points +1 center */
-
-  /* converts degrees into radians */
-  angle1 *= CD_DEG2RAD;
-  angle2 *= CD_DEG2RAD;
-
-  /* generates arc points at origin with axis x and y */
-
-  da = (angle2-angle1)/n;
-  c  = (float)cos(da);
-  s  = (float)sin(da);
-  sx = -(width*s)/height;
-  sy = (height*s)/width;
-
-  x = xc +  (width/2.0f)*(float)cos(angle1);
-  y = yc + (height/2.0f)*(float)sin(angle1);
-  poly[0].x = _cdRound(x);
-  poly[0].y = _cdRound(y);
-  prev_x = x;
-  prev_y = y;
-  p = 1;
-
-  for (i = 1; i < n+1; i++) /* n+1 points */
-  {
-    x = xc +  c*(prev_x-xc) + sx*(prev_y-yc);
-    y = yc + sy*(prev_x-xc) +  c*(prev_y-yc);
-
-    poly[p].x = _cdRound(x);
-    poly[p].y = _cdRound(y);
-
-    if (poly[p-1].x != poly[p].x || poly[p-1].y != poly[p].y)
-      p++;
-
-    prev_x = x;
-    prev_y = y;
-  }
-
-  if (poly[p-1].x != poly[0].x || poly[p-1].y != poly[0].y)
-  {
-    if (sector)  /* cdSector */
-    {
-      /* add center */
-      poly[p].x = xc;
-      poly[p].y = yc;
-    }
-    else         /* cdChord */
-    {
-      /* add initial point */
-      poly[p].x = poly[0].x;
-      poly[p].y = poly[0].y;
-    }
-    p++;
-  }
-
-  irgbClipPoly(ctxcanvas, ctxcanvas->clip_region, poly, p, ctxcanvas->canvas->combine_mode);
-
-  free(poly);
 }
 
 static void irgbClipBox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
@@ -952,54 +879,6 @@ static void cdfbox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin
   cdfSimBox(ctxcanvas, xmin, xmax, ymin, ymax);
 }
 
-static void cdsector(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
-{
-  if (ctxcanvas->canvas->new_region)
-  {
-    /* matrix transformation is done inside irgbClip* if necessary */
-    irgbClipElipse(ctxcanvas, xc, yc, w, h, a1, a2, 1);
-    return;
-  }
-
-  cdSimSector(ctxcanvas, xc, yc, w, h, a1, a2);
-}
-
-static void cdchord(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
-{
-  if (ctxcanvas->canvas->new_region)
-  {
-    /* matrix transformation is done inside irgbClip* if necessary */
-    irgbClipElipse(ctxcanvas, xc, yc, w, h, a1, a2, 0);
-    return;
-  }
-
-  cdSimChord(ctxcanvas, xc, yc, w, h, a1, a2);
-}
-
-static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
-{
-  if (ctxcanvas->canvas->new_region)
-  {
-    /* matrix transformation is done inside irgbClip* if necessary */
-    irgbClipElipse(ctxcanvas, _cdRound(xc), _cdRound(yc), _cdRound(w), _cdRound(h), a1, a2, 1);
-    return;
-  }
-
-  cdfSimSector(ctxcanvas, xc, yc, w, h, a1, a2);
-}
-
-static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
-{
-  if (ctxcanvas->canvas->new_region)
-  {
-    /* matrix transformation is done inside irgbClip* if necessary */
-    irgbClipElipse(ctxcanvas, _cdRound(xc), _cdRound(yc), _cdRound(w), _cdRound(h), a1, a2, 0);
-    return;
-  }
-
-  cdfSimChord(ctxcanvas, xc, yc, w, h, a1, a2);
-}
-
 static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
 {
   if (ctxcanvas->canvas->new_region)
@@ -1033,59 +912,6 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
   }
   else
     cdSimPoly(ctxcanvas, mode, poly, n);
-}
-
-static void cdfpoly(cdCtxCanvas* ctxcanvas, int mode, cdfPoint* fpoly, int n)
-{
-  int i;
-
-  switch(mode) 
-  {
-  case CD_CLOSED_LINES:
-    fpoly[n] = fpoly[0];
-    n++;
-    /* continue */
-  case CD_OPEN_LINES:
-    cdfSimPolyLine(ctxcanvas->canvas, fpoly, n);
-    break;
-  case CD_BEZIER:
-    cdfSimPolyBezier(ctxcanvas->canvas, fpoly, n);
-    break;
-  case CD_PATH:
-    cdfSimPolyPath(ctxcanvas->canvas, fpoly, n);
-    break;
-  case CD_FILL:
-    {
-      cdPoint* poly = malloc(sizeof(cdPoint)*n);
-
-      for (i = 0; i<n; i++)
-      {
-        poly[i].x = _cdRound(fpoly[i].x);
-        poly[i].y = _cdRound(fpoly[i].y);
-      }
-
-      cdpoly(ctxcanvas, CD_FILL, poly, n);
-
-      free(poly);
-    }
-    break;
-  case CD_CLIP:
-    {
-      cdPoint* poly = malloc(sizeof(cdPoint)*n);
-
-      for (i = 0; i<n; i++)
-      {
-        poly[i].x = _cdRound(fpoly[i].x);
-        poly[i].y = _cdRound(fpoly[i].y);
-      }
-
-      cdpoly(ctxcanvas, CD_CLIP, poly, n);
-
-      free(poly);
-      if (ctxcanvas->canvas->clip_mode == CD_CLIPPOLYGON) cdclip(ctxcanvas, CD_CLIPPOLYGON);
-    }
-    break;
-  }
 }
 
 static void cdgetimagergb(cdCtxCanvas* ctxcanvas, unsigned char *r, unsigned char *g, unsigned char *b, int x, int y, int w, int h)
@@ -2031,8 +1857,8 @@ static void cdinittable(cdCanvas* canvas)
   canvas->cxRect = cdSimRect;
   canvas->cxBox = cdbox;
   canvas->cxArc = cdSimArc;
-  canvas->cxSector = cdsector;
-  canvas->cxChord = cdchord;
+  canvas->cxSector = cdSimSector;
+  canvas->cxChord = cdSimChord;
   canvas->cxPoly = cdpoly;
   canvas->cxText = cdtext;
 
@@ -2040,9 +1866,9 @@ static void cdinittable(cdCanvas* canvas)
   canvas->cxFRect = cdfSimRect;
   canvas->cxFBox = cdfbox;
   canvas->cxFArc = cdfSimArc;
-  canvas->cxFSector = cdfsector;
-  canvas->cxFChord = cdfchord;
-  canvas->cxFPoly = cdfpoly;
+  canvas->cxFSector = cdfSimSector;
+  canvas->cxFChord = cdfSimChord;
+  canvas->cxFPoly = cdfSimPoly;
 
   canvas->cxKillCanvas = cdkillcanvas;
 

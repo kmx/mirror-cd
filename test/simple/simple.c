@@ -705,18 +705,26 @@ int SimpleDrawAll(void)
   cdCanvasPathSet(canvas, CD_PATH_MOVETO);
   cdVertex(w/2 + 200, h/2);
   cdCanvasPathSet(canvas, CD_PATH_LINETO);
+  cdVertex(w/2 + 230, h/2 + 50);
+  cdCanvasPathSet(canvas, CD_PATH_LINETO);
   cdVertex(w/2 + 250, h/2 + 50);
   cdCanvasPathSet(canvas, CD_PATH_CURVETO);
-  cdVertex(w/2+150+150, h/2+200-50); 
-  cdVertex(w/2+150+180, h/2+250-50); 
-  cdVertex(w/2+150+180, h/2+200-50); 
+  cdVertex(w/2+150+150, h/2+200-50); /* control point for start */
+  cdVertex(w/2+150+180, h/2+250-50); /* control point for end */
+  cdVertex(w/2+150+180, h/2+200-50); /* end point */
   cdCanvasPathSet(canvas, CD_PATH_CURVETO);
   cdVertex(w/2+150+180, h/2+150-50); 
   cdVertex(w/2+150+150, h/2+100-50); 
   cdVertex(w/2+150+300, h/2+100-50); 
-  cdCanvasPathSet(canvas, CD_PATH_CLOSE);
-//  cdCanvasPathSet(canvas, CD_PATH_STROKE);
-  cdCanvasPathSet(canvas, CD_PATH_FILL);
+  cdCanvasPathSet(canvas, CD_PATH_LINETO);
+  cdVertex(w/2+150+300, h/2-50);
+  cdCanvasPathSet(canvas, CD_PATH_ARC);
+  cdVertex(w/2+300, h/2);  /* center */
+  cdVertex(200, 100);  /* width, height */
+  cdVertex(-30*1000, -170*1000);  /* start angle, end angle (degrees / 1000) */
+//  cdCanvasPathSet(canvas, CD_PATH_CLOSE);
+  cdCanvasPathSet(canvas, CD_PATH_STROKE);
+//  cdCanvasPathSet(canvas, CD_PATH_FILL);
 //  cdCanvasPathSet(canvas, CD_PATH_FILLSTROKE);
   cdEnd();
 

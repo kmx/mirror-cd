@@ -222,7 +222,6 @@ struct _cdCanvas
 
   /* simulation flags */
   int sim_mode;
-  int sim_poly;
 
   /* WC */
   double s, sx, tx, sy, ty;   /* Transformacao Window -> Viewport (scale+translation)*/
@@ -269,7 +268,6 @@ enum{CD_CTX_NATIVEWINDOW, CD_CTX_IMAGE, CD_CTX_DBUFFER, CD_CTX_PRINTER, CD_CTX_E
 /* utilities */
 /*************/
 int cdRound(double x);
-void cdCanvasGetEllipseBox(int xc, int yc, int w, int h, double a1, double a2, int *xmin, int *xmax, int *ymin, int *ymax);
 int cdCheckBoxSize(int *xmin, int *xmax, int *ymin, int *ymax);
 int cdfCheckBoxSize(double *xmin, double *xmax, double *ymin, double *ymax);
 void cdNormalizeLimits(int w, int h, int *xmin, int *xmax, int *ymin, int *ymax);
@@ -279,6 +277,14 @@ int cdStrLineCount(const char* str);
 char* cdStrDup(const char* str);
 char* cdStrDupN(const char* str, int len);
 void cdSetPaperSize(int size, double *w_pt, double *h_pt);
+
+void cdCanvasPoly(cdCanvas* canvas, int mode, cdPoint* points, int n);
+void cdCanvasGetArcBox(int xc, int yc, int w, int h, double a1, double a2, int *xmin, int *xmax, int *ymin, int *ymax);
+int cdCanvasGetArcPathF(cdCanvas* canvas, const cdPoint* poly, double *xc, double *yc, double *w, double *h, double *a1, double *a2);
+int cdfCanvasGetArcPath(cdCanvas* canvas, const cdfPoint* poly, double *xc, double *yc, double *w, double *h, double *a1, double *a2);
+int cdCanvasGetArcPath(cdCanvas* canvas, const cdPoint* poly, int *xc, int *yc, int *w, int *h, double *a1, double *a2);
+void cdCanvasGetArcStartEnd(int xc, int yc, int w, int h, double a1, double a2, int *x1, int *y1, int *x2, int *y2);
+void cdfCanvasGetArcStartEnd(double xc, double yc, double w, double h, double a1, double a2, double *x1, double *y1, double *x2, double *y2);
 
 #define _cdCheckCanvas(_canvas) (_canvas!=NULL && ((unsigned char*)_canvas)[0] == 'C' && ((unsigned char*)_canvas)[1] == 'D')
 #define _cdInvertYAxis(_canvas, _y) (_canvas->h - (_y) - 1)
@@ -351,11 +357,6 @@ void cdSimGetTextSizeFT(cdCtxCanvas* ctxcanvas, const char *s, int len, int *wid
 
 /* sim_primitives.c */
 
-/* Simulation functions that depend on the simulation base driver. */
-void cdSimPolyFill(cdCanvas* canvas, cdPoint* poly, int n);
-void cdSimPolyLine(cdCanvas* canvas, const cdPoint* poly, int n);
-void cdfSimPolyLine(cdCanvas* canvas, const cdfPoint* poly, int n);
-
 /* Simulation functions that are >> independent << of the simulation base driver. */
 void cdSimMark(cdCanvas* canvas, int x, int y);
 void cdSimPutImageRectRGBA(cdCanvas* canvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax);
@@ -368,6 +369,8 @@ void cdSimBox(cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, int ymax);
 void cdSimArc(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, int height, double angle1, double angle2);
 void cdSimSector(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, int height, double angle1, double angle2);
 void cdSimChord(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, int height, double angle1, double angle2);
+void cdSimPoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* points, int n);
+
 void cdSimPolyBezier(cdCanvas* canvas, const cdPoint* points, int n);
 void cdSimPolyPath(cdCanvas* canvas, const cdPoint* points, int n);
 
@@ -379,12 +382,10 @@ void cdfSimBox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, do
 void cdfSimArc(cdCtxCanvas *ctxcanvas, double xc, double yc, double width, double height, double angle1, double angle2);
 void cdfSimSector(cdCtxCanvas *ctxcanvas, double xc, double yc, double width, double height, double angle1, double angle2);
 void cdfSimChord(cdCtxCanvas *ctxcanvas, double xc, double yc, double width, double height, double angle1, double angle2);
+void cdfSimPoly(cdCtxCanvas* ctxcanvas, int mode, cdfPoint* fpoly, int n);
+
 void cdfSimPolyBezier(cdCanvas* canvas, const cdfPoint* points, int n);
 void cdfSimPolyPath(cdCanvas* canvas, const cdfPoint* points, int n);
-
-/* Utilities */
-void cdSimPoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* points, int n);
-int cdSimCalcEllipseNumSegments(cdCanvas* canvas, int xc, int yc, int width, int height);
 
 
 #ifdef __cplusplus

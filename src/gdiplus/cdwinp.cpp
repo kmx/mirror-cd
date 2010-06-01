@@ -626,15 +626,21 @@ static void cdfbox(cdCtxCanvas* ctxcanvas, double xmin, double xmax, double ymin
   }
 }
 
-static void cdwpFixAngles(cdCtxCanvas* ctxcanvas, double *angle1, double *angle2)
+static void sFixAngles(cdCanvas* canvas, double *a1, double *a2)
 {
-  if (ctxcanvas->canvas->invert_yaxis)
-  {
-    // GDI+ angles are clock-wise by default, in degrees
-    *angle1 *= -1;
-    *angle2 *= -1;
+  // GDI+ angles are clock-wise by default, in degrees
 
-    // no need to swap, because we will use (angle2-angle1)
+  /* if NOT inverted means a transformation is set, 
+     so the angle will follow the transformation that includes the axis invertion,
+     then it is already counter-clockwise */
+
+  if (canvas->invert_yaxis)
+  {
+    /* change orientation */
+    *a1 *= -1;
+    *a2 *= -1;
+
+    /* no need to swap, because we will use (angle2-angle1) */
   }
 }
 
@@ -645,7 +651,7 @@ static void cdarc(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double a
     ctxcanvas->graphics->DrawEllipse(ctxcanvas->linePen, rect);
   else
   {
-    cdwpFixAngles(ctxcanvas, &angle1, &angle2);
+    sFixAngles(ctxcanvas->canvas, &angle1, &angle2);
     ctxcanvas->graphics->DrawArc(ctxcanvas->linePen, rect, (REAL)angle1, (REAL)(angle2-angle1));
   }
   ctxcanvas->dirty = 1;
@@ -658,7 +664,7 @@ static void cdfarc(cdCtxCanvas* ctxcanvas, double xc, double yc, double w, doubl
     ctxcanvas->graphics->DrawEllipse(ctxcanvas->linePen, rect);
   else
   {
-    cdwpFixAngles(ctxcanvas, &angle1, &angle2);
+    sFixAngles(ctxcanvas->canvas, &angle1, &angle2);
     ctxcanvas->graphics->DrawArc(ctxcanvas->linePen, rect, (REAL)angle1, (REAL)(angle2-angle1));
   }
   ctxcanvas->dirty = 1;
@@ -674,7 +680,7 @@ static void cdsector(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, doubl
       path.AddEllipse(rect);
     else
     {
-      cdwpFixAngles(ctxcanvas, &angle1, &angle2);
+      sFixAngles(ctxcanvas->canvas, &angle1, &angle2);
       path.AddPie(rect, (REAL)angle1, (REAL)(angle2-angle1));
     }
     Region region(&path);
@@ -692,7 +698,7 @@ static void cdsector(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, doubl
     }
     else
     {
-      cdwpFixAngles(ctxcanvas, &angle1, &angle2);
+      sFixAngles(ctxcanvas->canvas, &angle1, &angle2);
       ctxcanvas->graphics->FillPie(ctxcanvas->fillBrush, rect, (REAL)angle1, (REAL)(angle2-angle1));
       ctxcanvas->graphics->DrawArc(&pen, rect, (REAL)angle1, (REAL)(angle2-angle1));
     }
@@ -710,7 +716,7 @@ static void cdfsector(cdCtxCanvas* ctxcanvas, double xc, double yc, double w, do
       path.AddEllipse(rect);
     else
     {
-      cdwpFixAngles(ctxcanvas, &angle1, &angle2);
+      sFixAngles(ctxcanvas->canvas, &angle1, &angle2);
       path.AddPie(rect, (REAL)angle1, (REAL)(angle2-angle1));
     }
     Region region(&path);
@@ -728,7 +734,7 @@ static void cdfsector(cdCtxCanvas* ctxcanvas, double xc, double yc, double w, do
     }
     else
     {
-      cdwpFixAngles(ctxcanvas, &angle1, &angle2);
+      sFixAngles(ctxcanvas->canvas, &angle1, &angle2);
       ctxcanvas->graphics->FillPie(ctxcanvas->fillBrush, rect, (REAL)angle1, (REAL)(angle2-angle1));
       ctxcanvas->graphics->DrawArc(&pen, rect, (REAL)angle1, (REAL)(angle2-angle1));
     }
@@ -746,7 +752,7 @@ static void cdchord(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double
       path.AddEllipse(rect);
     else
     {
-      cdwpFixAngles(ctxcanvas, &angle1, &angle2);
+      sFixAngles(ctxcanvas->canvas, &angle1, &angle2);
       path.AddArc(rect, (REAL)angle1, (REAL)(angle2-angle1));
       path.CloseFigure();
     }
@@ -760,7 +766,7 @@ static void cdchord(cdCtxCanvas* ctxcanvas, int xc, int yc, int w, int h, double
     else
     {
       GraphicsPath path;
-      cdwpFixAngles(ctxcanvas, &angle1, &angle2);
+      sFixAngles(ctxcanvas->canvas, &angle1, &angle2);
       path.AddArc(rect, (REAL)angle1, (REAL)(angle2-angle1));
       ctxcanvas->graphics->FillPath(ctxcanvas->fillBrush, &path);
     }
@@ -780,7 +786,7 @@ static void cdfchord(cdCtxCanvas* ctxcanvas, double xc, double yc, double w, dou
       path.AddEllipse(rect);
     else
     {
-      cdwpFixAngles(ctxcanvas, &angle1, &angle2);
+      sFixAngles(ctxcanvas->canvas, &angle1, &angle2);
       path.AddArc(rect, (REAL)angle1, (REAL)(angle2-angle1));
       path.CloseFigure();
     }
@@ -794,7 +800,7 @@ static void cdfchord(cdCtxCanvas* ctxcanvas, double xc, double yc, double w, dou
     else
     {
       GraphicsPath path;
-      cdwpFixAngles(ctxcanvas, &angle1, &angle2);
+      sFixAngles(ctxcanvas->canvas, &angle1, &angle2);
       path.AddArc(rect, (REAL)angle1, (REAL)(angle2-angle1));
       ctxcanvas->graphics->FillPath(ctxcanvas->fillBrush, &path);
     }
@@ -850,27 +856,17 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
 
             if (i+3 > n) break;
 
-            xc = poly[i].x, 
-            yc = poly[i].y, 
-            w = poly[i+1].x, 
-            h = poly[i+1].y, 
-            a1 = poly[i+2].x/1000.0, 
-            a2 = poly[i+2].y/1000.0;
+            if (!cdCanvasGetArcPath(ctxcanvas->canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+              return;
 
             if (current_set)
             {
               int StartX, StartY;
 
               if (ctxcanvas->canvas->invert_yaxis)
-              {
-                StartX = xc + cdRound(w * cos(CD_DEG2RAD * a1) / 2.0);
-                StartY = yc - cdRound(h * sin(CD_DEG2RAD * a1) / 2.0);
-              }
+                cdCanvasGetArcStartEnd(xc, yc, w, h, -a1, -a2, &StartX, &StartY, NULL, NULL);
               else
-              {
-                StartX = xc + cdRound(w * cos(CD_DEG2RAD * a2) / 2.0);
-                StartY = yc + cdRound(h * sin(CD_DEG2RAD * a2) / 2.0);
-              }
+                cdCanvasGetArcStartEnd(xc, yc, w, h, a1, a2, &StartX, &StartY, NULL, NULL);
 
               graphics_path->AddLine(current_x, current_y, StartX, StartY);
             }
@@ -880,7 +876,7 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
               graphics_path->AddEllipse(rect);
             else
             {
-              cdwpFixAngles(ctxcanvas, &a1, &a2);
+              sFixAngles(ctxcanvas->canvas, &a1, &a2);
               graphics_path->AddArc(rect, (REAL)a1, (REAL)(a2-a1));
             }
 
@@ -1084,27 +1080,17 @@ static void cdfpoly(cdCtxCanvas* ctxcanvas, int mode, cdfPoint* poly, int n)
 
             if (i+3 > n) break;
 
-            xc = poly[i].x, 
-            yc = poly[i].y, 
-            w = poly[i+1].x, 
-            h = poly[i+1].y, 
-            a1 = poly[i+2].x, 
-            a2 = poly[i+2].y;
+            if (!cdfCanvasGetArcPath(ctxcanvas->canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+              return;
 
             if (current_set)
             {
               double StartX, StartY;
 
               if (ctxcanvas->canvas->invert_yaxis)
-              {
-                StartX = xc + w * cos(CD_DEG2RAD * a1) / 2.0;
-                StartY = yc - h * sin(CD_DEG2RAD * a1) / 2.0;
-              }
+                cdfCanvasGetArcStartEnd(xc, yc, w, h, -a1, -a2, &StartX, &StartY, NULL, NULL);
               else
-              {
-                StartX = xc + w * cos(CD_DEG2RAD * a2) / 2.0;
-                StartY = yc + h * sin(CD_DEG2RAD * a2) / 2.0;
-              }
+                cdfCanvasGetArcStartEnd(xc, yc, w, h, a1, a2, &StartX, &StartY, NULL, NULL);
 
               graphics_path->AddLine((REAL)current_x, (REAL)current_y, (REAL)StartX, (REAL)StartY);
             }
@@ -1114,7 +1100,7 @@ static void cdfpoly(cdCtxCanvas* ctxcanvas, int mode, cdfPoint* poly, int n)
               graphics_path->AddEllipse(rect);
             else
             {
-              cdwpFixAngles(ctxcanvas, &a1, &a2);
+              sFixAngles(ctxcanvas->canvas, &a1, &a2);
               graphics_path->AddArc(rect, (REAL)a1, (REAL)(a2-a1));
             }
 

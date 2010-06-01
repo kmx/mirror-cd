@@ -648,7 +648,7 @@ static void cdarc(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a
   if (ctxcanvas->eps)
   {
     int xmin, xmax, ymin, ymax;
-    cdCanvasGetEllipseBox(xc, yc, w, h, a1, a2, &xmin, &xmax, &ymin, &ymax);
+    cdCanvasGetArcBox(xc, yc, w, h, a1, a2, &xmin, &xmax, &ymin, &ymax);
     bbox(ctxcanvas, xmin, ymin);
     bbox(ctxcanvas, xmax, ymax);
   }
@@ -680,7 +680,7 @@ static void cdfarc(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, doubl
   if (ctxcanvas->eps)
   {
     int xmin, xmax, ymin, ymax;
-    cdCanvasGetEllipseBox(_cdRound(xc), _cdRound(yc), _cdRound(w), _cdRound(h), a1, a2, &xmin, &xmax, &ymin, &ymax);
+    cdCanvasGetArcBox(_cdRound(xc), _cdRound(yc), _cdRound(w), _cdRound(h), a1, a2, &xmin, &xmax, &ymin, &ymax);
     bbox(ctxcanvas, xmin, ymin);
     bbox(ctxcanvas, xmax, ymax);
   }
@@ -720,7 +720,7 @@ static void cdsector(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, doubl
   if (ctxcanvas->eps)
   {
     int xmin, xmax, ymin, ymax;
-    cdCanvasGetEllipseBox(xc, yc, w, h, a1, a2, &xmin, &xmax, &ymin, &ymax);
+    cdCanvasGetArcBox(xc, yc, w, h, a1, a2, &xmin, &xmax, &ymin, &ymax);
     bbox(ctxcanvas, xmin, ymin);
     bbox(ctxcanvas, xmax, ymax);
     bbox(ctxcanvas, xc, yc);
@@ -761,7 +761,7 @@ static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, do
   if (ctxcanvas->eps)
   {
     int xmin, xmax, ymin, ymax;
-    cdCanvasGetEllipseBox(_cdRound(xc), _cdRound(yc), _cdRound(w), _cdRound(h), a1, a2, &xmin, &xmax, &ymin, &ymax);
+    cdCanvasGetArcBox(_cdRound(xc), _cdRound(yc), _cdRound(w), _cdRound(h), a1, a2, &xmin, &xmax, &ymin, &ymax);
     bbox(ctxcanvas, xmin, ymin);
     bbox(ctxcanvas, xmax, ymax);
     fbbox(ctxcanvas, xc, yc);
@@ -800,7 +800,7 @@ static void cdchord(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double
   if (ctxcanvas->eps)
   {
     int xmin, xmax, ymin, ymax;
-    cdCanvasGetEllipseBox(xc, yc, w, h, a1, a2, &xmin, &xmax, &ymin, &ymax);
+    cdCanvasGetArcBox(xc, yc, w, h, a1, a2, &xmin, &xmax, &ymin, &ymax);
     bbox(ctxcanvas, xmin, ymin);
     bbox(ctxcanvas, xmax, ymax);
   }
@@ -838,7 +838,7 @@ static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, dou
   if (ctxcanvas->eps)
   {
     int xmin, xmax, ymin, ymax;
-    cdCanvasGetEllipseBox(_cdRound(xc), _cdRound(yc), _cdRound(w), _cdRound(h), a1, a2, &xmin, &xmax, &ymin, &ymax);
+    cdCanvasGetArcBox(_cdRound(xc), _cdRound(yc), _cdRound(w), _cdRound(h), a1, a2, &xmin, &xmax, &ymin, &ymax);
     bbox(ctxcanvas, xmin, ymin);
     bbox(ctxcanvas, xmax, ymax);
   }
@@ -1110,19 +1110,19 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
       case CD_PATH_ARC:
         {
           double xc, yc, w, h, a1, a2;
+          char* arc = "arc";
 
           if (i+3 > n) return;
 
-          xc = poly[i].x, 
-          yc = poly[i].y, 
-          w = poly[i+1].x, 
-          h = poly[i+1].y, 
-          a1 = poly[i+2].x/1000.0, 
-          a2 = poly[i+2].y/1000.0;
+          if (!cdCanvasGetArcPathF(ctxcanvas->canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+            return;
+
+          if ((a2-a1)<0)
+            arc = "arcn";
 
           if (w==h) /* Circulo: PS implementa direto */
           {
-            fprintf(ctxcanvas->file, "N %d %d %g %g %g arc\n", xc, yc, 0.5*w, a1, a2);
+            fprintf(ctxcanvas->file, "N %d %d %g %g %g %s\n", xc, yc, 0.5*w, a1, a2, arc);
           }
           else /* Elipse: mudar a escala p/ criar a partir do circulo */
           {
@@ -1130,7 +1130,7 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
             fprintf(ctxcanvas->file, "%d %d translate\n", xc, yc);
             fprintf(ctxcanvas->file, "1 %g scale\n", ((double)h)/w);
             fprintf(ctxcanvas->file, "N\n");
-            fprintf(ctxcanvas->file, "0 0 %g %g %g arc\n", 0.5*w, a1, a2);
+            fprintf(ctxcanvas->file, "0 0 %g %g %g %s\n", 0.5*w, a1, a2, arc);
             fprintf(ctxcanvas->file, "setmatrix\n"); /* back to CTM */
           }
 
@@ -1303,19 +1303,19 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
       case CD_PATH_ARC:
         {
           double xc, yc, w, h, a1, a2;
+          char* arc = "arc";
 
           if (i+3 > n) return;
 
-          xc = poly[i].x, 
-          yc = poly[i].y, 
-          w = poly[i+1].x, 
-          h = poly[i+1].y, 
-          a1 = poly[i+2].x, 
-          a2 = poly[i+2].y;
+          if (!cdfCanvasGetArcPath(ctxcanvas->canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+            return;
+
+          if ((a2-a1)<0)
+            arc = "arcn";
 
           if (w==h) /* Circulo: PS implementa direto */
           {
-            fprintf(ctxcanvas->file, "N %g %g %g %g %g arc\n", xc, yc, 0.5*w, a1, a2);
+            fprintf(ctxcanvas->file, "N %g %g %g %g %g %s\n", xc, yc, 0.5*w, a1, a2, arc);
           }
           else /* Elipse: mudar a escala p/ criar a partir do circulo */
           {
@@ -1323,7 +1323,7 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
             fprintf(ctxcanvas->file, "%g %g translate\n", xc, yc);
             fprintf(ctxcanvas->file, "1 %g scale\n", ((double)h)/w);
             fprintf(ctxcanvas->file, "N\n");
-            fprintf(ctxcanvas->file, "0 0 %g %g %g arc\n", 0.5*w, a1, a2);
+            fprintf(ctxcanvas->file, "0 0 %g %g %g %s\n", 0.5*w, a1, a2, arc);
             fprintf(ctxcanvas->file, "setmatrix\n"); /* back to CTM */
           }
 

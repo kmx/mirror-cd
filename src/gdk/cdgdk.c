@@ -890,7 +890,7 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
 {
   int i;
 
-  if (mode != CD_BEZIER)
+  if (mode != CD_BEZIER && mode != CD_PATH)
   {
     for (i = 0; i < n; i++)
     {

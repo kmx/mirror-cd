@@ -215,9 +215,36 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
   cdfbox(ctxcanvas, (double)xmin, (double)xmax, (double)ymin, (double)ymax);
 }
 
-static void sCalcArc(cdCtxCanvas* ctxcanvas, double xc, double yc, double w, double h, double a1, double a2, double *arcStartX, double *arcStartY, double *arcEndX, double *arcEndY, int *largeArc)
+static void sCalcArc(cdCanvas* canvas, double xc, double yc, double w, double h, double a1, double a2, double *arcStartX, double *arcStartY, double *arcEndX, double *arcEndY, int *largeArc)
 {
-  if (ctxcanvas->canvas->invert_yaxis==0)
+  /* computation is done as if the angles are counterclockwise, 
+     and yaxis is NOT inverted. */
+
+  if (canvas->invert_yaxis)
+  {
+    double t;
+
+    /* change orientation */
+    a1 *= -1;
+    a2 *= -1;
+
+    /* swap, so the start angle is the smaller */
+    t = a1;
+    a1 = a2;
+    a2 = t;
+  }
+
+  cdfCanvasGetArcStartEnd(xc, yc, w, h, a1, a2, arcStartX, arcStartY, arcEndX, arcEndY);
+
+  if (fabs(a2-a1) > 180.0)
+    *largeArc = 1;
+  else
+    *largeArc = 0;
+}
+
+static void sCalcArc_OLD(cdCanvas* canvas, double xc, double yc, double w, double h, double a1, double a2, double *arcStartX, double *arcStartY, double *arcEndX, double *arcEndY, int *largeArc)
+{
+  if (canvas->invert_yaxis==0)
   {
     double t;
 
@@ -263,7 +290,7 @@ static void cdfarc(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, doubl
     return;
   }
 
-  sCalcArc(ctxcanvas, xc, yc, w, h, a1, a2, &arcStartX, &arcStartY, &arcEndX, &arcEndY, &largeArc);
+  sCalcArc(ctxcanvas->canvas, xc, yc, w, h, a1, a2, &arcStartX, &arcStartY, &arcEndX, &arcEndY, &largeArc);
 
   fprintf(ctxcanvas->file, "<path d=\"M%g,%g A%g,%g 0 %d,0 %g,%g\" style=\"fill:none; stroke:%s; stroke-width:%d; stroke-linecap:%s; stroke-linejoin:%s; stroke-dasharray:%s; opacity:%g\" />\n",
     arcStartX, arcStartY, w/2, h/2, largeArc, arcEndX, arcEndY, ctxcanvas->fgColor, ctxcanvas->canvas->line_width, ctxcanvas->linecap, ctxcanvas->linejoin, ctxcanvas->linestyle, ctxcanvas->opacity);
@@ -286,7 +313,7 @@ static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, do
     return;
   }
 
-  sCalcArc(ctxcanvas, xc, yc, w, h, a1, a2, &arcStartX, &arcStartY, &arcEndX, &arcEndY, &largeArc);
+  sCalcArc(ctxcanvas->canvas, xc, yc, w, h, a1, a2, &arcStartX, &arcStartY, &arcEndX, &arcEndY, &largeArc);
 
   fprintf(ctxcanvas->file, "<path d=\"M%g,%g L%g,%g A%g,%g 0 %d,0 %g,%g Z\" style=\"fill:%s; stroke:none; opacity:%g\" />\n",
           xc, yc, arcStartX, arcStartY, w/2, h/2, largeArc, arcEndX, arcEndY, (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor: ctxcanvas->pattern, ctxcanvas->opacity);
@@ -302,7 +329,7 @@ static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, dou
   double arcStartX, arcStartY, arcEndX, arcEndY;
   int largeArc;
 
-  sCalcArc(ctxcanvas, xc, yc, w, h, a1, a2, &arcStartX, &arcStartY, &arcEndX, &arcEndY, &largeArc);
+  sCalcArc(ctxcanvas->canvas, xc, yc, w, h, a1, a2, &arcStartX, &arcStartY, &arcEndX, &arcEndY, &largeArc);
 
   fprintf(ctxcanvas->file, "<path d=\"M%g,%g A%g,%g 0 %d,0 %g,%g Z\" style=\"fill:%s; stroke:none; opacity:%g\" />\n",
           arcStartX, arcStartY, w/2, h/2, largeArc, arcEndX, arcEndY, (ctxcanvas->canvas->interior_style == CD_SOLID) ? ctxcanvas->fgColor: ctxcanvas->pattern, ctxcanvas->opacity);
@@ -477,14 +504,10 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 
           if (i+3 > n) return;
 
-          xc = poly[i].x, 
-          yc = poly[i].y, 
-          w = poly[i+1].x, 
-          h = poly[i+1].y, 
-          a1 = poly[i+2].x, 
-          a2 = poly[i+2].y;
+          if (!cdfCanvasGetArcPath(ctxcanvas->canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+            return;
 
-          sCalcArc(ctxcanvas, xc, yc, w, h, a1, a2, &arcStartX, &arcStartY, &arcEndX, &arcEndY, &largeArc);
+          sCalcArc(ctxcanvas->canvas, xc, yc, w, h, a1, a2, &arcStartX, &arcStartY, &arcEndX, &arcEndY, &largeArc);
 
           fprintf(ctxcanvas->file, "M %g %g A %g %g 0 %d 0 %g %g ",
                   arcStartX, arcStartY, w/2, h/2, largeArc, arcEndX, arcEndY);
@@ -636,14 +659,10 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
 
           if (i+3 > n) return;
 
-          xc = poly[i].x, 
-          yc = poly[i].y, 
-          w = poly[i+1].x, 
-          h = poly[i+1].y, 
-          a1 = poly[i+2].x/1000.0, 
-          a2 = poly[i+2].y/1000.0;
+          if (!cdCanvasGetArcPath(ctxcanvas->canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+            return;
 
-          sCalcArc(ctxcanvas, xc, yc, w, h, a1, a2, &arcStartX, &arcStartY, &arcEndX, &arcEndY, &largeArc);
+          sCalcArc(ctxcanvas->canvas, xc, yc, w, h, a1, a2, &arcStartX, &arcStartY, &arcEndX, &arcEndY, &largeArc);
 
           fprintf(ctxcanvas->file, "M %g %g A %d %d 0 %d 0 %g %g ",
                   arcStartX, arcStartY, w/2, h/2, largeArc, arcEndX, arcEndY);
