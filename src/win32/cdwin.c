@@ -729,13 +729,12 @@ static void sCalcArc(cdCanvas* canvas, int xc, int yc, int w, int h, double a1, 
 
   if (canvas->invert_yaxis)
   {
-    /* fix axis orientation only, because angle orientation is the same */
+    /* fix axis orientation */
     arc->YStartArc = 2*yc - arc->YStartArc;
     arc->YEndArc = 2*yc - arc->YEndArc;
   }
   else
   {
-    /* Arc behave diferent when GM_ADVANCED is set */
     /* it is clock-wise when axis NOT inverted */
     if (swap)
     {
