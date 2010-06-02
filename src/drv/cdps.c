@@ -1109,12 +1109,13 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
         break;
       case CD_PATH_ARC:
         {
-          double xc, yc, w, h, a1, a2;
+          int xc, yc, w, h;
+          double a1, a2;
           char* arc = "arc";
 
           if (i+3 > n) return;
 
-          if (!cdCanvasGetArcPathF(ctxcanvas->canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+          if (!cdCanvasGetArcPath(ctxcanvas->canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
             return;
 
           if ((a2-a1)<0)
@@ -1122,14 +1123,13 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
 
           if (w==h) /* Circulo: PS implementa direto */
           {
-            fprintf(ctxcanvas->file, "N %d %d %g %g %g %s\n", xc, yc, 0.5*w, a1, a2, arc);
+            fprintf(ctxcanvas->file, "%d %d %g %g %g %s\n", xc, yc, 0.5*w, a1, a2, arc);
           }
           else /* Elipse: mudar a escala p/ criar a partir do circulo */
           {
             fprintf(ctxcanvas->file, "[0 0 0 0 0 0] currentmatrix\n"); /* fill new matrix from CTM */
             fprintf(ctxcanvas->file, "%d %d translate\n", xc, yc);
             fprintf(ctxcanvas->file, "1 %g scale\n", ((double)h)/w);
-            fprintf(ctxcanvas->file, "N\n");
             fprintf(ctxcanvas->file, "0 0 %g %g %g %s\n", 0.5*w, a1, a2, arc);
             fprintf(ctxcanvas->file, "setmatrix\n"); /* back to CTM */
           }
@@ -1171,9 +1171,9 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
         break;
       case CD_PATH_CLIP:
         if (ctxcanvas->canvas->fill_mode==CD_EVENODD)
-          fprintf(ctxcanvas->file, "C eoclip\n");
+          fprintf(ctxcanvas->file, "closepath eoclip\n");
         else
-          fprintf(ctxcanvas->file, "C clip\n");
+          fprintf(ctxcanvas->file, "closepath clip\n");
         break;
       }
     }
@@ -1315,14 +1315,13 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 
           if (w==h) /* Circulo: PS implementa direto */
           {
-            fprintf(ctxcanvas->file, "N %g %g %g %g %g %s\n", xc, yc, 0.5*w, a1, a2, arc);
+            fprintf(ctxcanvas->file, "%g %g %g %g %g %s\n", xc, yc, 0.5*w, a1, a2, arc);
           }
           else /* Elipse: mudar a escala p/ criar a partir do circulo */
           {
             fprintf(ctxcanvas->file, "[0 0 0 0 0 0] currentmatrix\n"); /* fill new matrix from CTM */
             fprintf(ctxcanvas->file, "%g %g translate\n", xc, yc);
             fprintf(ctxcanvas->file, "1 %g scale\n", ((double)h)/w);
-            fprintf(ctxcanvas->file, "N\n");
             fprintf(ctxcanvas->file, "0 0 %g %g %g %s\n", 0.5*w, a1, a2, arc);
             fprintf(ctxcanvas->file, "setmatrix\n"); /* back to CTM */
           }

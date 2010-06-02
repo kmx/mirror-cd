@@ -544,7 +544,7 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
     int p;
 
     /* if there is any current path, remove it */
-    PDF_endpath(ctxcanvas->pdf);
+    /* Don't use PDF_endpath because here usually there will be no path scope */
 
     i = 0;
     for (p=0; p<ctxcanvas->canvas->path_n; p++)
@@ -552,7 +552,7 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
       switch(ctxcanvas->canvas->path[p])
       {
       case CD_PATH_NEW:
-        PDF_endpath(ctxcanvas->pdf);
+        /* Don't use PDF_endpath because here usually there will be no path scope */
         break;
       case CD_PATH_MOVETO:
         if (i+1 > n) return;
@@ -561,7 +561,7 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
         break;
       case CD_PATH_LINETO:
         if (i+1 > n) return;
-        PDF_moveto(ctxcanvas->pdf, poly[i].x, poly[i].y);
+        PDF_lineto(ctxcanvas->pdf, poly[i].x, poly[i].y);
         i++;
         break;
       case CD_PATH_ARC:
@@ -582,18 +582,22 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
           }
           else /* Ellipse: change the scale to create from the circle */
           {
-            PDF_save(ctxcanvas->pdf);  /* save to use the local transform */
+            /* NOT SUPPORTED IN PATH SCOPE!!!!
+            PDF_save(ctxcanvas->pdf);
 
             PDF_translate(ctxcanvas->pdf, xc, yc);
             PDF_scale(ctxcanvas->pdf, w/h, 1);
-            PDF_translate(ctxcanvas->pdf, -xc, -yc);
+            PDF_translate(ctxcanvas->pdf, -xc, -yc); */
+            double s = h;
+            if (w > h)
+              s = w;
 
             if ((a2-a1)<0)
-              PDF_arcn(ctxcanvas->pdf, xc, yc, 0.5*h, a1, a2);
+              PDF_arcn(ctxcanvas->pdf, xc, yc, 0.5*s, a1, a2);
             else
-              PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*h, a1, a2);
+              PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*s, a1, a2);
 
-            PDF_restore(ctxcanvas->pdf);  /* restore from local */
+            /* PDF_restore(ctxcanvas->pdf); */
           }
 
           i += 3;
@@ -711,7 +715,7 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
         break;
       case CD_PATH_LINETO:
         if (i+1 > n) return;
-        PDF_moveto(ctxcanvas->pdf, poly[i].x, poly[i].y);
+        PDF_lineto(ctxcanvas->pdf, poly[i].x, poly[i].y);
         i++;
         break;
       case CD_PATH_ARC:
@@ -724,18 +728,30 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
             return;
 
           if (w==h)
-            PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*w, a1, a2);
+          {
+            if ((a2-a1)<0)
+              PDF_arcn(ctxcanvas->pdf, xc, yc, 0.5*w, a1, a2);
+            else
+              PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*w, a1, a2);
+          }
           else /* Ellipse: change the scale to create from the circle */
           {
-            PDF_save(ctxcanvas->pdf);  /* save to use the local transform */
+            /* NOT SUPPORTED IN PATH SCOPE!!!!
+            PDF_save(ctxcanvas->pdf);
 
             PDF_translate(ctxcanvas->pdf, xc, yc);
             PDF_scale(ctxcanvas->pdf, w/h, 1);
-            PDF_translate(ctxcanvas->pdf, -xc, -yc);
+            PDF_translate(ctxcanvas->pdf, -xc, -yc);  */
+            double s = h;
+            if (w > h)
+              s = w;
 
-            PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*h, a1, a2);
+            if ((a2-a1)<0)
+              PDF_arcn(ctxcanvas->pdf, xc, yc, 0.5*s, a1, a2);
+            else
+              PDF_arc(ctxcanvas->pdf, xc, yc, 0.5*s, a1, a2);
 
-            PDF_restore(ctxcanvas->pdf);  /* restore from local */
+            /* PDF_restore(ctxcanvas->pdf);  */
           }
 
           i += 3;
@@ -831,7 +847,7 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 static int cdlinestyle(cdCtxCanvas *ctxcanvas, int style)
 {
   double mm = (72.0/25.4) / ctxcanvas->scale;
-  char options[80];
+  char options[200];
 
   switch (style)
   {
