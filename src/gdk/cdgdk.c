@@ -33,7 +33,7 @@ static char hatches[NUM_HATCHES][8] = {
 
 /******************************************************/
 
-static int gdkStrIsAscii(const char* str)
+static int sStrIsAscii(const char* str)
 {
   while(*str)
   {
@@ -45,12 +45,12 @@ static int gdkStrIsAscii(const char* str)
   return 1;
 }
 
-static char* gdkStrToUTF8(const char *str, const char* charset, int length)
+static char* sStrToUTF8(const char *str, const char* charset, int length)
 {
   return g_convert(str, length, "UTF-8", charset, NULL, NULL, NULL);
 }
 
-char* cdgdkStrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, int length)  /* From CD to GDK */
+static char* sStrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, int length)  /* From CD to GDK */
 {
   const char *charset = NULL;
 
@@ -65,28 +65,28 @@ char* cdgdkStrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, int length)
     }
     else
     {
-      ctxcanvas->gdkLastConvertUTF8 = gdkStrToUTF8(str, "ISO8859-1", length);   /* if string is not UTF-8, assume ISO8859-1 */
+      ctxcanvas->strLastConvertUTF8 = sStrToUTF8(str, "ISO8859-1", length);   /* if string is not UTF-8, assume ISO8859-1 */
       
-      if (!ctxcanvas->gdkLastConvertUTF8)
+      if (!ctxcanvas->strLastConvertUTF8)
         return (char*)str;
       
-      return ctxcanvas->gdkLastConvertUTF8;
+      return ctxcanvas->strLastConvertUTF8;
     }
   }
   else
   {
-    if (gdkStrIsAscii(str) || !charset)
+    if (sStrIsAscii(str) || !charset)
     {
       return (char*)str;
     }
     else if (charset)
     {    
-      ctxcanvas->gdkLastConvertUTF8 = gdkStrToUTF8(str, charset, length);
+      ctxcanvas->strLastConvertUTF8 = sStrToUTF8(str, charset, length);
 
-      if (!ctxcanvas->gdkLastConvertUTF8)
+      if (!ctxcanvas->strLastConvertUTF8)
         return (char*)str;
 
-      return ctxcanvas->gdkLastConvertUTF8;
+      return ctxcanvas->strLastConvertUTF8;
     }
   }
   return (char*)str;
@@ -133,6 +133,9 @@ void cdgdkKillCanvas(cdCtxCanvas *ctxcanvas)
     g_object_unref(ctxcanvas->last_stipple_gc); 
     g_object_unref(ctxcanvas->last_stipple);
   }
+
+  if (ctxcanvas->strLastConvertUTF8)
+    g_free(ctxcanvas->strLastConvertUTF8);
 
   g_object_unref(ctxcanvas->gc); 
 
@@ -530,22 +533,20 @@ static int cdfont(cdCtxCanvas *ctxcanvas, const char *typeface, int style, int s
   if (style & CD_STRIKEOUT)
     is_strikeout = 1;
 
-  if (size < 0)
-  {
-    double res = ((double)gdk_screen_get_width(gdk_screen_get_default()) / 
-                  (double)gdk_screen_get_width_mm(gdk_screen_get_default())); /* pixels/mm */
-      
-    /* 1 point = 1/72 inch     1 inch = 25.4 mm */
-    /* pixel = ((point/72)*25.4)*pixel/mm */
-    size = (int)((-size/res)*2.83464567 + 0.5); /* from pixels to points */
-  }
+  size = cdGetFontSizePoints(ctxcanvas->canvas, size);
 
   sprintf(font, "%s, %s%s%d", typeface, is_bold?"Bold ":"", is_italic?"Italic ":"", size);
+
+  if (ctxcanvas->fontdesc) 
+    pango_font_description_free(ctxcanvas->fontdesc);
 
   ctxcanvas->fontdesc = pango_font_description_from_string(font);
 
   if (!ctxcanvas->fontdesc)
     return 0;
+
+  if (ctxcanvas->fontlayout)  
+    g_object_unref(ctxcanvas->fontlayout);
 
   ctxcanvas->fontlayout = pango_layout_new(ctxcanvas->fontcontext);
   pango_layout_set_font_description(ctxcanvas->fontlayout, ctxcanvas->fontdesc);
@@ -760,8 +761,7 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
   int w, h, desc, dir = -1;
   int ox = x, oy = y;
 
-  ctxcanvas->gdkLastConvertUTF8 = cdgdkStrConvertToUTF8(ctxcanvas, s, len);
-  pango_layout_set_text(ctxcanvas->fontlayout, ctxcanvas->gdkLastConvertUTF8, -1);
+  pango_layout_set_text(ctxcanvas->fontlayout, sStrConvertToUTF8(ctxcanvas, s, len), -1);
   
 	pango_layout_get_pixel_size(ctxcanvas->fontlayout, &w, &h);
   metrics = pango_context_get_metrics(ctxcanvas->fontcontext, ctxcanvas->fontdesc, pango_context_get_language(ctxcanvas->fontcontext));
@@ -881,8 +881,7 @@ static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *s, int len, int *w
   if (!ctxcanvas->fontlayout)
     return;
 
-  ctxcanvas->gdkLastConvertUTF8 = cdgdkStrConvertToUTF8(ctxcanvas, s, len);
-  pango_layout_set_text(ctxcanvas->fontlayout, ctxcanvas->gdkLastConvertUTF8, -1);
+  pango_layout_set_text(ctxcanvas->fontlayout, sStrConvertToUTF8(ctxcanvas, s, len), len);
   pango_layout_get_pixel_size(ctxcanvas->fontlayout, width, height);
 }
 
@@ -1606,7 +1605,6 @@ cdCtxCanvas *cdgdkCreateCanvas(cdCanvas* canvas, GdkDrawable* wnd, GdkScreen* sc
 
   ctxcanvas->fontcontext = gdk_pango_context_get();
   pango_context_set_language(ctxcanvas->fontcontext, pango_language_get_default());
-  ctxcanvas->gdkLastConvertUTF8 = NULL;
 
   ctxcanvas->canvas = canvas;
   canvas->ctxcanvas = ctxcanvas;

@@ -120,6 +120,10 @@
 			>
 		</File>
 		<File
+			RelativePath="..\src\cdgdk.def"
+			>
+		</File>
+		<File
 			RelativePath="..\src\gdk\cdgdkclp.c"
 			>
 		</File>

@@ -8,6 +8,7 @@
 #define __CDCAIROCTX_H
 
 #include <cairo.h>
+#include <pango/pango.h>
 
 #include "cd.h"
 #include "cd_private.h"
@@ -27,13 +28,16 @@ struct _cdCtxCanvas
 
   cairo_t* cr;
 
-  cairo_scaled_font_t* font;
+  /* text attributes */
+  PangoContext *fontcontext;
+  PangoFontDescription *fontdesc;
+  PangoLayout *fontlayout;
+  char* strLastConvertUTF8;
 
+  /* fill attributes */
   cairo_pattern_t *pattern, *solid;
   int last_source;
   int hatchboxsize;
-
-  char* cairoLastConvertUTF8;
 
   /* custom attributes */
 

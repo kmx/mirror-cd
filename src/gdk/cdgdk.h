@@ -59,7 +59,7 @@ struct _cdCtxCanvas {
   PangoFontDescription *fontdesc;
   PangoLayout *fontlayout;
   PangoMatrix fontmatrix;
-  char* gdkLastConvertUTF8;
+  char* strLastConvertUTF8;
 
   cdImage* image_dbuffer;       /* Used by double buffer driver */
   cdCanvas* canvas_dbuffer;

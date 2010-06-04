@@ -11,6 +11,7 @@
 #include <math.h>
 
 #include <glib.h>
+#include <pango/pangocairo.h>
 
 #include "cdcairoctx.h"
 
@@ -19,7 +20,7 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-static int StrIsAscii(const char* str)
+static int sStrIsAscii(const char* str)
 {
   while(*str)
   {
@@ -31,12 +32,12 @@ static int StrIsAscii(const char* str)
   return 1;
 }
 
-static char* StrToUTF8(const char *str, const char* charset, int length)
+static char* sStrToUTF8(const char *str, const char* charset, int length)
 {
   return g_convert(str, length, "UTF-8", charset, NULL, NULL, NULL);
 }
 
-char* StrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, int length)
+static char* sStrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, int length)
 {
   const char *charset = NULL;
 
@@ -51,28 +52,28 @@ char* StrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, int length)
     }
     else
     {
-      ctxcanvas->cairoLastConvertUTF8 = StrToUTF8(str, "ISO8859-1", length);   /* if string is not UTF-8, assume ISO8859-1 */
+      ctxcanvas->strLastConvertUTF8 = sStrToUTF8(str, "ISO8859-1", length);   /* if string is not UTF-8, assume ISO8859-1 */
 
-      if (!ctxcanvas->cairoLastConvertUTF8)
+      if (!ctxcanvas->strLastConvertUTF8)
         return (char*)str;
 
-      return ctxcanvas->cairoLastConvertUTF8;
+      return ctxcanvas->strLastConvertUTF8;
     }
   }
   else
   {
-    if (StrIsAscii(str) || !charset)
+    if (sStrIsAscii(str) || !charset)
     {
       return (char*)str;
     }
     else if (charset)
     {    
-      ctxcanvas->cairoLastConvertUTF8 = StrToUTF8(str, charset, length);
+      ctxcanvas->strLastConvertUTF8 = sStrToUTF8(str, charset, length);
 
-      if (!ctxcanvas->cairoLastConvertUTF8)
+      if (!ctxcanvas->strLastConvertUTF8)
         return (char*)str;
 
-      return ctxcanvas->cairoLastConvertUTF8;
+      return ctxcanvas->strLastConvertUTF8;
     }
   }
 
@@ -109,11 +110,12 @@ void cdcairoKillCanvas(cdCtxCanvas *ctxcanvas)
   if (ctxcanvas->pattern)
     cairo_pattern_destroy(ctxcanvas->pattern);
 
-  if (ctxcanvas->font)
-    cairo_scaled_font_destroy(ctxcanvas->font);
+  if (ctxcanvas->fontdesc) pango_font_description_free(ctxcanvas->fontdesc);
+  if (ctxcanvas->fontlayout)  g_object_unref(ctxcanvas->fontlayout);
+  if (ctxcanvas->fontcontext) g_object_unref(ctxcanvas->fontcontext);
 
-  if (ctxcanvas->cairoLastConvertUTF8)
-    g_free(ctxcanvas->cairoLastConvertUTF8);
+  if (ctxcanvas->strLastConvertUTF8)
+    g_free(ctxcanvas->strLastConvertUTF8);
 
   cairo_destroy(ctxcanvas->cr);
 
@@ -492,61 +494,81 @@ static int cdlinecap(cdCtxCanvas *ctxcanvas, int cap)
 
 static int cdfont(cdCtxCanvas *ctxcanvas, const char *typeface, int style, int size)
 {
-  //TODO:pango
-  cairo_scaled_font_t *font;
-  cairo_font_slant_t  slant  = CAIRO_FONT_SLANT_NORMAL;    /* default is */
-  cairo_font_weight_t weight = CAIRO_FONT_WEIGHT_NORMAL;   /*  CD_PLAIN  */
+  int is_italic = 0, is_bold = 0;   /* default is CD_PLAIN */
+  int is_strikeout = 0, is_underline = 0;
+  char font[256];
+  PangoAttrList *attrs;
 
-  if (cdStrEqualNoCase(typeface, "Courier") || cdStrEqualNoCase(typeface, "Monospace"))
-    typeface = "Courier New";
-  else if (cdStrEqualNoCase(typeface, "Times") || cdStrEqualNoCase(typeface, "Serif"))
-    typeface = "Times New Roman";
-  else if (cdStrEqualNoCase(typeface, "Helvetica") || cdStrEqualNoCase(typeface, "Sans"))
-    typeface = "Arial";
+  if (cdStrEqualNoCase(typeface, "Courier") || cdStrEqualNoCase(typeface, "Courier New"))
+    typeface = "Monospace";
+  else if (cdStrEqualNoCase(typeface, "Times") || cdStrEqualNoCase(typeface, "Times New Roman"))
+    typeface = "Serif";
+  else if (cdStrEqualNoCase(typeface, "Helvetica") || cdStrEqualNoCase(typeface, "Arial"))
+    typeface = "Sans";
 
-  /* no support to underline and strikeout */
-  switch(style&3)
-  {
-  case CD_BOLD:
-    weight = CAIRO_FONT_WEIGHT_BOLD;
-    break;
-  case CD_ITALIC:
-    slant = CAIRO_FONT_SLANT_ITALIC;
-    break;
-  case CD_BOLD_ITALIC:
-    weight = CAIRO_FONT_WEIGHT_BOLD;
-    slant = CAIRO_FONT_SLANT_ITALIC;
-    break;
-  }
+  if (style & CD_BOLD)
+    is_bold = 1;
 
-  cairo_select_font_face(ctxcanvas->cr, typeface, slant, weight);
-  cairo_set_font_size(ctxcanvas->cr, (double)cdGetFontSizePixels(ctxcanvas->canvas, size));
+  if (style & CD_ITALIC)
+    is_italic = 1;
 
-  font = cairo_get_scaled_font(ctxcanvas->cr);
+  if (style & CD_UNDERLINE)
+    is_underline = 1;
 
-  if (!font)
+  if (style & CD_STRIKEOUT)
+    is_strikeout = 1;
+
+  size = cdGetFontSizePoints(ctxcanvas->canvas, size);
+
+  sprintf(font, "%s, %s%s%d", typeface, is_bold?"Bold ":"", is_italic?"Italic ":"", size);
+
+  if (ctxcanvas->fontdesc) 
+    pango_font_description_free(ctxcanvas->fontdesc);
+
+  ctxcanvas->fontdesc = pango_font_description_from_string(font);
+
+  if (!ctxcanvas->fontdesc)
     return 0;
 
-  font = cairo_scaled_font_reference(font);
-  ctxcanvas->font = font;
+  if (ctxcanvas->fontlayout)  
+    g_object_unref(ctxcanvas->fontlayout);
+
+  ctxcanvas->fontlayout = pango_layout_new(ctxcanvas->fontcontext);
+  pango_layout_set_font_description(ctxcanvas->fontlayout, ctxcanvas->fontdesc);
+
+  attrs = pango_attr_list_new();
+  pango_attr_list_insert(attrs, pango_attribute_copy(pango_attr_strikethrough_new(is_strikeout ? TRUE : FALSE)));
+  pango_attr_list_insert(attrs, pango_attribute_copy(pango_attr_underline_new(is_underline ? PANGO_UNDERLINE_SINGLE : PANGO_UNDERLINE_NONE)));
+  pango_layout_set_attributes(ctxcanvas->fontlayout, attrs);
+
+  pango_attr_list_unref(attrs);
+
+  pango_cairo_update_layout(ctxcanvas->cr, ctxcanvas->fontlayout);
 
   return 1;
 }
 
 static void cdgetfontdim(cdCtxCanvas *ctxcanvas, int *max_width, int *height, int *ascent, int *descent)
 {
-  cairo_font_extents_t extents;
+  PangoFontMetrics* metrics;
+  int charwidth, charheight, charascent, chardescent;
 
-  if (!ctxcanvas->font)
+  if(!ctxcanvas->fontdesc)
     return;
 
-  cairo_set_scaled_font(ctxcanvas->cr, ctxcanvas->font);
-  cairo_font_extents(ctxcanvas->cr, &extents);
+  pango_cairo_update_layout(ctxcanvas->cr, ctxcanvas->fontlayout);
+  metrics = pango_context_get_metrics(ctxcanvas->fontcontext, ctxcanvas->fontdesc, pango_context_get_language(ctxcanvas->fontcontext));
+  charascent  = pango_font_metrics_get_ascent(metrics);
+  chardescent = pango_font_metrics_get_descent(metrics);
+  charheight  = charascent + chardescent;
+  charwidth   = pango_font_metrics_get_approximate_char_width(metrics);
 
-  if (ascent)  *ascent  = (int)extents.ascent;
-  if (descent) *descent = (int)extents.descent;
-  if (height)  *height  = (int)extents.height;
-  if (max_width) *max_width = (int)extents.max_x_advance;
+  if (max_width) *max_width = (((charwidth)   + PANGO_SCALE/2) / PANGO_SCALE);
+  if (height)    *height    = (((charheight)  + PANGO_SCALE/2) / PANGO_SCALE);
+  if (ascent)    *ascent    = (((charascent)  + PANGO_SCALE/2) / PANGO_SCALE);
+  if (descent)   *descent   = (((chardescent) + PANGO_SCALE/2) / PANGO_SCALE);
+
+  pango_font_metrics_unref(metrics); 
 }
 
 static long int cdforeground(cdCtxCanvas *ctxcanvas, long int color)
@@ -743,38 +765,43 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
 
 static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, int len)
 {
-  cairo_text_extents_t extents;
-  cairo_font_extents_t font_extents;
-  int dir = -1;
-  double x_origin = x;
-  double y_origin = y;
+  PangoFontMetrics* metrics;
+  int w, h, desc, dir = -1;
 
-  s = StrConvertToUTF8(ctxcanvas, s, len);
+  pango_layout_set_text(ctxcanvas->fontlayout, sStrConvertToUTF8(ctxcanvas, s, len), -1);
+  
+	pango_layout_get_pixel_size(ctxcanvas->fontlayout, &w, &h);
+  metrics = pango_context_get_metrics(ctxcanvas->fontcontext, ctxcanvas->fontdesc, pango_context_get_language(ctxcanvas->fontcontext));
+  desc = (((pango_font_metrics_get_descent(metrics)) + PANGO_SCALE/2) / PANGO_SCALE);
 
-  cairo_set_scaled_font(ctxcanvas->cr, ctxcanvas->font);
-  cairo_font_extents(ctxcanvas->cr, &font_extents);
-  cairo_text_extents(ctxcanvas->cr, s, &extents);
+  if (ctxcanvas->canvas->text_orientation)
+  {
+    cairo_save (ctxcanvas->cr);
+    cairo_translate(ctxcanvas->cr, x, y);
+    cairo_rotate(ctxcanvas->cr, -ctxcanvas->canvas->text_orientation*CD_DEG2RAD);
+    cairo_translate(ctxcanvas->cr, -x, -y);
+  }
 
   switch (ctxcanvas->canvas->text_alignment)
   {
-  case CD_BASE_RIGHT:
-  case CD_NORTH_EAST:
-  case CD_EAST:
-  case CD_SOUTH_EAST:
-    x = x - (int)extents.width; 
-    break;
-  case CD_BASE_CENTER:
-  case CD_CENTER:
-  case CD_NORTH:
-  case CD_SOUTH:
-    x = x - (int)(extents.width/2);  
-    break;
-  case CD_BASE_LEFT:
-  case CD_NORTH_WEST:
-  case CD_WEST:
-  case CD_SOUTH_WEST:
-    x = x;         
-    break;
+    case CD_BASE_RIGHT:
+    case CD_NORTH_EAST:
+    case CD_EAST:
+    case CD_SOUTH_EAST:
+      x = x - w;
+      break;
+    case CD_BASE_CENTER:
+    case CD_CENTER:
+    case CD_NORTH:
+    case CD_SOUTH:
+      x = x - w/2;
+      break;
+    case CD_BASE_LEFT:
+    case CD_NORTH_WEST:
+    case CD_WEST:
+    case CD_SOUTH_WEST:
+      x = x;
+      break;
   }
 
   if (ctxcanvas->canvas->invert_yaxis)
@@ -782,47 +809,40 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, i
 
   switch (ctxcanvas->canvas->text_alignment)
   {
-  case CD_BASE_LEFT:
-  case CD_BASE_CENTER:
-  case CD_BASE_RIGHT:
-    y = y;
-    break;
-  case CD_SOUTH_EAST:
-  case CD_SOUTH_WEST:
-  case CD_SOUTH:
-    y = y - dir*(int)font_extents.descent;
-    break;
-  case CD_NORTH_EAST:
-  case CD_NORTH:
-  case CD_NORTH_WEST:
-    y = y + dir*(int)(extents.height - font_extents.descent);
-    break;
-  case CD_CENTER:
-  case CD_EAST:
-  case CD_WEST:
-    y = y + dir*(int)(extents.height/2 - font_extents.descent);
-    break;
+    case CD_BASE_LEFT:
+    case CD_BASE_CENTER:
+    case CD_BASE_RIGHT:
+      y = y - (dir*h - desc);
+      break;
+    case CD_SOUTH_EAST:
+    case CD_SOUTH_WEST:
+    case CD_SOUTH:
+      y = y - (dir*h);
+      break;
+    case CD_NORTH_EAST:
+    case CD_NORTH:
+    case CD_NORTH_WEST:
+      y = y;
+      break;
+    case CD_CENTER:
+    case CD_EAST:
+    case CD_WEST:
+      y = y - (dir*(h/2));
+      break;
   }
 
-  if (ctxcanvas->canvas->text_orientation != 0)
-  {
-    cairo_matrix_t matrix;
-    double angle = CD_DEG2RAD * ctxcanvas->canvas->text_orientation;
-    double cos_angle = cos(angle);
-    double sin_angle = sin(angle);
-
-    cdfRotatePoint(ctxcanvas->canvas, x, y, x_origin, y_origin, &x, &y, sin_angle, cos_angle);
-
-    cairo_get_font_matrix(ctxcanvas->cr, &matrix);
-    cairo_matrix_rotate(&matrix, -angle);
-    cairo_set_font_matrix(ctxcanvas->cr, &matrix);
-  }
+  /* Inform Pango to re-layout the text with the new transformation */
+  pango_cairo_update_layout(ctxcanvas->cr, ctxcanvas->fontlayout);
 
   sUpdateFill(ctxcanvas, 0);
 
   cairo_move_to(ctxcanvas->cr, x, y);
-  cairo_show_text(ctxcanvas->cr, s);
-  cairo_fill(ctxcanvas->cr);
+  pango_cairo_show_layout(ctxcanvas->cr, ctxcanvas->fontlayout);
+
+  if (ctxcanvas->canvas->text_orientation)
+    cairo_restore(ctxcanvas->cr);
+
+  pango_font_metrics_unref(metrics); 
 }
 
 static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
@@ -832,21 +852,12 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
 
 static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *s, int len, int *width, int *height)
 {
-  cairo_text_extents_t extents;
-
-  if (!ctxcanvas->font)
+  if (!ctxcanvas->fontlayout)
     return;
 
-  s = StrConvertToUTF8(ctxcanvas, s, len);
-
-  cairo_set_scaled_font(ctxcanvas->cr, ctxcanvas->font);
-  cairo_text_extents(ctxcanvas->cr, s, &extents);
-
-  if (width)
-    *width = (int)extents.width;
-
-  if (height)
-    *height = (int)extents.height;
+  pango_cairo_update_layout(ctxcanvas->cr, ctxcanvas->fontlayout);
+  pango_layout_set_text(ctxcanvas->fontlayout, sStrConvertToUTF8(ctxcanvas, s, len), len);
+  pango_layout_get_pixel_size(ctxcanvas->fontlayout, width, height);
 }
 
 static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
@@ -1666,21 +1677,10 @@ static cdAttribute rotate_attrib =
 
 static void set_aa_attrib(cdCtxCanvas* ctxcanvas, char* data)
 {
-  cairo_font_options_t* options = NULL;
-  cairo_scaled_font_get_font_options(ctxcanvas->font, options);
-
   if (!data || data[0] == '0')
-  {
     cairo_set_antialias(ctxcanvas->cr, CAIRO_ANTIALIAS_NONE);
-    cairo_font_options_set_antialias(options, CAIRO_ANTIALIAS_NONE);
-  }
   else
-  {
     cairo_set_antialias(ctxcanvas->cr, CAIRO_ANTIALIAS_DEFAULT);
-    cairo_font_options_set_antialias(options, CAIRO_ANTIALIAS_DEFAULT);
-  }
-  
-  cairo_font_options_destroy(options);
 }
 
 static char* get_aa_attrib(cdCtxCanvas* ctxcanvas)
@@ -1935,6 +1935,9 @@ cdCtxCanvas *cdcairoCreateCanvas(cdCanvas* canvas, cairo_t* cr)
 
   canvas->ctxcanvas = ctxcanvas;
   canvas->invert_yaxis = 1;
+
+  ctxcanvas->fontcontext = pango_cairo_create_context(ctxcanvas->cr);
+  pango_context_set_language(ctxcanvas->fontcontext, pango_language_get_default());
 
   cdRegisterAttribute(canvas, &rotate_attrib);
   cdRegisterAttribute(canvas, &version_attrib);
