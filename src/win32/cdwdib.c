@@ -323,6 +323,44 @@ void cdwDIBEncodeRGBARect(cdwDIB* dib, const unsigned char *red, const unsigned 
   }
 }
 
+void cdwDIBEncodeRGBARectMirror(cdwDIB* dib, const unsigned char *red, const unsigned char *green, const unsigned char *blue, const unsigned char *alpha, int xi, int yi, int wi, int hi)
+{
+  int x,y, resto1, resto2, offset, line_size;
+  BYTE* bits;
+  
+  line_size = cdwDIBLineSize(dib->w, 32);
+
+  bits = dib->bits + line_size*(dib->h-1);
+  resto1 = line_size - dib->w * 4;
+  resto2 = wi - dib->w;
+
+  offset = wi * yi + xi;
+  
+  red = red + offset;
+  green = green + offset;
+  blue = blue + offset;
+  alpha = alpha + offset;
+
+  for (y = 0; y < dib->h; y++)
+  {
+    for (x = 0; x < dib->w; x++)
+    {
+      *bits++ = CD_ALPHAPRE(*blue, *alpha);   blue++;
+      *bits++ = CD_ALPHAPRE(*green, *alpha);  green++;
+      *bits++ = CD_ALPHAPRE(*red, *alpha);    red++;
+      *bits++ = *alpha++;
+    }
+    
+    bits += resto1;
+    bits -= 2*line_size;
+
+    red += resto2;
+    green += resto2;
+    blue += resto2;
+    alpha += resto2;
+  }
+}
+
 void cdwDIBEncodeAlphaRect(cdwDIB* dib, const unsigned char *alpha, int xi, int yi, int wi, int hi)
 {
   int x,y, resto1, resto2, offset;

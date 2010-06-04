@@ -1210,12 +1210,23 @@ static void cdgetimagergb(cdCtxCanvas *ctxcanvas, unsigned char *r, unsigned cha
   cairo_surface_destroy(image_surface);
   cairo_destroy(cr);
 
-  cairo_restore (ctxcanvas->cr);
+  cairo_restore(ctxcanvas->cr);
+}
+
+static void sFixImageY(cdCanvas* canvas, int *topdown, int *y, int h)
+{
+  if (canvas->invert_yaxis)
+    *topdown = 0;
+  else
+    *topdown = 1;
+
+  if (!(*topdown))
+    *y -= (h - 1);  /* move Y to top-left corner, since it was at the bottom of the image */
 }
 
 static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
-  int i, j, rw, rh, pos, offset;
+  int i, j, rw, rh, pos, offset, topdown;
   unsigned long* data;
   cairo_surface_t* image_surface;
 
@@ -1229,11 +1240,16 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   data = (unsigned long*)cairo_image_surface_get_data(image_surface);
   offset = cairo_image_surface_get_stride(image_surface)/4 - rw;
 
-  for (i=ymax; i>=ymin; i--)
+  sFixImageY(ctxcanvas->canvas, &topdown, &y, h);
+
+  for (i=ymin; i<=ymax; i++)
   {
     for (j=xmin; j<=xmax; j++)
     {
-      pos = i*iw+j;
+      if (topdown)
+        pos = i*iw+j;
+      else
+        pos = (ymax+ymin - i)*iw+j;
       *data++ = sEncodeRGBA(r[pos], g[pos], b[pos], 255);
     }
 
@@ -1242,8 +1258,6 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   }
 
   cairo_save (ctxcanvas->cr);
-
-  y -= (h - 1);        /* Cairo image origin is at top-left */
 
   cairo_rectangle(ctxcanvas->cr, x, y, w, h);
   cairo_clip(ctxcanvas->cr);
@@ -1265,7 +1279,7 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 
 static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
-  int i, j, rw, rh, pos, offset;
+  int i, j, rw, rh, pos, offset, topdown;
   unsigned long* data;
   cairo_surface_t* image_surface;
 
@@ -1279,11 +1293,16 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
   data = (unsigned long*)cairo_image_surface_get_data(image_surface);
   offset = cairo_image_surface_get_stride(image_surface)/4 - rw;
 
-  for (i=ymax; i>=ymin; i--)
+  sFixImageY(ctxcanvas->canvas, &topdown, &y, h);
+
+  for (i=ymin; i<=ymax; i++)
   {
     for (j=xmin; j<=xmax; j++)
     {
-      pos = i*iw+j;
+      if (topdown)
+        pos = i*iw+j;
+      else
+        pos = (ymax+ymin - i)*iw+j;
       *data++ = sEncodeRGBA(r[pos], g[pos], b[pos], a[pos]);
     }
 
@@ -1292,8 +1311,6 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
   }
 
   cairo_save (ctxcanvas->cr);
-
-  y -= (h - 1);        /* Cairo image origin is at top-left */
 
   cairo_rectangle(ctxcanvas->cr, x, y, w, h);
   cairo_clip(ctxcanvas->cr);
@@ -1329,7 +1346,7 @@ static int sCalcPalSize(int size, const unsigned char *index)
 
 static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *index, const long int *colors, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
-  int i, j, rw, rh, pos, offset, pal_size;
+  int i, j, rw, rh, pos, offset, pal_size, topdown;
   unsigned long* data, cairo_colors[256], c;
   cairo_surface_t* image_surface;
 
@@ -1350,11 +1367,16 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
     cairo_colors[i] = sEncodeRGBA(cdRed(c), cdGreen(c), cdBlue(c), 255);
   }
 
-  for (i=ymax; i>=ymin; i--)
+  sFixImageY(ctxcanvas->canvas, &topdown, &y, h);
+
+  for (i=ymin; i<=ymax; i++)
   {
     for (j=xmin; j<=xmax; j++)
     {
-      pos = i*iw+j;
+      if (topdown)
+        pos = i*iw+j;
+      else
+        pos = (ymax+ymin - i)*iw+j;
       *data++ = cairo_colors[index[pos]];
     }
 
@@ -1363,8 +1385,6 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   }
 
   cairo_save (ctxcanvas->cr);
-
-  y -= (h - 1);        /* Cairo image origin is at top-left */
 
   cairo_rectangle(ctxcanvas->cr, x, y, w, h);
   cairo_clip(ctxcanvas->cr);

@@ -169,6 +169,7 @@ void cdwDIBEncodePattern(cdwDIB* dib, const long int *colors);
 void cdwDIBEncodeMapRect(cdwDIB* dib, const unsigned char *index, const long int *colors, int xi, int yi, int wi, int hi);
 void cdwDIBEncodeRGBRect(cdwDIB* dib, const unsigned char *red, const unsigned char *green, const unsigned char *blue, int xi, int yi, int wi, int hi);
 void cdwDIBEncodeRGBARect(cdwDIB* dib, const unsigned char *red, const unsigned char *green, const unsigned char *blue, const unsigned char *alpha, int xi, int yi, int wi, int hi);
+void cdwDIBEncodeRGBARectMirror(cdwDIB* dib, const unsigned char *red, const unsigned char *green, const unsigned char *blue, const unsigned char *alpha, int xi, int yi, int wi, int hi);
 void cdwDIBEncodeRGBARectZoom(cdwDIB* dib, const unsigned char *red, const unsigned char *green, const unsigned char *blue, const unsigned char *alpha, int w, int h, int xi, int yi, int wi, int hi);
 void cdwDIBEncodeAlphaRect(cdwDIB* dib, const unsigned char *alpha, int xi, int yi, int wi, int hi);
   

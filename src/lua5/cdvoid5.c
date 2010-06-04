@@ -80,9 +80,9 @@ void cdinittable(cdCanvas* canvas)
   canvas->cxArc = (void ( *)(cdCtxCanvas*, int ,int ,int ,int ,double ,double ))cdvoid_error;
   canvas->cxSector = (void ( *)(cdCtxCanvas*, int ,int ,int ,int ,double ,double ))cdvoid_error;
   canvas->cxChord = (void ( *)(cdCtxCanvas*, int ,int ,int ,int ,double ,double ))cdvoid_error;
-  canvas->cxText = (void (*)(cdCtxCanvas*, int ,int ,const char *))cdvoid_error;
+  canvas->cxText = (void (*)(cdCtxCanvas*, int ,int ,const char *, int))cdvoid_error;
   canvas->cxGetFontDim = (void (*)(cdCtxCanvas*, int *,int *,int *,int *))cdvoid_error;
-  canvas->cxGetTextSize = (void (*)(cdCtxCanvas*, const char *,int *,int *))cdvoid_error;
+  canvas->cxGetTextSize = (void (*)(cdCtxCanvas*, const char *,int,int *,int *))cdvoid_error;
   canvas->cxPutImageRectRGB = (void (*)(cdCtxCanvas*, int ,int ,const unsigned char *,const unsigned char *,const unsigned char *,int ,int ,int ,int ,int ,int ,int ,int ))cdvoid_error;
   canvas->cxPutImageRectRGBA = (void (*)(cdCtxCanvas*, int ,int ,const unsigned char *,const unsigned char *,const unsigned char *,const unsigned char *,int ,int ,int ,int ,int ,int ,int ,int ))cdvoid_error;
   canvas->cxPutImageRectMap = (void (*)(cdCtxCanvas*, int ,int ,const unsigned char *,const long *,int ,int ,int ,int ,int ,int ,int ,int ))cdvoid_error;
@@ -93,7 +93,7 @@ void cdinittable(cdCanvas* canvas)
   canvas->cxFBox = (void (*)(cdCtxCanvas*, double ,double ,double ,double ))cdvoid_error;
   canvas->cxFArc = (void (*)(cdCtxCanvas*, double ,double ,double ,double ,double ,double ))cdvoid_error;
   canvas->cxFSector = (void (*)(cdCtxCanvas*, double ,double ,double ,double ,double ,double ))cdvoid_error;
-  canvas->cxFText = (void (*)(cdCtxCanvas*, double ,double ,const char *))cdvoid_error;
+  canvas->cxFText = (void (*)(cdCtxCanvas*, double ,double ,const char *,int))cdvoid_error;
   canvas->cxStipple = (void (*)(cdCtxCanvas*, int ,int ,const unsigned char *))cdvoid_error;
   canvas->cxPattern = (void (*)(cdCtxCanvas*, int ,int , const long *))cdvoid_error;
   canvas->cxNativeFont = (int (*)(cdCtxCanvas*, const char*))cdvoid_error;

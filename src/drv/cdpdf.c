@@ -541,10 +541,28 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
 
   if (mode == CD_PATH)
   {
-    int p;
+    int p, fill = 0;
 
     /* if there is any current path, remove it */
     /* Don't use PDF_endpath because here usually there will be no path scope */
+
+    for (p=0; p<ctxcanvas->canvas->path_n; p++)
+    {
+      if (ctxcanvas->canvas->path[p] == CD_PATH_FILL ||
+          ctxcanvas->canvas->path[p] == CD_PATH_FILLSTROKE)
+      {
+        fill = 1;
+        break;
+      }
+    }
+
+    /* must be set before starting path scope */
+    sUpdateFill(ctxcanvas, 0);  /* set always */
+    if (fill)
+    {
+      PDF_set_parameter(ctxcanvas->pdf, "fillrule", ctxcanvas->canvas->fill_mode==CD_EVENODD? "evenodd": "winding");
+      sUpdateFill(ctxcanvas, fill);
+    }
 
     i = 0;
     for (p=0; p<ctxcanvas->canvas->path_n; p++)
@@ -612,18 +630,15 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
         PDF_closepath(ctxcanvas->pdf);
         break;
       case CD_PATH_FILL:
-        PDF_set_parameter(ctxcanvas->pdf, "fillrule", ctxcanvas->canvas->fill_mode==CD_EVENODD? "evenodd": "winding");
         PDF_fill(ctxcanvas->pdf);
         break;
       case CD_PATH_STROKE:
         PDF_stroke(ctxcanvas->pdf);
         break;
       case CD_PATH_FILLSTROKE:
-        PDF_set_parameter(ctxcanvas->pdf, "fillrule", ctxcanvas->canvas->fill_mode==CD_EVENODD? "evenodd": "winding");
         PDF_fill_stroke(ctxcanvas->pdf);
         break;
       case CD_PATH_CLIP:
-        PDF_set_parameter(ctxcanvas->pdf, "fillrule", ctxcanvas->canvas->fill_mode==CD_EVENODD? "evenodd": "winding");
         PDF_clip(ctxcanvas->pdf);
         break;
       }
@@ -638,6 +653,7 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
 
   if (mode==CD_FILL)
   {
+    /* must be set before starting path scope */
     if (ctxcanvas->holes || ctxcanvas->canvas->fill_mode==CD_EVENODD)
       PDF_set_parameter(ctxcanvas->pdf, "fillrule", "evenodd");
     else
@@ -695,10 +711,28 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 
   if (mode == CD_PATH)
   {
-    int p;
+    int p, fill = 0;
 
     /* if there is any current path, remove it */
-    PDF_endpath(ctxcanvas->pdf);
+    /* Don't use PDF_endpath because here usually there will be no path scope */
+
+    for (p=0; p<ctxcanvas->canvas->path_n; p++)
+    {
+      if (ctxcanvas->canvas->path[p] == CD_PATH_FILL ||
+          ctxcanvas->canvas->path[p] == CD_PATH_FILLSTROKE)
+      {
+        fill = 1;
+        break;
+      }
+    }
+
+    /* must be set before starting path scope */
+    sUpdateFill(ctxcanvas, 0);  /* set always */
+    if (fill)
+    {
+      PDF_set_parameter(ctxcanvas->pdf, "fillrule", ctxcanvas->canvas->fill_mode==CD_EVENODD? "evenodd": "winding");
+      sUpdateFill(ctxcanvas, fill);
+    }
 
     i = 0;
     for (p=0; p<ctxcanvas->canvas->path_n; p++)
@@ -706,7 +740,7 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
       switch(ctxcanvas->canvas->path[p])
       {
       case CD_PATH_NEW:
-        PDF_endpath(ctxcanvas->pdf);
+        /* Don't use PDF_endpath because here usually there will be no path scope */
         break;
       case CD_PATH_MOVETO:
         if (i+1 > n) return;
@@ -766,18 +800,15 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
         PDF_closepath(ctxcanvas->pdf);
         break;
       case CD_PATH_FILL:
-        PDF_set_parameter(ctxcanvas->pdf, "fillrule", ctxcanvas->canvas->fill_mode==CD_EVENODD? "evenodd": "winding");
         PDF_fill(ctxcanvas->pdf);
         break;
       case CD_PATH_STROKE:
         PDF_stroke(ctxcanvas->pdf);
         break;
       case CD_PATH_FILLSTROKE:
-        PDF_set_parameter(ctxcanvas->pdf, "fillrule", ctxcanvas->canvas->fill_mode==CD_EVENODD? "evenodd": "winding");
         PDF_fill_stroke(ctxcanvas->pdf);
         break;
       case CD_PATH_CLIP:
-        PDF_set_parameter(ctxcanvas->pdf, "fillrule", ctxcanvas->canvas->fill_mode==CD_EVENODD? "evenodd": "winding");
         PDF_clip(ctxcanvas->pdf);
         break;
       }
@@ -792,6 +823,7 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 
   if (mode==CD_FILL)
   {
+    /* must be set before starting path scope */
     if (ctxcanvas->holes || ctxcanvas->canvas->fill_mode==CD_EVENODD)
       PDF_set_parameter(ctxcanvas->pdf, "fillrule", "evenodd");
     else

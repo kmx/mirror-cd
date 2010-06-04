@@ -723,8 +723,8 @@ int SimpleDrawAll(void)
   cdVertex(200, 100);  /* width, height */
   cdVertex(-30*1000, -170*1000);  /* start angle, end angle (degrees / 1000) */
 //  cdCanvasPathSet(canvas, CD_PATH_CLOSE);
-  cdCanvasPathSet(canvas, CD_PATH_STROKE);
-//  cdCanvasPathSet(canvas, CD_PATH_FILL);
+//  cdCanvasPathSet(canvas, CD_PATH_STROKE);
+  cdCanvasPathSet(canvas, CD_PATH_FILL);
 //  cdCanvasPathSet(canvas, CD_PATH_FILLSTROKE);
   cdEnd();
 

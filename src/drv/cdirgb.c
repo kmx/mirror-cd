@@ -961,20 +961,27 @@ static void cdgetimagergb(cdCtxCanvas* ctxcanvas, unsigned char *r, unsigned cha
   }
 }
 
+static void sFixImageY(int *topdown, int *y, int *h)
+{
+  if (*h < 0)
+  {
+    *h = -(*h);
+    *y -= (*h - 1);    /* y is at top-left, move it to bottom-left */
+    *topdown = 1; /* image pointer will start at top-left     */
+  }
+  else
+    *topdown = 0;
+}
+
 static void cdputimagerectrgba_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
   int t_xmin, t_xmax, t_ymin, t_ymax, 
-      t_x, t_y, img_topdown = 0, dst_offset;
+      t_x, t_y, topdown, dst_offset;
   float i_x, i_y, xfactor, yfactor;
   unsigned char sr, sg, sb, sa = 255;
   double inv_matrix[6];
 
-  if (h < 0)
-  {
-    h = -h;
-    y -= (h - 1);    /* y is at top-left, move it to bottom-left */
-    img_topdown = 1; /* image pointer will start at top-left     */
-  }
+  sFixImageY(&topdown, &y, &h);
 
   /* calculate the destination limits */
   cdImageRGBCalcDstLimits(ctxcanvas->canvas, x, y, w, h, &t_xmin, &t_xmax, &t_ymin, &t_ymax, NULL);
@@ -993,7 +1000,7 @@ static void cdputimagerectrgba_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, co
 
       if (i_x > xmin && i_y > ymin && i_x < xmax+1 && i_y < ymax+1)
       {
-        if (img_topdown)  /* image is top-bottom */
+        if (topdown)  /* image is top-bottom */
           i_y = ih-1 - i_y;
 
         if (t_x == 350 && t_y == 383)
@@ -1016,17 +1023,12 @@ static void cdputimagerectrgba_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, co
 static void cdputimagerectmap_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsigned char *index, const long int *colors, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
   int t_xmin, t_xmax, t_ymin, t_ymax, 
-      t_x, t_y, img_topdown = 0, dst_offset;
+      t_x, t_y, topdown, dst_offset;
   float i_x, i_y, xfactor, yfactor;
   unsigned char si;
   double inv_matrix[6];
 
-  if (h < 0)
-  {
-    h = -h;
-    y -= (h - 1);    /* y is at top-left, move it to bottom-left */
-    img_topdown = 1; /* image pointer will start at top-left (undocumented feature)    */
-  }
+  sFixImageY(&topdown, &y, &h);
 
   /* calculate the destination limits */
   cdImageRGBCalcDstLimits(ctxcanvas->canvas, x, y, w, h, &t_xmin, &t_xmax, &t_ymin, &t_ymax, NULL);
@@ -1045,7 +1047,7 @@ static void cdputimagerectmap_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, con
 
       if (i_x > xmin && i_y > ymin && i_x < xmax+1 && i_y < ymax+1)
       {
-        if (img_topdown)  /* image is top-bottom */
+        if (topdown)  /* image is top-bottom */
           i_y = ih-1 - i_y;
 
         si = cdZeroOrderInterpolation(iw, ih, index, i_x, i_y);
@@ -1057,7 +1059,7 @@ static void cdputimagerectmap_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, con
 
 static void cdputimagerectrgb(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
-  int l, c, xsize, ysize, xpos, ypos, src_offset, dst_offset, rh, rw, img_topdown = 0;
+  int l, c, xsize, ysize, xpos, ypos, src_offset, dst_offset, rh, rw, topdown;
   const unsigned char *src_red, *src_green, *src_blue;
 
   if (ctxcanvas->canvas->use_matrix)
@@ -1066,12 +1068,7 @@ static void cdputimagerectrgb(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsi
     return;
   }
 
-  if (h < 0)
-  {
-    h = -h;
-    y -= (h - 1);    /* y is at top-left, move it to bottom-left */
-    img_topdown = 1; /* image pointer will start at top-left     */
-  }
+  sFixImageY(&topdown, &y, &h);
 
   /* verifica se esta dentro da area de desenho */
   if (x > (ctxcanvas->canvas->w-1) || y > (ctxcanvas->canvas->h-1) || 
@@ -1099,7 +1096,7 @@ static void cdputimagerectrgb(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsi
     for(l = 0; l < ysize; l++)
     {
       /* ajusta posicao inicial em source */
-      if (img_topdown)
+      if (topdown)
         src_offset = YTab[(ih - 1) - (l + (ypos - y))] * iw;
       else
         src_offset = YTab[l + (ypos - y)] * iw;
@@ -1126,7 +1123,7 @@ static void cdputimagerectrgb(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsi
     dst_offset = xpos + ypos * ctxcanvas->canvas->w;
 
     /* ajusta posicao inicial em source */
-    if (img_topdown)
+    if (topdown)
       src_offset = (xpos - x + xmin) + ((ih - 1) - (ypos - y + ymin)) * iw;
     else
       src_offset = (xpos - x + xmin) + (ypos - y + ymin) * iw;
@@ -1141,7 +1138,7 @@ static void cdputimagerectrgb(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsi
 
       dst_offset += ctxcanvas->canvas->w;
 
-      if (img_topdown)
+      if (topdown)
       {
         r -= iw;
         g -= iw;
@@ -1159,7 +1156,7 @@ static void cdputimagerectrgb(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsi
 
 static void cdputimagerectrgba(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
-  int l, c, xsize, ysize, xpos, ypos, src_offset, dst_offset, rw, rh, img_topdown = 0;
+  int l, c, xsize, ysize, xpos, ypos, src_offset, dst_offset, rw, rh, topdown;
   const unsigned char *src_red, *src_green, *src_blue, *src_alpha;
 
   if (ctxcanvas->canvas->use_matrix)
@@ -1168,12 +1165,7 @@ static void cdputimagerectrgba(cdCtxCanvas* ctxcanvas, int iw, int ih, const uns
     return;
   }
 
-  if (h < 0)
-  {
-    h = -h;
-    y -= (h - 1);    /* y is at top-left, move it to bottom-left */
-    img_topdown = 1; /* image pointer will start at top-left     */
-  }
+  sFixImageY(&topdown, &y, &h);
 
   /* verifica se esta dentro da area de desenho */
   if (x > (ctxcanvas->canvas->w-1) || y > (ctxcanvas->canvas->h-1) || 
@@ -1201,7 +1193,7 @@ static void cdputimagerectrgba(cdCtxCanvas* ctxcanvas, int iw, int ih, const uns
     for(l = 0; l < ysize; l++)
     {
       /* ajusta posicao inicial em source */
-      if (img_topdown)
+      if (topdown)
         src_offset = YTab[(ih - 1) - (l + (ypos - y))] * iw;
       else
         src_offset = YTab[l + (ypos - y)] * iw;
@@ -1229,7 +1221,7 @@ static void cdputimagerectrgba(cdCtxCanvas* ctxcanvas, int iw, int ih, const uns
     dst_offset = xpos + ypos * ctxcanvas->canvas->w;
 
     /* ajusta posicao inicial em source */
-    if (img_topdown)
+    if (topdown)
       src_offset = (xpos - x + xmin) + ((ih - 1) - (ypos - y + ymin)) * iw;
     else
       src_offset = (xpos - x + xmin) + (ypos - y + ymin) * iw;
@@ -1245,7 +1237,7 @@ static void cdputimagerectrgba(cdCtxCanvas* ctxcanvas, int iw, int ih, const uns
 
       dst_offset += ctxcanvas->canvas->w;
 
-      if (img_topdown)
+      if (topdown)
       {
         r -= iw;
         g -= iw;
@@ -1265,7 +1257,7 @@ static void cdputimagerectrgba(cdCtxCanvas* ctxcanvas, int iw, int ih, const uns
 
 static void cdputimagerectmap(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsigned char *index, const long int *colors, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
-  int l, c, xsize, ysize, xpos, ypos, src_offset, dst_offset, rw, rh, idx, img_topdown = 0;
+  int l, c, xsize, ysize, xpos, ypos, src_offset, dst_offset, rw, rh, idx, topdown;
   const unsigned char *src_index;
 
   if (ctxcanvas->canvas->use_matrix)
@@ -1274,12 +1266,7 @@ static void cdputimagerectmap(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsi
     return;
   }
 
-  if (h < 0)
-  {
-    h = -h;
-    y -= (h - 1);    /* y is at top-left, move it to bottom-left */
-    img_topdown = 1; /* image pointer will start at top-left     */
-  }
+  sFixImageY(&topdown, &y, &h);
 
   /* verifica se esta dentro da area de desenho */
   if (x > (ctxcanvas->canvas->w-1) || y > (ctxcanvas->canvas->h-1) || 
@@ -1307,7 +1294,7 @@ static void cdputimagerectmap(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsi
     for(l = 0; l < ysize; l++)
     {
       /* ajusta posicao inicial em source */
-      if (img_topdown)
+      if (topdown)
         src_offset = YTab[(ih - 1) - (l + (ypos - y))] * iw;
       else
         src_offset = YTab[l + (ypos - y)] * iw;
@@ -1333,7 +1320,7 @@ static void cdputimagerectmap(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsi
     dst_offset = xpos + ypos * ctxcanvas->canvas->w;
 
     /* ajusta posicao inicial em source */
-    if (img_topdown)
+    if (topdown)
       src_offset = (xpos - x + xmin) + ((ih - 1) - (ypos - y + ymin)) * iw;
     else
       src_offset = (xpos - x + xmin) + (ypos - y + ymin) * iw;
@@ -1350,7 +1337,7 @@ static void cdputimagerectmap(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsi
 
       dst_offset += ctxcanvas->canvas->w;
 
-      if (img_topdown)
+      if (topdown)
         index -= iw;
       else
         index += iw;

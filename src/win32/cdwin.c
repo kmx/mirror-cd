@@ -896,12 +896,11 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
             old_arcmode = SetArcDirection(ctxcanvas->hDC, ctxcanvas->canvas->invert_yaxis? AD_CLOCKWISE: AD_COUNTERCLOCKWISE);
           }
 
-          Arc(ctxcanvas->hDC, arc.LeftRect, arc.TopRect, arc.RightRect, arc.BottomRect, arc.XStartArc, arc.YStartArc, arc.XEndArc, arc.YEndArc);
+          ArcTo(ctxcanvas->hDC, arc.LeftRect, arc.TopRect, arc.RightRect, arc.BottomRect, arc.XStartArc, arc.YStartArc, arc.XEndArc, arc.YEndArc);
 
           if (old_arcmode) /* restore */
             SetArcDirection(ctxcanvas->hDC, old_arcmode);
 
-          MoveToEx(ctxcanvas->hDC, arc.XEndArc, arc.YEndArc, NULL);
           current_set = 1;
 
           i += 3;
@@ -1760,10 +1759,12 @@ static void sFixImageY(cdCanvas* canvas, int *y, int *h)
   /* Here, y is from top to bottom,
      is at the bottom-left corner of the image if h>0
      is at the top-left corner of the image if h<0. (Undocumented feature)
+
      cdCalcZoom expects Y at top-left if h>0
                    and  Y at bottom-left if h<0
      if h<0 then eh<0 to StretchDIBits mirror the image.
-     BUT!!!!!! AlphaBlend will NOT mirror the image. */
+     BUT!!!!!! AlphaBlend will NOT mirror the image. 
+     So it must be manually made there. */
 
   if (!canvas->invert_yaxis)
     *h = -(*h);
@@ -1879,26 +1880,16 @@ static void cdputimagerectrgba(cdCtxCanvas* ctxcanvas, int width, int height, co
       return;
     }
 
-    cdwDIBEncodeRGBARect(&dib, red, green, blue, alpha, bx, by, width, height);
-
     if (eh < 0) /* must mirror the image */
     {
-      XFORM xForm;
-
+      /* Fix position */
       eh = -eh;
+      ey = ey - eh; 
 
-      SetGraphicsMode(hDCMem, GM_ADVANCED);
-      ModifyWorldTransform(hDCMem, NULL, MWT_IDENTITY);
-
-      /* configure a bottom-up coordinate system */
-      xForm.eM11 = (FLOAT)1; 
-      xForm.eM12 = (FLOAT)0;
-      xForm.eM21 = (FLOAT)0; 
-      xForm.eM22 = (FLOAT)-1; 
-      xForm.eDx  = (FLOAT)0; 
-      xForm.eDy  = (FLOAT)(bh-1); 
-      ModifyWorldTransform(hDCMem, &xForm, MWT_LEFTMULTIPLY);
+      cdwDIBEncodeRGBARectMirror(&dib, red, green, blue, alpha, bx, by, width, height);
     }
+    else
+      cdwDIBEncodeRGBARect(&dib, red, green, blue, alpha, bx, by, width, height);
 
     hOldBitmap = SelectObject(hDCMem, hBitmap);
 
