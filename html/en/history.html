@@ -10,10 +10,15 @@
 	color: #008000;
 	font-weight: bold;
 }
-.style1 {
-	color: #008000;
+.hist_new {
+	color: #0000FF;
+	font-weight: bold;
 }
-</style>
+  .hist_fixed {
+	color: #FF0000;
+	font-weight: bold;
+}
+  </style>
 </head>
 
 <body>
@@ -21,95 +26,100 @@
 <h2>History of Changes</h2>
 <h3><a href="http://sourceforge.net/projects/canvasdraw/files/5.4/">Version 5.4</a> (XX/XX/2010)</h3>
 <ul>
-	<li><span style="color: #0000FF">New:</span> context plus driver Cairo.</li>
-	<li><span style="color: #0000FF">New:</span> &quot;CMD&quot;, &quot;OPACITY&quot; and &quot;HATCHBOXSIZE&quot; 
+	<li><span class="hist_new">New:</span> context plus driver Cairo.</li>
+	<li><span class="hist_new">New:</span> &quot;CMD&quot;, &quot;OPACITY&quot; and &quot;HATCHBOXSIZE&quot; 
 	attributes in the SVG driver.</li>
-	<li><span style="color: #0000FF">New:</span> CD_PATH <strong>cdCanvasBegin</strong> 
+	<li><span class="hist_new">New:</span> CD_PATH <strong>cdCanvasBegin</strong> 
 	mode to create a path composed of several primitives that can be line draw, 
 	filled or used as clipping. New function <strong>cdCanvasPathSet</strong> to 
 	configure the action between sequences of <strong>cdCanvasVertex</strong>.</li>
-	<li><span class="style1">Changed</span><span class="hist_changed">:</span>
+	<li><span class="hist_changed">Changed:</span> 
     CD_DXF now supports solid filled primitives for polygons and rectangles.</li>
-	<li><span class="style1">Changed</span><span class="hist_changed">:</span>
+	<li><span class="hist_changed">Changed:</span> 
     GDI+ base driver now supports floating point primitives. ATTENTION: check 
 	for alignment and size problems in the application. Please report if 
 	anything changed.</li>
-	<li><span style="color: #FF0000">Fixed:</span> PDF driver documentation,
+	<li dir="ltr">
+		<span class="hist_changed">Changed:</span>
+    removed compatibility with require&quot;cdlua51&quot;, now LuaBinaries must be used 
+	or LUA_CPATH must be set.</li>
+	<li>
+		<span class="hist_fixed">Fixed:</span> PDF driver documentation,
 	<strong>CanvasBackOpacity</strong> and <strong>CanvasBackground</strong> are 
 	supported.</li>
-	<li><span style="color: #FF0000">Fixed:</span> SVG driver support for 
+	<li><span class="hist_fixed">Fixed:</span> SVG driver support for 
 	<strong>BackOpacity</strong>=OPAQUE in Hatch. Transform and Clipping conflict. 
 	<strong>InteriorStyle</strong> 
 	initialization. Pattern orientation was upside down.</li>
-	<li><span style="color: #FF0000">Fixed:</span> alpha transparency in <strong>
+	<li><span class="hist_fixed">Fixed:</span> alpha transparency in <strong>
 	CanvasArc</strong> and Bezier polygon in the IMAGERGB driver.</li>
-	<li><span style="color: #FF0000">Fixed:</span> missed implementation for 
+	<li><span class="hist_fixed">Fixed:</span> missed implementation for 
 	CD_DEBUG, CD_PICTURE and CD_DBUFFERRGB in Lua.</li>
-	<li><span style="color: #FF0000">Fixed:</span> Chord in PDF driver.</li>
+	<li><span class="hist_fixed">Fixed:</span> Chord in PDF driver.</li>
 </ul>
 <h3><a href="http://sourceforge.net/projects/canvasdraw/files/5.3/">Version 5.3</a> (26/Jan/2010)</h3>
 <ul>
-	<li><span style="color: #0000FF">New:</span> driver SVG.</li>
-	<li><span style="color: #0000FF">New:</span> base driver GDK.</li>
-	<li><span style="color: #0000FF">New:</span> function <strong>
+	<li><span class="hist_new">New:</span> driver SVG.</li>
+	<li><span class="hist_new">New:</span> base driver GDK.</li>
+	<li><span class="hist_new">New:</span> function <strong>
 	CanvasYAxisMode</strong> to control the Y axis orientation.</li>
-	<li><span style="color: #0000FF">New:</span> functions <strong>
+	<li><span class="hist_new">New:</span> functions <strong>
 	wdCanvasSetTransform</strong>, <strong>wdCanvasGetTransform</strong>,
 	<strong>wdCanvasTranslate</strong> and <strong>wdCanvasScale</strong>, to 
 	better control the WD transformation.</li>
-	<li><span style="color: #0000FF">New:</span> 
+	<li><span class="hist_new">New:</span> 
 	&quot;PDFLIBVERSION&quot;, 
 	&quot;SUBJECT&quot;,&quot;TITLE&quot;,&quot;CREATOR&quot;,&quot;AUTHOR&quot;,&quot;KEYWORDS&quot; attributes for the PDF 
 	driver.</li>
-	<li><span style="color: #0000FF">New:</span> 
+	<li><span class="hist_new">New:</span> 
 	&quot;FREETYPEVERSION&quot; attribute for the Simulation base driver.</li>
-	<li><span style="color: #0000FF">New:</span> 
+	<li><span class="hist_new">New:</span> 
 	&quot;PRINTERNAME&quot; attribute for the CD_PRINTER base driver. </li>
-	<li><span class="style1">Changed</span><span class="hist_changed">:</span>
+	<li><span class="hist_changed">Changed:</span>
     Freetype updated to version 2.3.11.</li>
-	<li><span class="style1">Changed</span><span class="hist_changed">:</span>
+	<li><span class="hist_changed">Changed:</span>
     PDFLib Lite updated to version 7.0.4p4.</li>
-	<li><span class="style1">Changed</span><span class="hist_changed">:</span>
+	<li><span class="hist_changed">Changed:</span> 
     return value to boolean of <strong>CanvasIsPointInRegion</strong> and
 	<strong>cd.UseContextPlus</strong> in Lua.</li>
-	<li><span style="color: #008000">Changed:</span>
+	<li><span class="hist_changed">Changed:</span>
   	added missing support for alpha channel in image:<strong>cdCreateCanvas</strong>,
 	<strong>cd:imImageCreate</strong>, image<strong>:cdCreateBitmap</strong> and
 	image<strong>:cdInitBitmap</strong> in cdluaim binding.</li>
-	<li><span style="color: #008000">Changed:</span>
+	<li><span class="hist_changed">Changed:</span>
   	ANTIALIAS attribute is now respected also by <strong>CanvasText</strong> in 
 	the IMAGERGB driver.</li>
-	<li><span style="color: #008000">Changed:</span>
+	<li><span class="hist_changed">Changed:</span>
   	WriteMode=XOR is ignored if alpha transparency is used in the IMAGERGB 
 	driver.</li>
-	<li><span style="color: #FF0000">Fixed:</span> indexing of <strong>
+	<li><span class="hist_fixed">Fixed:</span> indexing of <strong>
 	cdImageRGB</strong>, <strong>cdImageRGBA</strong> and <strong>cdBitmap</strong>
 	objects in Lua.</li>
-	<li><span style="color: #FF0000">Fixed:</span> <strong>CanvasText</strong>
+	<li><span class="hist_fixed">Fixed:</span> <strong>CanvasText</strong>
 	for WD when using text with multiple lines.</li>
-	<li><span style="color: #FF0000">Fixed:</span> compositing in the IMAGERGB 
+	<li><span class="hist_fixed">Fixed:</span> compositing in the IMAGERGB 
 	driver when 
 	canvas has a semi-transparent alpha channel and a color with semi transparent alpha 
 	are used.</li>
-	<li><span style="color: #FF0000">Fixed:</span> polygon filling in the IMAGERGB 
+	<li><span class="hist_fixed">Fixed:</span> polygon filling in the IMAGERGB 
 	driver when the segments contain horizontal lines.</li>
-	<li><span style="color: #FF0000">Fixed:</span> line style background not 
+	<li><span class="hist_fixed">Fixed:</span> line style background not 
 	transparent in the IMAGERGB driver.</li>
-	<li><span style="color: #FF0000">Fixed:</span> <strong>CanvasClear</strong> method was affected by
+	<li><span class="hist_fixed">Fixed:</span> <strong>CanvasClear</strong> method was affected by
 	<strong>CanvasWriteMode</strong> in the X11 base driver.</li>
-	<li><span style="color: #FF0000">Fixed:</span> invalid memory access at
+	<li><span class="hist_fixed">Fixed:</span> invalid memory access at
 	<strong>CanvasFont</strong> in the PICTURE driver.</li>
-	<li><span style="color: #FF0000">Fixed:</span> improved support for line 
+	<li><span class="hist_fixed">Fixed:</span> improved support for line 
 	endings at <strong>cdPlay</strong> in the METAFILE driver.</li>
-	<li><span style="color: #FF0000">Fixed:</span> text alignment in the Windows 
+	<li><span class="hist_fixed">Fixed:</span> text alignment in the Windows 
 	base driver when WriteMode=XOR.</li>
 </ul>
 <h3><a href="http://sourceforge.net/projects/canvasdraw/files/5.2/">Version 5.2</a> (26/Jun/2009)</h3>
 <ul>
-	<li><span style="color: #0000FF">New:</span> functions <strong>
+	<li><span class="hist_new">New:</span> functions <strong>
 	CanvasGetVectorTextBox, CanvasGetVectorFontSize</strong> and <strong>
 	CanvasVectorFontSize</strong>.</li>
-	<li><span style="color: #008000">Changed:</span>
+	<li><span class="hist_changed">Changed:</span>
   	the functions <strong>CanvasVectorText</strong>, <strong>CanvasText</strong>
 	and <strong>CanvasGetTextSize</strong> now supports line breaks using '\n'.
 	<strong>CanvasMultiLineVectorText</strong> is now deprecated but kept for
@@ -117,44 +127,44 @@
   <strong>
   <span style="color: #FF0000">IMPORTANT</span></strong> - VectorTextSize now
 	uses the full line size.</li>
-	<li><span style="color: #008000">Changed:</span>
+	<li><span class="hist_changed">Changed:</span>
   	CD_DBUFFER now activates the buffered canvas before creating the image
 	canvas. If size is 0 then uses 1 and avoid to fail during creation.</li>
-	<li><span style="color: #008000">Changed:</span>
+	<li><span class="hist_changed">Changed:</span>
   	removed &quot;lua5.1.so&quot; dependency in UNIX.</li>
-	<li><span style="color: #FF0000">Fixed:</span> <strong>CanvasText</strong>
+	<li><span class="hist_fixed">Fixed:</span> <strong>CanvasText</strong>
 	for CD_IMAGERGB driver when the foreground color has alpha.</li>
 </ul>
 <h3><a href="http://sourceforge.net/projects/canvasdraw/files/5.1.1/">Version 5.1.1</a> (15/Dec/2008)</h3>
 <ul>
-	<li><span style="color: #FF0000">Fixed:</span> CDLua binding functions
+	<li><span class="hist_fixed">Fixed:</span> CDLua binding functions
 	canvas:foreground, canvas:setforeground, canvas:background and
 	canvas:setbackground. Color was being checked from the wrong position in the
 	stack. They were reporting and invalid color when being used.</li>
-	<li><span style="color: #FF0000">Fixed:</span> CDLua binding functions
+	<li><span class="hist_fixed">Fixed:</span> CDLua binding functions
 	canvas:foreground and canvas:background when using cd.QUERY are value. </li>
 </ul>
 <h3><a href="http://sourceforge.net/projects/canvasdraw/files/5.1/">Version 5.1</a> (14/Oct/2008)</h3>
 <ul>
-	<li><span style="color: #0000FF">New:</span> CD_DEBUG driver.</li>
-	<li><span style="color: #0000FF">New:</span> the &quot;imlua_cd&quot; library moved
+	<li><span class="hist_new">New:</span> CD_DEBUG driver.</li>
+	<li><span class="hist_new">New:</span> the &quot;imlua_cd&quot; library moved
 	from IM to CD under the name &quot;cdluaim&quot;. Only the initialization function
 	name is changed.</li>
-	<li><span style="color: #0000FF">New:</span> cdluacontextplus library so the
+	<li><span class="hist_new">New:</span> cdluacontextplus library so the
 	&quot;ContextPlus&quot; base drivers (GDI+ and XRender) can be dinamically loaded
 	using require.</li>
-	<li><span style="color: #008000">Changed:</span>
+	<li><span class="hist_changed">Changed:</span>
   <strong>
   <span style="color: #FF0000">IMPORTANT</span></strong> - the &quot;cdiup&quot; and &quot;cdluaiup&quot;
 	libraries moved from CD to IUP under the name &quot;iupcd&quot; and &quot;iupluacd&quot;. But
 	headers and documentation remains on the CD package. Function names were NOT
 	changed. This change eliminates a cross-dependency that IUP and CD had, now
 	only IUP depends on CD.</li>
-	<li><span style="color: #0000FF"><span style="color: #008000">Changed</span>:</span>
+	<li><span class="hist_changed">Changed:</span> 
 	<strong>
   <span style="color: #FF0000">IMPORTANT</span></strong> - renamed &quot;cdgliplus&quot;
 	and &quot;cdxrender&quot; libraries to &quot;cdcontextplus&quot;.</li>
-	<li><span style="color: #0000FF"><span style="color: #008000">Changed</span>:</span>
+	<li><span class="hist_changed">Changed:</span> 
 	<strong>
   <span style="color: #FF0000">IMPORTANT</span></strong> - removed the FreeType
 	library files from the main library. They now are available as an additional
@@ -162,104 +172,104 @@
 	link with the &quot;freetype6&quot; library in Windows and with the &quot;freetype&quot; library
 	in UNIX (if not using GTK, freetype is already included in GTK). This change will
 	avoid conflicts when using CD and GTK.</li>
-	<li><span style="color: #0000FF"><span style="color: #008000">Changed</span>:</span>
+	<li><span class="hist_changed">Changed:</span> 
 	<strong>
   <span style="color: #FF0000">IMPORTANT</span></strong> - removed the PDFLib
 	library files from the cdpdf library. They now are available as an
 	additional library that can be replaced by other PDFLib distributions. You
 	should now link with the &quot;pdflib&quot; library.</li>
-	<li><span style="color: #0000FF"><span style="color: #008000">Changed</span>:</span>
+	<li><span class="hist_changed">Changed:</span> 
 	<strong>
   <span style="color: #FF0000">IMPORTANT</span></strong> - the support services
 	(Downloads, Mailing List and CVS) moved from LuaForge to SourceForge.</li>
-	<li><span style="color: #008000">Changed:</span>
+	<li><span class="hist_changed">Changed:</span>
   	Makefiles for UNIX now uses a compact version of Tecmake that does not need
 	any installation, just type &quot;make&quot;.</li>
-	<li><span style="color: #008000">Changed:</span> All dll8 and dll9 DLLs now
+	<li><span class="hist_changed">Changed:</span> All dll8 and dll9 DLLs now
 	have a Manifest file that specifies the correct MSVCR*.DLL.</li>
-	<li><span style="color: #008000">Changed:</span> improved CDLua parameter
+	<li><span class="hist_changed">Changed:</span> improved CDLua parameter
 	checking and error report.</li>
-	<li><span style="color: #008000">Changed:</span> improved compatibility for
+	<li><span class="hist_changed">Changed:</span> improved compatibility for
 	font names in X and Win32.</li>
 	<li><span style="color: #0000FF"><span style="color: #008000">Changed</span>:</span>
 	Copyright notice modified to reflect the registration at INPI (National
 	Institute of Intellectual Property in Brazil). License continues under the
 	same terms.</li>
-	<li><span style="color: #0000FF"><span style="color: #008000">Changed</span>:</span>
+	<li><span class="hist_changed">Changed:</span> 
 	improved pattern and stipple resize in <strong>wdCanvasPattern</strong> and
 	<strong>wdCanvasStipple</strong>.</li>
-	<li><span style="color: #0000FF"><span style="color: #008000">Changed</span>:</span>
+	<li><span class="hist_changed">Changed:</span> 
 	pattern creation in Win32 to a more faster method.</li>
-	<li><span style="color: #0000FF"><span style="color: #008000">Changed</span>:</span>
+	<li><span class="hist_changed">Changed:</span> 
 	optimized font search in X-Windows base driver for size variations.</li>
-	<li><span style="color: #0000FF"><span style="color: #008000">Changed</span>:</span>
+	<li><span class="hist_changed">Changed:</span> 
 	the number of bits per pixel returned by the CD_PRINTER driver when the
 	printer is a PDF Writer was 1, now we add a workaround to return 24.</li>
-	<li><span style="color: #0000FF"><span style="color: #008000">Changed</span>:</span>
+	<li><span class="hist_changed">Changed:</span> 
 	improved the color convertion when drawing a RGB image in a CD_PRINTER
 	canvas with 1 bpp (usually a laser printer).</li>
-	<li><span style="color: #008000">Changed</span>: (UNDONE from 5.0) in Lua
+	<li><span class="hist_changed">Changed:</span> (UNDONE from 5.0) in Lua
 	canvases are NOT
   garbage collected anymore. Since there can be different Lua canvases pointing
 	to the same canvas.</li>
-	<li><span style="color: #008000">Changed</span>: font map in simulation
+	<li><span class="hist_changed">Changed:</span> font map in simulation
 	driver is not case sensitive anymore.</li>
-	<li><span style="color: #008000">Changed</span>: premake files are used now
+	<li><span class="hist_changed">Changed:</span> premake files are used now
 	only internally and were removed from the distribution.</li>
-	<li><span style="color: #FF0000">Fixed:</span> added missing
+	<li><span class="hist_fixed">Fixed:</span> added missing
 	CD_NO_OLD_INTERFACE definition on Linux makefiles.</li>
-	<li><span style="color: #FF0000">Fixed:</span> attributes not being
+	<li><span class="hist_fixed">Fixed:</span> attributes not being
 	preserved after changing clipping or adding a new page in CD_PDF.</li>
-	<li><span style="color: #FF0000">Fixed:</span> polygon clipping in
+	<li><span class="hist_fixed">Fixed:</span> polygon clipping in
 	CD_IMAGERGB driver when polygon is larger than the canvas.</li>
-	<li><span style="color: #FF0000">Fixed:</span> <strong>cdCanvasVertex</strong>
+	<li><span class="hist_fixed">Fixed:</span> <strong>cdCanvasVertex</strong>
 	when adding two reference points with the same coordinates in a bezier.</li>
-	<li><span style="color: #FF0000">Fixed:</span> client image zoom in
+	<li><span class="hist_fixed">Fixed:</span> client image zoom in
 	CD_IMAGERGB driver.</li>
-	<li><span style="color: #FF0000">Fixed:</span> text draw position and
+	<li><span class="hist_fixed">Fixed:</span> text draw position and
 	gettextsize in Xrender base driver.</li>
-	<li><span style="color: #FF0000">Fixed:</span> double buffer driver invalid
+	<li><span class="hist_fixed">Fixed:</span> double buffer driver invalid
 	memory access when using the Xrender base driver.</li>
 </ul>
 <h3>Version 5.0 (26/Nov/2007)</h3>
 <ul>
-	<li><span style="color: #0000FF">New:</span> attributes &quot;OPACITY&quot;, &quot;PATTERN&quot;
+	<li><span class="hist_new">New:</span> attributes &quot;OPACITY&quot;, &quot;PATTERN&quot;
 	and &quot;PDF&quot;&nbsp;in the CD_PDF driver.</li>
-	<li><span style="color: #0000FF">New:</span> XRender base driver.</li>
-  <li><span style="color: #008000">Changed:</span> PDF Lite library updated to
+	<li><span class="hist_new">New:</span> XRender base driver.</li>
+  <li><span class="hist_changed">Changed:</span> PDF Lite library updated to
   version &quot;7.0.2&quot;.</li>
-  <li><span style="color: #008000">Changed:</span> FreeType library updated to
+  <li><span class="hist_changed">Changed:</span> FreeType library updated to
   version &quot;2.3.5&quot;.</li>
-  <li><span style="color: #008000">Changed</span>: now using &quot;(char*)CD_QUERY&quot;
+  <li><span class="hist_changed">Changed:</span> now using &quot;(char*)CD_QUERY&quot;
   as the parameter in <b>cdCanvasNativeFont</b>, it returns the current selected font in
   the common format definition.</li>
-  <li><span style="color: #008000">Changed</span>: avoid setting X-Windows color
+  <li><span class="hist_changed">Changed:</span> avoid setting X-Windows color
   background when calling <b>cdCanvasClear</b> for NativeWindow driver. Now all
   X-Windows drivers will use only XFillRectangle.</li>
-  <li><span style="color: #008000">Changed</span>: in Lua canvases are now
+  <li><span class="hist_changed">Changed:</span> in Lua canvases are now
   garbage collected.</li>
-  <li><span style="color: #008000">Changed:</span> metatable names in Lua are
+  <li><span class="hist_changed">Changed:</span> metatable names in Lua are
   now the same as the C struct names.</li>
-  <li><span style="color: #FF0000">Fixed:</span> function cdlua_checkcanvas that
+  <li><span class="hist_fixed">Fixed:</span> function cdlua_checkcanvas that
   affects the creation of the cd.DBUFFER canvas. Thanks to Martin Saerbeck.</li>
-  <li><span style="color: #FF0000">Fixed:</span> vertical text alignment in PDF
+  <li><span class="hist_fixed">Fixed:</span> vertical text alignment in PDF
   and PS
   drivers.</li>
-  <li><span style="color: #FF0000">Fixed:</span> ascent and descent font
+  <li><span class="hist_fixed">Fixed:</span> ascent and descent font
   dimensions in PDF driver.</li>
-	<li><span style="color: #FF0000">Fixed:</span> check for mark size and font
+	<li><span class="hist_fixed">Fixed:</span> check for mark size and font
 	size when given size is 0.</li>
 </ul>
 <h3>Version 5.0 RC2 (09/Apr/2007)</h3>
 <ul>
-  <li><span style="color: #0000FF">New:</span> function <b>cdCanvasInvertYAxis</b> that
+  <li><span class="hist_new">New:</span> function <b>cdCanvasInvertYAxis</b> that
   will invert the given y coordinate even if the canvas is not internally
   inverted.</li>
-	<li><span style="color: #008000">Changed:</span> PDF Lite library updated to
+	<li><span class="hist_changed">Changed:</span> PDF Lite library updated to
   version &quot;7.0.0p3&quot;.</li>
-  <li><span style="color: #008000">Changed:</span> FreeType library updated to
+  <li><span class="hist_changed">Changed:</span> FreeType library updated to
   version &quot;2.2.1&quot;.</li>
-  <li><span style="color: #008000">Changed:</span> In the new API <strong>
+  <li><span class="hist_changed">Changed:</span> In the new API <strong>
   cdCanvasFont</strong> you can specify partial parameters using NULL, -1 and 0
   for typeface, style and size. When these parameters are specified the current
   font parameter is used. For example, <b>cdCanvasFont(NULL, -1, 10)</b> will only
@@ -267,12 +277,12 @@
 </ul>
 <h3>Version 5.0 RC1 (08/Mar/2007)</h3>
 <ul>
-  <li><span style="color: #0000FF">New:</span> attribute HATCHBOXSIZE in CD_PDF
+  <li><span class="hist_new">New:</span> attribute HATCHBOXSIZE in CD_PDF
   driver, to control the hatch spacing.</li>
-  <li><span style="color: #0000FF">New:</span> attribute ADDFONTMAP in
+  <li><span class="hist_new">New:</span> attribute ADDFONTMAP in
   simulation base driver to accept a map between a font name and a font file
   name.</li>
-  <li><span style="color: #0000FF">New:</span> Pango Font Description string is
+  <li><span class="hist_new">New:</span> Pango Font Description string is
   now accepted in <strong>NativeFont</strong> and replace the previous CD format is most
   drivers.<br>
   <strong>
@@ -280,7 +290,7 @@
   If style is not used, most drivers had a format compatible with the new
   format. But please check your <strong>NativeFont</strong> usage. The IUP
   format is still supported.</li>
-  <li><span style="color: #0000FF">New:</span> API using canvas as a parameter.
+  <li><span class="hist_new">New:</span> API using canvas as a parameter.
   Old API still exists. Library is backward compatible with previous versions,
   but the documentation shows only the new names.
   The new functions add a &quot;Canvas&quot; to the function prefix, for ex: the <strong>
@@ -291,124 +301,124 @@
   To facilitate the migration to the new API use the definition CD_NO_OLD_INTERFACE
   to exclude the old API definitions and check if you are using only the new
   functions.</li>
-  <li><span style="color: #0000FF">New:</span> support for primitives using
+  <li><span class="hist_new">New:</span> support for primitives using
   &quot;double&quot; floating point precision and not related to WC functions.</li>
-  <li><span style="color: #0000FF">New:</span> &quot;cd_canvas.hpp&quot; header file which
+  <li><span class="hist_new">New:</span> &quot;cd_canvas.hpp&quot; header file which
   defines a C++ class cdCanvasC that wraps the cdCanvas structure API.</li>
-  <li><span style="color: #0000FF">New:</span> ROTATE attribute in CD_PDF
+  <li><span class="hist_new">New:</span> ROTATE attribute in CD_PDF
   driver.</li>
-  <li><span style="color: #0000FF">New:</span> binding Lua of the CD_PDF driver.</li>
-  <li><span style="color: #0000FF">New:</span> support for alpha channel in
+  <li><span class="hist_new">New:</span> binding Lua of the CD_PDF driver.</li>
+  <li><span class="hist_new">New:</span> support for alpha channel in
   CD_IMAGERGB driver. Also support for alpha in color coding in the CD_IMAGERGB
   driver primitives.</li>
-  <li><span style="color: #0000FF">New:</span> attribute ANTIALIAS in the
+  <li><span class="hist_new">New:</span> attribute ANTIALIAS in the
   CD_IMAGERGB driver. Text is always antialiased as before.</li>
-  <li><span style="color: #0000FF">New: </span>implemented <strong>Chord</strong> primitive in
+  <li><span class="hist_new">New:</span><span style="color: #0000FF"> </span>implemented <strong>Chord</strong> primitive in
   simulation base
   driver.</li>
-  <li><span style="color: #0000FF">New: </span>implemented CD_WINDING fill mode
+  <li><span class="hist_new">New:</span><span style="color: #0000FF"> </span>implemented CD_WINDING fill mode
   in the simulation base driver.</li>
-  <li><span style="color: #0000FF">New: </span>implemented complex clipping
+  <li><span class="hist_new">New:</span><span style="color: #0000FF"> </span>implemented complex clipping
   regions in CD_IMAGERGB driver. Fixed polygon clipping and other clipping
   errors in the CD_IMAGERGB driver.</li>
-  <li><span style="color: #0000FF">New:</span> driver CD_DBUFFERRGB that uses
+  <li><span class="hist_new">New:</span> driver CD_DBUFFERRGB that uses
   the CD_IMAGERGB driver for double buffer, and can be a double buffer for any
   other driver (CD_DBUFFER works only for Window based drivers). </li>
-  <li><span style="color: #0000FF">New:</span> CD_PICTURE driver to store
+  <li><span class="hist_new">New:</span> CD_PICTURE driver to store
   primitives and attributes in memory that can be played and resized in any
   other driver.</li>
-  <li><span style="color: #0000FF">New:</span> functions to set color foreground
+  <li><span class="hist_new">New:</span> functions to set color foreground
   and background without query support (cdCanvasSetForeground and
   cdCanvasSetBackground). CD_QUERY conflicts with color RGBA=(255,255,255,255)
   (full transparent white).</li>
-  <li><span style="color: #0000FF">New:</span> support for generic canvas
+  <li><span class="hist_new">New:</span> support for generic canvas
   transformations using <strong>Transform</strong>, <strong>TransformTranslate</strong>,
   <strong>TransformRotate</strong> and <strong>TransformScale</strong> functions.</li>
-  <li><span style="color: #0000FF">New:</span> attribute &quot;GDI+&quot; for all GDI+
+  <li><span class="hist_new">New:</span> attribute &quot;GDI+&quot; for all GDI+
   based drivers that returns &quot;1&quot;. So it can be detected if the driver uses the
   GDI+ base driver.</li>
-  <li><span style="color: #008000">Changed:</span> <strong>
+  <li><span class="hist_changed">Changed:</span> <strong>
   <span style="color: #FF0000">INCOMPATIBILITY</span></strong> - removed
   clipping simulation from the simulation base driver. It is not possible
   anymore to simulate clipping, only primitives can be simulated.</li>
-  <li><span style="color: #008000">Changed:</span> canvas internal pointer allocation so it can be checked for valid canvas in
+  <li><span class="hist_changed">Changed:</span> canvas internal pointer allocation so it can be checked for valid canvas in
   all external API function calls.</li>
-  <li><span style="color: #008000">Changed:</span> <strong>NativeFont</strong>(&quot;-d&quot;) to set also the foreground color from the color in the dialog, and
+  <li><span class="hist_changed">Changed:</span> <strong>NativeFont</strong>(&quot;-d&quot;) to set also the foreground color from the color in the dialog, and
   initialize the font in the dialog with the current selected font.</li>
-  <li><span style="color: #008000">Changed:</span> In the new API <strong>
+  <li><span class="hist_changed">Changed:</span> In the new API <strong>
   cdCanvasFont</strong> changed the typeface parameter type from a small set of
   integer values to a more flexible string.</li>
-  <li><span style="color: #008000">Changed:</span> all accented characters are
+  <li><span class="hist_changed">Changed:</span> all accented characters are
   now available in the default vector text font.</li>
-  <li><span style="color: #008000">Changed:</span> all functions in the API now
+  <li><span class="hist_changed">Changed:</span> all functions in the API now
   use &quot;const&quot; when applicable.</li>
-  <li><span style="color: #008000">Changed:</span> server image defintion from
+  <li><span class="hist_changed">Changed:</span> server image defintion from
   &quot;void*&quot; to &quot;cdImage*&quot;. This will affect C++ applications that must update
   their code.</li>
-  <li><span style="color: #008000">Changed:</span> removed <strong>cdGetClipPoly</strong>
+  <li><span class="hist_changed">Changed:</span> removed <strong>cdGetClipPoly</strong>
   and <strong>wdGetClipPoly</strong> functions.</li>
-  <li><span style="color: #008000">Changed:</span> <strong>UpdateYAxis</strong>
+  <li><span class="hist_changed">Changed:</span> <strong>UpdateYAxis</strong>
   now also returns the changed value.</li>
-  <li><span style="color: #008000">Changed:</span> <strong>
+  <li><span class="hist_changed">Changed:</span> <strong>
   <span style="color: #FF0000">INCOMPATIBILITY</span> - cdCallback</strong>
   definition used in <strong>RegisterCallback</strong>, called from <strong>Play</strong>. Replaced the &quot;cdContext*&quot; by a &quot;cdCanvas*&quot;.
   If you do not use the pointer it can be simply ignored.</li>
-  <li><span style="color: #008000">Changed:</span> WC functions now are only
+  <li><span class="hist_changed">Changed:</span> WC functions now are only
   client functions of the CD API.</li>
-  <li><span style="color: #008000">Changed:</span> removed old support for
+  <li><span class="hist_changed">Changed:</span> removed old support for
   Windows 9x.</li>
-  <li><span style="color: #008000">Changed:</span> removed the <strong>cdInitGdiPlusIUP</strong> function and the &quot;<strong>cdiupgdiplus</strong>&quot;
+  <li><span class="hist_changed">Changed:</span> removed the <strong>cdInitGdiPlusIUP</strong> function and the &quot;<strong>cdiupgdiplus</strong>&quot;
   library. They are not necessary anymore. Althougth the CD_IUP driver still
   works with GDI+ support.</li>
-  <li><span style="color: #008000">Changed:</span> improved speed and precision
+  <li><span class="hist_changed">Changed:</span> improved speed and precision
   of the bezier polygon of the simulation base driver.</li>
-  <li><span style="color: #008000">Changed:</span> renamed distribution folder
+  <li><span class="hist_changed">Changed:</span> renamed distribution folder
   name from &quot;cd/data&quot; to &quot;cd/etc&quot;.</li>
-  <li><span style="color: #008000">Changed:</span> CD Lua for Lua 3 library name
+  <li><span class="hist_changed">Changed:</span> CD Lua for Lua 3 library name
   changed to include &quot;3&quot; as a suffix.</li>
-  <li><span style="color: #FF0000">Fixed:</span> conversion from ANSI to ASCII
+  <li><span class="hist_fixed">Fixed:</span> conversion from ANSI to ASCII
   in vector text fonts. </li>
-  <li><span style="color: #FF0000">Fixed:</span> Sector primitive in simulation
+  <li><span class="hist_fixed">Fixed:</span> Sector primitive in simulation
   base
   driver.</li>
-  <li><span style="color: #FF0000">Fixed:</span> deactivation of internal canvas in Double Buffer driver over a Native Windows driver for Win32.</li>
-  <li><span style="color: #FF0000">Fixed:</span> EPS compatibility in PostScript driver.</li>
-  <li><span style="color: #FF0000">Fixed:</span> the default values in <strong>cdCreateCanvas</strong> for CD_DGN, CD_DXF and CD_CGM.</li>
-  <li><span style="color: #FF0000">Fixed:</span> <strong>Play</strong> for CD_EMF when data contains poly-polygons or poly-polylines.</li>
-  <li><span style="color: #FF0000">Fixed:</span> <strong>LineWidth</strong> in
+  <li><span class="hist_fixed">Fixed:</span> deactivation of internal canvas in Double Buffer driver over a Native Windows driver for Win32.</li>
+  <li><span class="hist_fixed">Fixed:</span> EPS compatibility in PostScript driver.</li>
+  <li><span class="hist_fixed">Fixed:</span> the default values in <strong>cdCreateCanvas</strong> for CD_DGN, CD_DXF and CD_CGM.</li>
+  <li><span class="hist_fixed">Fixed:</span> <strong>Play</strong> for CD_EMF when data contains poly-polygons or poly-polylines.</li>
+  <li><span class="hist_fixed">Fixed:</span> <strong>LineWidth</strong> in
   WC when updating the
   size in pixels.</li>
-  <li><span style="color: #FF0000">Fixed:</span> <strong>TextSize</strong> and
+  <li><span class="hist_fixed">Fixed:</span> <strong>TextSize</strong> and
   <strong>FontDim</strong> in driver DXF.</li>
-  <li><span style="color: #FF0000">Fixed:</span> <strong>Font</strong> in the
+  <li><span class="hist_fixed">Fixed:</span> <strong>Font</strong> in the
   X-Windows base driver, size parameter was incorrectly passed to the X-Windows.
   <span style="color: #FF0000"><strong>WARNING</strong></span>: the result font
   will have a size different than previous CD versions in X-Windows. </li>
-  <li><span style="color: #FF0000">Fixed:</span> <strong>Flush</strong> in
+  <li><span class="hist_fixed">Fixed:</span> <strong>Flush</strong> in
   CD_DBUFFER driver, it was affected by the write mode state of the
   buffered canvas.</li>
-  <li><span style="color: #FF0000">Fixed:</span> WC tranformation update when
+  <li><span class="hist_fixed">Fixed:</span> WC tranformation update when
   the Window is invalid. Thanks to Marian Trifon.</li>
-  <li><span style="color: #FF0000">Fixed:</span> polygon filling in simulation
+  <li><span class="hist_fixed">Fixed:</span> polygon filling in simulation
   base driver.</li>
-  <li><span style="color: #FF0000">Fixed:</span> invalid resample in <strong>
+  <li><span class="hist_fixed">Fixed:</span> invalid resample in <strong>
   PutImageRect</strong>* in GDI+ base driver cause a band with a mix of the
   background color appear on right and bottom when image is zoomed in (larger
   than original size).</li>
 </ul>
 <h3>Version 4.4 (12/Dec/2005)</h3>
 <ul>
-  <li><span style="color: #0000FF">New:</span> CDLua for Lua 5. The CDLua for Lua 3 is now also totally compatible with the &quot;cd.&quot; name space used in the
+  <li><span class="hist_new">New:</span> CDLua for Lua 5. The CDLua for Lua 3 is now also totally compatible with the &quot;cd.&quot; name space used in the
   CDLUA for Lua 5. So the documentation now reflects only the new nomenclature although the old CDLua 3 names are still
   valid<font color="#FF0000">.</font></li>
-  <li><span style="color: #0000FF">New:</span> attribute <font face="Courier New">&quot;WINDOWRGN&quot;</font> for the Native Windows and IUP drivers to set the shape
+  <li><span class="hist_new">New:</span> attribute <font face="Courier New">&quot;WINDOWRGN&quot;</font> for the Native Windows and IUP drivers to set the shape
   of a window to the current complex clipping region.</li>
-  <li><span style="color: #0000FF">New:</span> <b><font face="Courier New">cdlua_close</font></b> function to release the memory allocated by the <b>
+  <li><span class="hist_new">New:</span> <b><font face="Courier New">cdlua_close</font></b> function to release the memory allocated by the <b>
   <font face="Courier New">cdlua_open</font></b>.</li>
-  <li><span style="color: #0000FF">New:</span> <font face="Courier New">&quot;ROTATE&quot;</font> attribute for PS driver, GDI+ base driver and GDI base driver.</li>
-  <li><span style="color: #0000FF">New:</span> <font face="Courier New">CD_FILLSPLINE</font> and <font face="Courier New">CD_SPLINE</font> parameters for
+  <li><span class="hist_new">New:</span> <font face="Courier New">&quot;ROTATE&quot;</font> attribute for PS driver, GDI+ base driver and GDI base driver.</li>
+  <li><span class="hist_new">New:</span> <font face="Courier New">CD_FILLSPLINE</font> and <font face="Courier New">CD_SPLINE</font> parameters for
   cdBegin in GDI+ base driver.</li>
-  <li><span style="color: #0000FF">New:</span> support for complex regions for clipping using: <b><font face="Courier New">cdBox</font></b>, <b>
+  <li><span class="hist_new">New:</span> support for complex regions for clipping using: <b><font face="Courier New">cdBox</font></b>, <b>
   <font face="Courier New">cdSector</font></b>, <b><font face="Courier New">Polygons</font></b> and <b>
   <font face="Courier New">cdText</font></b>. New: parameter <font face="Courier New">CD_REGION</font> for <b>
   <font face="Courier New">cdBegin</font></b> to create the region, new parameter <font face="Courier New">CD_CLIPREGION</font>
@@ -417,93 +427,93 @@
   <b><font face="Courier New">cdPointInRegion</font></b>, <b><font face="Courier New">cdOffsetRegion</font></b>, <b>
   <font face="Courier New">cdRegionBox</font></b> and&nbsp; <b><font face="Courier New">cdRegionCombineMode</font></b>.
   Valid only for the Windows GDI, GDI+ and X-Windows base drivers and their derived drives.</li>
-  <li><span style="color: #0000FF">New:</span> mode for <b><font face="Courier New">cdBegin</font></b>, <font face="Courier New">CD_BEZIER</font>.</li>
-  <li><span style="color: #0000FF">New:</span> filled primitive <b><font face="Courier New">cdChord</font></b>.</li>
-  <li><span style="color: #0000FF">New:</span> polygon fill rule control using <b><font face="Courier New">cdFillMode</font></b> with
+  <li><span class="hist_new">New:</span> mode for <b><font face="Courier New">cdBegin</font></b>, <font face="Courier New">CD_BEZIER</font>.</li>
+  <li><span class="hist_new">New:</span> filled primitive <b><font face="Courier New">cdChord</font></b>.</li>
+  <li><span class="hist_new">New:</span> polygon fill rule control using <b><font face="Courier New">cdFillMode</font></b> with
   <font face="Courier New">CD_EVENODD</font> (the default) and <font face="Courier New">CD_WINDING</font> parameters.</li>
-  <li><span style="color: #0000FF">New:</span> line cap and line join styles using <b><font face="Courier New">cdLineCap</font></b> and <b>
+  <li><span class="hist_new">New:</span> line cap and line join styles using <b><font face="Courier New">cdLineCap</font></b> and <b>
   <font face="Courier New">cdLineJoin</font></b>.</li>
-  <li><span style="color: #0000FF">New:</span> typeface <font face="Courier New">CD_NATIVE</font> to indicate that a native font has been selected.</li>
-  <li><span style="color: #0000FF">New:</span> custom line style using <b><font face="Courier New">cdLineStyleDashes</font></b> and <b>
+  <li><span class="hist_new">New:</span> typeface <font face="Courier New">CD_NATIVE</font> to indicate that a native font has been selected.</li>
+  <li><span class="hist_new">New:</span> custom line style using <b><font face="Courier New">cdLineStyleDashes</font></b> and <b>
   <font face="Courier New">cdLineStyle</font></b>(<font face="Courier New">CD_CUSTOM</font>). This replaces the
   attribute &quot;<font face="Courier New">USERLINESTYLE</font>&quot;.<br>
   (All New:, when not specified the divers, are valid for all the drivers, except DXF, DGN e CGM.)</li>
-  <li><span style="color: #0000FF">New:</span> text utility function <b><font face="Courier New">cdTextBounds</font></b> that returns the oriented bounding
+  <li><span class="hist_new">New:</span> text utility function <b><font face="Courier New">cdTextBounds</font></b> that returns the oriented bounding
   rectangle<font color="#FF0000">.</font> </li>
-  <li><span style="color: #0000FF">New:</span> <font face="Courier New">&quot;IMAGEFORMAT&quot;</font> and <font face="Courier New">&quot;IMAGEALPHA&quot;</font> attributes for
+  <li><span class="hist_new">New:</span> <font face="Courier New">&quot;IMAGEFORMAT&quot;</font> and <font face="Courier New">&quot;IMAGEALPHA&quot;</font> attributes for
   the Windows base driver.</li>
-  <li><span style="color: #0000FF">New:</span> In GDI+, the <font face="Courier New">CD_CLIPBOARD</font> driver supports EMF and BMP formats.</li>
-  <li><span style="color: #0000FF">New:</span> function <b><font face="Courier New">cdReleaseState</font></b> to release the memory allocated by a state.
+  <li><span class="hist_new">New:</span> In GDI+, the <font face="Courier New">CD_CLIPBOARD</font> driver supports EMF and BMP formats.</li>
+  <li><span class="hist_new">New:</span> function <b><font face="Courier New">cdReleaseState</font></b> to release the memory allocated by a state.
   The <b><font face="Courier New">cdRestoreState</font></b> does not release the memory anymore so it can be used
   several times for the same state.</li>
-  <li><span style="color: #FF0000">Fixed:</span> Invalid cdKillImage in X-Windows when active canvas is not the canvas where the image was created.</li>
-  <li><span style="color: #FF0000">Fixed:</span> Text clipping for <font face="Courier New">CD_IMAGERGB</font> driver.</li>
-  <li><span style="color: #FF0000">Fixed:</span> fixed size in milimeter of <b><font face="Courier New">cdGetScreenSize</font></b> in Win32.</li>
-  <li><span style="color: #FF0000">Fixed:</span> fixed size of the EMF picture.</li>
-  <li><span style="color: #FF0000">Fixed:</span> fixed the parse of filenames with spaces for all file based drivers. The filename must be inside
+  <li><span class="hist_fixed">Fixed:</span> Invalid cdKillImage in X-Windows when active canvas is not the canvas where the image was created.</li>
+  <li><span class="hist_fixed">Fixed:</span> Text clipping for <font face="Courier New">CD_IMAGERGB</font> driver.</li>
+  <li><span class="hist_fixed">Fixed:</span> fixed size in milimeter of <b><font face="Courier New">cdGetScreenSize</font></b> in Win32.</li>
+  <li><span class="hist_fixed">Fixed:</span> fixed size of the EMF picture.</li>
+  <li><span class="hist_fixed">Fixed:</span> fixed the parse of filenames with spaces for all file based drivers. The filename must be inside
   double quotes (&quot;) if it has spaces.</li>
-  <li><span style="color: #FF0000">Fixed:</span> <b><font face="Courier New">cdSetAttribute</font></b> in Lua now can set nil values.</li>
-  <li><span style="color: #FF0000">Fixed:</span> fixed <b><font face="Courier New">cdSector</font></b> when interior style is <font face="Courier New">
+  <li><span class="hist_fixed">Fixed:</span> <b><font face="Courier New">cdSetAttribute</font></b> in Lua now can set nil values.</li>
+  <li><span class="hist_fixed">Fixed:</span> fixed <b><font face="Courier New">cdSector</font></b> when interior style is <font face="Courier New">
   CD_HOLLOW</font>, to include two lines connecting to the center point.</li>
-  <li><span style="color: #FF0000">Fixed:</span> In GDI+, the NATIVEWINDOW driver ignored other data pointer configurations in <b>
+  <li><span class="hist_fixed">Fixed:</span> In GDI+, the NATIVEWINDOW driver ignored other data pointer configurations in <b>
   <font face="Courier New">cdCreateCanvas</font></b>.</li>
-  <li><span style="color: #FF0000">Fixed:</span> In GDI+, <b><font face="Courier New">cdStipple</font></b> was not updated when the foreground or
+  <li><span class="hist_fixed">Fixed:</span> In GDI+, <b><font face="Courier New">cdStipple</font></b> was not updated when the foreground or
   background colors where changed.</li>
-  <li><span style="color: #FF0000">Fixed:</span> In GDI+, <b><font face="Courier New">cdSector</font></b> and <b><font face="Courier New">cdArc</font></b>
+  <li><span class="hist_fixed">Fixed:</span> In GDI+, <b><font face="Courier New">cdSector</font></b> and <b><font face="Courier New">cdArc</font></b>
   have incorrect angles.</li>
-  <li><span style="color: #FF0000">Fixed:</span> &quot;simple.c&quot; and &quot;simple.zip&quot; were outdated. Now new makefiles were added.</li>
-  <li><span style="color: #FF0000">Fixed:</span> in Windows base driver small incompatibility in cdNativeFont with the IUP FONT attribute.</li>
-  <li><span style="color: #008000">Changed:</span> Optimization flags now are ON when building the library in all platforms.</li>
-  <li><span style="color: #008000">Changed:</span> Upgraded Freetype to version 2.1.10. The CD library file size increased because of this. But we gain
+  <li><span class="hist_fixed">Fixed:</span> &quot;simple.c&quot; and &quot;simple.zip&quot; were outdated. Now new makefiles were added.</li>
+  <li><span class="hist_fixed">Fixed:</span> in Windows base driver small incompatibility in cdNativeFont with the IUP FONT attribute.</li>
+  <li><span class="hist_changed">Changed:</span> Optimization flags now are ON when building the library in all platforms.</li>
+  <li><span class="hist_changed">Changed:</span> Upgraded Freetype to version 2.1.10. The CD library file size increased because of this. But we gain
   a better text rendering for images.</li>
-  <li><span style="color: #008000">Changed:</span> Better organization of the documentation.</li>
-  <li><span style="color: #008000">Changed:</span> In Windows the NATIVEWINDOW driver now accepts a NULL pointer to draw in the entire screen.</li>
-  <li><span style="color: #008000">Changed:</span> Optimized <b><font face="Courier New">cdPutImageRGBARect</font></b> in Windows base driver.</li>
-  <li><span style="color: #008000">Changed:</span> Now by default CD will not print X-Windows messages. To enable you must set the CD_XERROR environment
+  <li><span class="hist_changed">Changed:</span> Better organization of the documentation.</li>
+  <li><span class="hist_changed">Changed:</span> In Windows the NATIVEWINDOW driver now accepts a NULL pointer to draw in the entire screen.</li>
+  <li><span class="hist_changed">Changed:</span> Optimized <b><font face="Courier New">cdPutImageRGBARect</font></b> in Windows base driver.</li>
+  <li><span class="hist_changed">Changed:</span> Now by default CD will not print X-Windows messages. To enable you must set the CD_XERROR environment
   variable.</li>
-  <li><span style="color: #008000">Changed:</span> The default fill rule for polygons in CD_PS is now the Even-Odd rule. Matching the other drivers.</li>
-  <li><span style="color: #008000">Changed:</span> Line Styles in GDI+ was corrected again to match GDI line styles when line width is not 1.</li>
-  <li><span style="color: #008000">Changed:</span> The native WC support in GDI+ was removed because of alignment and size problems, simulation will be used.</li>
-  <li><span style="color: #008000">Changed:</span> the EMF drivers now ignore the resolution parameter. For EMFs, the resolution is always the screen
+  <li><span class="hist_changed">Changed:</span> The default fill rule for polygons in CD_PS is now the Even-Odd rule. Matching the other drivers.</li>
+  <li><span class="hist_changed">Changed:</span> Line Styles in GDI+ was corrected again to match GDI line styles when line width is not 1.</li>
+  <li><span class="hist_changed">Changed:</span> The native WC support in GDI+ was removed because of alignment and size problems, simulation will be used.</li>
+  <li><span class="hist_changed">Changed:</span> the EMF drivers now ignore the resolution parameter. For EMFs, the resolution is always the screen
   resolution.</li>
-  <li><span style="color: #008000">Changed:</span> the value of following attributes were changed to strings <font face="Courier New">&quot;IMAGEMASK&quot;</font>,
+  <li><span class="hist_changed">Changed:</span> the value of following attributes were changed to strings <font face="Courier New">&quot;IMAGEMASK&quot;</font>,
   <font face="Courier New">&quot;IMAGEPOINTS&quot;</font>, <font face="Courier New">&quot;ROTATE&quot;</font>, <font face="Courier New">
   &quot;GRADIENTCOLOR&quot;</font>, <font face="Courier New">&quot;IMAGETRANSP&quot;</font> and&nbsp; <font face="Courier New">&quot;IMAGEFORMAT&quot;</font>.
   </li>
-  <li><span style="color: #008000">Changed:</span> in GDI+ base driver, the <b><font face="Courier New">cdBegin</font></b> modes <font face="Courier New">
+  <li><span class="hist_changed">Changed:</span> in GDI+ base driver, the <b><font face="Courier New">cdBegin</font></b> modes <font face="Courier New">
   CD_IMAGEWARP</font> and <font face="Courier New">CD_GRADIENT</font> were moved to attributes <font face="Courier New">
   &quot;IMAGEPOINTS&quot;</font> and <font face="Courier New">&quot;LINEGRADIENT&quot;</font>. Mode <font face="Courier New">CD_PATHGRADIENT</font>
   was renamed to <font face="Courier New">CD_FILLGRADIENT</font>, and <font face="Courier New">&quot;PATHGRADIENT&quot;</font>
   attribute was renamed to <font face="Courier New">&quot;GRADIENTCOLOR&quot;</font>. Their definition was also changed.</li>
-  <li><span style="color: #008000">Changed:</span> <b><font face="Courier New">cdImageEx</font></b> was renamed to <b><font face="Courier New">cdBitmap</font></b>,
+  <li><span class="hist_changed">Changed:</span> <b><font face="Courier New">cdImageEx</font></b> was renamed to <b><font face="Courier New">cdBitmap</font></b>,
   and now supports only client images. This will cause a conflict with a macro definition in <font face="Courier New">
   &quot;im_image.h&quot;</font> header of the IM toolkit. Include this header before <font face="Courier New">&quot;cd.h&quot;</font> and
   inbetween set <font face="Courier New">&quot;#undef cdPutBitmap&quot;</font>. The IM macro will be changed in the next IM
   version.</li>
-  <li><span style="color: #008000">Changed:</span> <b><font face="Courier New">cdText</font></b> is not dependent on the <b><font face="Courier New">
+  <li><span class="hist_changed">Changed:</span> <b><font face="Courier New">cdText</font></b> is not dependent on the <b><font face="Courier New">
   cdBackOpacity</font></b> anymore. Text now is always transparent. If you need a box under the text use <b>
   <font face="Courier New">cdTextBox</font></b> to calculate the dimensions for <b><font face="Courier New">cdBox</font></b>.</li>
 </ul>
 <h3>Version 4.3.3 (25/Aug/2004)</h3>
 <ul>
-  <li><span style="color: #0000FF">New:</span> &quot;USERLINESTYLE&quot; attribute for the base GDI and X11 drivers.</li>
-  <li><span style="color: #0000FF">New:</span> &quot;GC&quot; attribute for the base X11 driver.</li>
-  <li><span style="color: #008000">Changed:</span> in the Native Window driver for the Windows system, the creation using a HDC can have an addicional
+  <li><span class="hist_new">New:</span> &quot;USERLINESTYLE&quot; attribute for the base GDI and X11 drivers.</li>
+  <li><span class="hist_new">New:</span> &quot;GC&quot; attribute for the base X11 driver.</li>
+  <li><span class="hist_changed">Changed:</span> in the Native Window driver for the Windows system, the creation using a HDC can have an addicional
   parameter for the canvas size.</li>
-  <li><span style="color: #008000">Changed:</span> in cdTextSize for the GDI+ base driver we now compensates the height in -10% to match the GDI height.</li>
-  <li><span style="color: #008000">Changed:</span> The GDI+ printer driver now returns the HDC attribute.</li>
-  <li><span style="color: #FF0000">Fixed:</span> fixed a bug in <b><font face="Courier New">cdNativeFont</font></b> for the GDI+ base driver.</li>
-  <li><span style="color: #FF0000">Fixed:</span> again fixed a rounding error in <b><font face="Courier New">cdPutImage*</font></b> for big zooms.</li>
+  <li><span class="hist_changed">Changed:</span> in cdTextSize for the GDI+ base driver we now compensates the height in -10% to match the GDI height.</li>
+  <li><span class="hist_changed">Changed:</span> The GDI+ printer driver now returns the HDC attribute.</li>
+  <li><span class="hist_fixed">Fixed:</span> fixed a bug in <b><font face="Courier New">cdNativeFont</font></b> for the GDI+ base driver.</li>
+  <li><span class="hist_fixed">Fixed:</span> again fixed a rounding error in <b><font face="Courier New">cdPutImage*</font></b> for big zooms.</li>
 </ul>
 <h3>Version 4.3.2 (14/Apr/2004)</h3>
 <ul>
-  <li><span style="color: #FF0000">Fixed:</span> in the Win32 and X-Win drivers the <font face="Courier New"><b>cdPutImageRGB</b></font> and
+  <li><span class="hist_fixed">Fixed:</span> in the Win32 and X-Win drivers the <font face="Courier New"><b>cdPutImageRGB</b></font> and
   <font face="Courier New"><b>cdPutImageMap</b></font> functions when zooming bigger then the canvas where incorrectly
   positioning the image by some pixels because of round errors.</li>
 </ul>
 <h3>Version 4.3.1 (07/Nov/2003)</h3>
 <ul>
-  <li><span style="color: #FF0000">Fixed:</span> in the Win32 driver the clipping of <font face="Courier New"><b>cdPutImage*</b></font> functions when
+  <li><span class="hist_fixed">Fixed:</span> in the Win32 driver the clipping of <font face="Courier New"><b>cdPutImage*</b></font> functions when
   zooming was wrong. In the DoubleBuffer driver the main canvas <font face="Courier New"><b>cdOrigin</b></font> can be
   used to move the image in the swap operation (<font face="Courier New"><b>cdFlush</b></font>). In the GDI+
   DoubleBuffer driver there was an error in the <font face="Courier New"><b>cdFlush</b></font> when some primitive used
@@ -511,139 +521,139 @@
 </ul>
 <h3>Version 4.3 (06/Mar/2003)</h3>
 <ul>
-  <li><span style="color: #0000FF">New:</span> the function <font face="Courier New"><b>cdlua_getcanvas</b></font> retreives the pointer of a canvas created
+  <li><span class="hist_new">New:</span> the function <font face="Courier New"><b>cdlua_getcanvas</b></font> retreives the pointer of a canvas created
   in Lua.</li>
-  <li><span style="color: #0000FF">New:</span> in Win32 the function <font face="Courier New"><b>cdUseContextPlus</b></font> change the behavior of the
+  <li><span class="hist_new">New:</span> in Win32 the function <font face="Courier New"><b>cdUseContextPlus</b></font> change the behavior of the
   Windows drivers NativeWindow, IUP, Image, Printer, EMF and Double Buffer to make them use the GDI+ for drawing. GDI+
   does not have support for XOR Write Mode, but it has other resources like: transparency, anti-aliasing, gradient
   filling, bezier lines and filled cardinal splines. WC functions are directly implemented in the base driver. Two new
   functions were created to support transparency in the CD color coding: <font face="Courier New"><b>cdEncodeAlpha</b></font>
   and <font face="Courier New"><b>cdDecodeAlpha.</b></font>Check the documentation for more information.</li>
-  <li><span style="color: #008000">Changed:</span> the Lua binding is now distributed in the same package. There is only one version number.</li>
-  <li><span style="color: #FF0000">Fixed:</span> the PS header had same flaws, the character &quot;:&quot; was missing in some DCS attributes.</li>
-  <li><span style="color: #FF0000">Fixed:</span> screen resolution was wrong in the Win32 driver, this afects the size of the canvas in milimeters.</li>
-  <li><span style="color: #FF0000">Fixed:</span> in the Win32 driver the creation of a polygon for clipping does not activate the clipping.</li>
-  <li><span style="color: #FF0000">Fixed:</span> in the Win32 driver the function <font face="Courier New"><b>cdNativeFont</b></font> using &quot;-d&quot;
+  <li><span class="hist_changed">Changed:</span> the Lua binding is now distributed in the same package. There is only one version number.</li>
+  <li><span class="hist_fixed">Fixed:</span> the PS header had same flaws, the character &quot;:&quot; was missing in some DCS attributes.</li>
+  <li><span class="hist_fixed">Fixed:</span> screen resolution was wrong in the Win32 driver, this afects the size of the canvas in milimeters.</li>
+  <li><span class="hist_fixed">Fixed:</span> in the Win32 driver the creation of a polygon for clipping does not activate the clipping.</li>
+  <li><span class="hist_fixed">Fixed:</span> in the Win32 driver the function <font face="Courier New"><b>cdNativeFont</b></font> using &quot;-d&quot;
   parameter need some ajusts. Also the returned string does not contains all the used parameters.</li>
-  <li><span style="color: #FF0000">Fixed:</span> in the Win32 driver the function <font face="Courier New"><b>cdPutImageRectRGBA</b></font> had a
+  <li><span class="hist_fixed">Fixed:</span> in the Win32 driver the function <font face="Courier New"><b>cdPutImageRectRGBA</b></font> had a
   positioning error.</li>
 </ul>
 <h3>Version 4.2 (20/July/2001)</h3>
 <ul>
-  <li><span style="color: #008000">Changed:</span> in driver Win32, <font face="Courier New"><b>cdNativeFont</b></font> accepts parameter
+  <li><span class="hist_changed">Changed:</span> in driver Win32, <font face="Courier New"><b>cdNativeFont</b></font> accepts parameter
   <font face="Courier New">&quot;-d&quot;</font> on the font name to show the font-selection dialog.</li>
-  <li><span style="color: #008000">Changed:</span> the whole code can now be compiled as C++.</li>
-  <li><span style="color: #008000">Changed:</span> functions <font face="Courier New"><b>wdPattern</b></font> and <b><font face="Courier New">wdStipple</font></b>
+  <li><span class="hist_changed">Changed:</span> the whole code can now be compiled as C++.</li>
+  <li><span class="hist_changed">Changed:</span> functions <font face="Courier New"><b>wdPattern</b></font> and <b><font face="Courier New">wdStipple</font></b>
   were changed to make pattern deformation more uniform.</li>
-  <li><span style="color: #FF0000">Fixed:</span> in the Clipboard driver on Win32, when parameter <font face="Courier New">&quot;-b&quot;</font> was used the
+  <li><span class="hist_fixed">Fixed:</span> in the Clipboard driver on Win32, when parameter <font face="Courier New">&quot;-b&quot;</font> was used the
   image was not correctly copied.</li>
-  <li><span style="color: #FF0000">Fixed:</span> in certain moments, color vectors were being allocated with size 4 and should be
+  <li><span class="hist_fixed">Fixed:</span> in certain moments, color vectors were being allocated with size 4 and should be
   <font face="Courier New">&quot;sizeof(long)&quot;</font>. This was done to improve the compatibility with 64-bit systems.</li>
-  <li><span style="color: #FF0000">Fixed:</span> <font face="Courier New"><b>cdPutImageRectRGB</b></font> in driver ImageRGB had a memory-invasion
+  <li><span class="hist_fixed">Fixed:</span> <font face="Courier New"><b>cdPutImageRectRGB</b></font> in driver ImageRGB had a memory-invasion
   error in some cases when the image was placed in a negative coordinate.</li>
 </ul>
 <h3>Version 4.1.10 (04/May/2000)</h3>
 <ul>
-  <li><span style="color: #008000">Changed:</span> the driver Native Windows in Win32 now also accepts an already created HDC handle as a parameter.</li>
-  <li><span style="color: #008000">Changed:</span> in the <font face="Courier New"><strong>cdPutImageMap</strong></font>* functions, in case the color
+  <li><span class="hist_changed">Changed:</span> the driver Native Windows in Win32 now also accepts an already created HDC handle as a parameter.</li>
+  <li><span class="hist_changed">Changed:</span> in the <font face="Courier New"><strong>cdPutImageMap</strong></font>* functions, in case the color
   vector is null, a vector with 256 gray shades in assumed.</li>
-  <li><span style="color: #FF0000">Fixed:</span> <font face="Courier New"><b>cdRegisterAttribute</b></font> was not verifying whether the attribute had
+  <li><span class="hist_fixed">Fixed:</span> <font face="Courier New"><b>cdRegisterAttribute</b></font> was not verifying whether the attribute had
   already been registered.</li>
-  <li><span style="color: #FF0000">Fixed:</span> function <font face="Courier New"><b>cdArc</b></font> in the simulation driver (includes <strong>
+  <li><span class="hist_fixed">Fixed:</span> function <font face="Courier New"><b>cdArc</b></font> in the simulation driver (includes <strong>
   ImageRGB</strong>) was returning without drawing anything in an incorrect test.</li>
-  <li><span style="color: #FF0000">Fixed:</span> function <font face="Courier New"><b>cdTextBox</b></font> was returning incorrect values when the text
+  <li><span class="hist_fixed">Fixed:</span> function <font face="Courier New"><b>cdTextBox</b></font> was returning incorrect values when the text
   had an orientation different from the default one in some alignment instances.</li>
-  <li><span style="color: #FF0000">Fixed:</span> in function <font face="Courier New"><b>cdRGB2Map</b></font> there was a memory invasion.</li>
-  <li><span style="color: #FF0000">Fixed:</span> the vector text simulation was not freeing the memory used for fonts loaded from files.</li>
-  <li><span style="color: #FF0000">Fixed:</span> in the Doubled Buffer driver in X-Windows there was an invalid memory liberation.</li>
-  <li><span style="color: #FF0000">Fixed:</span> in the Lua binding, in several functions receiving or returning tables, the first index was being
+  <li><span class="hist_fixed">Fixed:</span> in function <font face="Courier New"><b>cdRGB2Map</b></font> there was a memory invasion.</li>
+  <li><span class="hist_fixed">Fixed:</span> the vector text simulation was not freeing the memory used for fonts loaded from files.</li>
+  <li><span class="hist_fixed">Fixed:</span> in the Doubled Buffer driver in X-Windows there was an invalid memory liberation.</li>
+  <li><span class="hist_fixed">Fixed:</span> in the Lua binding, in several functions receiving or returning tables, the first index was being
   considered as 0, but in Lua they must be 1. This correction includes <font face="Courier New"><strong>
   cdVectorTextTransform</strong>, <strong>cdGetVectorTextBounds</strong>, <strong>wdGetVectorTextBounds</strong>,
   <strong>cdGetClipPoly</strong> </font>and<font face="Courier New"> <strong>wdGetClipPoly</strong></font>.</li>
-  <li><span style="color: #FF0000">Fixed:</span> when the PS driver generated EPS, it did not correctly add the description of the bounding box (a line
+  <li><span class="hist_fixed">Fixed:</span> when the PS driver generated EPS, it did not correctly add the description of the bounding box (a line
   break was missing).</li>
-  <li><span style="color: #FF0000">Fixed:</span> the vector text drawing functions did not take into account the fact that the default font and the GKS
+  <li><span class="hist_fixed">Fixed:</span> the vector text drawing functions did not take into account the fact that the default font and the GKS
   fonts were in ASCII standard. Now a conversion from ANSI to ASCII is made before these fonts are used for drawing.</li>
-  <li><span style="color: #FF0000">Fixed:</span> in the X-Win driver, an error in the X-Vertex library caused the texts in 90/270 degrees to be drawn
+  <li><span class="hist_fixed">Fixed:</span> in the X-Win driver, an error in the X-Vertex library caused the texts in 90/270 degrees to be drawn
   incorrectly.</li>
-  <li><span style="color: #FF0000">Fixed:</span> in the X-Win driver, the <font face="Courier New"><strong>cdPutImageMap</strong></font> functions were
+  <li><span class="hist_fixed">Fixed:</span> in the X-Win driver, the <font face="Courier New"><strong>cdPutImageMap</strong></font> functions were
   generating a memory invasion when the X was in 16 bits.</li>
-  <li><span style="color: #FF0000">Fixed:</span> in the Win32 driver, very large non-filled polygons were not being drawn in Windows 9x. To correct
+  <li><span class="hist_fixed">Fixed:</span> in the Win32 driver, very large non-filled polygons were not being drawn in Windows 9x. To correct
   that, they were divided into smaller polygons.</li>
 </ul>
 <h3>Version 4.1 (24/Nov/99)</h3>
 <ul>
-  <li><span style="color: #0000FF">New:</span> new basic Windows driver attributes that allow controling the internal simulation of pattern/stipple, XOR
+  <li><span class="hist_new">New:</span> new basic Windows driver attributes that allow controling the internal simulation of pattern/stipple, XOR
   text, and filled polygon (&quot;<font face="Courier New">SIMXORTEXT</font>&quot;, &quot;<font face="Courier New">SIMPATTERN8X8</font>&quot;,
   &quot;<font face="Courier New">PENFILLPOLY</font>&quot;). New: attribute for returning the HDC of the Windows canvas.</li>
-  <li><span style="color: #0000FF">New:</span> the PS driver accepts landscape orientation as a parameter.
+  <li><span class="hist_new">New:</span> the PS driver accepts landscape orientation as a parameter.
   New: &quot;<font face="Courier New">POLYHOLE</font>&quot;
   attribute allows controling the number of holes in a closed polygon. New: &quot;<font face="Courier New">-1</font>&quot;
   parameter forces a level 1 Postscript. New: &quot;<font face="Courier New">-g</font>&quot; parameter adds comments to the PS file
   in order to better explain what is done. New: &quot;<font face="Courier New">CMD</font>&quot; attribute saves a string to the
   file.</li>
-  <li><span style="color: #0000FF">New:</span> new environment variable, <font face="Courier New">CD_QUIET</font>, does not display in <em>stdout</em> the
+  <li><span class="hist_new">New:</span> new environment variable, <font face="Courier New">CD_QUIET</font>, does not display in <em>stdout</em> the
   library's version information.</li>
-  <li><span style="color: #0000FF">New:</span> two new exclusive functions for the Native Window driver: <font face="Courier New"><b>cdGetScreenColorPlanes</b></font>
+  <li><span class="hist_new">New:</span> two new exclusive functions for the Native Window driver: <font face="Courier New"><b>cdGetScreenColorPlanes</b></font>
   and <font face="Courier New"><b>cdGetScreenSize</b></font>.</li>
-  <li><span style="color: #0000FF">New:</span> new CD_DBUFFER driver implements a <em>double buffer</em> using a server image.</li>
-  <li><span style="color: #0000FF">New:</span> new attributes in the ImageRGB driver: &quot;<font face="Courier New">REDIMAGE</font>&quot;, &quot;<font face="Courier New">GREENIMAGE</font>&quot;
+  <li><span class="hist_new">New:</span> new CD_DBUFFER driver implements a <em>double buffer</em> using a server image.</li>
+  <li><span class="hist_new">New:</span> new attributes in the ImageRGB driver: &quot;<font face="Courier New">REDIMAGE</font>&quot;, &quot;<font face="Courier New">GREENIMAGE</font>&quot;
   and &quot;<font face="Courier New">BLUEIMAGE</font>&quot;.</li>
-  <li><span style="color: #0000FF">New:</span> new functions <font face="Courier New"><b>wdGetVectorTextBounds</b></font> and <font face="Courier New"><b>
+  <li><span class="hist_new">New:</span> new functions <font face="Courier New"><b>wdGetVectorTextBounds</b></font> and <font face="Courier New"><b>
   cdGetVectorTextBounds</b></font> to obtain the bounding box of the vector text.</li>
-  <li><span style="color: #0000FF">New:</span> new <font face="Courier New"><b>wdGetFont</b></font> function. It is equivalent to <font face="Courier New">
+  <li><span class="hist_new">New:</span> new <font face="Courier New"><b>wdGetFont</b></font> function. It is equivalent to <font face="Courier New">
   <strong>cdGetFont</strong></font>, but the returned size is in millimeters.</li>
-  <li><span style="color: #FF0000">Fixed:</span> the management of WD functions was incomplete for functions <font face="Courier New"><strong>cdPixel</strong>,
+  <li><span class="hist_fixed">Fixed:</span> the management of WD functions was incomplete for functions <font face="Courier New"><strong>cdPixel</strong>,
   <strong>cdVertex</strong> </font>and<font face="Courier New"> <strong>cdPutImage</strong></font>*. This resulted in a
   wrong or out of the canvas positioning. It only affects drivers PS and METAFILE.</li>
-  <li><span style="color: #FF0000">Fixed:</span> function <font face="Courier New"><b>cdActivate</b></font> in Lua was not returning the correct
+  <li><span class="hist_fixed">Fixed:</span> function <font face="Courier New"><b>cdActivate</b></font> in Lua was not returning the correct
   values.</li>
-  <li><span style="color: #FF0000">Fixed:</span> when the image was partially out of the window, above or below, functions <font face="Courier New">
+  <li><span class="hist_fixed">Fixed:</span> when the image was partially out of the window, above or below, functions <font face="Courier New">
   <strong>cdPutImageMap</strong></font> and <font face="Courier New"><strong>RGB</strong></font> were drawing a wrong
   portion of the image.</li>
-  <li><span style="color: #FF0000">Fixed:</span>&nbsp;in the CGM driver, after opening the file of the <font face="Courier New"><strong>cdPlay</strong></font>
+  <li><span class="hist_fixed">Fixed:</span>&nbsp;in the CGM driver, after opening the file of the <font face="Courier New"><strong>cdPlay</strong></font>
   function, the check to see if the opening had been successful was not being done.</li>
-  <li><span style="color: #FF0000">Fixed:</span> when the active canvas was already <font face="Courier New">NULL</font>, the activation of a
+  <li><span class="hist_fixed">Fixed:</span> when the active canvas was already <font face="Courier New">NULL</font>, the activation of a
   <font face="Courier New">NULL</font> canvas was generating a memory invasion.</li>
-  <li><span style="color: #FF0000">Fixed:</span> in the creation of EPS, the PS driver was adding a wrong call to <font face="Courier New">
+  <li><span class="hist_fixed">Fixed:</span> in the creation of EPS, the PS driver was adding a wrong call to <font face="Courier New">
   setpagedevice</font>. The <font face="Courier New"><strong>cdPutImageMap</strong></font> function was modifying the
   wrong PS parameter in the file. The margin clipping was not saved when the drawing's clipping area was changed. The
   clipping area, when drawing in WD, was being incorrectly modified.</li>
-  <li><span style="color: #FF0000">Fixed:</span> in the IMAGERGB driver, functions <font face="Courier New"><b>cdRedImage</b>, <b>cdBlueImage</b>
+  <li><span class="hist_fixed">Fixed:</span> in the IMAGERGB driver, functions <font face="Courier New"><b>cdRedImage</b>, <b>cdBlueImage</b>
   </font>and<font face="Courier New"> <b>cdGreenImage</b></font> were returning invalid pointers.</li>
-  <li><span style="color: #FF0000">Fixed:</span> when initializing text simulation functions, the opened font file was not being closed. This affected
+  <li><span class="hist_fixed">Fixed:</span> when initializing text simulation functions, the opened font file was not being closed. This affected
   all CD drivers, but was only apparent in the application that opened and closed many drivers.</li>
-  <li><span style="color: #FF0000">Fixed:</span> the approximate computation of the text size was not accepting sizes in pixels.</li>
-  <li><span style="color: #FF0000">Fixed:</span> the creation of the IMAGERGB driver in Lua was incorrect when the resolution parameter (which is
+  <li><span class="hist_fixed">Fixed:</span> the approximate computation of the text size was not accepting sizes in pixels.</li>
+  <li><span class="hist_fixed">Fixed:</span> the creation of the IMAGERGB driver in Lua was incorrect when the resolution parameter (which is
   optional) was not specified.</li>
-  <li><span style="color: #FF0000">Fixed:</span> functions <font face="Courier New"><b>cdGetClipPoly</b></font> and <font face="Courier New"><b>
+  <li><span class="hist_fixed">Fixed:</span> functions <font face="Courier New"><b>cdGetClipPoly</b></font> and <font face="Courier New"><b>
   wdGetClipPoly</b></font> in Lua were causing memory invasion.</li>
-  <li><span style="color: #008000">Changed:</span> in the PS driver, when the Map image is actually a grayscale, function <font face="Courier New">
+  <li><span class="hist_changed">Changed:</span> in the PS driver, when the Map image is actually a grayscale, function <font face="Courier New">
   <strong>cdPutImageMap</strong></font> uses an 8 bit image, thus saving memory. Level 2 Postscript functions
   <font face="Courier New">rectfill, rectstroke</font> and <font face="Courier New">rectclip</font> are now used. The
   comments in DCS were updated to DCS version 3 and were increased to improve the document's portability.</li>
-  <li><span style="color: #008000">Changed:</span> in driver X-Windows, the text drawing attribute was implemented with any orientation.</li>
-  <li><span style="color: #008000">Changed:</span> function <font face="Courier New"><b>cdVersion</b></font> in Lua now behaves just like in C. A global Lua
+  <li><span class="hist_changed">Changed:</span> in driver X-Windows, the text drawing attribute was implemented with any orientation.</li>
+  <li><span class="hist_changed">Changed:</span> function <font face="Courier New"><b>cdVersion</b></font> in Lua now behaves just like in C. A global Lua
   variable, <font face="Courier New"><b>CDLUA_VERSION</b></font>, was created containing the version of the Lua binding
   library - for example: &quot;CDLua 1.3.0&quot;.</li>
-  <li><span style="color: #008000">Changed:</span> function <font face="Courier New"><b>cdVectorTextTransform</b></font> now returns the previsous
+  <li><span class="hist_changed">Changed:</span> function <font face="Courier New"><b>cdVectorTextTransform</b></font> now returns the previsous
   transformation matrix.</li>
 </ul>
 <h3>Version 4.0.1 (05/Mar/99)</h3>
 <ul>
-  <li><span style="color: #FF0000">Fixed:</span> in the Windows driver, the polygon simulation with pattern was corrected to polygons with repeated
+  <li><span class="hist_fixed">Fixed:</span> in the Windows driver, the polygon simulation with pattern was corrected to polygons with repeated
   points.</li>
-  <li><span style="color: #FF0000">Fixed:</span> in the Windows driver, function <font face="Courier New"><strong>cdNativeFont</strong></font> was
+  <li><span class="hist_fixed">Fixed:</span> in the Windows driver, function <font face="Courier New"><strong>cdNativeFont</strong></font> was
   corrected for IUP fonts. It was affecting the Matrix's visualization.</li>
-  <li><span style="color: #FF0000">Fixed:</span> function <font face="Courier New"><strong>cdNativeFont</strong></font> was wrongly testing its input
+  <li><span class="hist_fixed">Fixed:</span> function <font face="Courier New"><strong>cdNativeFont</strong></font> was wrongly testing its input
   parameter and always returning.</li>
-  <li><span style="color: #FF0000">Fixed:</span> in the drivers IUP and Native Window, the <font face="Courier New"><strong>cdGetCanvasSize</strong></font>
+  <li><span class="hist_fixed">Fixed:</span> in the drivers IUP and Native Window, the <font face="Courier New"><strong>cdGetCanvasSize</strong></font>
   function was corrected. When the window size was changed, the values in millimeters were not updated to
   <font face="Courier New"><strong>cdActivate</strong></font>.</li>
-  <li><span style="color: #FF0000">Fixed:</span> in the CGM driver, function <font face="Courier New"><strong>cdPlay</strong></font> was generating
+  <li><span class="hist_fixed">Fixed:</span> in the CGM driver, function <font face="Courier New"><strong>cdPlay</strong></font> was generating
   problems in reading and displaying cell arrays. When the <font face="Courier New"><strong>cdCreateCanvas</strong></font>
   function used the default values for dimensions and resolution, it generated files with errors.</li>
-  <li><span style="color: #008000">Changed:</span> in the X-Windows driver, function <font face="Courier New"><strong>cdPixel</strong></font> was
+  <li><span class="hist_changed">Changed:</span> in the X-Windows driver, function <font face="Courier New"><strong>cdPixel</strong></font> was
   optimized. It now compares the color to the foreground color and reuses the value.</li>
 </ul>
 <h3>Version 4.0 (18/Feb/99)</h3>

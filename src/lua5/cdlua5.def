@@ -8,6 +8,5 @@ EXPORTS
   cdlua_checkcanvas
   cdlua_pushcanvas
   luaopen_cdlua
-  luaopen_cdlua51
   cdlua_pushbitmap
   cdlua_checkbitmap

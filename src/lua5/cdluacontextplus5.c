@@ -37,8 +37,3 @@ int luaopen_cdluacontextplus(lua_State* L)
 {
   return cdluacontextplus_open(L);
 }
-
-int luaopen_cdluacontextplus51(lua_State* L)
-{
-  return cdluacontextplus_open(L);
-}

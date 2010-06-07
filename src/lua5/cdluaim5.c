@@ -285,8 +285,3 @@ int luaopen_cdluaim(lua_State *L)
 {
   return cdluaim_open(L);
 }
-
-int luaopen_cdluaim51(lua_State *L)
-{
-  return cdluaim_open(L);
-}

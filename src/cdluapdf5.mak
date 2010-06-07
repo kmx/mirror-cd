@@ -1,5 +1,5 @@
 PROJNAME = cd
-LIBNAME = cdluapdf51
+LIBNAME = cdluapdf
 
 OPT = YES
 
@@ -10,7 +10,13 @@ DEF_FILE = cdluapdf5.def
 
 LIBS = cdpdf
 
-USE_LUA51 = Yes
+ifdef USE_LUA52
+  LIBNAME := $(LIBNAME)52
+else
+  USE_LUA51 = Yes
+  LIBNAME := $(LIBNAME)51
+endif
+
 NO_LUALINK = Yes
 USE_CD = YES
 USE_CDLUA = YES
