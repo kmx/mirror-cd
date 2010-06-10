@@ -21,6 +21,10 @@
   implemented in the X-Windows system. The implementation uses the XLIB API 
   functions. It was developed using X11R4, but works in more recent versions, 
   such as X11R6.</p>
+<p>This is included in the main library in AIX, SunOS and IRIX. To use it in 
+Linux and BSD you must link with the <strong>cdx11</strong> library instead of 
+the <strong>cd</strong> main library.</p>
+
   <p>Note: The coordinates internally implemented by the video driver use 16-bit 
   integers. Therefore, if a coordinate with less than -32k or more than 32k is 
   defined, it will be interpreted incorrectly.</p>

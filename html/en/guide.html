@@ -91,23 +91,29 @@ the makefiles and projects expect the following directory tree:</p>
         im\
         lua5.1\</pre>
 <h4>Libraries Dependencies</h4>
-<pre>cd -&gt; <strong><span class="style4">gdi32</span></strong> <strong><span class="style4">user32</span></strong> <strong><span class="style4">comdlg32</span></strong> (system - Windows)
-   -&gt; <strong><span class="style4">X11</span></strong> (system - UNIX)
-   -&gt; <strong><span class="style2">FreeType</span></strong> (included as separate library)
-cdgdk -&gt; <strong><span class="style1">gdk-win32-2.0</span></strong>(system - Windows)
-      -&gt; <strong><span class="style1">gdk-x11-2.0</span></strong> (system - UNIX)
-      -&gt; <span class="style1"><strong>cairo-2</strong></span> (system - Windows/UNIX)
-cdgdiplus -&gt; cd
+<pre>cd -&gt; <strong><span class="style2">FreeType</span></strong> (included as separate library)
+<em>   cdwin*</em> -&gt; <strong><span class="style4">gdi32</span></strong> <strong><span class="style4">user32</span></strong> <strong><span class="style4">comdlg32</span></strong> (system - Windows)
+<em>   cdx11*</em> -&gt; <strong><span class="style4">X11</span></strong> (system - UNIX)
+<em>   </em><em>cdgdk</em><em>*</em> -&gt; <strong><span class="style1">gdk-win32-2.0 pangowin32-1.0</span></strong>(system - Windows)
+<em>   </em>       -&gt; <strong><span class="style1">gdk-x11-2.0</span></strong> <strong><span class="style1">pangox-1.0 </span></strong>(system - UNIX)
+          -&gt; <span class="style1"><strong>cairo-2 </strong></span><strong><span class="style1">gdk_pixbuf-2.0 pango-1.0 gobject-2.0</span></strong> <strong><span class="style1">gmodule-2.0 glib-2.0</span></strong> (system - Windows/UNIX)
+<em>cdgdiplus*</em> -&gt; cd
           -&gt; <strong><span class="style4">gdiplus</span></strong> (system - Windows)
-cdxrender -&gt; cd
+<em>cdxrender*</em> -&gt; cd
           -&gt; <strong><span class="style4">Xrender</span></strong> <strong><span class="style4">Xft</span></strong> (system - UNIX)
+<em>cdcairo*</em> -&gt; <span class="style1"><strong>cairo-2</strong></span> (system - Windows/UNIX)
 cdpdf    -&gt; <strong><span class="style2">pdflib</span></strong> (included as separate library)
 cdlua51  -&gt; cd
          -&gt; <strong><span class="style3">lua5.1</span></strong>
 cdluaim51 -&gt; cdlua51
           -&gt; <strong><span class="style3">imlua51</span></strong> 
 cdluapdf51 -&gt; cdlua51
-           -&gt; cdpdf</pre>
+           -&gt; cdpdf
+
+(*) In Windows, &quot;<strong>cdwin</strong>&quot; is called &quot;<strong>cd</strong>&quot;. 
+    In Linux and BSD &quot;<strong>cdgdk</strong>&quot; is called &quot;<strong>cd</strong>&quot;. 
+    In IRIX, AIX and SunOS &quot;<strong>cdx11</strong>&quot; is called &quot;<strong>cd</strong>&quot;.</pre>
+
 <p>As a general rule (excluding system dependencies and included third party 
 libraries): CD has NO external dependencies, and CDLua depends on Lua and IMLua. 
 Just notice that not all CDLua libraries depend on IMLua.</p>
@@ -121,7 +127,8 @@ LUALIB and LUABINDIR definitions before using Tecmake or Tecmake Compact.</p>
 <pre>libx11-dev
 libxpm-dev
 libxmu-dev
-libxft-dev</pre>
+libxft-dev (for the XRender driver)
+libgtk2.0-dev (for the GDK driver)</pre>
 
 <h3><a name="Environment">Environment Variables</a></h3>
 

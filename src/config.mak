@@ -41,7 +41,7 @@ SRC = $(SRCCOMM) $(SRCSVG) $(SRCINTCGM) $(SRCDRV) $(SRCSIM)
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )
   ifdef USE_GDK
     SRC += $(SRCGDK) $(SRCNULL) $(SRCCAIRO)
-    LIBNAME := cdgdk
+    LIBNAME := $(LIBNAME)gdk
     USE_GTK = Yes
     LIBS += cairo
   else
@@ -51,10 +51,17 @@ ifneq ($(findstring Win, $(TEC_SYSNAME)), )
 else
   ifdef USE_GDK
     SRC += $(SRCGDK) $(SRCCAIRO)
-    LIBNAME := cdgdk
     USE_GTK = Yes
     LIBS += cairo
+    ifndef GTK_DEFAULT
+      # Build GDK version in IRIX,SunOS,AIX,Win32
+      LIBNAME := $(LIBNAME)gdk
+    endif
   else
+    ifdef GTK_DEFAULT
+      # Build X11 version in Linux,Darwin,FreeBSD
+      LIBNAME := $(LIBNAME)x11
+    endif
     SRC += $(SRCX11)
     USE_X11 = Yes
   endif

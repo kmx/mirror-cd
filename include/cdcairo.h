@@ -14,7 +14,7 @@ extern "C" {
 
 /* Some of these context can be used directly or by cdInitContextPlus,
    as  CD_NATIVEWINDOW, CD_IMAGE and CD_DBUFFER.
-   The other only directly. 
+   The others only directly. 
 */
 
 cdContext* cdContextCairoPS(void);

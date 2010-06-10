@@ -37,7 +37,11 @@ int cdluapdf_open (lua_State *L)
 {
   cdluaLuaState* cdL = cdlua_getstate(L);
   lua_pushliteral(L, "cd");
+#if LUA_VERSION_NUM > 501
+  lua_pushglobaltable(L);
+#else
   lua_gettable(L, LUA_GLOBALSINDEX);  /* leave "cd" table at the top of the stack */
+#endif
   cdlua_addcontext(L, cdL, &cdluapdfctx);
   return 1;
 }

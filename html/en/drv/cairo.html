@@ -10,6 +10,9 @@
 .style1 {
 	font-family: Courier;
 }
+.style3 {
+	text-decoration: underline;
+}
 </style>
 </head>
 
@@ -19,8 +22,7 @@
 
   <p>This driver represents a basic driver for all system-dependent drivers 
   implemented in the X-Windows and MS-Windows systems. The implementation uses the
-  <a href="http://library.gnome.org/devel/pango/">Cairo</a> API 
-  functions and Pango functions to support Unicode text. This driver can be 
+  <a href="http://library.gnome.org/devel/pango/">Cairo</a> and Pango functions. This driver can be 
   compiled and used in all systems Cairo is supported. The drivers <b>Native Window</b>, 
 	<b>Image</b>, <b>Printer</b> and <b>Double Buffer</b> were implemented.</p>
 <p>The main motivation for the use of Cairo was transparency for all the 
@@ -40,15 +42,49 @@ for complex clipping regions.</p>
   <span style="font-family: Courier">CD_DBUFFER</span></strong>, because they are 
   function calls and not static defines.</p>
   <p>Using Cairo it is allowed to create more that one canvas at the same time for the same Window. And they can co-exist 
-  with a standard GD, Win32 or X-Windows canvas.</p>
+  with a standard GDK, Win32 or X-Windows canvas.</p>
   <p>To enable the use of Cairo based drivers you must call the initialization function <font face="Courier"><strong>
-  cdInitContextPlus()</strong></font> once and link to the libraries &quot;<strong>cdcairo</strong>&quot; and &quot;<strong>cairo</strong>&quot;. 
-  When using the GDK base driver you do not need to link with the &quot;<strong>cdcairo</strong>&quot; 
-	library. Also the Cairo library must be installed in your system.</p>
-  <p>In CDLua it is not necessary any additional initialization, but the 
-	application must still be linked with the <strong>cdcontextplus.lib</strong> 
-	library or a <strong>require&quot;cdluacontextplus&quot;</strong> can be used when 
-	using dynamic libraries.</p>
+  cdInitContextPlus()</strong></font> once and link to the libraries &quot;<strong>cdcairo</strong>&quot; and &quot;<strong>cairo</strong>&quot;. Also the Cairo library must be installed in your system. 
+	When using the GDK base driver you do not need to link with the &quot;<strong>cdcairo</strong>&quot; 
+	library. </p>
+  <p>In CDLua it is not necessary any additional initialization, and <strong>require&quot;cdluacairo&quot;</strong> can be used when 
+	using dynamic libraries. But when using require there are some restrictions, 
+	in Win32 the GDK base driver can NOT be used, in Linux the X11 base driver 
+	can NOT be used, and in other UNICES the GDK base driver can NOT be used.</p>
+
+<h3>Extra Drivers (cdcairo.h)</h3>
+<p>Only available in Lua when <strong>require&quot;cdluacairo&quot;</strong> is 
+used.</p>
+
+<h4>CD_CAIRO_PS - PostScript Driver</h4>
+
+  <p>Similar to <a href="ps.html">CD_PS</a>, uses the same creation parameters. 
+	But margins are not supported and Postscript level can be 2 (parameter -2) 
+	or 3 (parameter -3).</p>
+
+<h4>CD_CAIRO_PDF - PDF Driver</h4>
+
+  <p>Similar to <a href="pdf.html">CD_PDF</a>, uses the same creation 
+	parameters. The driver also does not depends on the PDFLib. The additional 
+	attributes &quot;OPACITY&quot;, &quot;PATTERN&quot;, &quot;PDF&quot;, &quot;PDFLIBVERSION&quot; and the description 
+	strings, are not supported.</p>
+<h4>CD_CAIRO_SVG - Scalable Vector Graphics Driver</h4>
+
+  <p>Similar to <a href="svg.html">CD_SVG</a>, uses the same creation 
+	parameters. The additional attributes &quot;OPACITY&quot; and &quot;CMD&quot; are not supported.</p>
+
+<h4>CD_CAIRO_IMAGERGB - RGB Client Image Driver</h4>
+
+  <p>Similar to <a href="irgb.html">CD_IMAGERGB</a>, uses <span class="style3">
+	almost</span> the same creation parameters. The main difference is that the 
+	data pointers are packed in RGBARGBARGBA... format. So it is used only 1 
+	pointer for data, instead of 3. Also the attributes &quot;REDIMAGE&quot;, 
+	&quot;GREENIMAGE&quot;, &quot;BLUEIMAGE&quot; and &quot;ALPHAIMAGE are not supported and replaced by 
+	the &quot;RGBDATA&quot; attribute. There are also two new attributes, &quot;STRIDE&quot; that 
+	returns the line size in bytes, when data is specified during creation then 
+	stride is always width*32. Even when there is not alpha channel, data is 
+	stored in 32 bits per pixel. Image data is also organized in top-bottom 
+	orientation, it means the data pointer points to the top-left corner.</p>
 
 <h3>Behavior of Functions</h3>
 <h4>Control&nbsp; </h4>
