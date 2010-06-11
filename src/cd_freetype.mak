@@ -33,6 +33,10 @@ ifneq ($(findstring gcc, $(TEC_UNAME)), )
   LIBNAME = freetype
 endif
 
+ifneq ($(findstring cygw, $(TEC_UNAME)), )
+  LIBNAME = freetype-6
+endif
+
 ifneq ($(findstring bc5, $(TEC_UNAME)), )
   FLAGS = -w-8004
 endif
