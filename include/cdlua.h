@@ -29,6 +29,11 @@ int cdlua_close(lua_State *L);
 cdCanvas* cdlua_getcanvas(lua_State * L); /* pos=1, deprecated use cdlua_checkcanvas */
 cdCanvas* cdlua_checkcanvas(lua_State * L, int pos);
 void cdlua_pushcanvas(lua_State * L, cdCanvas* canvas);
+
+#if LUA_VERSION_NUM < 502
+#define luaL_typeerror luaL_typerror
+#endif
+
 #endif
 
 #ifdef __cplusplus

@@ -397,7 +397,7 @@ static void *cdimagergb_checkdata(lua_State* L, int param)
     int ret = cdlua_rawchecktype(L, param, "cdBitmap");
 
     if (ret == 0)
-      luaL_typerror(L, param, "cdBitmap");  /* not a user data and not a metatable */
+      luaL_typeerror(L, param, "cdBitmap");  /* not a user data and not a metatable */
 
     if (ret == 1)
     {
@@ -487,7 +487,7 @@ static void *cdimagergb_checkdata(lua_State* L, int param)
       return data_s;
     }
 
-    luaL_typerror(L, param, "cdBitmap");  /* is a metatable but it is not one of the accepted */
+    luaL_typeerror(L, param, "cdBitmap");  /* is a metatable but it is not one of the accepted */
   }
 
   return data_s;

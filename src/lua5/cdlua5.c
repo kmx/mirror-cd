@@ -87,7 +87,7 @@ static cdluaPalette* cdlua_rawcheckpalette(lua_State *L, int param)
       }
     }
   }
-  luaL_typerror(L, param, "cdPalette");  /* else error */
+  luaL_typeerror(L, param, "cdPalette");  /* else error */
   return NULL;  /* to avoid warnings */
 }
 

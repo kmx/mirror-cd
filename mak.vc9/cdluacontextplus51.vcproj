@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="cdlua5"
-	ProjectGUID="{53FC9752-81C1-4AA6-B366-A7890A2B81F6}"
+	Name="cdluacontextplus51"
+	ProjectGUID="{B4823266-DF8C-ABCD-1234-C7688C234EAC}"
 	TargetFrameworkVersion="0"
 	>
 	<Platforms>
@@ -59,14 +59,13 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				Culture="1046"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/$(ProjectName)1.lib"
+				OutputFile="$(OutDir)/$(ProjectName).lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -90,39 +89,15 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\include\cdlua.h"
+			RelativePath="..\include\cdluacontextplus.h"
 			>
 		</File>
 		<File
-			RelativePath="..\src\lua5\cdlua5.c"
+			RelativePath="..\src\lua5\cdluacontextplus5.c"
 			>
 		</File>
 		<File
-			RelativePath="..\src\lua5\cdlua5.def"
-			>
-		</File>
-		<File
-			RelativePath="..\src\lua5\cdlua5_active.c"
-			>
-		</File>
-		<File
-			RelativePath="..\src\lua5\cdlua5_canvas.c"
-			>
-		</File>
-		<File
-			RelativePath="..\include\cdlua5_private.h"
-			>
-		</File>
-		<File
-			RelativePath="..\src\lua5\cdlua5ctx.c"
-			>
-		</File>
-		<File
-			RelativePath="..\src\lua5\cdvoid5.c"
-			>
-		</File>
-		<File
-			RelativePath="..\src\lua5\cdvoid5.h"
+			RelativePath="..\src\lua5\cdluacontextplus5.def"
 			>
 		</File>
 	</Files>

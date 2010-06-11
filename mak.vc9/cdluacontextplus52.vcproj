@@ -2,8 +2,8 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="cdluaim5"
-	ProjectGUID="{CB863607-6B6C-0000-0000-123400001234}"
+	Name="cdluacontextplus52"
+	ProjectGUID="{B4823266-DF8C-A169-F6A1-C7656C234EAC}"
 	TargetFrameworkVersion="0"
 	>
 	<Platforms>
@@ -22,7 +22,6 @@
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
 			UseOfMFC="0"
 			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -42,12 +41,11 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="../include;../../lua5.1/include;../../im/include"
-				PreprocessorDefinitions="WIN32,_DEBUG,_LIB,_CRT_SECURE_NO_DEPRECATE"
-				ExceptionHandling="0"
+				AdditionalIncludeDirectories="..\include;..\..\lua52\include"
+				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,CD_NO_OLD_INTERFACE,_CRT_SECURE_NO_DEPRECATE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
-				PrecompiledHeaderFile="..\lib/cdluaim5.pch"
+				PrecompiledHeaderFile=""
 				AssemblerListingLocation=""
 				ObjectFile="$(IntDir)\"
 				ProgramDataBaseFileName="$(IntDir)\vc90.pdb"
@@ -61,15 +59,13 @@
 			/>
 			<Tool
 				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG"
-				Culture="1046"
 			/>
 			<Tool
 				Name="VCPreLinkEventTool"
 			/>
 			<Tool
 				Name="VCLibrarianTool"
-				OutputFile="$(OutDir)/$(ProjectName)1.lib"
+				OutputFile="$(OutDir)/$(ProjectName).lib"
 				SuppressStartupBanner="true"
 			/>
 			<Tool
@@ -92,19 +88,18 @@
 	<References>
 	</References>
 	<Files>
-		<Filter
-			Name="Source Files"
-			Filter="cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
+		<File
+			RelativePath="..\include\cdluacontextplus.h"
 			>
-			<File
-				RelativePath="..\src\lua5\cdluaim5.c"
-				>
-			</File>
-			<File
-				RelativePath="..\src\lua5\cdluaim5.def"
-				>
-			</File>
-		</Filter>
+		</File>
+		<File
+			RelativePath="..\src\lua5\cdluacontextplus5.c"
+			>
+		</File>
+		<File
+			RelativePath="..\src\lua5\cdluacontextplus5.def"
+			>
+		</File>
 	</Files>
 	<Globals>
 	</Globals>
