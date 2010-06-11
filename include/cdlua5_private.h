@@ -133,6 +133,9 @@ void cdlua_pushbitmap(lua_State* L, cdBitmap* bitmap);
 void cdlua_pushimagergb_ex(lua_State* L, unsigned char* red, unsigned char* green, unsigned char* blue, int width, int height);
 void cdlua_pushimagergba_ex(lua_State* L, unsigned char* red, unsigned char* green, unsigned char* blue, unsigned char* alpha, int width, int height);
 
+#if LUA_VERSION_NUM < 502
+#define luaL_typeerror luaL_typerror
+#endif
 
 #ifdef __cplusplus
 }
