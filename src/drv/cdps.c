@@ -1893,7 +1893,7 @@ static cdAttribute rotate_attrib =
 
 static void set_cmd_attrib(cdCtxCanvas *ctxcanvas, char* data)
 {
-  fprintf(ctxcanvas->file, data);
+  fprintf(ctxcanvas->file, "%s", data);
 }
 
 static cdAttribute cmd_attrib =

@@ -567,10 +567,10 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
     cgm_polygon( ctxcanvas->cgm, n, fpoly);
     break;
   case CD_BEZIER:
-    cdfSimPolyBezier(ctxcanvas->canvas, fpoly, n);
+    cdfSimPolyBezier(ctxcanvas->canvas, (cdfPoint*)fpoly, n);
     break;
   case CD_PATH:
-    cdfSimPolyPath(ctxcanvas->canvas, fpoly, n);
+    cdfSimPolyPath(ctxcanvas->canvas, (cdfPoint*)fpoly, n);
     break;
   }
 
@@ -602,10 +602,10 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
     cgm_polygon( ctxcanvas->cgm, n, fpoly);
     break;
   case CD_BEZIER:
-    cdfSimPolyBezier(ctxcanvas->canvas, fpoly, n);
+    cdfSimPolyBezier(ctxcanvas->canvas, poly, n);
     break;
   case CD_PATH:
-    cdfSimPolyPath(ctxcanvas->canvas, fpoly, n);
+    cdfSimPolyPath(ctxcanvas->canvas, poly, n);
     break;
   }
 }

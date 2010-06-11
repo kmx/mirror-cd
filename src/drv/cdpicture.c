@@ -1243,6 +1243,72 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
           cdfCanvasVertex(canvas, prim->param.polyf.points[p].x, prim->param.polyf.points[p].y);
         cdCanvasEnd(canvas);
         break;
+      case CDPIC_PATH:
+        if (prim->param.path.fill)
+          primUpdateAttrib_Fill(prim, canvas);
+        else
+          primUpdateAttrib_Line(prim, canvas);
+        cdCanvasBegin(canvas, CD_PATH);
+        n = 0;
+        for (p=0; p<prim->param.path.path_n; p++)
+        {
+          cdCanvasPathSet(canvas, prim->param.path.path[p]);
+
+          switch(prim->param.path.path[p])
+          {
+          case CD_PATH_MOVETO:
+          case CD_PATH_LINETO:
+            if (n+1 > n) break;
+            cdCanvasVertex(canvas, prim->param.path.points[n].x, prim->param.path.points[n].y);
+            n++;
+            break;
+          case CD_PATH_CURVETO:
+          case CD_PATH_ARC:
+            {
+              if (n+3 > n) break;
+              cdCanvasVertex(canvas, prim->param.path.points[n].x,   prim->param.path.points[n].y);
+              cdCanvasVertex(canvas, prim->param.path.points[n+1].x, prim->param.path.points[n+1].y);
+              cdCanvasVertex(canvas, prim->param.path.points[n+2].x, prim->param.path.points[n+2].y);
+              n += 3;
+            }
+            break;
+          }
+        }
+        cdCanvasEnd(canvas);
+        break;
+      case CDPIC_FPATH:
+        if (prim->param.path.fill)
+          primUpdateAttrib_Fill(prim, canvas);
+        else
+          primUpdateAttrib_Line(prim, canvas);
+        cdCanvasBegin(canvas, CD_PATH);
+        n = 0;
+        for (p=0; p<prim->param.pathf.path_n; p++)
+        {
+          cdCanvasPathSet(canvas, prim->param.pathf.path[p]);
+
+          switch(prim->param.pathf.path[p])
+          {
+          case CD_PATH_MOVETO:
+          case CD_PATH_LINETO:
+            if (n+1 > n) break;
+            cdfCanvasVertex(canvas, prim->param.pathf.points[n].x, prim->param.pathf.points[n].y);
+            n++;
+            break;
+          case CD_PATH_CURVETO:
+          case CD_PATH_ARC:
+            {
+              if (n+3 > n) break;
+              cdfCanvasVertex(canvas, prim->param.pathf.points[n].x,   prim->param.pathf.points[n].y);
+              cdfCanvasVertex(canvas, prim->param.pathf.points[n+1].x, prim->param.pathf.points[n+1].y);
+              cdfCanvasVertex(canvas, prim->param.pathf.points[n+2].x, prim->param.pathf.points[n+2].y);
+              n += 3;
+            }
+            break;
+          }
+        }
+        cdCanvasEnd(canvas);
+        break;
       case CDPIC_IMAGERGB:
         cdCanvasPutImageRectRGB(canvas, prim->param.imagergba.iw, prim->param.imagergba.ih, prim->param.imagergba.r, prim->param.imagergba.g, prim->param.imagergba.b, prim->param.imagergba.x, prim->param.imagergba.y, prim->param.imagergba.w, prim->param.imagergba.h, 0, 0, 0, 0);
         break;

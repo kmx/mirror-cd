@@ -1196,7 +1196,7 @@ static void set_opacity_attrib(cdCtxCanvas *ctxcanvas, char* data)
 static char* get_opacity_attrib(cdCtxCanvas *ctxcanvas)
 {
   static char data[50];
-  sprintf(data, "%d", ctxcanvas->opacity);
+  sprintf(data, "%d", cdRound(ctxcanvas->opacity*255.0));
   return data;
 }
 
@@ -1209,7 +1209,7 @@ static cdAttribute opacity_attrib =
 
 static void set_cmd_attrib(cdCtxCanvas *ctxcanvas, char* data)
 {
-  fprintf(ctxcanvas->file, data);
+  fprintf(ctxcanvas->file, "%s", data);
 }
 
 static cdAttribute cmd_attrib =
