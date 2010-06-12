@@ -65,13 +65,14 @@ void cdwpKillCanvas(cdCtxCanvas* ctxcanvas)
   /* ctxcanvas e´ liberado em cada driver */
 }
 
-static int cdwpSetTransform(cdCtxCanvas* ctxcanvas, Matrix &transformMatrix, const double* matrix)
+static int sAddTransform(cdCtxCanvas* ctxcanvas, Matrix &transformMatrix, const double* matrix)
 {
   if (matrix)
   {
     // configure a bottom-up coordinate system
     Matrix Matrix1((REAL)1, (REAL)0, (REAL)0, (REAL)-1, (REAL)0, (REAL)(ctxcanvas->canvas->h-1));
     transformMatrix.Multiply(&Matrix1);
+
     // add the global transform
     Matrix Matrix2((REAL)matrix[0], (REAL)matrix[1], (REAL)matrix[2], (REAL)matrix[3], (REAL)matrix[4], (REAL)matrix[5]);
     transformMatrix.Multiply(&Matrix2);
@@ -89,11 +90,11 @@ static int cdwpSetTransform(cdCtxCanvas* ctxcanvas, Matrix &transformMatrix, con
   return 0;
 }
 
-static void cdwpUpdateTransform(cdCtxCanvas* ctxcanvas)
+static void sUpdateTransform(cdCtxCanvas* ctxcanvas)
 {
   Matrix transformMatrix;
   ctxcanvas->graphics->ResetTransform(); // reset to the identity.
-  if (cdwpSetTransform(ctxcanvas, transformMatrix, ctxcanvas->canvas->use_matrix? ctxcanvas->canvas->matrix: NULL))
+  if (sAddTransform(ctxcanvas, transformMatrix, ctxcanvas->canvas->use_matrix? ctxcanvas->canvas->matrix: NULL))
     ctxcanvas->graphics->SetTransform(&transformMatrix);
 }
 
@@ -1304,7 +1305,7 @@ static void sTextBox(cdCtxCanvas* ctxcanvas, WCHAR *ws, int len, int x, int y, i
   *ymin += ydir * (*h);
 }
 
-static void cdwpCanvasGetTextHeight(cdCanvas* canvas, int x, int y, int w, int h, int *hbox)
+static void sGetTransformTextHeight(cdCanvas* canvas, int x, int y, int w, int h, int *hbox)
 {
   int xmin, xmax, ymin, ymax;
 
@@ -1340,21 +1341,12 @@ static void cdwpCanvasGetTextHeight(cdCanvas* canvas, int x, int y, int w, int h
   *hbox = ymax-ymin+1;
 }
 
-static void cdwpTextTransform(cdCtxCanvas* ctxcanvas, int *x, int *y, int w, int h, Matrix &transformMatrix)
+static void sAddTextTransform(cdCtxCanvas* ctxcanvas, int *x, int *y, int w, int h, Matrix &transformMatrix)
 {
   int hbox;
-  double* matrix = ctxcanvas->canvas->matrix;
   Matrix m1;
 
-  cdwpCanvasGetTextHeight(ctxcanvas->canvas, *x, *y, w, h, &hbox);
-
-  // configure a bottom-up coordinate system
-  m1.SetElements((REAL)1, (REAL)0, (REAL)0, (REAL)-1, (REAL)0, (REAL)(ctxcanvas->canvas->h-1));
-  transformMatrix.Multiply(&m1);
-
-  // add the global transform
-  m1.SetElements((REAL)matrix[0], (REAL)matrix[1], (REAL)matrix[2], (REAL)matrix[3], (REAL)matrix[4], (REAL)matrix[5]);
-  transformMatrix.Multiply(&m1);
+  sGetTransformTextHeight(ctxcanvas->canvas, *x, *y, w, h, &hbox);
 
   // move to (x,y) and remove a vertical offset since text reference point is top-left
   m1.SetElements((REAL)1, (REAL)0, (REAL)0, (REAL)1, (REAL)*x, (REAL)(*y - (hbox-1)));
@@ -1387,10 +1379,12 @@ static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s, int len)
 
   if (ctxcanvas->canvas->use_matrix)
   {
-    cdwpTextTransform(ctxcanvas, &x, &y, w, h, transformMatrix);
+    double* matrix = ctxcanvas->canvas->matrix;
+    sAddTransform(ctxcanvas, transformMatrix, matrix);
+    sAddTextTransform(ctxcanvas, &x, &y, w, h, transformMatrix);
     use_transform = 1;
   }
-  else if (cdwpSetTransform(ctxcanvas, transformMatrix, NULL))
+  else if (sAddTransform(ctxcanvas, transformMatrix, NULL))
     use_transform = 1;
 
   if (ctxcanvas->canvas->new_region)
@@ -1419,7 +1413,7 @@ static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s, int len)
                                   ctxcanvas->lineBrush);
 
   if (use_transform)
-    cdwpUpdateTransform(ctxcanvas); // reset transform
+    sUpdateTransform(ctxcanvas); // reset transform
 
   ctxcanvas->dirty = 1;
 }
@@ -1616,7 +1610,7 @@ static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
   else
     ctxcanvas->canvas->invert_yaxis = 1;
 
-  if (cdwpSetTransform(ctxcanvas, transformMatrix, matrix))
+  if (sAddTransform(ctxcanvas, transformMatrix, matrix))
     ctxcanvas->graphics->SetTransform(&transformMatrix);
 }
 
@@ -2691,7 +2685,7 @@ void cdwpUpdateCanvas(cdCtxCanvas* ctxcanvas)
   else
     set_aa_attrib(ctxcanvas, NULL);
 
-  cdwpUpdateTransform(ctxcanvas);
+  sUpdateTransform(ctxcanvas);
 }
 
 /* 

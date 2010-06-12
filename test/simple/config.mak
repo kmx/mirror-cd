@@ -1,11 +1,21 @@
-APPNAME = simple
+APPNAME := simple
 
-ifdef USE_GDK
-  APPNAME = simplegdk
-  USE_GTK = Yes
-else
-  DEFINES = USE_CONTEXTPLUS
+ifdef GTK_DEFAULT
+  ifdef USE_MOTIF
+    # Build Motif version in Linux,Darwin,FreeBSD
+    APPNAME := $(APPNAME)mot
+  else
+    GDK_CAIRO = Yes
+  endif
+else  
+  ifdef USE_GTK
+    # Build GTK version in IRIX,SunOS,AIX,Win32
+    APPNAME := $(APPNAME)gtk
+    GDK_CAIRO = Yes
+  endif
 endif
+
+DEFINES = USE_CONTEXTPLUS
 
 SRC = simple.c simple_led.c iupmain.c
             
@@ -31,7 +41,7 @@ USE_STATIC = Yes
 
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )
   LIBS = cdpdf pdflib
-  ifndef USE_GDK
+  ifndef GDK_CAIRO
     LIBS += cdcontextplus gdiplus
   endif
 else
@@ -42,7 +52,7 @@ else
   endif  
 
   SLIB = $(CDLIB)/libcdpdf.a $(CDLIB)/libpdflib.a 
-  ifndef USE_GDK
+  ifndef GDK_CAIRO
     SLIB += $(CDLIB)/libcdcontextplus.a
     LIBS = Xrender Xft
   else  

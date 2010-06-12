@@ -589,6 +589,33 @@ static long int cdforeground(cdCtxCanvas *ctxcanvas, long int color)
 
 /******************************************************/
 
+static void sSetTransform(cdCtxCanvas *ctxcanvas, const double* matrix)
+{
+  if (matrix)
+  {
+    cairo_matrix_t mtx;
+
+    /* configure a bottom-up coordinate system */
+    mtx.xx = 1; mtx.yx = 0;
+    mtx.xy = 0; mtx.yy = -1;
+    mtx.x0 = 0; mtx.y0 = (ctxcanvas->canvas->h-1);
+    cairo_transform(ctxcanvas->cr, &mtx);
+
+    mtx.xx = matrix[0]; mtx.yx = matrix[1];
+    mtx.xy = matrix[2]; mtx.yy = matrix[3];
+    mtx.x0 = matrix[4]; mtx.y0 = matrix[5];
+    cairo_transform(ctxcanvas->cr, &mtx);
+  }
+  else if (ctxcanvas->rotate_angle)
+  {
+    /* rotation = translate to point + rotation + translate back */
+    /* the rotation must be corrected because of the Y axis orientation */
+    cairo_translate(ctxcanvas->cr, ctxcanvas->rotate_center_x, _cdInvertYAxis(ctxcanvas->canvas, ctxcanvas->rotate_center_y));
+    cairo_rotate(ctxcanvas->cr, (double)-ctxcanvas->rotate_angle * CD_DEG2RAD);
+    cairo_translate(ctxcanvas->cr, -ctxcanvas->rotate_center_x, -_cdInvertYAxis(ctxcanvas->canvas, ctxcanvas->rotate_center_y));
+  }
+}
+
 static void cdclear(cdCtxCanvas* ctxcanvas)
 {
   cairo_save (ctxcanvas->cr);
@@ -763,10 +790,71 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
   cdfbox(ctxcanvas, (double)xmin, (double)xmax, (double)ymin, (double)ymax);
 }
 
+static void sGetTransformTextHeight(cdCanvas* canvas, int x, int y, int w, int h, int *hbox)
+{
+  int xmin, xmax, ymin, ymax;
+  int baseline, height, ascent;
+
+  /* distance from bottom to baseline */
+  cdgetfontdim(canvas->ctxcanvas, NULL, &height, &ascent, NULL);
+  baseline = height - ascent; 
+
+  /* move to bottom-left */
+  cdTextTranslatePoint(canvas, x, y, w, h, baseline, &xmin, &ymin);
+
+  xmax = xmin + w-1;
+  ymax = ymin + h-1;
+
+  if (canvas->text_orientation)
+  {
+    double cos_theta = cos(canvas->text_orientation*CD_DEG2RAD);
+    double sin_theta = sin(canvas->text_orientation*CD_DEG2RAD);
+    int rectY[4];
+
+    cdRotatePointY(canvas, xmin, ymin, x, y, &rectY[0], sin_theta, cos_theta);
+    cdRotatePointY(canvas, xmax, ymin, x, y, &rectY[1], sin_theta, cos_theta);
+    cdRotatePointY(canvas, xmax, ymax, x, y, &rectY[2], sin_theta, cos_theta);
+    cdRotatePointY(canvas, xmin, ymax, x, y, &rectY[3], sin_theta, cos_theta);
+
+    ymin = ymax = rectY[0];
+    if (rectY[1] < ymin) ymin = rectY[1];
+    if (rectY[2] < ymin) ymin = rectY[2];
+    if (rectY[3] < ymin) ymin = rectY[3];
+    if (rectY[1] > ymax) ymax = rectY[1];
+    if (rectY[2] > ymax) ymax = rectY[2];
+    if (rectY[3] > ymax) ymax = rectY[3];
+  }
+
+  *hbox = ymax-ymin+1;
+}
+
+static void sSetTextTransform(cdCtxCanvas* ctxcanvas, double *x, double *y, int w, int h)
+{
+  int hbox;
+  cairo_matrix_t mtx;
+
+  sGetTransformTextHeight(ctxcanvas->canvas, (int)*x, (int)*y, w, h, &hbox);
+
+  /* move to (x,y) and remove a vertical offset since text reference point is top-left */
+  mtx.xx = 1; mtx.yx = 0;
+  mtx.xy = 0; mtx.yy = 1;
+  mtx.x0 = *x; mtx.y0 = *y - (hbox-1);
+  cairo_transform(ctxcanvas->cr, &mtx);
+
+  /* invert the text vertical orientation, relative to itself */
+  mtx.xx = 1; mtx.yx = 0;
+  mtx.xy = 0; mtx.yy = -1;
+  mtx.x0 = 0; mtx.y0 = hbox-1;
+  cairo_transform(ctxcanvas->cr, &mtx);
+
+  *x = 0;
+  *y = 0;
+}
+
 static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, int len)
 {
   PangoFontMetrics* metrics;
-  int w, h, desc, dir = -1;
+  int w, h, desc, dir = -1, reset_transform = 0;
 
   pango_layout_set_text(ctxcanvas->fontlayout, sStrConvertToUTF8(ctxcanvas, s, len), -1);
   
@@ -774,14 +862,25 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, i
   metrics = pango_context_get_metrics(ctxcanvas->fontcontext, ctxcanvas->fontdesc, pango_context_get_language(ctxcanvas->fontcontext));
   desc = (((pango_font_metrics_get_descent(metrics)) + PANGO_SCALE/2) / PANGO_SCALE);
 
-  if (ctxcanvas->canvas->text_orientation)
+  if (ctxcanvas->canvas->text_orientation || 
+      ctxcanvas->canvas->use_matrix ||
+      ctxcanvas->rotate_angle)
+    reset_transform = 1;
+
+  if (reset_transform)
   {
     cairo_save (ctxcanvas->cr);
+    cairo_identity_matrix(ctxcanvas->cr);
+  }
+
+  if (ctxcanvas->canvas->text_orientation)
+  {
     cairo_translate(ctxcanvas->cr, x, y);
     cairo_rotate(ctxcanvas->cr, -ctxcanvas->canvas->text_orientation*CD_DEG2RAD);
     cairo_translate(ctxcanvas->cr, -x, -y);
   }
 
+  /* move to top-left corner of the text */
   switch (ctxcanvas->canvas->text_alignment)
   {
     case CD_BASE_RIGHT:
@@ -831,6 +930,15 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, i
       break;
   }
 
+  if (ctxcanvas->canvas->use_matrix)
+  {
+    double* matrix = ctxcanvas->canvas->matrix;
+    sSetTransform(ctxcanvas, matrix);
+    sSetTextTransform(ctxcanvas, &x, &y, w, h);
+  }
+  else 
+    sSetTransform(ctxcanvas, NULL);
+
   /* Inform Pango to re-layout the text with the new transformation */
   pango_cairo_update_layout(ctxcanvas->cr, ctxcanvas->fontlayout);
 
@@ -839,7 +947,7 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, i
   cairo_move_to(ctxcanvas->cr, x, y);
   pango_cairo_show_layout(ctxcanvas->cr, ctxcanvas->fontlayout);
 
-  if (ctxcanvas->canvas->text_orientation)
+  if (reset_transform)
     cairo_restore(ctxcanvas->cr);
 
   pango_font_metrics_unref(metrics); 
@@ -1547,29 +1655,9 @@ static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
   ctxcanvas->canvas->invert_yaxis = 1;
 
   if (matrix)
-  {
-    cairo_matrix_t mtx;
-
-    /* configure a bottom-up coordinate system */
-    mtx.xx = 1; mtx.yx = 0;
-    mtx.xy = 0; mtx.yy = -1;
-    mtx.x0 = 0; mtx.y0 = (ctxcanvas->canvas->h-1);
-    cairo_transform(ctxcanvas->cr, &mtx);
     ctxcanvas->canvas->invert_yaxis = 0;
 
-    mtx.xx = matrix[0]; mtx.yx = matrix[1];
-    mtx.xy = matrix[2]; mtx.yy = matrix[3];
-    mtx.x0 = matrix[4]; mtx.y0 = matrix[5];
-    cairo_transform(ctxcanvas->cr, &mtx);
-  }
-  else if (ctxcanvas->rotate_angle)
-  {
-    /* rotation = translate to point + rotation + translate back */
-    /* the rotation must be corrected because of the Y axis orientation */
-    cairo_translate(ctxcanvas->cr, ctxcanvas->rotate_center_x, _cdInvertYAxis(ctxcanvas->canvas, ctxcanvas->rotate_center_y));
-    cairo_rotate(ctxcanvas->cr, (double)-ctxcanvas->rotate_angle * CD_DEG2RAD);
-    cairo_translate(ctxcanvas->cr, -ctxcanvas->rotate_center_x, -_cdInvertYAxis(ctxcanvas->canvas, ctxcanvas->rotate_center_y));
-  }
+  sSetTransform(ctxcanvas, matrix);
 }
 
 /******************************************************************/
