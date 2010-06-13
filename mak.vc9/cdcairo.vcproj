@@ -161,6 +161,14 @@
 		<File
 			RelativePath="..\src\cairo\cdcairoprn.c"
 			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				ExcludedFromBuild="true"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+				/>
+			</FileConfiguration>
 		</File>
 		<File
 			RelativePath="..\src\cairo\cdcairops.c"
