@@ -159,6 +159,10 @@
 			>
 		</File>
 		<File
+			RelativePath="..\src\cairo\cdcairoprn.c"
+			>
+		</File>
+		<File
 			RelativePath="..\src\cairo\cdcairops.c"
 			>
 		</File>

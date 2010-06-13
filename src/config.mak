@@ -37,6 +37,7 @@ SRCCOMM = cd.c wd.c wdhdcpy.c rgb2map.c cd_vectortext.c cd_active.c \
           cd_attributes.c cd_bitmap.c cd_image.c cd_primitives.c cd_text.c cd_util.c
       
 SRC = $(SRCCOMM) $(SRCSVG) $(SRCINTCGM) $(SRCDRV) $(SRCSIM)
+INCLUDES = . drv x11 win32 intcgm freetype2 sim cairo ../include
 
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )
   ifdef USE_GDK
@@ -50,7 +51,8 @@ ifneq ($(findstring Win, $(TEC_SYSNAME)), )
   LIBS = freetype6
 else
   ifdef USE_GDK
-    SRC += $(SRCGDK) $(SRCCAIRO)
+    SRC += $(SRCGDK) $(SRCCAIRO) cairo/cdcairoprn.c
+    INCLUDES += /usr/include/gtk-unix-print-2.0
     USE_GTK = Yes
     LIBS += cairo
     ifndef GTK_DEFAULT
@@ -75,4 +77,3 @@ endif
 
 LDIR = ../lib/$(TEC_UNAME)
 
-INCLUDES = . drv x11 win32 intcgm freetype2 sim cairo ../include

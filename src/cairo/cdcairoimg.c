@@ -45,7 +45,6 @@ static cdContext cdImageContext =
   NULL
 };
 
-
 cdContext* cdContextCairoImage(void)
 {
   return &cdImageContext;

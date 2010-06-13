@@ -13,6 +13,9 @@
 #include "cd.h"
 #include "cd_private.h"
 
+#ifndef __GTK_PRINT_UNIX_DIALOG_H__
+typedef struct _GtkPrintJob  GtkPrintJob;
+#endif
 
 struct _cdCtxImage {
   unsigned int w, h;
@@ -68,6 +71,8 @@ struct _cdCtxCanvas
 
   cdImage* image_dbuffer;       /* Used by double buffer driver */
   cdCanvas* canvas_dbuffer;
+
+  GtkPrintJob* job;    /* used in Printer */
 };
 
 #define cdCairoGetRed(_)   (((double)cdRed(_))/255.)

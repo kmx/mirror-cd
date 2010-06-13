@@ -18,8 +18,8 @@ void cdInitContextPlus(void)
   ctx_list[CD_CTX_NATIVEWINDOW] = cdContextCairoNativeWindow();
   ctx_list[CD_CTX_IMAGE] = cdContextCairoImage();
   ctx_list[CD_CTX_DBUFFER] = cdContextCairoDBuffer();
-#ifdef WIN32
-//  ctx_list[CD_CTX_PRINTER] = cdContextCairoPrinter();
+#ifndef WIN32
+  ctx_list[CD_CTX_PRINTER] = cdContextCairoPrinter();
 #endif
 
   cdInitContextPlusList(ctx_list);
