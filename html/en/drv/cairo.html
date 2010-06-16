@@ -27,8 +27,8 @@
 	<b>Image</b>, <b>Printer</b> and <b>Double Buffer</b> were implemented.</p>
 <p>The main motivation for the use of Cairo was transparency for all the 
 primitives. Beyond that we got other features like anti-aliasing, gradient 
-filling, transformations and back-ends (support to rendering: PDF, PS, SVG and 
-PNG surfaces).</p>
+filling, transformations and other back-ends (support to rendering: PDF, PS, SVG and 
+IMAGERGB surfaces).</p>
 <p>This driver still does not completely replace the X-Windows and GDI Windows 
 base drivers, because Cairo does not have support for bitwise XOR operations and 
 for complex clipping regions.</p>
@@ -38,9 +38,12 @@ for complex clipping regions.</p>
   This function affects only the <font face="Courier"><strong>cdCreateCanvas</strong></font> function call, once created 
   the canvas will be always a Cairo canvas. In fact the function affects primary the definitions 
 	<font face="Courier"><strong>CD_NATIVEWINDOW</strong></font>, 
-  <strong><span style="font-family: Courier">CD_IMAGE</span></strong> and <strong>
+  <strong><span style="font-family: Courier">CD_IMAGE</span></strong>, 
+  <strong><span style="font-family: Courier">CD_PRINTER</span></strong> and <strong>
   <span style="font-family: Courier">CD_DBUFFER</span></strong>, because they are 
-  function calls and not static defines.</p>
+  function calls and not static defines. 
+  <strong><span style="font-family: Courier">CD_PRINTER</span></strong> can only 
+	be used along with GDK base driver in UNIX.</p>
   <p>Using Cairo it is allowed to create more that one canvas at the same time for the same Window. And they can co-exist 
   with a standard GDK, Win32 or X-Windows canvas.</p>
   <p>To enable the use of Cairo based drivers you must call the initialization function <font face="Courier"><strong>
@@ -60,7 +63,8 @@ used.</p>
 
   <p>Similar to <a href="ps.html">CD_PS</a>, uses the same creation parameters. 
 	But margins are not supported and Postscript level can be 2 (parameter -2) 
-	or 3 (parameter -3).</p>
+	or 3 (parameter -3). The &quot;CMD&quot; attribute is not supported, and the new 
+	attribute &quot;DSCCOMMENT&quot; accepts a string that is saved as a DSC comment.</p>
 
 <h4>CD_CAIRO_PDF - PDF Driver</h4>
 
@@ -84,7 +88,10 @@ used.</p>
 	returns the line size in bytes, when data is specified during creation then 
 	stride is always width*32. Even when there is not alpha channel, data is 
 	stored in 32 bits per pixel. Image data is also organized in top-bottom 
-	orientation, it means the data pointer points to the top-left corner.</p>
+	orientation, it means the data pointer points to the top-left corner. And 
+	the &quot;WRITE2PNG&quot; attribute that accepts a filename to save the image as a PNG 
+	file (this does not depends of the
+	<a href="http://www.tecgraf.puc-rio.br/im">IM</a> library).</p>
 
 <h3>Behavior of Functions</h3>
 <h4>Control&nbsp; </h4>

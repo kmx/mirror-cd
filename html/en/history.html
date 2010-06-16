@@ -18,6 +18,9 @@
 	color: #FF0000;
 	font-weight: bold;
 }
+  .style1 {
+	color: #FF0000;
+}
   </style>
 </head>
 
@@ -26,17 +29,20 @@
 <h2>History of Changes</h2>
 <h3><a href="http://sourceforge.net/projects/canvasdraw/files/5.4/">Version 5.4</a> (XX/June/2010)</h3>
 <ul>
-	<li><span class="hist_new">New:</span> context plus driver Cairo.</li>
+	<li><span class="hist_new">New:</span> context plus driver 
+	<a href="drv/cairo.html">Cairo</a>.</li>
 	<li><span class="hist_new">New:</span> &quot;CMD&quot;, &quot;OPACITY&quot; and &quot;HATCHBOXSIZE&quot; 
 	attributes in the SVG driver.</li>
-	<li><span class="hist_new">New:</span> CD_PATH <strong>cdCanvasBegin</strong> 
+	<li><span class="hist_new">New:</span> <a href="func/polygon.html#cdBegin">CD_PATH</a> <strong>cdCanvasBegin</strong> 
 	mode to create a path composed of several primitives that can be line draw, 
-	filled or used as clipping. New function <strong>cdCanvasPathSet</strong> to 
+	filled or used as clipping. New function <strong>
+	<a href="func/polygon.html#cdPathSet">cdCanvasPathSet</a></strong> to 
 	configure the action between sequences of <strong>cdCanvasVertex</strong>.</li>
 	<li><span class="hist_changed">Changed:</span> 
     CD_DXF now supports solid filled primitives for polygons and rectangles.</li>
 	<li><span class="hist_changed">Changed:</span> 
-    GDI+ base driver now supports floating point primitives. ATTENTION: check 
+    GDI+ base driver now supports floating point primitives. 
+	<span class="style1">ATTENTION</span>: check 
 	for alignment and size problems in the application. Please report if 
 	anything changed.</li>
 	<li dir="ltr">
