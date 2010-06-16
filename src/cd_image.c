@@ -86,26 +86,9 @@ void cdCanvasPutImageRectRGB(cdCanvas* canvas, int iw, int ih, const unsigned ch
   if (canvas->invert_yaxis)
     y = _cdInvertYAxis(canvas, y);
 
-  if (canvas->bpp <= 8)
-  {
-    int height = ymax-ymin+1;
-    unsigned char* map = (unsigned char*)malloc(iw * height);
-    int pal_size = 1L << canvas->bpp;
-    long colors[256];
-
-    if (!map)
-      return;
-
-    if (pal_size == 2) /* probably a laser printer, use a gray image for better results */
-      cdRGB2Gray(iw, height, r+ymin*iw, g+ymin*iw, b+ymin*iw, map, colors);
-    else
-      cdRGB2Map(iw, height, r+ymin*iw, g+ymin*iw, b+ymin*iw, map, pal_size, colors);
-
-    canvas->cxPutImageRectMap(canvas->ctxcanvas, iw, height, map, colors, x, y, w, h, xmin, xmax, 0, height-1);
-
-    free(map);
-  }
-  else
+  if (canvas->cxPutImageRectMap && (canvas->bpp <= 8 || !canvas->cxPutImageRectRGB))
+    cdSimPutImageRectRGB(canvas, iw, ih, r, g, b, x, y, w, h, xmin, xmax, ymin, ymax);
+  else if (canvas->cxPutImageRectRGB)
     canvas->cxPutImageRectRGB(canvas->ctxcanvas, iw, ih, r, g, b, x, y, w, h, xmin, xmax, ymin, ymax);
 }
 
@@ -142,6 +125,11 @@ void cdCanvasPutImageRectRGBA(cdCanvas* canvas, int iw, int ih, const unsigned c
   {
     if (canvas->cxGetImageRGB)
       cdSimPutImageRectRGBA(canvas, iw, ih, r, g, b, a, x, y, w, h, xmin, xmax, ymin, ymax);
+    else if (!canvas->cxPutImageRectRGB)
+    {
+      if (canvas->cxPutImageRectMap)
+        cdSimPutImageRectRGB(canvas, iw, ih, r, g, b, x, y, w, h, xmin, xmax, ymin, ymax);
+    }
     else
       canvas->cxPutImageRectRGB(canvas->ctxcanvas, iw, ih, r, g, b, x, y, w, h, xmin, xmax, ymin, ymax);
   }

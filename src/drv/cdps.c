@@ -49,11 +49,11 @@ struct _cdCtxCanvas
 {
   cdCanvas* canvas;
 
-  FILE *file;          /* Arquivo PS */
+  FILE *file;            /* Arquivo PS */
   int res;               /* Resolucao */
   int pages;             /* Numero total de paginas */
-  double width;          /* Largura do papel (points) */
-  double height;         /* Altura do papel (points) */
+  double width_pt;       /* Largura do papel (points) */
+  double height_pt;      /* Altura do papel (points) */
   double xmin, ymin;     /* Definem as margens esquerda e inferior (points) */
   double xmax, ymax;     /* Definem as margens direita e superior (points) */
   double bbxmin, bbymin; /* Definem a bounding box */
@@ -82,7 +82,8 @@ struct _cdCtxCanvas
 static void setpsdefaultvalues(cdCtxCanvas *ctxcanvas)
 {
   /* all the other values are set to 0 */
-  cdSetPaperSize(CD_A4, &ctxcanvas->width, &ctxcanvas->height);
+  cdSetPaperSize(CD_A4, &ctxcanvas->width_pt, &ctxcanvas->height_pt);
+
   ctxcanvas->xmin = 25.4; /* ainda em mm, sera' convertido para points na init_ps */
   ctxcanvas->xmax = 25.4;
   ctxcanvas->ymin = 25.4;
@@ -249,8 +250,10 @@ static void set_default_matrix(cdCtxCanvas *ctxcanvas)
     fprintf(ctxcanvas->file, "setmatrix\n");  
   }
 
-  /* margin and scale */
+  /* margin */
   fprintf(ctxcanvas->file, "%g %g translate\n", ctxcanvas->xmin, ctxcanvas->ymin);
+
+  /* default coordinate system is in points, change it to pixels. */
   fprintf(ctxcanvas->file, "%g %g scale\n", ctxcanvas->scale, ctxcanvas->scale);
 }
 
@@ -259,15 +262,15 @@ static void set_default_matrix(cdCtxCanvas *ctxcanvas)
 */
 static void init_ps(cdCtxCanvas *ctxcanvas)
 {
-  double w, h;
+  double w_pt, h_pt;
 
   time_t now = time(NULL);
 
-  ctxcanvas->scale = 72.0/ctxcanvas->res;
+  /* convert margin values to actual limits */
   ctxcanvas->xmin = mm2pt(ctxcanvas->xmin);
-  ctxcanvas->xmax = ctxcanvas->width - mm2pt(ctxcanvas->xmax);
+  ctxcanvas->xmax = ctxcanvas->width_pt - mm2pt(ctxcanvas->xmax);
   ctxcanvas->ymin = mm2pt(ctxcanvas->ymin);
-  ctxcanvas->ymax = ctxcanvas->height - mm2pt(ctxcanvas->ymax);
+  ctxcanvas->ymax = ctxcanvas->height_pt - mm2pt(ctxcanvas->ymax);
   ctxcanvas->bbmargin = mm2pt(ctxcanvas->bbmargin);
 
   fprintf(ctxcanvas->file, "%%!PS-Adobe-3.0 %s\n", ctxcanvas->eps ? "EPSF-3.0":"");
@@ -309,9 +312,10 @@ static void init_ps(cdCtxCanvas *ctxcanvas)
   
   if (!ctxcanvas->eps && !ctxcanvas->level1)
   {
+    /* setpagedevice not allowed in EPS */
     fprintf(ctxcanvas->file, "%%%%IncludeFeature: *Resolution %d\n", ctxcanvas->res);
     fprintf(ctxcanvas->file, "%%%%BeginFeature: *PageSize\n");
-    fprintf(ctxcanvas->file, "<< /PageSize [%g %g] >> setpagedevice\n", ctxcanvas->width, ctxcanvas->height); /* setpagedevice not allowed in EPS */
+    fprintf(ctxcanvas->file, "<< /PageSize [%g %g] >> setpagedevice\n", ctxcanvas->width_pt, ctxcanvas->height_pt); 
     fprintf(ctxcanvas->file, "%%%%EndFeature\n");
   }
 
@@ -321,16 +325,20 @@ static void init_ps(cdCtxCanvas *ctxcanvas)
   fputs(change_font, ctxcanvas->file);
   fputs(re_encode, ctxcanvas->file);
 
-  w = ctxcanvas->xmax - ctxcanvas->xmin;
-  h = ctxcanvas->ymax - ctxcanvas->ymin;
+  ctxcanvas->scale = 72.0/ctxcanvas->res;
+  ctxcanvas->canvas->xres = ctxcanvas->res/25.4;
+  ctxcanvas->canvas->yres = ctxcanvas->canvas->xres;
 
-  ctxcanvas->canvas->w = (int)(w/ctxcanvas->scale + 0.5);   /* Converte p/ unidades do usuario */
-  ctxcanvas->canvas->h = (int)(h/ctxcanvas->scale + 0.5); /* Converte p/ unidades do usuario */
-  ctxcanvas->canvas->w_mm = w/CD_MM2PT;   /* Converte p/ milimetros */
-  ctxcanvas->canvas->h_mm = h/CD_MM2PT; /* Converte p/ milimetros */
+  w_pt = ctxcanvas->xmax - ctxcanvas->xmin;
+  h_pt = ctxcanvas->ymax - ctxcanvas->ymin;
+
+  ctxcanvas->canvas->w_mm = w_pt/CD_MM2PT;   /* Converte p/ milimetros */
+  ctxcanvas->canvas->h_mm = h_pt/CD_MM2PT; /* Converte p/ milimetros */
+
+  ctxcanvas->canvas->w = cdRound(ctxcanvas->canvas->xres*ctxcanvas->canvas->w_mm);
+  ctxcanvas->canvas->h = cdRound(ctxcanvas->canvas->yres*ctxcanvas->canvas->h_mm);
+
   ctxcanvas->canvas->bpp = 24;
-  ctxcanvas->canvas->xres = ctxcanvas->canvas->w / ctxcanvas->canvas->w_mm;
-  ctxcanvas->canvas->yres = ctxcanvas->canvas->h / ctxcanvas->canvas->h_mm;
 
   fprintf(ctxcanvas->file, "%%%%Page: 1 1\n");
   ctxcanvas->pages = 1;
@@ -1989,16 +1997,16 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
         {
           int paper;
           sscanf(line, "%d", &paper);
-          cdSetPaperSize(paper, &ctxcanvas->width, &ctxcanvas->height);
+          cdSetPaperSize(paper, &ctxcanvas->width_pt, &ctxcanvas->height_pt);
           break;
         }
       case 'w':
         sscanf(line, "%g", &num);
-        ctxcanvas->width = mm2pt(num);
+        ctxcanvas->width_pt = mm2pt(num);
         break;
       case 'h':
         sscanf(line, "%g", &num);
-        ctxcanvas->height = mm2pt(num);
+        ctxcanvas->height_pt = mm2pt(num);
         break;
       case 'l':
         sscanf(line, "%g", &num);
@@ -2048,9 +2056,9 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   /* update canvas context */
   canvas->ctxcanvas = ctxcanvas;
 
-  if (ctxcanvas->landscape == 1)
+  if (ctxcanvas->landscape)
   {
-    _cdSwapDouble(ctxcanvas->width, ctxcanvas->height);
+    _cdSwapDouble(ctxcanvas->width_pt, ctxcanvas->height_pt);
     _cdSwapDouble(ctxcanvas->xmin, ctxcanvas->ymin);
     _cdSwapDouble(ctxcanvas->xmax, ctxcanvas->ymax);
   }

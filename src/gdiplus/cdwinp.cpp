@@ -2560,19 +2560,22 @@ static cdAttribute img_points_attrib =
   get_img_points_attrib
 }; 
 
-static BOOL Is_WinXP_or_Later(void) 
+static BOOL Is_WinXP_or_WinSrv03(void) 
 {
   OSVERSIONINFO osvi;
   ZeroMemory(&osvi, sizeof(OSVERSIONINFO));
   osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
   GetVersionEx (&osvi);
 
-  BOOL bIsWindowsXPorLater = 
+  BOOL bIsWindowsXP = 
     (osvi.dwPlatformId == VER_PLATFORM_WIN32_NT) &&
-    ( (osvi.dwMajorVersion > 5) || ( (osvi.dwMajorVersion == 5) && 
-                                     (osvi.dwMinorVersion >= 1)));
+    ((osvi.dwMajorVersion == 5) && (osvi.dwMinorVersion == 1));
 
-  return bIsWindowsXPorLater;
+  BOOL bIsWindowsServer2003 = 
+    (osvi.dwPlatformId == VER_PLATFORM_WIN32_NT) &&
+    ((osvi.dwMajorVersion == 5) && (osvi.dwMinorVersion == 2));
+
+  return bIsWindowsXP || bIsWindowsServer2003;
 }
 
 static void set_aa_attrib(cdCtxCanvas* ctxcanvas, char* data)
@@ -2588,7 +2591,7 @@ static void set_aa_attrib(cdCtxCanvas* ctxcanvas, char* data)
   {
     ctxcanvas->graphics->SetInterpolationMode(InterpolationModeBilinear);
     ctxcanvas->graphics->SetSmoothingMode(SmoothingModeAntiAlias);
-    if (Is_WinXP_or_Later())
+    if (Is_WinXP_or_WinSrv03())
       ctxcanvas->graphics->SetTextRenderingHint(TextRenderingHintClearTypeGridFit);
     else
       ctxcanvas->graphics->SetTextRenderingHint(TextRenderingHintAntiAliasGridFit);

@@ -1316,6 +1316,29 @@ void cdSimPutImageRectRGBA(cdCanvas* canvas, int iw, int ih, const unsigned char
   free(fy);
 }
 
+void cdSimPutImageRectRGB(cdCanvas* canvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
+{
+  int height = ymax-ymin+1;
+  unsigned char* map;
+  int pal_size = 1L << canvas->bpp;
+  long colors[256];
+  (void)ih;
+
+  map = (unsigned char*)malloc(iw * height);
+  if (!map)
+    return;
+
+  if (pal_size == 2) /* probably a laser printer, use a gray image for better results */
+    cdRGB2Gray(iw, height, r+ymin*iw, g+ymin*iw, b+ymin*iw, map, colors);
+  else
+    cdRGB2Map(iw, height, r+ymin*iw, g+ymin*iw, b+ymin*iw, map, pal_size, colors);
+
+  canvas->cxPutImageRectMap(canvas->ctxcanvas, iw, height, map, colors, x, y, w, h, xmin, xmax, 0, height-1);
+
+  free(map);
+}
+
+
 /************************************************************************/
 
 #include "cd_truetype.h"

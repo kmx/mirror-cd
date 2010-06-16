@@ -743,7 +743,7 @@ static void cgmb_s ( CGM *cgm, const char *s, int len )
   else
     cgmb_putu8(cgm,l);
 
-  for ( i=0; i<len; s++ )
+  for ( i=0; i<l; i++, s++ )
   {
     if ( (i + bc) == 32766 )
     {
@@ -756,7 +756,7 @@ static void cgmb_s ( CGM *cgm, const char *s, int len )
       else
         cgmb_putu16 ( cgm, l );
     }
-    cgmb_putc ( cgm, s[i] );
+    cgmb_putc ( cgm, *s );
   }
 }
 

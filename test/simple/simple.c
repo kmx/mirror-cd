@@ -223,10 +223,17 @@ int SimpleDrawWindow(void)
 void DrawCanvasDriver(cdContext* ctx, char* StrData)
 {
   cdCanvas* tmpCanvas = cdCreateCanvas(ctx, StrData);
-  if (tmpCanvas == NULL) return;
+  if (tmpCanvas == NULL) 
+  {
+    printf("CreateCanvas(%s) - Failed!\n", StrData);
+    return;
+  }
+  printf("CreateCanvas(%s)\n", StrData);
   cdActivate(tmpCanvas);
   SimpleDraw();
   cdKillCanvas(tmpCanvas);
+  printf("KillCanvas()\n");
+
   cdActivate(curCanvas);
 }
 
@@ -237,10 +244,12 @@ void DrawCanvasDriverSize(cdContext* ctx, char* name, int pixels)
   double w_mm, h_mm;
   cdActivate(curCanvas);
   cdGetCanvasSize(&w, &h, &w_mm, &h_mm);
-  if (pixels)
+  if (pixels == 1)
     sprintf(StrData, "%s %dx%d", name, w, h);
+  else if (pixels == 2)
+    sprintf(StrData, "%s -w%g -h%g -s%g", name, w_mm, h_mm, ((double)w/w_mm)*25.4);
   else
-    sprintf(StrData, "%s %gx%g", name, w_mm, h_mm);
+    sprintf(StrData, "%s %gx%g %g", name, w_mm, h_mm, (double)w/w_mm);
   DrawCanvasDriver(ctx, StrData);
 }
 
@@ -262,7 +271,7 @@ int SimpleDrawDebug(void)
 
 int SimpleDrawCGMText(void)
 {
-  DrawCanvasDriverSize(CD_CGM, "simple_t.cgm - t", 0);
+  DrawCanvasDriverSize(CD_CGM, "simple_t.cgm -t", 0);
   return 0;
 }
 
@@ -300,7 +309,7 @@ int SimpleDrawMetafile(void)
 
 int SimpleDrawPS(void)
 {
-  DrawCanvasDriver(CD_PS, "simple.ps");
+  DrawCanvasDriverSize(CD_PS, "simple.ps -l0 -r0 -t0 -b0", 2);
   return 0;
 }
 
@@ -312,13 +321,13 @@ int SimpleDrawSVG(void)
 
 int SimpleDrawPDF(void)
 {
-  DrawCanvasDriver(CD_PDF, "simple.pdf");
+  DrawCanvasDriverSize(CD_PDF, "simple.pdf", 2);
   return 0;
 }
 
 int SimpleDrawEPS(void)
 {
-  DrawCanvasDriver(CD_PS, "simple.eps -e");
+  DrawCanvasDriverSize(CD_PS, "simple.eps -e", 2);
   return 0;
 }
 
@@ -339,7 +348,7 @@ int SimpleDrawPrint(void)
 int SimpleDrawPrintDialog(void)
 {
   if (gdpiplus) cdUseContextPlus(1);
-  DrawCanvasDriver(CD_PRINTER, "simple -d");
+  DrawCanvasDriver(CD_PRINTER, "simple -d");   /* show dialog */
   if (gdpiplus) cdUseContextPlus(0);
   return 0;
 }

@@ -1274,7 +1274,7 @@ static void cdcreatecanvas(cdCanvas *canvas, void *data)
   cdRegisterAttribute(canvas, &opacity_attrib);
 
   fprintf(ctxcanvas->file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-  fprintf(ctxcanvas->file, "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" width=\"%dpt\" height=\"%dpt\" viewBox=\"0 0 %d %d\" version=\"1.1\">\n", canvas->w, canvas->h, canvas->w, canvas->h);
+  fprintf(ctxcanvas->file, "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" width=\"%gpt\" height=\"%gpt\" viewBox=\"0 0 %d %d\" version=\"1.1\">\n", CD_MM2PT*canvas->w_mm, CD_MM2PT*canvas->h_mm, canvas->w, canvas->h);
   fprintf(ctxcanvas->file, "<g>\n"); /* open global container */
 }
 

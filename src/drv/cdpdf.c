@@ -111,18 +111,16 @@ static void begin_page(cdCtxCanvas *ctxcanvas)
 static void init_pdf(cdCtxCanvas *ctxcanvas)
 {
   ctxcanvas->scale = 72.0/ctxcanvas->res;
+  ctxcanvas->canvas->xres = ctxcanvas->res/25.4;
+  ctxcanvas->canvas->yres = ctxcanvas->canvas->xres;
 
-  /* Converte p/ unidades do usuario */
-  ctxcanvas->canvas->w = (int)(ctxcanvas->width_pt/ctxcanvas->scale + 0.5); 
-  ctxcanvas->canvas->h = (int)(ctxcanvas->height_pt/ctxcanvas->scale + 0.5);
-
-  /* Passa o valor em milimetros para o canvas CD */
   ctxcanvas->canvas->w_mm = ctxcanvas->width_mm; 
   ctxcanvas->canvas->h_mm = ctxcanvas->height_mm;
 
+  ctxcanvas->canvas->w = cdRound(ctxcanvas->canvas->xres*ctxcanvas->canvas->w_mm);
+  ctxcanvas->canvas->h = cdRound(ctxcanvas->canvas->yres*ctxcanvas->canvas->h_mm);
+
   ctxcanvas->canvas->bpp = 24;
-  ctxcanvas->canvas->xres = ctxcanvas->canvas->w / ctxcanvas->canvas->w_mm; 
-  ctxcanvas->canvas->yres = ctxcanvas->canvas->h / ctxcanvas->canvas->h_mm;
 
   begin_page(ctxcanvas);
 }
@@ -1675,7 +1673,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   /* update canvas context */
   canvas->ctxcanvas = ctxcanvas;
 
-  if (ctxcanvas->landscape == 1)
+  if (ctxcanvas->landscape)
   {
     _cdSwapDouble(ctxcanvas->width_pt, ctxcanvas->height_pt);
     _cdSwapDouble(ctxcanvas->width_mm, ctxcanvas->height_mm);

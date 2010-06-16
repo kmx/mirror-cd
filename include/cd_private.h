@@ -360,6 +360,7 @@ void cdSimGetTextSizeFT(cdCtxCanvas* ctxcanvas, const char *s, int len, int *wid
 /* Simulation functions that are >> independent << of the simulation base driver. */
 void cdSimMark(cdCanvas* canvas, int x, int y);
 void cdSimPutImageRectRGBA(cdCanvas* canvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax);
+void cdSimPutImageRectRGB(cdCanvas* canvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax);
 
 /* Simulation functions that are >> independent << of the simulation base driver.
    All use the polygon method ->cxPoly only. */
