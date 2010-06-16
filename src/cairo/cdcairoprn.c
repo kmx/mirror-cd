@@ -13,14 +13,47 @@
 #include "cdcairoctx.h"
 #include "cdprint.h"
 
+static gboolean print_enum(GtkPrinter *printer, GtkPrinter **ret_printer)
+{
+  if (gtk_printer_is_default(printer))
+  {
+    *ret_printer = printer;
+    g_object_ref(printer);
+    return TRUE;
+  }
+  return FALSE;
+}
 
+static void finish_send(GtkPrintJob *job, GMainLoop* loop, GError *error)
+{
+  if (error != NULL)
+  {
+    GtkWidget *edialog;
+    edialog = gtk_message_dialog_new (NULL, 
+                                      GTK_DIALOG_DESTROY_WITH_PARENT,
+                                      GTK_MESSAGE_ERROR,
+                                      GTK_BUTTONS_CLOSE,
+                                      "Error printing");
+    gtk_message_dialog_format_secondary_text (GTK_MESSAGE_DIALOG (edialog), "%s", error->message);
+    gtk_window_set_modal (GTK_WINDOW (edialog), TRUE);
+    g_signal_connect(edialog, "response", G_CALLBACK (gtk_widget_destroy), NULL);
+
+    gtk_window_present(GTK_WINDOW(edialog));
+  }
+
+  g_main_loop_quit(loop);
+}
 
 static void cdkillcanvas(cdCtxCanvas *ctxcanvas)
 {
-  //if(ctxcanvas->settings)
-  //  g_object_unref(ctxcanvas->settings);
+  GMainLoop* loop = g_main_loop_new (NULL, FALSE);
 
-  gtk_print_job_send(ctxcanvas->job, NULL, NULL, NULL);
+  cairo_surface_finish(cairo_get_target(ctxcanvas->cr));
+
+  gtk_print_job_send(ctxcanvas->job, (GtkPrintJobCompleteFunc)finish_send, loop, NULL);
+
+  g_main_loop_run(loop);
+  g_main_loop_unref(loop);
 
   cdcairoKillCanvas(ctxcanvas);
 }
@@ -42,7 +75,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   cdCtxCanvas* ctxcanvas;
   char *data_str = (char*) data;
   char docname[256] = "CD - Canvas Draw Document";
-  GtkPrintUnixDialog* dialog;
+  GtkPrintUnixDialog* dialog = NULL;
   GtkPrinter* printer;
   GtkPrintSettings* settings;
   GtkPageSetup* page_setup;
@@ -69,55 +102,68 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
     }
   }
 
-  dialog = (GtkPrintUnixDialog*)gtk_print_unix_dialog_new(NULL, NULL);
-
-  //GTK_PRINT_CAPABILITY_PAGE_SET         = 1 << 0,
-  //GTK_PRINT_CAPABILITY_COPIES           = 1 << 1,
-  //GTK_PRINT_CAPABILITY_COLLATE          = 1 << 2,
-  //GTK_PRINT_CAPABILITY_REVERSE          = 1 << 3,
-  //GTK_PRINT_CAPABILITY_SCALE            = 1 << 4,
-  //GTK_PRINT_CAPABILITY_GENERATE_PDF     = 1 << 5,
-  //GTK_PRINT_CAPABILITY_GENERATE_PS      = 1 << 6,
-  //GTK_PRINT_CAPABILITY_PREVIEW          = 1 << 7,
-  //GTK_PRINT_CAPABILITY_NUMBER_UP        = 1 << 8,
-  //GTK_PRINT_CAPABILITY_NUMBER_UP_LAYOUT = 1 << 9
-
-  gtk_print_unix_dialog_set_manual_capabilities(dialog, GTK_PRINT_CAPABILITY_GENERATE_PDF|GTK_PRINT_CAPABILITY_GENERATE_PS);
-
-  gtk_widget_realize(GTK_WIDGET(dialog));
-
   if (show_dialog)
   {
-    int response = gtk_dialog_run(GTK_DIALOG(dialog));
+    int response;
+
+    dialog = (GtkPrintUnixDialog*)gtk_print_unix_dialog_new(NULL, NULL);
+
+    gtk_print_unix_dialog_set_manual_capabilities(dialog,
+						   GTK_PRINT_CAPABILITY_PAGE_SET |
+						   GTK_PRINT_CAPABILITY_COPIES |
+						   GTK_PRINT_CAPABILITY_COLLATE |
+						   GTK_PRINT_CAPABILITY_REVERSE |
+						   GTK_PRINT_CAPABILITY_SCALE);
+
+    gtk_widget_realize(GTK_WIDGET(dialog));
+
+    response = gtk_dialog_run(GTK_DIALOG(dialog));
 
     if (response == GTK_RESPONSE_CANCEL)
     {
       gtk_widget_destroy(GTK_WIDGET(dialog));  
       return;
     }
-  }
 
-  printer = gtk_print_unix_dialog_get_selected_printer(dialog);
-  settings = gtk_print_unix_dialog_get_settings(dialog);
-  page_setup = gtk_print_unix_dialog_get_page_setup(dialog);
+    printer = gtk_print_unix_dialog_get_selected_printer(dialog);
+    settings = gtk_print_unix_dialog_get_settings(dialog);
+    page_setup = gtk_print_unix_dialog_get_page_setup(dialog);
+  }
+  else
+  {
+    printer = NULL;
+    gtk_enumerate_printers((GtkPrinterFunc)print_enum, &printer, NULL, TRUE);
+    if (!printer)
+      return;
+    page_setup = gtk_printer_get_default_page_size(printer);
+    if (!page_setup)
+      page_setup = gtk_page_setup_new();  /* ?????? */
+
+    settings = gtk_print_settings_new();  /* ?????? */
+  }
 
   job = gtk_print_job_new(docname, printer, settings, page_setup);
 
-  canvas->w = (int)gtk_page_setup_get_page_width(page_setup, GTK_UNIT_PIXEL);
-  canvas->h = (int)gtk_page_setup_get_page_height(page_setup, GTK_UNIT_PIXEL);
   canvas->w_mm = (int)gtk_page_setup_get_page_width(page_setup, GTK_UNIT_MM);
   canvas->h_mm = (int)gtk_page_setup_get_page_height(page_setup, GTK_UNIT_MM);
   canvas->bpp  = 24;
-  canvas->xres = (double)canvas->w / canvas->w_mm;
-  canvas->yres = (double)canvas->h / canvas->h_mm;
+  canvas->xres = (double)gtk_print_settings_get_resolution_x(settings) / 25.4;
+  canvas->yres = (double)gtk_print_settings_get_resolution_y(settings) / 25.4;
+  canvas->w = cdRound(canvas->w_mm*canvas->xres);
+  canvas->h = cdRound(canvas->h_mm*canvas->yres);
 
   ctxcanvas = cdcairoCreateCanvas(canvas, cairo_create(gtk_print_job_get_surface(job, NULL)));
   ctxcanvas->job = job;
 
+  cairo_identity_matrix(ctxcanvas->cr);
+  cairo_scale(ctxcanvas->cr, 0.25, 0.25);  /* TODO: why this is needed? */
+
   cdRegisterAttribute(canvas, &printername_attrib);
 
-//  gtk_widget_destroy(GTK_WIDGET(dialog)); 
-  //g_object_unref(settings);
+  if (dialog)
+    gtk_widget_destroy(GTK_WIDGET(dialog)); 
+
+  g_object_unref(settings);
 }
 
 static void cdinittable(cdCanvas* canvas)

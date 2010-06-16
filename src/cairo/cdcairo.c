@@ -127,6 +127,7 @@ void cdcairoKillCanvas(cdCtxCanvas *ctxcanvas)
 
 static void cdflush(cdCtxCanvas *ctxcanvas)
 {
+  cairo_surface_flush(cairo_get_target(ctxcanvas->cr));
   cairo_show_page(ctxcanvas->cr);
 }
 
@@ -871,6 +872,9 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, i
   {
     cairo_save (ctxcanvas->cr);
     cairo_identity_matrix(ctxcanvas->cr);
+
+    if (ctxcanvas->job)
+      cairo_scale(ctxcanvas->cr, 0.25, 0.25);  /* ??? */
   }
 
   if (ctxcanvas->canvas->text_orientation)
@@ -1652,10 +1656,14 @@ static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
 {
   /* reset to identity */
   cairo_identity_matrix(ctxcanvas->cr);
-  ctxcanvas->canvas->invert_yaxis = 1;
+  
+  if (ctxcanvas->job)
+    cairo_scale(ctxcanvas->cr, 0.254, 0.254);
 
   if (matrix)
     ctxcanvas->canvas->invert_yaxis = 0;
+  else
+    ctxcanvas->canvas->invert_yaxis = 1;
 
   sSetTransform(ctxcanvas, matrix);
 }
