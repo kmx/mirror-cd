@@ -77,6 +77,10 @@ wb_usr.tree =
           link= "to_do.html"
         },
         {
+          name= {en= "Screenshots"},
+          link= "screenshots.html"
+        },
+        {
           name= {en= "Comparing", pt= "Outras Bibliotecas Gráficas"},
           link= "toolkits.html"
         }
