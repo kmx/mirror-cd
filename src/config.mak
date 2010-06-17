@@ -2,6 +2,28 @@ PROJNAME = cd
 LIBNAME = cd
 OPT = YES   
 
+ifdef GTK_DEFAULT
+  ifdef USE_X11
+    # Build X11 version in Linux,Darwin,FreeBSD
+    LIBNAME := $(LIBNAME)x11
+  else
+    ifeq ($(findstring Win, $(TEC_SYSNAME)), )
+      # Force definition if not in Windows
+      USE_GDK = Yes
+    endif
+  endif
+else  
+  ifdef USE_GDK
+    # Build GDK version in IRIX,SunOS,AIX,Win32
+    LIBNAME := $(LIBNAME)gdk
+  else
+    ifeq ($(findstring Win, $(TEC_SYSNAME)), )
+      # Force definition if not in Windows
+      USE_X11 = Yes
+    endif
+  endif
+endif
+
 DEFINES = CD_NO_OLD_INTERFACE
 
 SRCSVG = base64.c lodepng.c cdsvg.c
@@ -39,36 +61,25 @@ SRCCOMM = cd.c wd.c wdhdcpy.c rgb2map.c cd_vectortext.c cd_active.c \
 SRC = $(SRCCOMM) $(SRCSVG) $(SRCINTCGM) $(SRCDRV) $(SRCSIM)
 INCLUDES = . drv x11 win32 intcgm freetype2 sim cairo ../include
 
-ifneq ($(findstring Win, $(TEC_SYSNAME)), )
-  ifdef USE_GDK
-    SRC += $(SRCGDK) $(SRCNULL) $(SRCCAIRO)
-    LIBNAME := $(LIBNAME)gdk
-    USE_GTK = Yes
-    LIBS += cairo
-  else
-    SRC += $(SRCWIN32)
-  endif
-  LIBS = freetype6
-else
-  ifdef USE_GDK
-    SRC += $(SRCGDK) $(SRCCAIRO) cairo/cdcairoprn.c
+ifdef USE_GDK
+  SRC += $(SRCGDK) $(SRCNULL) $(SRCCAIRO)
+  USE_GTK = Yes
+  LIBS = pangocairo-1.0 cairo
+  ifeq ($(findstring Win, $(TEC_SYSNAME)), )
+    SRC += cairo/cdcairoprn.c
     INCLUDES += /usr/include/gtk-unix-print-2.0
-    USE_GTK = Yes
-    LIBS += cairo
-    ifndef GTK_DEFAULT
-      # Build GDK version in IRIX,SunOS,AIX,Win32
-      LIBNAME := $(LIBNAME)gdk
-    endif
+    LIBS += freetype
   else
-    ifdef GTK_DEFAULT
-      # Build X11 version in Linux,Darwin,FreeBSD
-      LIBNAME := $(LIBNAME)x11
-    endif
-    SRC += $(SRCX11)
-    USE_X11 = Yes
+    LIBS += freetype6
   endif
-  SRC += $(SRCNULL)
+else
+ifdef USE_X11
+  SRC += $(SRCX11) $(SRCNULL)
   LIBS = freetype
+else
+  SRC += $(SRCWIN32)
+  LIBS = freetype6
+endif
 endif
 
 ifneq ($(findstring dll, $(TEC_UNAME)), )
@@ -76,4 +87,3 @@ ifneq ($(findstring dll, $(TEC_UNAME)), )
 endif
 
 LDIR = ../lib/$(TEC_UNAME)
-

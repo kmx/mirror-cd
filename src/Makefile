@@ -1,12 +1,13 @@
 
-.PHONY: do_all cd_freetype cd cdgdk cd_pdflib cdpdf cdcontextplus cdlua3 cdluapdf3 cdlua5 cdluapdf5 cdluacontextplus5 cdluaim5
-#do_all: cd_freetype cd cdgdk cd_pdflib cdpdf cdcontextplus cdlua3 cdluapdf3 cdlua5 cdluapdf5 cdluacontextplus5 cdluaim5
-do_all: cd_freetype cd cdgdk cd_pdflib cdpdf cdcontextplus cdlua5 cdluapdf5 cdluacontextplus5 cdluaim5
+.PHONY: do_all cd_freetype cd cdx11 cdgdk cd_pdflib cdpdf cdcontextplus cdcairo cdlua3 cdluapdf3 cdlua5 cdluapdf5 cdluacontextplus5 cdluacairo5 cdluaim5
+do_all: cd_freetype cd cd_pdflib cdpdf cdlua5 cdluapdf5 cdluaim5
 
 cd_freetype:
 	@$(MAKE) --no-print-directory -f tecmake.mak MF=cd_freetype
 cd:
-	@$(MAKE) --no-print-directory -f tecmake.mak 
+	@$(MAKE) --no-print-directory -f tecmake.mak
+cdx11:
+	@$(MAKE) --no-print-directory -f tecmake.mak USE_X11=Yes
 cdgdk:
 	@$(MAKE) --no-print-directory -f tecmake.mak USE_GDK=Yes
 cd_pdflib:
@@ -15,6 +16,8 @@ cdpdf:
 	@$(MAKE) --no-print-directory -f tecmake.mak MF=cdpdf
 cdcontextplus:
 	@$(MAKE) --no-print-directory -f tecmake.mak MF=cdcontextplus
+cdcairo:
+	@$(MAKE) --no-print-directory -f tecmake.mak MF=cdcairo
 cdlua3:
 	@$(MAKE) --no-print-directory -f tecmake.mak MF=cdlua3
 cdluapdf3:
@@ -25,5 +28,7 @@ cdluapdf5:
 	@$(MAKE) --no-print-directory -f tecmake.mak MF=cdluapdf5
 cdluacontextplus5:
 	@$(MAKE) --no-print-directory -f tecmake.mak MF=cdluacontextplus5
+cdluacairo5:
+	@$(MAKE) --no-print-directory -f tecmake.mak MF=cdluacairo5
 cdluaim5:
 	@$(MAKE) --no-print-directory -f tecmake.mak MF=cdluaim5

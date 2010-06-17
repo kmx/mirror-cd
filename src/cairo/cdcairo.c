@@ -155,6 +155,7 @@ static int cdclip(cdCtxCanvas *ctxcanvas, int mode)
   switch (mode)
   {
   case CD_CLIPOFF:
+    cairo_rectangle(ctxcanvas->cr, 0, 0, ctxcanvas->canvas->w, ctxcanvas->canvas->h);
     break;
   case CD_CLIPAREA:
       cairo_rectangle(ctxcanvas->cr, ctxcanvas->canvas->clip_frect.xmin, 
@@ -202,9 +203,6 @@ static int cdclip(cdCtxCanvas *ctxcanvas, int mode)
   case CD_CLIPREGION:
     break;
   }
-
-  if (mode != CD_CLIPOFF)
-    cairo_clip(ctxcanvas->cr);
 
   return mode;
 }
@@ -622,6 +620,8 @@ static void cdclear(cdCtxCanvas* ctxcanvas)
   cairo_save (ctxcanvas->cr);
   cairo_identity_matrix(ctxcanvas->cr);
   cairo_reset_clip(ctxcanvas->cr);
+  cairo_rectangle(ctxcanvas->cr, 0, 0, ctxcanvas->canvas->w, ctxcanvas->canvas->h);
+  cairo_clip(ctxcanvas->cr);
   cairo_set_source_rgba(ctxcanvas->cr, cdCairoGetRed(ctxcanvas->canvas->background), cdCairoGetGreen(ctxcanvas->canvas->background), cdCairoGetBlue(ctxcanvas->canvas->background), cdCairoGetAlpha(ctxcanvas->canvas->background));
   cairo_set_operator (ctxcanvas->cr, CAIRO_OPERATOR_SOURCE);
   cairo_paint (ctxcanvas->cr);  /* paints the current source everywhere within the current clip region. */
