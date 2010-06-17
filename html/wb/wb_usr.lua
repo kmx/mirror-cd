@@ -78,7 +78,14 @@ wb_usr.tree =
         },
         {
           name= {en= "Screenshots"},
-          link= "screenshots.html"
+          link= "screenshots.html",
+          folder=
+          {
+            {
+              name= {en= "C Source Code"},
+              link= "screenshots_src_c.html"
+            }
+          }
         },
         {
           name= {en= "Comparing", pt= "Outras Bibliotecas Gráficas"},

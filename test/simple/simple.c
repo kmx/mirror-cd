@@ -46,7 +46,7 @@ cdCanvas *curCanvas = NULL;        /* The current canvas */
 
 int clipping = CD_CLIPOFF;                     /* Clipping flag, same as the CD */
 int write_mode = CD_REPLACE;                   /* Write Mode flag, same as the CD */
-int gdpiplus = 0;
+int contextplus = 0;
 int simple_draw = 0;
 int use_transform = 0;
 int simulate = 0;
@@ -79,9 +79,9 @@ void SimpleInitAlpha(int width, int height, unsigned char* _alpha)
 void SimpleCreateCanvasWindow(void)
 {
   /* creates the canvas based in an existing window */
-  if (gdpiplus) cdUseContextPlus(1);
+  if (contextplus) cdUseContextPlus(1);
   winCanvas = cdCreateCanvas(CD_IUP, winData);
-  if (gdpiplus) cdUseContextPlus(0);
+  if (contextplus) cdUseContextPlus(0);
   curCanvas = winCanvas;
 }
 
@@ -151,7 +151,7 @@ int SimpleTransform(void)
 int SimpleContextPlus(void)
 {
 #ifdef USE_CONTEXTPLUS
-  gdpiplus = !gdpiplus;
+  contextplus = !contextplus;
   SimpleKillCanvas();
   SimpleCreateCanvasWindow();
   SimpleDrawRepaint();
@@ -295,9 +295,9 @@ int SimpleDrawDGN(void)
 
 int SimpleDrawEMF(void)
 {
-  if (gdpiplus) cdUseContextPlus(1);
+  if (contextplus) cdUseContextPlus(1);
   DrawCanvasDriverSize(CD_EMF, "simple.emf", 1);
-  if (gdpiplus) cdUseContextPlus(0);
+  if (contextplus) cdUseContextPlus(0);
   return 0;
 }
 
@@ -339,41 +339,41 @@ int SimpleDrawWMF(void)
 
 int SimpleDrawPrint(void)
 {
-  if (gdpiplus) cdUseContextPlus(1);
+  if (contextplus) cdUseContextPlus(1);
   DrawCanvasDriver(CD_PRINTER, "simple print");
-  if (gdpiplus) cdUseContextPlus(0);
+  if (contextplus) cdUseContextPlus(0);
   return 0;
 }
 
 int SimpleDrawPrintDialog(void)
 {
-  if (gdpiplus) cdUseContextPlus(1);
+  if (contextplus) cdUseContextPlus(1);
   DrawCanvasDriver(CD_PRINTER, "simple -d");   /* show dialog */
-  if (gdpiplus) cdUseContextPlus(0);
+  if (contextplus) cdUseContextPlus(0);
   return 0;
 }
 
 int SimpleDrawClipboardBitmap(void)
 {
-  if (gdpiplus) cdUseContextPlus(1);
+  if (contextplus) cdUseContextPlus(1);
   DrawCanvasDriverSizeParam(CD_CLIPBOARD, "-b");
-  if (gdpiplus) cdUseContextPlus(0);
+  if (contextplus) cdUseContextPlus(0);
   return 0;
 }
 
 int SimpleDrawClipboardMetafile(void)
 {
-  if (gdpiplus) cdUseContextPlus(1);
+  if (contextplus) cdUseContextPlus(1);
   DrawCanvasDriverSizeParam(CD_CLIPBOARD, "-m");
-  if (gdpiplus) cdUseContextPlus(0);
+  if (contextplus) cdUseContextPlus(0);
   return 0;
 }
 
 int SimpleDrawClipboardEMF(void)
 {
-  if (gdpiplus) cdUseContextPlus(1);
+  if (contextplus) cdUseContextPlus(1);
   DrawCanvasDriverSizeParam(CD_CLIPBOARD, "");
-  if (gdpiplus) cdUseContextPlus(0);
+  if (contextplus) cdUseContextPlus(0);
   return 0;
 }
 
@@ -449,9 +449,9 @@ int SimpleDrawImage(void)
 {
   if (dbCanvas) cdKillCanvas(dbCanvas);
 
-  if (gdpiplus) cdUseContextPlus(1);
+  if (contextplus) cdUseContextPlus(1);
   dbCanvas = cdCreateCanvas(CD_DBUFFER, winCanvas);
-  if (gdpiplus) cdUseContextPlus(0);
+  if (contextplus) cdUseContextPlus(0);
 
   curCanvas = dbCanvas;
   SimpleDrawRepaint();
@@ -463,9 +463,9 @@ int SimpleDrawImageRGB(void)
 {
   if (dbCanvas) cdKillCanvas(dbCanvas);
 
-  if (gdpiplus) cdUseContextPlus(1);
+  if (contextplus) cdUseContextPlus(1);
   dbCanvas = cdCreateCanvas(CD_DBUFFERRGB, winCanvas);
-  if (gdpiplus) cdUseContextPlus(0);
+  if (contextplus) cdUseContextPlus(0);
 
   curCanvas = dbCanvas;
   SimpleDrawRepaint();
@@ -517,52 +517,51 @@ void SimpleDraw(void)
 
 int SimpleDrawAll(void)
 {
-  int w, h;
   cdCanvas* canvas = cdActiveCanvas();
-  cdGetCanvasSize(&w, &h, 0, 0);
+  int w, h;
+  cdCanvasGetSize(canvas, &w, &h, NULL, NULL);
   
   simple_draw = DRAW_ALL;
 
-  wdViewport(0,w-1,0,h-1);
-  if (w>h)
-    wdWindow(0,(double)w/(double)h,0,1);
-  else
-    wdWindow(0,1,0,(double)h/(double)w);
-
   /* Clear the background to be white */
-  cdBackground(CD_WHITE);
+  cdCanvasBackground(canvas, CD_WHITE);
 //  cdBackground(CD_GREEN);
-  cdClear();
+  cdCanvasClear(canvas);
 
-  cdLineWidth(3);
-  cdForeground(cdEncodeAlpha(CD_DARK_MAGENTA, 128));
-  cdRect(100, 200, 100, 200);
+  /* Draw a reactangle and a polyline at the bottom-left area,
+     using a thick line with transparency.
+     Observe that transparency is only supported in a few drivers,
+     and line join is not supported in the IMAGERGB driver. */
+  cdCanvasLineWidth(canvas, 3);
+  cdCanvasLineStyle(canvas, CD_CONTINUOUS);
+  cdCanvasForeground(canvas, cdEncodeAlpha(CD_DARK_MAGENTA, 128));
+  cdCanvasRect(canvas, 100, 200, 100, 200);
 
-  cdBegin(CD_OPEN_LINES);
-  cdVertex(300, 250);
-  cdVertex(320, 270);
-  cdVertex(350, 260);
-  cdVertex(340, 200);
-  cdVertex(310, 210);
-  cdEnd();
+  cdCanvasBegin(canvas, CD_OPEN_LINES);
+  cdCanvasVertex(canvas, 300, 250);
+  cdCanvasVertex(canvas, 320, 270);
+  cdCanvasVertex(canvas, 350, 260);
+  cdCanvasVertex(canvas, 340, 200);
+  cdCanvasVertex(canvas, 310, 210);
+  cdCanvasEnd(canvas);
   
-  cdInteriorStyle(CD_SOLID);
-
-  cdForeground(CD_RED);
-  cdLineWidth(3);
+  /* Draw the red diagonal line with a custom line style. 
+     Observe that line styles are not supported in the IMAGERGB driver. */
+  cdCanvasForeground(canvas, CD_RED);
+  cdCanvasLineWidth(canvas, 3);
   {
     int dashes[] = {20, 15, 5, 5};
-    cdLineStyleDashes(dashes, 4);
+    cdCanvasLineStyleDashes(canvas, dashes, 4);
   }
-  cdLineStyle(CD_CUSTOM);
-  cdLine(0, 0, w-1, h-1);
+  cdCanvasLineStyle(canvas, CD_CUSTOM);
+  cdCanvasLine(canvas, 0, 0, w-1, h-1);
 
-  cdForeground(CD_BLUE);
-  cdLineWidth(10);
-  cdLineStyle(CD_DOTTED);
-  //cdLine(0, 0, 500, 500);
-//  wdLine(0, 1, 1, 0);
-  cdLine(0, h-1, w-1, 0);
+  /* Draw the blue diagonal line with a pre-defined line style.
+     Observe that the pre-defined line style is dependent on the driver. */
+  cdCanvasForeground(canvas, CD_BLUE);
+  cdCanvasLineWidth(canvas, 10);
+  cdCanvasLineStyle(canvas, CD_DOTTED);
+  cdCanvasLine(canvas, 0, h-1, w-1, 0);
 
   switch(clipping)
   {
@@ -628,43 +627,62 @@ int SimpleDrawAll(void)
 
 //  cdSetfAttribute("ROTATE", "15 %d %d", w/2, h/2);
 
-  cdLineStyle(CD_CONTINUOUS);
-  cdLineWidth(1);
-  cdBackOpacity(CD_TRANSPARENT); 
-                            
-  cdForeground(CD_MAGENTA);
-  cdSector(w-100, 100, 100, 100, 50, 180);
-  cdForeground(CD_RED);
-  cdArc(100, 100, 100, 100, 50, 180);
+  /* Reset line style and width */
+  cdCanvasLineStyle(canvas, CD_CONTINUOUS);
+  cdCanvasLineWidth(canvas, 1);
+//  cdBackOpacity(CD_TRANSPARENT); 
+                   
+  /* Draw an arc at bottom-left, and a sector at bottom-right.
+     Notice that counter-clockwise orientation of both. */
+  cdCanvasInteriorStyle(canvas, CD_SOLID);
+  cdCanvasForeground(canvas, CD_MAGENTA);
+  cdCanvasSector(canvas, w-100, 100, 100, 100, 50, 180);
+  cdCanvasForeground(canvas, CD_RED);
+  cdCanvasArc(canvas, 100, 100, 100, 100, 50, 180);
 
-  cdForeground(CD_YELLOW);
-  cdBox(w/2 - 100, w/2 + 100, h/2 - 100, h/2 + 100); 
+  /* Draw a solid filled rectangle at center. */
+  cdCanvasForeground(canvas, CD_YELLOW);
+  cdCanvasBox(canvas, w/2 - 100, w/2 + 100, h/2 - 100, h/2 + 100); 
 
-  cdTextAlignment(CD_CENTER);
-  cdTextOrientation(70);
-  cdFont(CD_TIMES_ROMAN, CD_BOLD, 24);
+  /* Prepare font for text. */
+  cdCanvasTextAlignment(canvas, CD_CENTER);
+  cdCanvasTextOrientation(canvas, 70);
+  cdCanvasFont(canvas, "Times", CD_BOLD, 24);
 
+  /* Draw text at center, with orientation, 
+     and draw its bounding box. 
+     Notice that in some drivers the bounding box is not precise. */
   {
     int rect[8];
-    cdTextBounds(w/2, h/2, "cdMin Draw (Á„Ì)", rect);
-    cdForeground(CD_RED);
-    cdBegin(CD_CLOSED_LINES);
-    cdVertex(rect[0], rect[1]);
-    cdVertex(rect[2], rect[3]);
-    cdVertex(rect[4], rect[5]);
-    cdVertex(rect[6], rect[7]);
-    cdEnd();
+    cdCanvasGetTextBounds(canvas, w/2, h/2, "cdMin Draw (Á„Ì)", rect);
+    cdCanvasForeground(canvas, CD_RED);
+    cdCanvasBegin(canvas, CD_CLOSED_LINES);
+    cdCanvasVertex(canvas, rect[0], rect[1]);
+    cdCanvasVertex(canvas, rect[2], rect[3]);
+    cdCanvasVertex(canvas, rect[4], rect[5]);
+    cdCanvasVertex(canvas, rect[6], rect[7]);
+    cdCanvasEnd(canvas);
   }
-  cdForeground(CD_BLUE);
-  cdText(w/2, h/2, "cdMin Draw (Á„Ì)");
-  cdTextOrientation(0);
+  cdCanvasForeground(canvas, CD_BLUE);
+  cdCanvasText(canvas, w/2, h/2, "cdMin Draw (Á„Ì)");
+//  cdTextOrientation(0);
 
-  wdBox(0.20, 0.30, 0.40, 0.50);
-  cdForeground(CD_RED);
-  wdLine(0.20, 0.40, 0.30, 0.50);
+  /* Prepare World Coordinates */
+  wdCanvasViewport(canvas, 0,w-1,0,h-1);
+  if (w>h)
+    wdCanvasWindow(canvas, 0,(double)w/(double)h,0,1);
+  else
+    wdCanvasWindow(canvas, 0,1,0,(double)h/(double)w);
+
+  /* Draw a filled blue rectangle in WC */
+  wdCanvasBox(canvas, 0.20, 0.30, 0.40, 0.50);
+  cdCanvasForeground(canvas, CD_RED);
+  /* Draw the diagonal of that rectangle in WC */
+  wdCanvasLine(canvas, 0.20, 0.40, 0.30, 0.50);
 
 //  wdVectorTextDirection(0, 0, 1, 1);
-  wdVectorCharSize(0.07);
+  /* Prepare Vector Text in WC. */
+  wdCanvasVectorCharSize(canvas, 0.07);
 
 //  wdVectorText(0.1, 0.4, "ÒÁ ·ÈÌÛ˙ ‡ËÏÚ˘ ‚ÍÓÙ˚ ‰ÎÔˆ¸");
 //  wdVectorText(0.1, 0.2, "—« ¡…Õ”⁄ ¿»Ã“Ÿ ¬ Œ‘€ ƒÀœ÷‹");
@@ -694,146 +712,158 @@ int SimpleDrawAll(void)
   //  }
   //}
 
+  /* Draw vector text, and draw its bounding box. 
+     We also use this text to show when we are using a contextplus driver. */
   {
     double rect[8];
-    cdForeground(CD_RED);
-    if (gdpiplus)
-      wdGetVectorTextBounds("WDj-Plus", 0.25, 0.35, rect);
+    cdCanvasForeground(canvas, CD_RED);
+    if (contextplus)
+      wdCanvasGetVectorTextBounds(canvas, "WDj-Plus", 0.25, 0.35, rect);
     else
-      wdGetVectorTextBounds("WDj", 0.25, 0.35, rect);
-    cdBegin(CD_CLOSED_LINES);
-    wdVertex(rect[0], rect[1]);
-    wdVertex(rect[2], rect[3]);
-    wdVertex(rect[4], rect[5]);
-    wdVertex(rect[6], rect[7]);
-    cdEnd();
+      wdCanvasGetVectorTextBounds(canvas, "WDj", 0.25, 0.35, rect);
+    cdCanvasBegin(canvas, CD_CLOSED_LINES);
+    wdCanvasVertex(canvas, rect[0], rect[1]);
+    wdCanvasVertex(canvas, rect[2], rect[3]);
+    wdCanvasVertex(canvas, rect[4], rect[5]);
+    wdCanvasVertex(canvas, rect[6], rect[7]);
+    cdCanvasEnd(canvas);
+
+    cdCanvasLineWidth(canvas, 2);
+    cdCanvasLineStyle(canvas, CD_CONTINUOUS);
+    if (contextplus)
+      wdCanvasVectorText(canvas, 0.25, 0.35, "WDj-Plus");
+    else
+      wdCanvasVectorText(canvas, 0.25, 0.35, "WDj");
+    cdCanvasLineWidth(canvas, 1);
   }
 
-  cdForeground(CD_GREEN);
-  cdBegin(CD_PATH);
+  /* Draw a filled path at center-right (looks like a weird fish). 
+     Notice that in PDF the arc is necessarily a circle arc, and not an ellipse. */
+  cdCanvasForeground(canvas, CD_GREEN);
+  cdCanvasBegin(canvas, CD_PATH);
   cdCanvasPathSet(canvas, CD_PATH_MOVETO);
-  cdVertex(w/2 + 200, h/2);
+  cdCanvasVertex(canvas, w/2 + 200, h/2);
   cdCanvasPathSet(canvas, CD_PATH_LINETO);
-  cdVertex(w/2 + 230, h/2 + 50);
+  cdCanvasVertex(canvas, w/2 + 230, h/2 + 50);
   cdCanvasPathSet(canvas, CD_PATH_LINETO);
-  cdVertex(w/2 + 250, h/2 + 50);
+  cdCanvasVertex(canvas, w/2 + 250, h/2 + 50);
   cdCanvasPathSet(canvas, CD_PATH_CURVETO);
-  cdVertex(w/2+150+150, h/2+200-50); /* control point for start */
-  cdVertex(w/2+150+180, h/2+250-50); /* control point for end */
-  cdVertex(w/2+150+180, h/2+200-50); /* end point */
+  cdCanvasVertex(canvas, w/2+150+150, h/2+200-50); /* control point for start */
+  cdCanvasVertex(canvas, w/2+150+180, h/2+250-50); /* control point for end */
+  cdCanvasVertex(canvas, w/2+150+180, h/2+200-50); /* end point */
   cdCanvasPathSet(canvas, CD_PATH_CURVETO);
-  cdVertex(w/2+150+180, h/2+150-50); 
-  cdVertex(w/2+150+150, h/2+100-50); 
-  cdVertex(w/2+150+300, h/2+100-50); 
+  cdCanvasVertex(canvas, w/2+150+180, h/2+150-50); 
+  cdCanvasVertex(canvas, w/2+150+150, h/2+100-50); 
+  cdCanvasVertex(canvas, w/2+150+300, h/2+100-50); 
   cdCanvasPathSet(canvas, CD_PATH_LINETO);
-  cdVertex(w/2+150+300, h/2-50);
+  cdCanvasVertex(canvas, w/2+150+300, h/2-50);
   cdCanvasPathSet(canvas, CD_PATH_ARC);
-  cdVertex(w/2+300, h/2);  /* center */
-  cdVertex(200, 100);  /* width, height */
-  cdVertex(-30*1000, -170*1000);  /* start angle, end angle (degrees / 1000) */
+  cdCanvasVertex(canvas, w/2+300, h/2);  /* center */
+  cdCanvasVertex(canvas, 200, 100);  /* width, height */
+  cdCanvasVertex(canvas, -30*1000, -170*1000);  /* start angle, end angle (degrees / 1000) */
 //  cdCanvasPathSet(canvas, CD_PATH_CLOSE);
 //  cdCanvasPathSet(canvas, CD_PATH_STROKE);
   cdCanvasPathSet(canvas, CD_PATH_FILL);
 //  cdCanvasPathSet(canvas, CD_PATH_FILLSTROKE);
-  cdEnd();
+  cdCanvasEnd(canvas);
 
+  /* Draw 3 pixels at center left. */
+  cdCanvasPixel(canvas, 10, h/2+0, CD_RED);
+  cdCanvasPixel(canvas, 11, h/2+1, CD_GREEN);
+  cdCanvasPixel(canvas, 12, h/2+2, CD_BLUE);
 
-  cdPixel(10, h/2+0, CD_RED);
-  cdPixel(11, h/2+1, CD_GREEN);
-  cdPixel(12, h/2+2, CD_BLUE);
+  /* Draw 4 mark types, distributed near each corner.  */
+  cdCanvasForeground(canvas, CD_RED);
+  cdCanvasMarkSize(canvas, 30);
+  cdCanvasMarkType(canvas, CD_PLUS);
+  cdCanvasMark(canvas, 200, 200);
+  cdCanvasMarkType(canvas, CD_CIRCLE);
+  cdCanvasMark(canvas, w - 200, 200);
+  cdCanvasMarkType(canvas, CD_HOLLOW_CIRCLE);
+  cdCanvasMark(canvas, 200, h - 200);
+  cdCanvasMarkType(canvas, CD_DIAMOND);
+  cdCanvasMark(canvas, w - 200, h - 200);
 
-  /* draws all the mark type possibilities */
-  cdForeground(CD_RED);
-  cdMarkSize(30);
-  cdMarkType(CD_PLUS);
-  cdMark(200, 200);
-  cdMarkType(CD_CIRCLE);
-  cdMark(w - 200, 200);
-  cdMarkType(CD_HOLLOW_CIRCLE);
-  cdMark(200, h - 200);
-  cdMarkType(CD_DIAMOND);
-  cdMark(w - 200, h - 200);
+  /* Draw all the line style possibilities at bottom. 
+     Notice that they have some small differences between drivers. */
+  cdCanvasLineWidth(canvas, 1);
+  cdCanvasLineStyle(canvas, CD_CONTINUOUS);
+  cdCanvasLine(canvas, 0, 10, w, 10);
+  cdCanvasLineStyle(canvas, CD_DASHED);
+  cdCanvasLine(canvas, 0, 20, w, 20);
+  cdCanvasLineStyle(canvas, CD_DOTTED);
+  cdCanvasLine(canvas, 0, 30, w, 30);
+  cdCanvasLineStyle(canvas, CD_DASH_DOT);
+  cdCanvasLine(canvas, 0, 40, w, 40);
+  cdCanvasLineStyle(canvas, CD_DASH_DOT_DOT);
+  cdCanvasLine(canvas, 0, 50, w, 50);
 
-  /* draws all the line style possibilities */
-  cdLineWidth(1);
-  cdLineStyle(CD_CONTINUOUS);
-  cdLine(0, 10, w, 10);
-  cdLineStyle(CD_DASHED);
-  cdLine(0, 20, w, 20);
-  cdLineStyle(CD_DOTTED);
-  cdLine(0, 30, w, 30);
-  cdLineStyle(CD_DASH_DOT);
-  cdLine(0, 40, w, 40);
-  cdLineStyle(CD_DASH_DOT_DOT);
-  cdLine(0, 50, w, 50);
+  /* Draw all the hatch style possibilities in the top-left corner.
+     Notice that they have some small differences between drivers. */
+  cdCanvasHatch(canvas, CD_VERTICAL); 
+  cdCanvasBox(canvas, 0, 50, h - 60, h);
+  cdCanvasHatch(canvas, CD_FDIAGONAL); 
+  cdCanvasBox(canvas, 50, 100, h - 60, h);
+  cdCanvasHatch(canvas, CD_BDIAGONAL); 
+  cdCanvasBox(canvas, 100, 150, h - 60, h);
+  cdCanvasHatch(canvas, CD_CROSS); 
+  cdCanvasBox(canvas, 150, 200, h - 60, h);
+  cdCanvasHatch(canvas, CD_HORIZONTAL); 
+  cdCanvasBox(canvas, 200, 250, h - 60, h);
+  cdCanvasHatch(canvas, CD_DIAGCROSS); 
+  cdCanvasBox(canvas, 250, 300, h - 60, h);
 
-  /* draws all the hatch style possibilities */
-  cdHatch(CD_VERTICAL); 
-  cdBox(0, 50, h - 60, h);
-  cdHatch(CD_FDIAGONAL); 
-  cdBox(50, 100, h - 60, h);
-  cdHatch(CD_BDIAGONAL); 
-  cdBox(100, 150, h - 60, h);
-  cdHatch(CD_CROSS); 
-  cdBox(150, 200, h - 60, h);
-  cdHatch(CD_HORIZONTAL); 
-  cdBox(200, 250, h - 60, h);
-  cdHatch(CD_DIAGCROSS); 
-  cdBox(250, 300, h - 60, h);
+  /* Draw 4 regions, in diamond shape,
+     at top, bottom, left, right, 
+     using different interior styles. */
 
-  /* closed polygon */
-  cdBegin(CD_CLOSED_LINES);
-  cdVertex(w/2, h - 100); 
-  cdVertex(w/2 + 50, h - 150); 
-  cdVertex(w/2, h - 200); 
-  cdVertex(w/2 - 50, h - 150); 
-  cdEnd();
+  /* At top, not filled polygon, notice that the last line style is used. */
+  cdCanvasBegin(canvas, CD_CLOSED_LINES);
+  cdCanvasVertex(canvas, w/2, h - 100); 
+  cdCanvasVertex(canvas, w/2 + 50, h - 150); 
+  cdCanvasVertex(canvas, w/2, h - 200); 
+  cdCanvasVertex(canvas, w/2 - 50, h - 150); 
+  cdCanvasEnd(canvas);
 
-  /* hatch filled polygon */
-  cdHatch(CD_DIAGCROSS); 
-  cdBegin(CD_FILL);
-  cdVertex(100, h/2); 
-  cdVertex(150, h/2 + 50); 
-  cdVertex(200, h/2); 
-  cdVertex(150, h/2 - 50); 
-  cdEnd();
+  /* At left, hatch filled polygon */
+  cdCanvasHatch(canvas, CD_DIAGCROSS); 
+  cdCanvasBegin(canvas, CD_FILL);
+  cdCanvasVertex(canvas, 100, h/2); 
+  cdCanvasVertex(canvas, 150, h/2 + 50); 
+  cdCanvasVertex(canvas, 200, h/2); 
+  cdCanvasVertex(canvas, 150, h/2 - 50); 
+  cdCanvasEnd(canvas);
 
-  /* pattern filled polygon */
-  cdPattern(STYLE_SIZE, STYLE_SIZE, pattern);
-  cdBegin(CD_FILL);
-  cdVertex(w - 100, h/2); 
-  cdVertex(w - 150, h/2 + 50); 
-  cdVertex(w - 200, h/2); 
-  cdVertex(w - 150, h/2 - 50); 
-  cdEnd();
+  /* At right, pattern filled polygon */
+  cdCanvasPattern(canvas, STYLE_SIZE, STYLE_SIZE, pattern);
+  cdCanvasBegin(canvas, CD_FILL);
+  cdCanvasVertex(canvas, w - 100, h/2); 
+  cdCanvasVertex(canvas, w - 150, h/2 + 50); 
+  cdCanvasVertex(canvas, w - 200, h/2); 
+  cdCanvasVertex(canvas, w - 150, h/2 - 50); 
+  cdCanvasEnd(canvas);
   
-  /* stipple filled polygon */
-  cdStipple(STYLE_SIZE, STYLE_SIZE, stipple);
-  cdBegin(CD_FILL);
-  cdVertex(w/2, 100); 
-  cdVertex(w/2 + 50, 150); 
-  cdVertex(w/2, 200); 
-  cdVertex(w/2 - 50, 150); 
-  cdEnd();
+  /* At bottom, stipple filled polygon */
+  cdCanvasStipple(canvas, STYLE_SIZE, STYLE_SIZE, stipple);
+  cdCanvasBegin(canvas, CD_FILL);
+  cdCanvasVertex(canvas, w/2, 100); 
+  cdCanvasVertex(canvas, w/2 + 50, 150); 
+  cdCanvasVertex(canvas, w/2, 200); 
+  cdCanvasVertex(canvas, w/2 - 50, 150); 
+  cdCanvasEnd(canvas);
 
-  cdBegin(CD_BEZIER);
-  cdVertex(100, 100); 
-  cdVertex(150, 200); 
-  cdVertex(180, 250); 
-  cdVertex(180, 200); 
-  cdVertex(180, 150); 
-  cdVertex(150, 100); 
-  cdVertex(300, 100); 
-  cdEnd();
+  /* Draw two beziers at bottom-left */
+  cdCanvasBegin(canvas, CD_BEZIER);
+  cdCanvasVertex(canvas, 100, 100); 
+  cdCanvasVertex(canvas, 150, 200); 
+  cdCanvasVertex(canvas, 180, 250); 
+  cdCanvasVertex(canvas, 180, 200); 
+  cdCanvasVertex(canvas, 180, 150); 
+  cdCanvasVertex(canvas, 150, 100); 
+  cdCanvasVertex(canvas, 300, 100); 
+  cdCanvasEnd(canvas);
 
-  cdLineWidth(2);
-  cdLineStyle(CD_CONTINUOUS);
-  if (gdpiplus)
-    wdVectorText(0.25, 0.35, "WDj-Plus");
-  else
-    wdVectorText(0.25, 0.35, "WDj");
-
-  /* always clear the image buffer contents */
+  /* Initialize the image buffer contents */
 //#define IMAGE_SIZE 16
   memset(red, 0xFF, IMAGE_SIZE*IMAGE_SIZE/2);
   memset(green, 0x5F, IMAGE_SIZE*IMAGE_SIZE/2);
@@ -870,13 +900,19 @@ int SimpleDrawAll(void)
 //  cdPutImageRGB(IMAGE_SIZE, IMAGE_SIZE, red, green, blue, 100, h - 200, IMAGE_SIZE, IMAGE_SIZE);
 //  cdPutImageRGBA(IMAGE_SIZE, IMAGE_SIZE, red, green, blue, alpha, 100, h - 200, IMAGE_SIZE, IMAGE_SIZE);
 //  cdPutImageRGB(IMAGE_SIZE, IMAGE_SIZE, red, green, blue, w - 400, h - 310, 3*IMAGE_SIZE, 3*IMAGE_SIZE);
-  cdPutImageRGBA(IMAGE_SIZE, IMAGE_SIZE, red, green, blue, alpha, w - 400, h - 310, 3*IMAGE_SIZE, 3*IMAGE_SIZE);
+  /* Draw the image on the top-right corner but increasing its actual size, and uses its full area */
+  cdCanvasPutImageRectRGBA(canvas, IMAGE_SIZE, IMAGE_SIZE, red, green, blue, alpha, w - 400, h - 310, 3*IMAGE_SIZE, 3*IMAGE_SIZE, 0, 0, 0, 0);
 
   cdSetAttribute("ROTATE", NULL);
   if (use_transform)
     cdCanvasTransform(canvas, NULL);
   cdClip(CD_CLIPOFF);
-  cdFlush();
+
+  /* Adds a new page, or 
+     flushes the file, or
+     flushes the screen, or
+     swap the double buffer. */
+  cdCanvasFlush(canvas);
 
   return 0;
 }

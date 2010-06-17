@@ -876,7 +876,7 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 
 static int cdlinestyle(cdCtxCanvas *ctxcanvas, int style)
 {
-  double mm = (72.0/25.4) / ctxcanvas->scale;
+  double mm = ctxcanvas->canvas->xres;
   char options[200];
 
   switch (style)
@@ -901,12 +901,12 @@ static int cdlinestyle(cdCtxCanvas *ctxcanvas, int style)
   case CD_CUSTOM :
     {
       int i;
-
+      /* size here is in pixels, do not use mm */
       strcpy(options, "dasharray={");
       for (i = 0; i < ctxcanvas->canvas->line_dashes_count; i++)
       {
         char tmp[80];
-        sprintf(tmp, "%g ", ctxcanvas->canvas->line_dashes[i]*mm);
+        sprintf(tmp, "%g ", (double)ctxcanvas->canvas->line_dashes[i]);
         strcat(options, tmp);
       }
       strcat(options, "}");
