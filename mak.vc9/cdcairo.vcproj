@@ -115,6 +115,10 @@
 			>
 		</File>
 		<File
+			RelativePath="..\src\cairo\cdcairoemf.c"
+			>
+		</File>
+		<File
 			RelativePath="..\src\cairo\cdcairoimg.c"
 			>
 		</File>
@@ -159,7 +163,7 @@
 			>
 		</File>
 		<File
-			RelativePath="..\src\cairo\cdcairoprn.c"
+			RelativePath="..\src\cairo\cdcairoprn_unix.c"
 			>
 			<FileConfiguration
 				Name="Debug|Win32"
@@ -169,6 +173,10 @@
 					Name="VCCLCompilerTool"
 				/>
 			</FileConfiguration>
+		</File>
+		<File
+			RelativePath="..\src\cairo\cdcairoprn_win32.c"
+			>
 		</File>
 		<File
 			RelativePath="..\src\cairo\cdcairops.c"

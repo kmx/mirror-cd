@@ -124,7 +124,9 @@ cd.InitContextPlus() [in Lua]</pre>
 <p>Initializes the context driver to use another context replacing the standard drivers. 
 This functions is only available when a library containing a &quot;ContextPlus&quot; 
 context driver is used. See the <a href="../drv/cairo.html">Cairo</a>,&nbsp; <a href="../drv/gdiplus.html">GDI+</a> 
-and <a href="../drv/xrender.html">XRender</a> base drivers.</p>
+and <a href="../drv/xrender.html">XRender</a> base drivers. Those libraries does 
+not support XOR write mode, but has support for anti-aliasing and alpha for 
+transparency.</p>
 <p>In Lua, when using require&quot;cdluacontextplus&quot; this function will be 
 automatically called.</p>
 

@@ -66,10 +66,11 @@ ifdef USE_GDK
   USE_GTK = Yes
   LIBS = pangocairo-1.0 cairo
   ifeq ($(findstring Win, $(TEC_SYSNAME)), )
-    SRC += cairo/cdcairoprn.c
+    SRC += cairo/cdcairoprn_unix.c
     INCLUDES += /usr/include/gtk-unix-print-2.0
     LIBS += freetype
   else
+    SRC += cairo/cdcairoprn_win32.c cdcairoemf.c
     LIBS += freetype6
   endif
 else

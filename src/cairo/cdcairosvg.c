@@ -17,7 +17,8 @@
 
 static void cdflush(cdCtxCanvas *ctxcanvas)
 {
-  (void)ctxcanvas;  /* Nothing to do */
+  (void)ctxcanvas;
+  /* does nothing in SVG */
 }
 
 static void cdkillcanvas (cdCtxCanvas *ctxcanvas)

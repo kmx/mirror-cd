@@ -69,10 +69,11 @@ struct _cdCtxCanvas
 
   int eps;  /* used in PS */
 
-  cdImage* image_dbuffer;       /* Used by double buffer driver */
+  cdImage* image_dbuffer;       /* Used in double buffer driver */
   cdCanvas* canvas_dbuffer;
 
-  GtkPrintJob* job;    /* used in Printer */
+  GtkPrintJob* job;    /* used in Printer (UNIX) */
+  char* printername;   /* used in Printer (Win32) */
 };
 
 #define cdCairoGetRed(_)   (((double)cdRed(_))/255.)

@@ -13,25 +13,29 @@ extern "C" {
 #endif
 
 /* Some of these context can be used directly or by cdInitContextPlus,
-   as  CD_NATIVEWINDOW, CD_IMAGE and CD_DBUFFER.
+   as  CD_NATIVEWINDOW, CD_IMAGE, CD_EMF, CD_PRINTER and CD_DBUFFER.
    The others only directly. 
 */
 
+cdContext* cdContextCairoNativeWindow(void);
+cdContext* cdContextCairoImage(void);
+cdContext* cdContextCairoDBuffer(void);
+cdContext* cdContextCairoPrinter(void);
 cdContext* cdContextCairoPS(void);
 cdContext* cdContextCairoPDF(void);
 cdContext* cdContextCairoSVG(void);
 cdContext* cdContextCairoImageRGB(void);
-cdContext* cdContextCairoDBuffer(void);
-cdContext* cdContextCairoImage(void);
-cdContext* cdContextCairoNativeWindow(void);
+cdContext* cdContextCairoEMF(void);
 
 #define CD_CAIRO_NATIVEWINDOW cdContextCairoNativeWindow()
 #define CD_CAIRO_IMAGE cdContextCairoImage()
 #define CD_CAIRO_DBUFFER cdContextCairoDBuffer()
+#define CD_CAIRO_PRINTER cdContextCairoPrinter()
 #define CD_CAIRO_PS cdContextCairoPS()
 #define CD_CAIRO_PDF cdContextCairoPDF()
 #define CD_CAIRO_SVG cdContextCairoSVG()
 #define CD_CAIRO_IMAGERGB cdContextCairoImageRGB()
+#define CD_CAIRO_EMF cdContextCairoEMF()
 
 
 #ifdef __cplusplus

@@ -24,7 +24,7 @@
   implemented in the X-Windows and MS-Windows systems. The implementation uses the
   <a href="http://library.gnome.org/devel/pango/">Cairo</a> and Pango functions. This driver can be 
   compiled and used in all systems Cairo is supported. The drivers <b>Native Window</b>, 
-	<b>Image</b>, <b>Printer</b> and <b>Double Buffer</b> were implemented.</p>
+	<b>Image</b>, <b>EMF</b>, <b>Printer</b> and <b>Double Buffer</b> were implemented.</p>
 <p>The main motivation for the use of Cairo was transparency for all the 
 primitives. Beyond that we got other features like anti-aliasing, gradient 
 filling, transformations and other back-ends (support to rendering: PDF, PS, SVG and 
@@ -39,11 +39,14 @@ for complex clipping regions.</p>
   the canvas will be always a Cairo canvas. In fact the function affects primary the definitions 
 	<font face="Courier"><strong>CD_NATIVEWINDOW</strong></font>, 
   <strong><span style="font-family: Courier">CD_IMAGE</span></strong>, 
+  <strong><span style="font-family: Courier">CD_EMF</span></strong>, 
   <strong><span style="font-family: Courier">CD_PRINTER</span></strong> and <strong>
   <span style="font-family: Courier">CD_DBUFFER</span></strong>, because they are 
   function calls and not static defines. 
-  <strong><span style="font-family: Courier">CD_PRINTER</span></strong> can only 
-	be used along with GDK base driver in UNIX.</p>
+  <strong><span style="font-family: Courier">CD_PRINTER</span></strong> can be used with 
+	the GDK base driver in UNIX, or with the Win32 base driver in Windows. 
+  <strong><span style="font-family: Courier">CD_EMF </span></strong> can be used 
+	in Windows only, with GDK or Win32 base drivers.</p>
   <p>Using Cairo it is allowed to create more that one canvas at the same time for the same Window. And they can co-exist 
   with a standard GDK, Win32 or X-Windows canvas.</p>
   <p>To enable the use of Cairo based drivers you must call the initialization function <font face="Courier"><strong>

@@ -1658,7 +1658,7 @@ static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
   cairo_identity_matrix(ctxcanvas->cr);
   
   if (ctxcanvas->job)
-    cairo_scale(ctxcanvas->cr, 0.254, 0.254);
+    cairo_scale(ctxcanvas->cr, 0.25, 0.25);  /* ??? */
 
   if (matrix)
     ctxcanvas->canvas->invert_yaxis = 0;

@@ -12,9 +12,10 @@ SRC = cdcairodbuf.c cdcairopdf.c cdcairosvg.c cdcairo.c cdcairoimg.c cdcairoplus
 # cdcaironative_gdk.c  
 
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )
-  SRC += cdcaironative_win32.c
+  SRC += cdcaironative_win32.c cdcairoprn_win32.c cdcairoemf.c
 else
-  SRC += cdcaironative_x11.c    
+  SRC += cdcaironative_x11.c   
+  DEFINES += CAIRO_X11  
 endif
 
 INCLUDES += $(GTK)/include/cairo $(GTK)/include/pango-1.0 $(GTK)/include/glib-2.0 $(GTK)/lib/glib-2.0/include  
