@@ -293,23 +293,10 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
     }
     break;
   case CD_PATH:
+    cdSimPolyPath(ctxcanvas->canvas, poly, n);
+    break;
   case CD_BEZIER:
-    {
-      cdfPoint* fpoly = malloc(sizeof(cdfPoint)*n);     /* because we support cdfpoly */
-
-      for (i = 0; i<n; i++)
-      {
-        fpoly[i].x = (double)poly[i].x;
-        fpoly[i].y = (double)poly[i].y;
-      }
-
-      if (mode == CD_BEZIER)
-        cdfSimPolyBezier(ctxcanvas->canvas, fpoly, n);  
-      else
-        cdfSimPolyPath(ctxcanvas->canvas, fpoly, n);  
-
-      free(fpoly);
-    }
+    cdSimPolyBezier(ctxcanvas->canvas, poly, n);  
     break;
   case CD_FILL:
     {
