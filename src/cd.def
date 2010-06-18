@@ -394,6 +394,7 @@ EXPORTS
   cdCanvasSetBackground
   cdCanvasTransformPoint
   cdfCanvasTransformPoint
+  cdRound
 
   cdInitContextPlusList
   cdGetContextPlus

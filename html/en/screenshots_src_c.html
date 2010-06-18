@@ -9,6 +9,7 @@
  p {
 	margin-top: 0;
 	margin-bottom: 0;
+	font-family: "Courier New", Courier, monospace;
 }
 .style1 {
 	color: #0000FF;
@@ -16,11 +17,24 @@
 .style2 {
 	color: #FF00FF;
 }
+.style3 {
+	font-family: Arial, Helvetica, sans-serif;
+}
+.style4 {
+	text-align: left;
+}
 </style>
 </head>
 <body>
 
 <h2 align="center" style="text-align:center">Screenshots C Source Code</h2>
+
+
+
+
+<p class="style4"><span class="style3">Get the source code here: </span>
+<a href="../download/simple.zip">simple.zip</a>.</p>
+<p align="center" class="style4">&nbsp;</p>
 
 
 
@@ -56,9 +70,9 @@ cdCanvasClear</font><font SIZE="3" COLOR="#ff00ff"><b>(</b></font><font SIZE="3"
 <p>&nbsp;</p><p><font SIZE="3">
 </font><font SIZE="3" COLOR="#008000">/* Draw a reactangle and a polyline at 
 the bottom-left area,</p>
-<p>&nbsp;&nbsp;&nbsp; using a thick line with transparency.</p>
-<p>&nbsp;&nbsp;&nbsp; Notice that transparency is only supported in a few drivers,</p>
-<p>&nbsp;&nbsp;&nbsp; and line join is not supported in the IMAGERGB driver. */</p></font><p><font SIZE="3">
+<p>&nbsp;&nbsp; using a thick line with transparency.</p>
+<p>&nbsp;&nbsp; Notice that transparency is only supported in a few drivers,</p>
+<p>&nbsp;&nbsp; and line join is not supported in the IMAGERGB driver. */</p></font><p><font SIZE="3">
 cdCanvasLineWidth</font><font SIZE="3" COLOR="#ff00ff"><b>(</b></font><font SIZE="3">canvas</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3">
 </font><font SIZE="3" COLOR="#800000">3</font><font SIZE="3" COLOR="#ff00ff"><b>);</b>
 </font></p><p><font SIZE="3">
@@ -103,7 +117,7 @@ cdCanvasEnd</font><font SIZE="3" COLOR="#ff00ff"><b>(</b></font><font SIZE="3">c
 
 <p></font><font SIZE="3" COLOR="#008000">/* Draw the red diagonal line with a 
 custom line style. </p>
-<p>&nbsp;&nbsp;&nbsp; Notice that line styles are not supported in the IMAGERGB driver. */</font></p><p><font SIZE="3">
+<p>&nbsp;&nbsp; Notice that line styles are not supported in the IMAGERGB driver. */</font></p><p><font SIZE="3">
 cdCanvasForeground</font><font SIZE="3" COLOR="#ff00ff"><b>(</b></font><font SIZE="3">canvas</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3"> 
 CD_RED</font><font SIZE="3" COLOR="#ff00ff"><b>);</b>
 </font></p><p><font SIZE="3">
@@ -134,7 +148,7 @@ h</font><font SIZE="3" COLOR="#ff00ff"><b>-</b></font><font SIZE="3" COLOR="#800
 <p>&nbsp;</p><p><font SIZE="3">
 </font><font SIZE="3" COLOR="#008000">/* Draw the blue diagonal line with a 
 pre-defined line style.</p>
-<p>&nbsp;&nbsp;&nbsp; Notice that the pre-defined line style is dependent on the driver. */</font></p><p><font SIZE="3">
+<p>&nbsp;&nbsp; Notice that the pre-defined line style is dependent on the driver. */</font></p><p><font SIZE="3">
 cdCanvasForeground</font><font SIZE="3" COLOR="#ff00ff"><b>(</b></font><font SIZE="3">canvas</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3"> 
 CD_BLUE</font><font SIZE="3" COLOR="#ff00ff"><b>);</b>
 </font></p><p><font SIZE="3">
@@ -160,7 +174,7 @@ cdCanvasLineWidth</font><font SIZE="3" COLOR="#ff00ff"><b>(</b></font><font SIZE
 
 <p></font><font SIZE="3" COLOR="#008000">/* Draw an arc at bottom-left, and a 
 sector at bottom-right.</p>
-<p>&nbsp;&nbsp;&nbsp; Notice that counter-clockwise orientation of both. */</font></p><p><font SIZE="3">
+<p>&nbsp;&nbsp; Notice that counter-clockwise orientation of both. */</font></p><p><font SIZE="3">
 cdCanvasInteriorStyle</font><font SIZE="3" COLOR="#ff00ff"><b>(</b></font><font SIZE="3">canvas</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3"> 
 CD_SOLID</font><font SIZE="3" COLOR="#ff00ff"><b>);</b>
 </font></p><p><font SIZE="3">
@@ -222,13 +236,13 @@ CD_BOLD</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3">
 <p>&nbsp;</p><p><font SIZE="3">
 </font><font SIZE="3" COLOR="#008000">/* Draw text at center, with 
 orientation, </p>
-<p>&nbsp;&nbsp;&nbsp; and draw its bounding box. </p>
-<p>&nbsp;&nbsp;&nbsp; Notice that in some drivers the bounding box is not precise. */</font></p>
+<p>&nbsp;&nbsp; and draw its bounding box. </p>
+<p>&nbsp;&nbsp; Notice that in some drivers the bounding box is not precise. */</font></p>
 <p><font SIZE="3">
 cdCanvasGetTextBounds</font><font SIZE="3" COLOR="#ff00ff"><b>(</b></font><font SIZE="3">canvas</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3"> 
 w</font><font SIZE="3" COLOR="#ff00ff"><b>/</b></font><font SIZE="3" COLOR="#800000">2</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3"> 
 h</font><font SIZE="3" COLOR="#ff00ff"><b>/</b></font><font SIZE="3" COLOR="#800000">2</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3">
-</font><font SIZE="3" COLOR="#a31515">&quot;cdMin Draw ()&quot;</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3"> 
+</font><font SIZE="3" COLOR="#a31515">&quot;cdMin Draw (згн)&quot;</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3"> 
 irect</font><font SIZE="3" COLOR="#ff00ff"><b>);</b>
 </font></p><p><font SIZE="3">
 cdCanvasForeground</font><font SIZE="3" COLOR="#ff00ff"><b>(</b></font><font SIZE="3">canvas</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3"> 
@@ -262,7 +276,7 @@ CD_BLUE</font><font SIZE="3" COLOR="#ff00ff"><b>);</b>
 cdCanvasText</font><font SIZE="3" COLOR="#ff00ff"><b>(</b></font><font SIZE="3">canvas</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3"> 
 w</font><font SIZE="3" COLOR="#ff00ff"><b>/</b></font><font SIZE="3" COLOR="#800000">2</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3"> 
 h</font><font SIZE="3" COLOR="#ff00ff"><b>/</b></font><font SIZE="3" COLOR="#800000">2</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3">
-</font><font SIZE="3" COLOR="#a31515">&quot;cdMin Draw ()&quot;</font><font SIZE="3" COLOR="#ff00ff"><b>);</b>
+</font><font SIZE="3" COLOR="#a31515">&quot;cdMin Draw (згн)&quot;</font><font SIZE="3" COLOR="#ff00ff"><b>);</b>
 </font></p>
 <p>&nbsp;</p><p><font SIZE="3">
 </font><font SIZE="3" COLOR="#008000">/* Prepare World Coordinates */</font></p><p><font SIZE="3">
@@ -309,7 +323,7 @@ wdCanvasVectorCharSize</font><font SIZE="3" COLOR="#ff00ff"><b>(</b></font><font
 </font></p><p>&nbsp;</p>
 <p><font SIZE="3" COLOR="#008000">/* Draw vector text, and draw its 
 bounding box. </p>
-<p>&nbsp;&nbsp;&nbsp; We also use this text to show when we are using a contextplus driver. */</font></p>
+<p>&nbsp;&nbsp; We also use this text to show when we are using a contextplus driver. */</font></p>
 <p><font SIZE="3">
 cdCanvasForeground</font><font SIZE="3" COLOR="#ff00ff"><b>(</b></font><font SIZE="3">canvas</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3"> 
 CD_RED</font><font SIZE="3" COLOR="#ff00ff"><b>);</b>
@@ -383,7 +397,7 @@ cdCanvasLineWidth</font><font SIZE="3" COLOR="#ff00ff"><b>(</b></font><font SIZE
 </font></p><p><font SIZE="3" COLOR="#ff00ff">&nbsp;</font></p><p><font SIZE="3">
 </font><font SIZE="3" COLOR="#008000">/* Draw a filled path at center-right 
 (looks like a weird fish). </p>
-<p>&nbsp;&nbsp;&nbsp; Notice that in PDF the arc is necessarily a circle arc, and not an ellipse. 
+<p>&nbsp;&nbsp; Notice that in PDF the arc is necessarily a circle arc, and not an ellipse. 
 */</font></p><p><font SIZE="3">
 cdCanvasForeground</font><font SIZE="3" COLOR="#ff00ff"><b>(</b></font><font SIZE="3">canvas</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3"> 
 CD_GREEN</font><font SIZE="3" COLOR="#ff00ff"><b>);</b>
@@ -544,7 +558,7 @@ h </font><font SIZE="3" COLOR="#ff00ff"><b>-</b></font><font SIZE="3"> </font>
 <p>&nbsp;</p><p><font SIZE="3">
 </font><font SIZE="3" COLOR="#008000">/* Draw all the line style 
 possibilities at bottom. </p>
-<p>&nbsp;&nbsp;&nbsp; Notice that they have some small differences between drivers. */</font></p><p><font SIZE="3">
+<p>&nbsp;&nbsp; Notice that they have some small differences between drivers. */</font></p><p><font SIZE="3">
 cdCanvasLineWidth</font><font SIZE="3" COLOR="#ff00ff"><b>(</b></font><font SIZE="3">canvas</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3">
 </font><font SIZE="3" COLOR="#800000">1</font><font SIZE="3" COLOR="#ff00ff"><b>);</b>
 </font></p><p><font SIZE="3">
@@ -596,7 +610,7 @@ w</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3"> </font>
 <p>&nbsp;</p><p><font SIZE="3">
 </font><font SIZE="3" COLOR="#008000">/* Draw all the hatch style 
 possibilities in the top-left corner.</p>
-<p>&nbsp;&nbsp;&nbsp; Notice that they have some small differences between drivers. */</font></p><p><font SIZE="3">
+<p>&nbsp;&nbsp; Notice that they have some small differences between drivers. */</font></p><p><font SIZE="3">
 cdCanvasHatch</font><font SIZE="3" COLOR="#ff00ff"><b>(</b></font><font SIZE="3">canvas</font><font SIZE="3" COLOR="#ff00ff"><b>,</b></font><font SIZE="3"> 
 CD_VERTICAL</font><font SIZE="3" COLOR="#ff00ff"><b>);</b></font></p><font SIZE="3">
 
@@ -659,8 +673,8 @@ h</font><font SIZE="3" COLOR="#ff00ff"><b>);</b>
 </font></p>
 <p>&nbsp;</p><p><font SIZE="3">
 </font><font SIZE="3" COLOR="#008000">/* Draw 4 regions, in diamond shape,</p>
-<p>&nbsp;&nbsp;&nbsp; at top, bottom, left, right, </p>
-<p>&nbsp;&nbsp;&nbsp; using different interior styles. <font SIZE="3" COLOR="#008000">
+<p>&nbsp;&nbsp; at top, bottom, left, right, </p>
+<p>&nbsp;&nbsp; using different interior styles. <font SIZE="3" COLOR="#008000">
 */</font></p>
 <p>&nbsp;</p>
 <p>/* At top, not filled polygon, notice that the last line style is used. */</font></p><p><font SIZE="3">
@@ -847,9 +861,9 @@ h </font><font SIZE="3" COLOR="#ff00ff"><b>-</b></font><font SIZE="3"> </font>
 </font></p>
 <p>&nbsp;</p>
 <p><font SIZE="3" COLOR="#008000">/* Adds a new page, or </p>
-<p>&nbsp;&nbsp;&nbsp; flushes the file, or</p>
-<p>&nbsp;&nbsp;&nbsp; flushes the screen, or</p>
-<p>&nbsp;&nbsp;&nbsp; swap the double buffer. */</font></p><p><font SIZE="3">
+<p>&nbsp;&nbsp; flushes the file, or</p>
+<p>&nbsp;&nbsp; flushes the screen, or</p>
+<p>&nbsp;&nbsp; swap the double buffer. */</font></p><p><font SIZE="3">
 cdCanvasFlush</font><font SIZE="3" COLOR="#ff00ff"><b>(</b></font><font SIZE="3">canvas</font><font SIZE="3" COLOR="#ff00ff"><b>);</b>
 </font></p>
 </div>

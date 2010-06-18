@@ -2,7 +2,6 @@ EXPORTS
   cdContextCairoImage
   cdContextCairoImageRGB
   cdContextCairoPS
-  cdContextCairoPrinter
   cdContextCairoNativeWindow
   cdContextCairoDBuffer
   cdContextCairoSVG

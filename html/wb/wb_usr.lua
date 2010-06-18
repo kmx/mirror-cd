@@ -84,6 +84,10 @@ wb_usr.tree =
             {
               name= {en= "C Source Code"},
               link= "screenshots_src_c.html"
+            },
+            {
+              name= {en= "Lua Source Code"},
+              link= "screenshots_src_lua.html"
             }
           }
         },

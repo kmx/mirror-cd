@@ -171,8 +171,8 @@ canvas:wGetTextSize(text: string) -&gt; (width, heigth: number) (WC) [in Lua]</p
 <pre class="function"><span class="mainFunction">void <a name="cdTextBounds">cdCanvasGetTextBounds</a>(cdCanvas* canvas, int x, int y, const char *text, int *rect); [in C]</span>
 void wdCanvasGetTextBounds(cdCanvas* canvas, double x, double y, const char* text, double *rect); (WC) [in C]
 
-canvas:GetTextBounds(x, y: number, text: string) -&gt; (rect0, rect1, rect2, rect3, rect4, rect5, rect6, rect7: number) [in Lua]
-canvas:wGetTextBounds(x, y: number, text: string) -&gt; (rect0, rect1, rect2, rect3, rect4, rect5, rect6, rect7: number) (WC) [in Lua]</pre>
+canvas:GetTextBounds(x, y: number, text: string) -&gt; (rect: table) [in Lua]
+canvas:wGetTextBounds(x, y: number, text: string) -&gt; (rect: table) (WC) [in Lua]</pre>
 
   <p>Returns the oriented bounding rectangle occupied by a text at a given 
 	position. The rectangle has the same dimentions returned by <strong>

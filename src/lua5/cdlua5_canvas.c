@@ -1494,7 +1494,7 @@ static int wdlua5_gettextbox(lua_State *L)
 }
 
 /***************************************************************************************************************\
-* cd.GetTextBounds(x, y: number, text: string) -> (rect0, rect1, rect2, rect3, rect4, rect5, rect6, rect7: number) *
+* cd.GetTextBounds(x, y: number, text: string) -> (rect: table) *
 \***************************************************************************************************************/
 static int cdlua5_gettextbounds(lua_State *L)
 {
@@ -1502,21 +1502,20 @@ static int cdlua5_gettextbounds(lua_State *L)
   int x = luaL_checkint(L, 2);
   int y = luaL_checkint(L, 3);
   const char* s = luaL_checkstring(L, 4);
+  int i;
 
   cdCanvasGetTextBounds(cdlua_checkcanvas(L, 1), x, y, s, rect);
-  lua_pushnumber(L, rect[0]);
-  lua_pushnumber(L, rect[1]);
-  lua_pushnumber(L, rect[2]);
-  lua_pushnumber(L, rect[3]);
-  lua_pushnumber(L, rect[4]);
-  lua_pushnumber(L, rect[5]);
-  lua_pushnumber(L, rect[6]);
-  lua_pushnumber(L, rect[7]);
-  return 4;
+  lua_newtable(L);
+  for (i=0; i < 8; i++)
+  {
+    lua_pushnumber(L, rect[i]);
+    lua_rawseti(L, -2, i+1);
+  }
+  return 1;
 }
 
 /****************************************************************************************************************\
-* cd.wGetTextBounds(x, y: number, text: string) -> (rect0, rect1, rect2, rect3, rect4, rect5, rect6, rect7: number) *
+* cd.wGetTextBounds(x, y: number, text: string) -> (rect: table) *
 \****************************************************************************************************************/
 static int wdlua5_gettextbounds(lua_State *L)
 {
@@ -1524,17 +1523,16 @@ static int wdlua5_gettextbounds(lua_State *L)
   double x = luaL_checknumber(L, 2);
   double y = luaL_checknumber(L, 3);
   const char* s = luaL_checkstring(L, 4);
+  int i;
 
   wdCanvasGetTextBounds(cdlua_checkcanvas(L, 1), x, y, s, rect);
-  lua_pushnumber(L, rect[0]);
-  lua_pushnumber(L, rect[1]);
-  lua_pushnumber(L, rect[2]);
-  lua_pushnumber(L, rect[3]);
-  lua_pushnumber(L, rect[4]);
-  lua_pushnumber(L, rect[5]);
-  lua_pushnumber(L, rect[6]);
-  lua_pushnumber(L, rect[7]);
-  return 4;
+  lua_newtable(L);
+  for (i=0; i < 8; i++)
+  {
+    lua_pushnumber(L, rect[i]);
+    lua_rawseti(L, -2, i+1);
+  }
+  return 1;
 }
 
 
