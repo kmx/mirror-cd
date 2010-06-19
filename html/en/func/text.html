@@ -6,6 +6,11 @@
 <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
 <title>Text</title>
 <link rel="stylesheet" type="text/css" href="../../style.css">
+<style type="text/css">
+.style1 {
+	text-decoration: underline;
+}
+</style>
 </head>
 
 <body>
@@ -14,8 +19,8 @@
 
   <p>A raster text using a font with styles. The position the text is drawn depends on the text alignment attribute. </p>
   <p>The library has at least 4 standard typefaces: &quot;System&quot; (which depends on the driver and platform), 
-  &quot;Courier&quot; (mono spaced 
-  with serif), &quot;Times&quot; (proportional with serif) and &quot;Helvetica&quot; (proportional without serif). Each typeface can have 
+  &quot;<span class="style1">Courier</span>&quot; (mono spaced 
+  with serif), &quot;<span class="style1">Times</span>&quot; (proportional with serif) and &quot;<span class="style1">Helvetica</span>&quot; (proportional without serif). Each typeface can have 
   some styles: Plain, <strong>Bold</strong>, <em>Italic</em> and a combination of <em><strong>Bold and Italic</strong></em>. 
   As an alternative to the standard typefaces, you can use other typefaces or native driver typefaces with the function
   <strong>NativeFont</strong>, but they may work in a reduced set of drivers.
