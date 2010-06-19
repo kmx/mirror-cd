@@ -204,6 +204,8 @@ static int cdclip(cdCtxCanvas *ctxcanvas, int mode)
     break;
   }
 
+  cairo_clip(ctxcanvas->cr);
+
   return mode;
 }
 
