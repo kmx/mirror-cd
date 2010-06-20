@@ -24,7 +24,8 @@
       if the canvas has a small size the picture quality will be poor. To increase 
       picture quality create a canvas with a larger size, if possible.</p>
     <p>All World Coordinate drawing in all drivers are simulated using other CD 
-	primitives and do NOT depend or use the Transformation matrix.</p>
+	primitives and do NOT depend or use the <strong>cdCanvasTransform</strong> 
+	transformation matrix.</p>
     <hr>
     <pre class="function"><span class="mainFunction">void <a name="wdWindow">wdCanvasWindow</a>(cdCanvas* canvas, double xmin, double xmax, double ymin, double ymax); [in C]</span>
     
@@ -74,7 +75,8 @@ canvas:wSetTransform(sx, sy, tx, ty: number) [in Lua]</pre>
     <p>Configures the world coordinate system transformation to be used to 
 	convert world coordinates (with values in real numbers) into canvas 
 	coordinates (with values in integers). The transformation is automatically 
-	set by <strong>wdCanvasWindow</strong> and <strong>wdCanvasViewport</strong>.</p>
+	set by <strong>wdCanvasWindow</strong> and <strong>wdCanvasViewport</strong>. 
+	This has NO relation with <strong>cdCanvasTransform</strong>.</p>
     <pre class="function"><span class="mainFunction">void <a name="wdGetTransform">wdCanvasGetTransform</a>(cdCanvas* canvas, double *sx, double *sy, double *tx, double *ty); [in C]</span>
 
 canvas:wGetTransform() -&gt; (sx, sy, tx, ty: number) [in Lua]</pre>
