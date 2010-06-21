@@ -6,6 +6,7 @@
 
 void SimpleCreateCanvas(char* data);
 void SimpleKillCanvas(void);
+void SimpleUpdateSize(cdCanvas* cnv);
 
 int SimplePlayClipboard(void);
 int SimplePlayCGMBin(void);

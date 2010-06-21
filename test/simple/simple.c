@@ -51,6 +51,7 @@ int contextplus = 0;
 int simple_draw = 0;
 int use_transform = 0;
 int simulate = 0;
+int use_opengl = 0;
 
 enum {DRAW_ALL, DRAW_TEXTFONTS, DRAW_TEXTALIGN, DRAW_TEST};
 
@@ -490,7 +491,9 @@ int SimpleDrawGL(void)
   dbCanvas = cdCreateCanvas(CD_GL, StrData);
 
   curCanvas = dbCanvas;
+  use_opengl = 1;
   SimpleDrawRepaint();
+  use_opengl = 0;
 
   return 0;
 }
@@ -542,6 +545,13 @@ int SimpleDrawAll(void)
 {
   cdCanvas* canvas = cdActiveCanvas();
   int w, h;
+
+#ifdef USE_OPENGL
+  if (use_opengl)
+    SimpleUpdateSize(canvas);
+#endif
+
+
   cdCanvasGetSize(canvas, &w, &h, NULL, NULL);
   
   simple_draw = DRAW_ALL;

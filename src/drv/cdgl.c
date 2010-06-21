@@ -232,7 +232,9 @@ static void cdglEnableBackOpacity(cdCtxCanvas* ctxcanvas)
 {
   if (ctxcanvas->canvas->back_opacity == CD_OPAQUE)
   {
-    glColor4ub(cdRed(ctxcanvas->canvas->foreground), cdGreen(ctxcanvas->canvas->foreground), cdBlue(ctxcanvas->canvas->foreground), 255);
+    glColor4ub(cdRed(ctxcanvas->canvas->foreground), 
+                     cdGreen(ctxcanvas->canvas->foreground), 
+                     cdBlue(ctxcanvas->canvas->foreground), 255);
 
     glDepthMask(GL_TRUE);
 
@@ -250,7 +252,9 @@ static void cdglEnableBackOpacity(cdCtxCanvas* ctxcanvas)
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_FALSE);
 
-    glColor4ub(cdRed(ctxcanvas->canvas->foreground), cdGreen(ctxcanvas->canvas->foreground), cdBlue(ctxcanvas->canvas->foreground), 0);
+    glColor4ub(cdRed(ctxcanvas->canvas->foreground), 
+               cdGreen(ctxcanvas->canvas->foreground), 
+               cdBlue(ctxcanvas->canvas->foreground), 0);
   }
 }
 

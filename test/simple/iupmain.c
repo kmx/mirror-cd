@@ -1,4 +1,6 @@
 #include <stdlib.h>
+#include <stdio.h>
+
 #include <iup.h>
 #include <iupgl.h>
 #include <cd.h>
@@ -28,6 +30,28 @@ glu32
 cdgl
 ftgl
 */
+void SimpleUpdateSize(cdCanvas* cnv)
+{
+  Ihandle* canvas = IupGetHandle("SimpleCanvas");
+  int w = IupGetInt(canvas, "RASTERSIZE");
+  int h = IupGetInt2(canvas, "RASTERSIZE");
+  IupGLMakeCurrent(canvas);
+
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  gluOrtho2D(0, w, 0, h);
+
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+
+  if (cnv)
+  {
+    char StrData[100];
+    sprintf(StrData, "%dx%d", w, h);  /* no need to update resolution */
+    cdCanvasSetAttribute(cnv, "SIZE", StrData);
+  }
+}
+
 
 int main(int argc, char** argv)
 {
@@ -112,19 +136,8 @@ int main(int argc, char** argv)
   SimpleDrawWindow();
 
 #ifdef USE_OPENGL
-  {
-    Ihandle* canvas = IupGetHandle("SimpleCanvas");
-    int w = IupGetInt(canvas, "RASTERSIZE");
-    int h = IupGetInt2(canvas, "RASTERSIZE");
-    IupGLMakeCurrent(canvas);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluOrtho2D(0, w, 0, h);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-  }
+  SimpleUpdateSize(NULL);
+  IupUpdate(IupGetHandle("SimpleCanvas"));
 #endif
 
   IupMainLoop();
