@@ -39,10 +39,18 @@ USE_STATIC = Yes
 
 #USE_IM = Yes
 
+USE_OPENGL = Yes
+ifdef USE_OPENGL
+  DEFINES += USE_OPENGL
+endif
+
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )
   LIBS = cdpdf pdflib
   ifndef GDK_CAIRO
     LIBS += cdcontextplus gdiplus
+  endif
+  ifdef USE_OPENGL
+    LIBS += cdgl ftgl
   endif
 else
   ifdef DBG_DIR
@@ -55,6 +63,9 @@ else
   ifndef GDK_CAIRO
     SLIB += $(CDLIB)/libcdcontextplus.a
     LIBS = Xrender Xft
-  else  
+  endif
+  ifdef USE_OPENGL
+    SLIB += $(CDLIB)/libcdgl.a $(CDLIB)/libftgl.a
+    #LIBS = ftgl
   endif
 endif

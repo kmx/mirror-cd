@@ -1057,10 +1057,7 @@ static void cdgetimagergb(cdCtxCanvas *ctxcanvas, unsigned char *r, unsigned cha
                                                    x, y-h+1, 
                                                    0, 0, w, h);
   if (!pixbuf)
-  {
-    fprintf(stderr, "CanvasDraw: error getting image\n");
     return;
-  }
 
   cdgdkGetPixbufData(pixbuf, r, g, b);
 }
@@ -1087,10 +1084,8 @@ static void cdputimagerectrgba_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, co
   if (a) nc = 4;
   dst_r = malloc(nc*size);
   if (!dst_r)
-  {
-    fprintf(stderr, "CanvasDraw: no enough memory\n");
     return;
-  }
+
   dst_g = dst_r + size;
   dst_b = dst_g + size;
   if (a) dst_a = dst_b + size;
@@ -1177,10 +1172,8 @@ static void cdputimagerectmap_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, con
   size = ew*eh;
   dst_index = malloc(size);
   if (!dst_index)
-  {
-    fprintf(stderr, "CanvasDraw: no enough memory\n");
     return;
-  }
+
   memset(dst_index, 0, size);
 
   /* for all pixels in the destiny area */

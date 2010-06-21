@@ -1,8 +1,18 @@
 #include <stdlib.h>
 #include <iup.h>
+#include <iupgl.h>
 #include <cd.h>
 
 #include "simple.h"
+
+#ifdef USE_OPENGL
+#ifdef WIN32
+#include <windows.h>
+#endif
+
+#include <GL/gl.h>
+#include <GL/glu.h>
+#endif
 
 int cmdExit(void)
 {
@@ -11,6 +21,14 @@ int cmdExit(void)
 
 void simple_loadled (void);
 
+/* USE_OPENGL - add to linker:
+iupgl
+opengl32
+glu32
+cdgl
+ftgl
+*/
+
 int main(int argc, char** argv)
 {
   IupOpen(&argc, &argv);                        
@@ -18,8 +36,21 @@ int main(int argc, char** argv)
 #ifdef USE_CONTEXTPLUS
   cdInitContextPlus();
 #endif
+#ifdef USE_OPENGL
+  IupGLCanvasOpen();
+#endif
 
   simple_loadled();
+#ifdef USE_OPENGL
+  {
+    Ihandle* dialog = IupGetHandle("SimpleDialog");
+    Ihandle* canvas = IupGetHandle("SimpleCanvas");
+    IupDestroy(canvas);
+    canvas = IupGLCanvas("SimpleRepaint");
+    IupSetHandle("SimpleCanvas", canvas);
+    IupAppend(dialog, canvas);
+  }
+#endif
 
   IupSetAttribute(IupGetHandle("SimpleDialog"), "PLACEMENT", "MAXIMIZED");
   IupShow(IupGetHandle("SimpleDialog"));
@@ -57,6 +88,10 @@ int main(int argc, char** argv)
   IupSetFunction("SimpleDrawImageRGB", (Icallback) SimpleDrawImageRGB);
   IupSetFunction("SimpleDrawSimulate", (Icallback) SimpleDrawSimulate);
 
+#ifdef USE_OPENGL
+  IupSetFunction("SimpleDrawGL", (Icallback) SimpleDrawGL);
+#endif
+
   IupSetFunction("SimpleNotXor", (Icallback) SimpleNotXor);
   IupSetFunction("SimpleXor", (Icallback) SimpleXor);
   IupSetFunction("SimpleReplace", (Icallback) SimpleReplace);
@@ -75,6 +110,22 @@ int main(int argc, char** argv)
   IupSetFunction("SimpleRepaint", (Icallback) SimpleDrawRepaint);
 
   SimpleDrawWindow();
+
+#ifdef USE_OPENGL
+  {
+    Ihandle* canvas = IupGetHandle("SimpleCanvas");
+    int w = IupGetInt(canvas, "RASTERSIZE");
+    int h = IupGetInt2(canvas, "RASTERSIZE");
+    IupGLMakeCurrent(canvas);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    gluOrtho2D(0, w, 0, h);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+  }
+#endif
 
   IupMainLoop();
 

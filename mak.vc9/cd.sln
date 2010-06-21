@@ -134,6 +134,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdluaim52", "cdluaim52.vcpr
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdluapdf52", "cdluapdf52.vcproj", "{B4823266-DF8C-ABC1-DF8C-12688C234EAC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdgl", "cdgl.vcproj", "{8441F69D-7135-AB59-1F94-4522123C8467}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ftgl", "cd_ftgl.vcproj", "{1D758EEA-59C3-46E4-BEF5-16DCCA8C0B21}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -189,6 +193,10 @@ Global
 		{CB863607-6B6C-FF53-DF34-12AA00001234}.Debug|Win32.Build.0 = Debug|Win32
 		{B4823266-DF8C-ABC1-DF8C-12688C234EAC}.Debug|Win32.ActiveCfg = Debug|Win32
 		{B4823266-DF8C-ABC1-DF8C-12688C234EAC}.Debug|Win32.Build.0 = Debug|Win32
+		{8441F69D-7135-AB59-1F94-4522123C8467}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8441F69D-7135-AB59-1F94-4522123C8467}.Debug|Win32.Build.0 = Debug|Win32
+		{1D758EEA-59C3-46E4-BEF5-16DCCA8C0B21}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1D758EEA-59C3-46E4-BEF5-16DCCA8C0B21}.Debug|Win32.Build.0 = Debug|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

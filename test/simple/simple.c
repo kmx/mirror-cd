@@ -29,6 +29,7 @@
 #include "cddebug.h"
 #include "wd.h"
 #include "cdgdiplus.h"
+#include "cdgl.h"
 
 #include "simple.h"
 
@@ -472,6 +473,28 @@ int SimpleDrawImageRGB(void)
 
   return 0;
 }
+
+#ifdef USE_OPENGL
+int SimpleDrawGL(void)
+{
+  char StrData[100];
+  int w, h;
+  double w_mm, h_mm;
+  cdActivate(curCanvas);
+  cdGetCanvasSize(&w, &h, &w_mm, &h_mm);
+
+  sprintf(StrData, "%dx%d %g", w, h, ((double)w/w_mm));
+
+  if (dbCanvas) cdKillCanvas(dbCanvas);
+
+  dbCanvas = cdCreateCanvas(CD_GL, StrData);
+
+  curCanvas = dbCanvas;
+  SimpleDrawRepaint();
+
+  return 0;
+}
+#endif
 
 int SimpleDrawSimulate(void)
 {

@@ -92,6 +92,7 @@ void simple_loadled (void)
     IupItem( "Window", "SimpleDrawWindow" ),
     IupItem( "Server Image", "SimpleDrawImage" ),
     IupItem( "Image RGB", "SimpleDrawImageRGB" ),
+    IupItem( "OpenGL", "SimpleDrawGL" ),
   NULL), NULL );
   named[8] = decl( "mnPrimitives", IupMenu(
     IupItem( "All", "SimpleDrawAll" ),
