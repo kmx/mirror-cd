@@ -8,18 +8,21 @@
   </head>
   <body>
     <h2 align="center">General Attributes</h2>
+    <div class="function">
     <pre class="function"><span class="mainFunction">long int <a name="cdForeground">cdCanvasForeground</a>(cdCanvas* canvas, long int color); [in C]</span>
 void cdCanvasSetForeground(cdCanvas* canvas, long int color); [in C]
 
 canvas:Foreground(color: lightuserdata) -&gt; (old_color: lightuserdata) [in Lua]
 canvas:SetForeground(color: lightuserdata) [in Lua]</pre>
-    <p>Configures a new current foreground color and returns the previous one. This 
-      color is used in all primitives (lines, areas, marks and text). Default value: <b>
+    <p>Configures a new current foreground color and returns the previous one. 
+	This color is used in all primitives (lines, areas, marks and text). Default 
+	value: <b>
         <tt>CD_BLACK</tt></b>. Value <tt><b>CD_QUERY</b> </tt>simply returns the 
-      current value.</p>
+	current value.</p>
     <p>Notice that CD_QUERY conflicts with color RGBA=(255,255,255,0) (full 
-    transparent white). Use <strong>SetForeground</strong> to avoid the 
-    conflict. See also <a href="color.html">Color Coding</a>.</p>
+	transparent white). Use <strong>SetForeground</strong> to avoid the 
+	conflict. See also <a href="color.html">Color Coding</a>.</p></div>
+    <div class="function">
     <pre class="function"><span class="mainFunction">long int <a name="cdBackground">cdCanvasBackground</a>(cdCanvas* canvas, long int color); [in C]</span>
 void cdCanvasSetBackground(cdCanvas* canvas, long int color); [in C]
 
@@ -33,7 +36,8 @@ canvas:SetBackground(color: lightuserdata) [in Lua]</pre>
       Value <tt><b>CD_QUERY</b> </tt>simply returns the current value.</p>
     <p>Notice that CD_QUERY conflicts with color RGBA=(255,255,255,0) (full 
     transparent white). Use <strong>SetBackground</strong> to avoid the 
-    conflict. See also <a href="color.html">Color Coding</a>.</p>
+    conflict. See also <a href="color.html">Color Coding</a>.</p></div>
+    <div class="function">
     <pre class="function"><span class="mainFunction">int <a name="cdWriteMode">cdCanvasWriteMode</a>(cdCanvas* canvas, int mode); [in C]</span>
 
 canvas:WriteMode(mode: number) -&gt; (old_mode: number) [in Lua]</pre>
@@ -44,6 +48,6 @@ canvas:WriteMode(mode: number) -&gt; (old_mode: number) [in Lua]</pre>
     </p>
     <p>Note: operation XOR is very useful, because, using white as the foreground 
       color and drawing the same image twice, you can go back to the original color, 
-      before the drawing. This is commonly used for mouse selection feedback.</p>
+      before the drawing. This is commonly used for mouse selection feedback.</p></div>
   </body>
 </html>

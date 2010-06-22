@@ -943,6 +943,7 @@ wb_usr.tree =
         }
       }
     },
+    { link= "", name= {en= "" } },
     {
       name= {nl= "Drivers"},
       link= "drv.html",

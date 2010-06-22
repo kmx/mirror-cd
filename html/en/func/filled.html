@@ -35,11 +35,11 @@ PDF drivers the line at the edge is not included at all.</p>
   the clipping is only affected if it is active.</p>
 
 <hr>
-<pre class="function"><span class="mainFunction">Filled <a name="Polygons">Polygons</a></span></pre>
+<h3>Filled <a name="Polygons">Polygons</a></h3>
 
   <p>Filled polygons can be created using <font><strong>cdBegin(</strong>CD_FILL<strong>)/cdVertex(x,y)/.../cdEnd()</strong></font>.</p>
   <p>See the documentation of <a href="polygon.html">cdBegin/cdVertex/cdEnd</a>.</p>
-
+<div class="function">
 <pre class="function"><span class="mainFunction">void <a name="cdBox">cdCanvasBox</a>(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax); [in C]</span>
 void cdfCanvasBox(cdCanvas* canvas, double xmin, double xmax, double ymin, double ymax); [in C]
 void wdCanvasBox(cdCanvas* canvas, double xmin, double xmax, double ymin, double ymax); (WC) [in C]
@@ -53,8 +53,8 @@ canvas:wBox(xmin, xmax, ymin, ymax: number) (WC) [in Lua]</pre>
   will be painted. When the interior style <font>CD_HOLLOW</font> 
   is defined, the function behaves like its equivalent <strong>
   <font>cdRect</font>.</strong></p>
-
-<pre class="function"><span class="mainFunction">void <a name="cdSector">cdCanvasSector</a>(cdCanvas* canvas, int xc, int yc, int w, int h, double angle1, double angle2); [in C]</span>
+</div>
+<div class="function"><pre class="function"><span class="mainFunction">void <a name="cdSector">cdCanvasSector</a>(cdCanvas* canvas, int xc, int yc, int w, int h, double angle1, double angle2); [in C]</span>
 void cdfCanvasSector(cdCanvas* canvas, double xc, double yc, double w, double h, double angle1, double angle2); [in C]
 void wdCanvasSector(cdCanvas* canvas, double xc, double yc, double w, double h, double angle1, double angle2); (WC) [in C]
 
@@ -89,7 +89,8 @@ canvas:wSector(xc, yc, w, h, angle1, angle2: number) (WC) [in Lua]</pre>
   plus two lines connecting to the center.</p>
   <p align="center"><font size="4">Sector Parameters</font><br>
   <img src="../../img/sector.gif" border="2" width="161" height="160"></p>
-
+</div>
+<div class="function">
 <pre class="function"><span class="mainFunction">void <a name="cdChord">cdCanvasChord</a>(cdCanvas* canvas, int xc, int yc, int w, int h, double angle1, double angle2); [in C]</span>
 void cdfCanvasChord(cdCanvas* canvas, double xc, double yc, double w, double h, double angle1, double angle2); [in C]
 void wdCanvasChord(cdCanvas* canvas, double xc, double yc, double w, double h, double angle1, double angle2); (WC) [in C]
@@ -106,9 +107,9 @@ canvas:wChord(xc, yc, w, h, angle1, angle2: number) (WC) [in Lua]</pre>
   plus a line connecting the arc start and end points.</p>
   <p align="center"><font size="4">Chord Parameters</font><br>
   <img src="../../img/chord.gif" border="2" width="161" height="160"></p>
-
+</div>
 <h3>Attributes</h3>
-<pre class="function"><span class="mainFunction">int <a name="cdBackOpacity">cdCanvasBackOpacity</a>(cdCanvas* canvas, int opacity); [in C]</span>
+<div class="function"><pre class="function"><span class="mainFunction">int <a name="cdBackOpacity">cdCanvasBackOpacity</a>(cdCanvas* canvas, int opacity); [in C]</span>
 
 canvas:BackOpacity(opacity: number) -&gt; (old_opacity: number) [in Lua]</pre>
 
@@ -121,8 +122,8 @@ canvas:BackOpacity(opacity: number) -&gt; (old_opacity: number) [in Lua]</pre>
   current value. In some drivers is always opaque.</p>
   <p align="center"><font size="4">Back Opacity Attribute<br>
   </font><img src="../../img/opacity.gif" border="2" width="260" height="136"></p>
-
-<pre class="function"><span class="mainFunction">int <a name="cdFillMode">cdCanvasFillMode</a>(cdCanvas* canvas, int mode); [in C]</span>
+</div>
+<div class="function"><pre class="function"><span class="mainFunction">int <a name="cdFillMode">cdCanvasFillMode</a>(cdCanvas* canvas, int mode); [in C]</span>
 
 canvas:FillMode(mode: number) -&gt; (old_mode: number) [in Lua]</pre>
 
@@ -132,7 +133,8 @@ canvas:FillMode(mode: number) -&gt; (old_mode: number) [in Lua]</pre>
   <p align="center"><font size="4">Fill Modes</font><br>
   <img src="../../img/fillmode.gif" border="2" width="260" height="136"></p>
 
-<pre class="function"><span class="mainFunction">int <a name="cdInteriorStyle">cdCanvasInteriorStyle</a>(cdCanvas* canvas, int style); [in C]</span>
+</div>
+<div class="function"><pre class="function"><span class="mainFunction">int <a name="cdInteriorStyle">cdCanvasInteriorStyle</a>(cdCanvas* canvas, int style); [in C]</span>
 
 canvas:InteriorStyle(style: number) -&gt; (old_style: number) [in Lua]</pre>
 
@@ -150,7 +152,8 @@ canvas:InteriorStyle(style: number) -&gt; (old_style: number) [in Lua]</pre>
   equivalent <strong>cdRect</strong> and <strong>cdArc+Lines</strong>, and the 
   polygons with style <b>CD_FILL</b> behave like <b>CD_CLOSED_LINES</b>.</p>
 
-<pre class="function"><span class="mainFunction">int <a name="cdHatch">cdCanvasHatch</a>(cdCanvas* canvas, int style); [in C]</span>
+</div>
+<div class="function"><pre class="function"><span class="mainFunction">int <a name="cdHatch">cdCanvasHatch</a>(cdCanvas* canvas, int style); [in C]</span>
 
 canvas:Hatch(style: number) -&gt; (old_style: number) [in Lua]</pre>
 
@@ -166,7 +169,8 @@ canvas:Hatch(style: number) -&gt; (old_style: number) [in Lua]</pre>
   <p align="center"><font size="4">Hatch Styles</font><br>
   <img src="../../img/hatch.gif" border="2" width="182" height="348"></p>
 
-<pre class="function"><span class="mainFunction">void <a name="cdStipple">cdCanvasStipple</a>(cdCanvas* canvas, int w, int h, const unsigned char *fgbg) [in C]</span>
+</div>
+<div class="function"><pre class="function"><span class="mainFunction">void <a name="cdStipple">cdCanvasStipple</a>(cdCanvas* canvas, int w, int h, const unsigned char *fgbg) [in C]</span>
 
 canvas:Stipple(stipple: cdStipple) [in Lua]</pre>
 
@@ -181,7 +185,8 @@ canvas:Stipple(stipple: cdStipple) [in Lua]</pre>
   drivers is always opaque. The foreground and background colors must be set 
   before setting the style. </p>
 
-<pre class="function"><span class="mainFunction">void <a name="wdStipple">wdCanvasStipple</a>(cdCanvas* canvas, int w, int h, const unsigned char *fgbg, double w_mm, double h_mm); [in C]</span>
+</div>
+<div class="function"><pre class="function"><span class="mainFunction">void <a name="wdStipple">wdCanvasStipple</a>(cdCanvas* canvas, int w, int h, const unsigned char *fgbg, double w_mm, double h_mm); [in C]</span>
 
 canvas:wStipple(stipple: cdStipple, w_mm, h_mm: number) [in Lua]</pre>
 
@@ -191,14 +196,16 @@ canvas:wStipple(stipple: cdStipple, w_mm, h_mm: number) [in Lua]</pre>
 	size that is closets to the size in millimeters. The use of this function may produce very large or very small 
   stipples.</p>
 
-<pre class="function"><span class="mainFunction">unsigned char* <a name="cdGetStipple">cdCanvasGetStipple</a>(cdCanvas* canvas, int* w, int* h); [in C]</span>
+</div>
+<div class="function"><pre class="function"><span class="mainFunction">unsigned char* <a name="cdGetStipple">cdCanvasGetStipple</a>(cdCanvas* canvas, int* w, int* h); [in C]</span>
 
 canvas:GetStipple() - &gt; (stipple: cdStipple) [in Lua]</pre>
 
   <p>Returns the current <i>stipple</i> and its dimensions. Returns NULL if no
   <i>stipple</i> was defined.</p>
 
-<pre class="function"><span class="mainFunction">void <a name="cdPattern">cdCanvasPattern</a>(cdCanvas* canvas, int w, int h, const long int *color); [in C]</span>
+</div>
+<div class="function"><pre class="function"><span class="mainFunction">void <a name="cdPattern">cdCanvasPattern</a>(cdCanvas* canvas, int w, int h, const long int *color); [in C]</span>
 
 canvas:Pattern(pattern: cdPattern) [in Lua]</pre>
 
@@ -209,7 +216,8 @@ canvas:Pattern(pattern: cdPattern) [in Lua]</pre>
   does not need to be stored by the application, as it is internally replicated 
   by the library.</p>
 
-<pre class="function"><span class="mainFunction">void <a name="wdPattern">wdCanvasPattern</a>(cdCanvas* canvas, int w, int h, const long int *color, double w_mm, double h_mm); [in C]</span>
+</div>
+<div class="function"><pre class="function"><span class="mainFunction">void <a name="wdPattern">wdCanvasPattern</a>(cdCanvas* canvas, int w, int h, const long int *color, double w_mm, double h_mm); [in C]</span>
 
 canvas:wPattern(pattern: cdPattern, w_mm, h_mm: number) [in Lua]</pre>
 
@@ -219,32 +227,37 @@ canvas:wPattern(pattern: cdPattern, w_mm, h_mm: number) [in Lua]</pre>
 	size that is closets to the size in millimeters. The use of this function may produce very large or very small 
   patterns.</p>
 
-<pre class="function"><span class="mainFunction">long int* <a name="cdGetPattern">cdCanvasGetPattern</a>(cdCanvas* canvas, int* w, int* h); [in C]</span>
+</div>
+<div class="function"><pre class="function"><span class="mainFunction">long int* <a name="cdGetPattern">cdCanvasGetPattern</a>(cdCanvas* canvas, int* w, int* h); [in C]</span>
 
 canvas:GetPattern() - &gt; (pattern: cdPattern) [in Lua]</pre>
 
   <p>Returns the current <i>pattern</i> and its dimensions. Returns NULL if no
   <i>pattern</i> was defined.</p>
-
+</div>
 <h3>Extras in Lua</h3>
-<pre class="function"><a name="cdCreatePattern">cd.CreatePattern</a>(width, height: number) -&gt; (pattern: cdPattern)</pre>
+
+<div class="function"><pre class="function"><a name="cdCreatePattern">cd.CreatePattern</a>(width, height: number) -&gt; (pattern: cdPattern)</pre>
 
   <p>Creates a pattern in Lua.</p>
 
-<pre class="function"><a name="cdKillPattern">cd.KillPattern</a>(pattern: cdPattern)</pre>
+</div>
+<div class="function"><pre class="function"><a name="cdKillPattern">cd.KillPattern</a>(pattern: cdPattern)</pre>
 
   <p>Destroys the created pattern and liberates allocated memory. If this 
   function is not called in Lua, the garbage collector will call it.</p>
 
-<pre class="function"><a name="cdCreateStipple">cd.CreateStipple</a>(width, height: number) -&gt; (stipple: cdStipple)</pre>
+</div>
+<div class="function"><pre class="function"><a name="cdCreateStipple">cd.CreateStipple</a>(width, height: number) -&gt; (stipple: cdStipple)</pre>
 
   <p>Creates a stipple in Lua.</p>
 
-<pre class="function"><a name="cdKillStipple">cd.KillStipple</a>(stipple: cdStipple)</pre>
+</div>
+<div class="function"><pre class="function"><a name="cdKillStipple">cd.KillStipple</a>(stipple: cdStipple)</pre>
 
   <p>Destroys the created stipple and liberates allocated memory. If this 
   function is not called in Lua, the garbage collector will call it.</p>
-
+</div>
 <h3><a name="DataAccess">Data Access</a></h3>
 
   <p>Data access in Lua is done directly using the operator &quot;<font>[y*width 
