@@ -4,7 +4,7 @@ OPT = YES
 
 ifdef GTK_DEFAULT
   ifdef USE_X11
-    # Build X11 version in Linux,Darwin,FreeBSD
+    # Build X11 version in Linux and BSD
     LIBNAME := $(LIBNAME)x11
   else
     ifeq ($(findstring Win, $(TEC_SYSNAME)), )

@@ -41,6 +41,6 @@ ifneq ($(findstring bc5, $(TEC_UNAME)), )
   FLAGS = -w-8004
 endif
 
-ifneq ($(findstring Darwin, $(TEC_UNAME)), )
+ifneq ($(findstring MacOS, $(TEC_UNAME)), )
   DEFINES += DARWIN_NO_CARBON
 endif
