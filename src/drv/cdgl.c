@@ -16,7 +16,6 @@
 #endif
 
 #include <GL/gl.h>
-#include <GL/glu.h>
 
 #include <FTGL/ftgl.h>
 
@@ -80,16 +79,21 @@ static char* cdglStrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, unsig
 #ifdef WIN32
   {
     wchar_t* toUnicode;
+    int wlen = MultiByteToWideChar(CP_ACP, 0, str, len, NULL, 0);
+    if(!wlen)
+      return (char*)str;
 
-    toUnicode = (wchar_t*)malloc((len+1) * sizeof(wchar_t));
-    MultiByteToWideChar(CP_ACP, 0, str, len+1, toUnicode, (len+1));
+    toUnicode = (wchar_t*)calloc((wlen+1), sizeof(wchar_t));
+    MultiByteToWideChar(CP_ACP, 0, str, len, toUnicode, wlen);
+    toUnicode[wlen] = 0;
 
-    len = WideCharToMultiByte(CP_UTF8, 0, toUnicode, -1, NULL, 0, NULL, NULL);
+    len = WideCharToMultiByte(CP_UTF8, 0, toUnicode, wlen, NULL, 0, NULL, NULL);
     if(!len)
       return (char*)str;
 
-    ctxcanvas->glLastConvertUTF8 = (char*)malloc(len * sizeof(char));
-    WideCharToMultiByte(CP_UTF8, 0, toUnicode, -1, ctxcanvas->glLastConvertUTF8, len, NULL, NULL);
+    ctxcanvas->glLastConvertUTF8 = (char*)calloc((len+1), sizeof(char));
+    WideCharToMultiByte(CP_UTF8, 0, toUnicode, wlen, ctxcanvas->glLastConvertUTF8, len, NULL, NULL);
+    ctxcanvas->glLastConvertUTF8[len] = 0;
 
     free(toUnicode);
   }
@@ -184,23 +188,21 @@ static void cdcliparea(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int
 
 static int cdwritemode(cdCtxCanvas *ctxcanvas, int write_mode)
 {
-  if(glIsEnabled(GL_COLOR_LOGIC_OP))
-    glDisable(GL_COLOR_LOGIC_OP);
-
   switch (write_mode)
   {
   case CD_REPLACE:
-    glLogicOp(GL_COPY);
+    if(glIsEnabled(GL_COLOR_LOGIC_OP))
+      glDisable(GL_COLOR_LOGIC_OP);
     break;
   case CD_XOR:
+    glEnable(GL_COLOR_LOGIC_OP);
     glLogicOp(GL_XOR);
     break;
   case CD_NOT_XOR:
+    glEnable(GL_COLOR_LOGIC_OP);
     glLogicOp(GL_EQUIV);
     break;
   }
-
-  glEnable(GL_COLOR_LOGIC_OP);
 
   (void)ctxcanvas;
   return write_mode;
@@ -228,36 +230,6 @@ static int cdhatch(cdCtxCanvas *ctxcanvas, int hatch_style)
   return hatch_style;
 }
 
-static void cdglEnableBackOpacity(cdCtxCanvas* ctxcanvas)
-{
-  if (ctxcanvas->canvas->back_opacity == CD_OPAQUE)
-  {
-    glColor4ub(cdRed(ctxcanvas->canvas->foreground), 
-                     cdGreen(ctxcanvas->canvas->foreground), 
-                     cdBlue(ctxcanvas->canvas->foreground), 255);
-
-    glDepthMask(GL_TRUE);
-
-    if(glIsEnabled(GL_DEPTH_TEST))
-      glDisable(GL_DEPTH_TEST);
-
-    if(glIsEnabled(GL_BLEND))
-      glDisable(GL_BLEND);
-  }
-  else
-  {
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    glEnable(GL_DEPTH_TEST);
-    glDepthMask(GL_FALSE);
-
-    glColor4ub(cdRed(ctxcanvas->canvas->foreground), 
-               cdGreen(ctxcanvas->canvas->foreground), 
-               cdBlue(ctxcanvas->canvas->foreground), 0);
-  }
-}
-
 static int cdinteriorstyle(cdCtxCanvas *ctxcanvas, int style)
 {
   switch (style)
@@ -275,17 +247,15 @@ static int cdinteriorstyle(cdCtxCanvas *ctxcanvas, int style)
 
   switch (style)
   {
+  case CD_STIPPLE:
+  case CD_PATTERN:
   case CD_HOLLOW:
   case CD_SOLID:
     if(glIsEnabled(GL_POLYGON_STIPPLE))
       glDisable(GL_POLYGON_STIPPLE);
     break;
   case CD_HATCH:
-    cdglEnableBackOpacity(ctxcanvas);
     cdhatch(ctxcanvas, ctxcanvas->canvas->hatch_style);
-    break;
-  case CD_STIPPLE:
-  case CD_PATTERN:
     break;
   }
 
@@ -307,7 +277,6 @@ static int cdlinestyle(cdCtxCanvas *ctxcanvas, int style)
   case CD_DASH_DOT_DOT:
   case CD_CUSTOM:
     glEnable(GL_LINE_STIPPLE);
-    cdglEnableBackOpacity(ctxcanvas);
     break;
   }
 
@@ -326,7 +295,7 @@ static int cdlinestyle(cdCtxCanvas *ctxcanvas, int style)
     glLineStipple(1, 0x333F);
     break;
   case CD_CUSTOM:
-    /* style patterns more than 16 bits are not completely drawed */
+    /* style patterns more than 16 bits are not drawn completely */
     glLineStipple(1, (GLushort)*ctxcanvas->canvas->line_dashes);
     break;
   }
@@ -591,12 +560,8 @@ static long int cdforeground(cdCtxCanvas *ctxcanvas, long int color)
   unsigned char r, g, b;
   (void)ctxcanvas;
 
-  //TODO
-  if(glIsEnabled(GL_POLYGON_STIPPLE))
-    glDisable(GL_POLYGON_STIPPLE);
-
   cdDecodeColor(color, &r, &g, &b);
-  glColor3ub(r, g, b);
+  glColor4ub(r, g, b, cdDecodeAlpha(color));
 
   return color;
 }
@@ -643,6 +608,23 @@ static void cdrect(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int yma
 
 static void cdfbox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
 {
+  if(ctxcanvas->canvas->back_opacity == CD_OPAQUE && glIsEnabled(GL_POLYGON_STIPPLE))
+  {
+    /* draw twice, one with background color only, and one with foreground color */
+    glDisable(GL_POLYGON_STIPPLE);
+    glColor4ub(cdRed(ctxcanvas->canvas->background), cdGreen(ctxcanvas->canvas->background), cdBlue(ctxcanvas->canvas->background), cdAlpha(ctxcanvas->canvas->background));
+
+    glBegin(GL_QUADS);
+      glVertex2d(xmin, ymin);
+      glVertex2d(xmax, ymin);
+      glVertex2d(xmax, ymax);
+      glVertex2d(xmin, ymax);
+    glEnd();
+
+    glColor4ub(cdRed(ctxcanvas->canvas->foreground), cdGreen(ctxcanvas->canvas->foreground), cdBlue(ctxcanvas->canvas->foreground), cdAlpha(ctxcanvas->canvas->foreground));
+    glEnable(GL_POLYGON_STIPPLE);
+  }
+
   glBegin(GL_QUADS);
     glVertex2d(xmin, ymin);
     glVertex2d(xmax, ymin);
@@ -660,7 +642,7 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
 
 static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, int len)
 {
-  int dir = -1;
+  int dir = -1, stipple = 0;
   float bounds[6];
   int w, h, desc;
   double x_origin = x;
@@ -733,20 +715,20 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, i
     cdfRotatePoint(ctxcanvas->canvas, x, y, x_origin, y_origin, &x, &y, sin_angle, cos_angle);
   }
 
+  if(glIsEnabled(GL_POLYGON_STIPPLE))
+  {
+    stipple = 1;
+    glDisable(GL_POLYGON_STIPPLE);
+  }
+
   glPushMatrix();
     glTranslated(x, y, 0.0);
     glRotated(ctxcanvas->canvas->text_orientation, 0, 0, 1);
-
-    /* FTGL not operate as expected when a logical pixel operation (write mode) is enabled. */
-    if(glIsEnabled(GL_COLOR_LOGIC_OP))
-    {
-      glDisable(GL_COLOR_LOGIC_OP);
-      ftglRenderFont(ctxcanvas->font, s, FTGL_RENDER_ALL);
-      glEnable(GL_COLOR_LOGIC_OP);
-    }
-    else
-      ftglRenderFont(ctxcanvas->font, s, FTGL_RENDER_ALL);
+    ftglRenderFont(ctxcanvas->font, s, FTGL_RENDER_ALL);
   glPopMatrix();
+
+  if(stipple)
+    glEnable(GL_POLYGON_STIPPLE);
 }
 
 static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
@@ -793,6 +775,7 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
     glEvalMesh1(GL_LINE, 0, prec);
     glDisable(GL_MAP1_VERTEX_3);
 
+    free(points);
     return;
   }
 
@@ -811,6 +794,21 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
     glBegin(GL_LINE_STRIP);
     break;
   case CD_FILL :
+    if(ctxcanvas->canvas->back_opacity == CD_OPAQUE && glIsEnabled(GL_POLYGON_STIPPLE))
+    {
+      /* draw twice, one with background color only, and one with foreground color */
+      glDisable(GL_POLYGON_STIPPLE);
+      glColor4ub(cdRed(ctxcanvas->canvas->background), cdGreen(ctxcanvas->canvas->background), cdBlue(ctxcanvas->canvas->background), cdAlpha(ctxcanvas->canvas->background));
+
+      glBegin(GL_POLYGON);
+      for(i = 0; i < n; i++)
+        glVertex2i(poly[i].x, poly[i].y);
+      glEnd();
+
+      glColor4ub(cdRed(ctxcanvas->canvas->foreground), cdGreen(ctxcanvas->canvas->foreground), cdBlue(ctxcanvas->canvas->foreground), cdAlpha(ctxcanvas->canvas->foreground));
+      glEnable(GL_POLYGON_STIPPLE);
+    }
+
     glBegin(GL_POLYGON);
     break;
   }
@@ -847,6 +845,7 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
     glEvalMesh1(GL_LINE, 0, prec);
     glDisable(GL_MAP1_VERTEX_3);
 
+    free(points);
     return;
   }
 
@@ -865,6 +864,20 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
     glBegin(GL_LINE_STRIP);
     break;
   case CD_FILL :
+    if(ctxcanvas->canvas->back_opacity == CD_OPAQUE && glIsEnabled(GL_POLYGON_STIPPLE))
+    {
+      glDisable(GL_POLYGON_STIPPLE);
+      glColor4ub(cdRed(ctxcanvas->canvas->background), cdGreen(ctxcanvas->canvas->background), cdBlue(ctxcanvas->canvas->background), cdAlpha(ctxcanvas->canvas->background));
+
+      glBegin(GL_POLYGON);
+      for(i = 0; i < n; i++)
+        glVertex2d(poly[i].x, poly[i].y);
+      glEnd();
+
+      glColor4ub(cdRed(ctxcanvas->canvas->foreground), cdGreen(ctxcanvas->canvas->foreground), cdBlue(ctxcanvas->canvas->foreground), cdAlpha(ctxcanvas->canvas->foreground));
+      glEnable(GL_POLYGON_STIPPLE);
+    }
+
     glBegin(GL_POLYGON);
     break;
   }
@@ -1022,6 +1035,7 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
   /* Images are bitmaps, and cannot be directly rotated or scaled */
+  int blend = 1;
   GLubyte* glImage;
   int rw = xmax-xmin+1;
   int rh = ymax-ymin+1;
@@ -1048,21 +1062,18 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
   if (w != rw || h != rh)
     glPixelZoom((GLfloat)w/rw, (GLfloat)h/rh);
 
-  glEnable(GL_BLEND);
+  if (!glIsEnabled(GL_BLEND))
+  {
+    blend = 0;
+    glEnable(GL_BLEND);
+  }
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
   glRasterPos2i(x, y);
+  glDrawPixels(rw, rh, GL_RGBA, GL_UNSIGNED_BYTE, glImage);
 
-  if(glIsEnabled(GL_COLOR_LOGIC_OP))
-  {
-    glDisable(GL_COLOR_LOGIC_OP);
-    glDrawPixels(rw, rh, GL_RGBA, GL_UNSIGNED_BYTE, glImage);
-    glEnable(GL_COLOR_LOGIC_OP);
-  }
-  else
-    glDrawPixels(rw, rh, GL_RGBA, GL_UNSIGNED_BYTE, glImage);
-
-  glDisable(GL_BLEND);
+  if (!blend)
+    glDisable(GL_BLEND);
 
   (void)ih;
   (void)ctxcanvas;
@@ -1110,7 +1121,7 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 
 static void cdpixel(cdCtxCanvas *ctxcanvas, int x, int y, long int color)
 {
-  glColor3ub(cdRed(color), cdGreen(color), cdBlue(color));
+  glColor4ub(cdRed(color), cdGreen(color), cdBlue(color), cdAlpha(color));
 
   /* Draw pixel */
   glPointSize(1);
@@ -1119,7 +1130,7 @@ static void cdpixel(cdCtxCanvas *ctxcanvas, int x, int y, long int color)
   glEnd();
 
   /* restore the foreground color */
-  glColor3ub(cdRed(ctxcanvas->canvas->foreground), cdGreen(ctxcanvas->canvas->foreground), cdBlue(ctxcanvas->canvas->foreground));
+  glColor4ub(cdRed(ctxcanvas->canvas->foreground), cdGreen(ctxcanvas->canvas->foreground), cdBlue(ctxcanvas->canvas->foreground), cdAlpha(ctxcanvas->canvas->foreground));
 
   (void)ctxcanvas;
 }
@@ -1188,11 +1199,83 @@ static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
     glLoadIdentity();
     glMultMatrixd(&transformMTX[0][0]);
   }
+  else
+    glLoadIdentity();
 
   (void)ctxcanvas;
 }
 
 /******************************************************************/
+static void set_alpha_attrib(cdCtxCanvas* ctxcanvas, char* data)
+{
+  if (!data || data[0] == '0')
+  {
+    glDisable(GL_BLEND);
+  }
+  else
+  {
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+  }
+
+  (void)ctxcanvas;
+}
+
+static char* get_alpha_attrib(cdCtxCanvas* ctxcanvas)
+{
+  (void)ctxcanvas;
+
+  if (glIsEnabled(GL_BLEND))
+    return "1";
+  else
+    return "0";
+}
+
+static cdAttribute alpha_attrib =
+{
+  "ALPHA",
+  set_alpha_attrib,
+  get_alpha_attrib
+};
+
+static void set_aa_attrib(cdCtxCanvas* ctxcanvas, char* data)
+{
+  if (!data || data[0] == '0')
+  {
+    glDisable(GL_POINT_SMOOTH);
+    glDisable(GL_LINE_SMOOTH);
+    glDisable(GL_POLYGON_SMOOTH);
+  }
+  else
+  {
+    glEnable(GL_POINT_SMOOTH);
+    glEnable(GL_LINE_SMOOTH);
+    glEnable(GL_POLYGON_SMOOTH);
+
+    glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
+    glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
+    glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
+  }
+
+  (void)ctxcanvas;
+}
+
+static char* get_aa_attrib(cdCtxCanvas* ctxcanvas)
+{
+  (void)ctxcanvas;
+
+  if (glIsEnabled(GL_LINE_SMOOTH))
+    return "1";
+  else
+    return "0";
+}
+
+static cdAttribute aa_attrib =
+{
+  "ANTIALIAS",
+  set_aa_attrib,
+  get_aa_attrib
+};
 
 static void set_poly_attrib(cdCtxCanvas *ctxcanvas, char* data)
 {
@@ -1329,6 +1412,11 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   cdRegisterAttribute(canvas, &version_attrib);
   cdRegisterAttribute(canvas, &poly_attrib);
   cdRegisterAttribute(canvas, &size_attrib);
+  cdRegisterAttribute(canvas, &alpha_attrib);
+  cdRegisterAttribute(canvas, &aa_attrib);
+
+  cdCanvasSetAttribute(canvas, "ALPHA", "1");
+  cdCanvasSetAttribute(canvas, "ANTIALIAS", "1");
 }
 
 static void cdinittable(cdCanvas* canvas)

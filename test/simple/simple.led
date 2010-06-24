@@ -76,10 +76,10 @@ mnSurface = MENU
 
 mnPrimitives = MENU
 (
- ITEM("All", SimpleDrawAll),
- ITEM("Text Align", SimpleDrawTextAlign),
- ITEM("Text Fonts", SimpleDrawTextFonts),
- ITEM("Test", SimpleDrawTest)
+ ITEM("All", SimpleAll),
+ ITEM("Text Align", SimpleTextAlign),
+ ITEM("Text Fonts", SimpleTextFonts),
+ ITEM("Test", SimpleTest)
 )    
 
 mnSimpleMenu = MENU

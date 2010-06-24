@@ -67,7 +67,7 @@ unsigned char alpha[IMAGE_SIZE*IMAGE_SIZE];     /* Alpha image buffer */
 
 
 /* Prototype of the function that makes the drawing independent of canvas. */
-void SimpleDraw(void);
+void SimpleDraw(cdCanvas* canvas);
 
 void SimpleInitAlpha(int width, int height, unsigned char* _alpha)
 {
@@ -146,7 +146,7 @@ void SimpleCreateCanvas(char* data)
 int SimpleTransform(void)
 {
   use_transform = !use_transform;
-  SimpleDrawRepaint();
+  SimpleDraw(curCanvas);
   return 0;
 }
 
@@ -156,7 +156,7 @@ int SimpleContextPlus(void)
   contextplus = !contextplus;
   SimpleKillCanvas();
   SimpleCreateCanvasWindow();
-  SimpleDrawRepaint();
+  SimpleDraw(curCanvas);
 #endif
   return 0;
 }
@@ -164,12 +164,12 @@ int SimpleContextPlus(void)
 void PlayCanvasDriver(cdContext* ctx, char* StrData)
 {
   int w, h;
-  cdActivate(curCanvas);
-  cdBackground(CD_WHITE);
-  cdClear();
-  cdGetCanvasSize(&w, &h, 0, 0);
-  cdPlay(ctx, 100, w-100, 100, h-100, StrData);
-//  cdPlay(ctx, 0, 0, 0, 0, StrData);
+  cdCanvasActivate(curCanvas);
+  cdCanvasBackground(curCanvas, CD_WHITE);
+  cdCanvasClear(curCanvas);
+  cdCanvasGetSize(curCanvas, &w, &h, 0, 0);
+  cdCanvasPlay(curCanvas, ctx, 100, w-100, 100, h-100, StrData);
+//  cdCanvasPlay(curCanvas, ctx, 0, 0, 0, 0, StrData);
 }
 
 int SimplePlayClipboard(void)
@@ -208,18 +208,18 @@ int SimplePlayEMF(void)
   return 0;
 }
 
-int SimpleDrawRepaint(void)
+int SimpleRepaint(void)
 {
-  cdActivate(curCanvas);
-  SimpleDraw();
-  cdFlush();
+  SimpleDraw(curCanvas);
   return 0;
 }
 
 int SimpleDrawWindow(void)
 {
+  use_opengl = 0;
   curCanvas = winCanvas;
-  return SimpleDrawRepaint();
+  SimpleDraw(curCanvas);
+  return 0;
 }
 
 void DrawCanvasDriver(cdContext* ctx, char* StrData)
@@ -231,12 +231,9 @@ void DrawCanvasDriver(cdContext* ctx, char* StrData)
     return;
   }
   printf("CreateCanvas(%s)\n", StrData);
-  cdActivate(tmpCanvas);
-  SimpleDraw();
+  SimpleDraw(tmpCanvas);
   cdKillCanvas(tmpCanvas);
   printf("KillCanvas()\n");
-
-  cdActivate(curCanvas);
 }
 
 void DrawCanvasDriverSize(cdContext* ctx, char* name, int pixels)
@@ -244,8 +241,7 @@ void DrawCanvasDriverSize(cdContext* ctx, char* name, int pixels)
   char StrData[100];
   int w, h;
   double w_mm, h_mm;
-  cdActivate(curCanvas);
-  cdGetCanvasSize(&w, &h, &w_mm, &h_mm);
+  cdCanvasGetSize(curCanvas, &w, &h, &w_mm, &h_mm);
   if (pixels == 1)
     sprintf(StrData, "%s %dx%d", name, w, h);
   else if (pixels == 2)
@@ -259,8 +255,7 @@ void DrawCanvasDriverSizeParam(cdContext* ctx, char* param)
 {
   char StrData[100];
   int w, h;
-  cdActivate(curCanvas);
-  cdGetCanvasSize(&w, &h, 0, 0);
+  cdCanvasGetSize(curCanvas, &w, &h, 0, 0);
   sprintf(StrData, "%dx%d %s", w, h, param);
   DrawCanvasDriver(ctx, StrData);
 }
@@ -382,56 +377,77 @@ int SimpleDrawClipboardEMF(void)
 int SimpleReplace(void)
 {
   write_mode = CD_REPLACE;
-  cdActivate(curCanvas);
-  SimpleDrawAll();
+  SimpleDraw(curCanvas);
   return 0;
 }
 
 int SimpleXor(void)
 {
   write_mode = CD_XOR;
-  cdActivate(curCanvas);
-  SimpleDrawAll();
+  SimpleDraw(curCanvas);
   return 0;
 }
 
 int SimpleNotXor(void)
 {
   write_mode = CD_NOT_XOR;
-  cdActivate(curCanvas);
-  SimpleDrawAll();
+  SimpleDraw(curCanvas);
   return 0;
 }
 
 int SimpleClippingOff(void)
 {
   clipping = CD_CLIPOFF;
-  cdActivate(curCanvas);
-  SimpleDrawAll();
+  SimpleDraw(curCanvas);
   return 0;
 }
 
 int SimpleClippingArea(void)
 {
   clipping = CD_CLIPAREA;
-  cdActivate(curCanvas);
-  SimpleDrawAll();
+  SimpleDraw(curCanvas);
   return 0;
 }
 
 int SimpleClippingPolygon(void)
 {
   clipping = CD_CLIPPOLYGON;
-  cdActivate(curCanvas);
-  SimpleDrawAll();
+  SimpleDraw(curCanvas);
   return 0;
 }
 
 int SimpleClippingRegion(void)
 {
   clipping = CD_CLIPREGION;
-  cdActivate(curCanvas);
-  SimpleDrawAll();
+  SimpleDraw(curCanvas);
+  return 0;
+}
+
+int SimpleAll(void)
+{
+  simple_draw = DRAW_ALL;
+  SimpleDraw(curCanvas);
+  return 0;
+}
+
+int SimpleTextAlign(void)
+{
+  simple_draw = DRAW_TEXTALIGN;
+  SimpleDraw(curCanvas);
+  return 0;
+}
+
+int SimpleTextFonts(void)
+{
+  simple_draw = DRAW_TEXTFONTS;
+  SimpleDraw(curCanvas);
+  return 0;
+}
+
+int SimpleTest(void)
+{
+  simple_draw = DRAW_TEST;
+  SimpleDraw(curCanvas);
   return 0;
 }
 
@@ -440,15 +456,16 @@ void* CreateImageRGBA(int w, int h)
   void* myImage;
   unsigned char * _alpha = malloc(w * h);
   SimpleInitAlpha(w, h, _alpha);
-  cdSetAttribute("IMAGEALPHA", (char*)_alpha);    
-  cdSetAttribute("IMAGEFORMAT", "32");    // afetara¥ o proximo cdCreateImage
-  myImage = cdCreateImage(w, h);
-  cdSetAttribute("IMAGEFORMAT", NULL);    // remove o atributo para nao afetar outros cdCreateImage
+  cdCanvasSetAttribute(curCanvas, "IMAGEALPHA", (char*)_alpha);    
+  cdCanvasSetAttribute(curCanvas, "IMAGEFORMAT", "32");    // afetara¥ o proximo cdCreateImage
+  myImage = cdCanvasCreateImage(curCanvas, w, h);
+  cdCanvasSetAttribute(curCanvas, "IMAGEFORMAT", NULL);    // remove o atributo para nao afetar outros cdCreateImage
   return myImage;
 }
 
 int SimpleDrawImage(void)
 {
+  use_opengl = 0;
   if (dbCanvas) cdKillCanvas(dbCanvas);
 
   if (contextplus) cdUseContextPlus(1);
@@ -456,13 +473,14 @@ int SimpleDrawImage(void)
   if (contextplus) cdUseContextPlus(0);
 
   curCanvas = dbCanvas;
-  SimpleDrawRepaint();
+  SimpleDraw(curCanvas);
 
   return 0;
 }
 
 int SimpleDrawImageRGB(void)
 {
+  use_opengl = 0;
   if (dbCanvas) cdKillCanvas(dbCanvas);
 
   if (contextplus) cdUseContextPlus(1);
@@ -470,7 +488,7 @@ int SimpleDrawImageRGB(void)
   if (contextplus) cdUseContextPlus(0);
 
   curCanvas = dbCanvas;
-  SimpleDrawRepaint();
+  SimpleDraw(curCanvas);
 
   return 0;
 }
@@ -481,8 +499,11 @@ int SimpleDrawGL(void)
   char StrData[100];
   int w, h;
   double w_mm, h_mm;
-  cdActivate(curCanvas);
-  cdGetCanvasSize(&w, &h, &w_mm, &h_mm);
+
+  if (use_opengl)
+    return 0;
+
+  cdCanvasGetSize(curCanvas, &w, &h, &w_mm, &h_mm);
 
   sprintf(StrData, "%dx%d %g", w, h, ((double)w/w_mm));
 
@@ -492,8 +513,7 @@ int SimpleDrawGL(void)
 
   curCanvas = dbCanvas;
   use_opengl = 1;
-  SimpleDrawRepaint();
-  use_opengl = 0;
+  SimpleDraw(curCanvas);
 
   return 0;
 }
@@ -501,16 +521,14 @@ int SimpleDrawGL(void)
 
 int SimpleDrawSimulate(void)
 {
-  cdActivate(curCanvas);
-
   simulate = !simulate;
 
   if (simulate)
-    cdSimulate(CD_SIM_ALL);
+    cdCanvasSimulate(curCanvas, CD_SIM_ALL);
   else
-    cdSimulate(CD_SIM_NONE);
+    cdCanvasSimulate(curCanvas, CD_SIM_NONE);
 
-  SimpleDrawRepaint();
+  SimpleDraw(curCanvas);
 
   return 0;
 }
@@ -529,33 +547,40 @@ void SimpleKillCanvas(void)
   }
 }
 
-void SimpleDraw(void)
-{
-  if (simple_draw == DRAW_TEXTFONTS)
-    SimpleDrawTextFonts();
-  else if (simple_draw == DRAW_TEXTALIGN)
-    SimpleDrawTextAlign();
-  else if (simple_draw == DRAW_TEST)
-    SimpleDrawTest();
-  else
-    SimpleDrawAll();
-}
+void SimpleDrawTextFonts(cdCanvas* canvas);
+void SimpleDrawTextAlign(cdCanvas* canvas);
+void SimpleDrawAll(cdCanvas* canvas);
+void SimpleDrawTest(cdCanvas* canvas);
 
-int SimpleDrawAll(void)
+void SimpleDraw(cdCanvas* canvas)
 {
-  cdCanvas* canvas = cdActiveCanvas();
-  int w, h;
-
 #ifdef USE_OPENGL
   if (use_opengl)
     SimpleUpdateSize(canvas);
 #endif
 
+  if (simple_draw == DRAW_TEXTFONTS)
+    SimpleDrawTextFonts(canvas);
+  else if (simple_draw == DRAW_TEXTALIGN)
+    SimpleDrawTextAlign(canvas);
+  else if (simple_draw == DRAW_TEST)
+    SimpleDrawTest(canvas);
+  else
+    SimpleDrawAll(canvas);
 
+  cdCanvasFlush(canvas);
+
+#ifdef USE_OPENGL
+  if (use_opengl)
+    SimpleFlush();
+#endif
+}
+
+void SimpleDrawAll(cdCanvas* canvas)
+{
+  int w, h;
   cdCanvasGetSize(canvas, &w, &h, NULL, NULL);
   
-  simple_draw = DRAW_ALL;
-
   /* Clear the background to be white */
   cdCanvasBackground(canvas, CD_WHITE);
 //  cdBackground(CD_GREEN);
@@ -599,53 +624,53 @@ int SimpleDrawAll(void)
   switch(clipping)
   {
   case CD_CLIPOFF:
-    cdClip(CD_CLIPOFF);
+    cdCanvasClip(canvas, CD_CLIPOFF);
     break;
   case CD_CLIPAREA:
     /* Defines the clipping area equals the canvas area minus a 100 pixels margin. */
-    cdClipArea(100, w - 100, 100, h - 100);
-    cdClip(CD_CLIPAREA);
+    cdCanvasClipArea(canvas, 100, w - 100, 100, h - 100);
+    cdCanvasClip(canvas, CD_CLIPAREA);
     break;
   case CD_CLIPPOLYGON:
-    cdBegin(CD_CLIP);
-    cdVertex(100, 100);
-    cdVertex(w - 100, 100);
-    cdVertex(w / 2, h - 100);
-    cdEnd();
-    cdClip(CD_CLIPPOLYGON);
+    cdCanvasBegin(canvas, CD_CLIP);
+    cdCanvasVertex(canvas, 100, 100);
+    cdCanvasVertex(canvas, w - 100, 100);
+    cdCanvasVertex(canvas, w / 2, h - 100);
+    cdCanvasEnd(canvas);
+    cdCanvasClip(canvas, CD_CLIPPOLYGON);
     break;
   case CD_CLIPREGION:
-    cdTextAlignment(CD_CENTER);
-    cdFont(CD_TIMES_ROMAN, CD_BOLD, 50);
+    cdCanvasTextAlignment(canvas, CD_CENTER);
+    cdCanvasFont(canvas, "Times", CD_BOLD, 50);
 
-    cdBegin(CD_REGION);
-    cdRegionCombineMode(CD_UNION);
-    cdBox(100, 200, 100, 200);
-    cdSector(w/2-50, h/2+50, 150, 150, 0, 360);
-    cdSector(w/2-50, h/2-50, 150, 150, 0, 360);
-    cdSector(w/2+50, h/2+50, 150, 150, 0, 360);
-    cdSector(w/2+50, h/2-50, 150, 150, 0, 360);
-    cdRegionCombineMode(CD_DIFFERENCE); 
-    cdText(w/2, h/2, "TEXT");
-    cdEnd();
-//    cdOffsetRegion(-50, 50);
-    cdClip(CD_CLIPREGION);
+    cdCanvasBegin(canvas, CD_REGION);
+    cdCanvasRegionCombineMode(canvas, CD_UNION);
+    cdCanvasBox(canvas, 100, 200, 100, 200);
+    cdCanvasSector(canvas, w/2-50, h/2+50, 150, 150, 0, 360);
+    cdCanvasSector(canvas, w/2-50, h/2-50, 150, 150, 0, 360);
+    cdCanvasSector(canvas, w/2+50, h/2+50, 150, 150, 0, 360);
+    cdCanvasSector(canvas, w/2+50, h/2-50, 150, 150, 0, 360);
+    cdCanvasRegionCombineMode(canvas, CD_DIFFERENCE); 
+    cdCanvasText(canvas, w/2, h/2, "TEXT");
+    cdCanvasEnd(canvas);
+//    cdCanvasOffsetRegion(canvas, -50, 50);
+    cdCanvasClip(canvas, CD_CLIPREGION);
 
-    cdForeground(CD_DARK_RED);
-    cdBox(0,w,0,h);
+    cdCanvasForeground(canvas, CD_DARK_RED);
+    cdCanvasBox(canvas, 0,w,0,h);
     break;
   }
 
   switch(write_mode)
   {
   case CD_REPLACE:
-    cdWriteMode(CD_REPLACE);
+    cdCanvasWriteMode(canvas, CD_REPLACE);
     break;
   case CD_XOR:
-    cdWriteMode(CD_XOR);
+    cdCanvasWriteMode(canvas, CD_XOR);
     break;
   case CD_NOT_XOR:
-    cdWriteMode(CD_NOT_XOR);
+    cdCanvasWriteMode(canvas, CD_NOT_XOR);
     break;
   }
 
@@ -698,7 +723,7 @@ int SimpleDrawAll(void)
   }
   cdCanvasForeground(canvas, CD_BLUE);
   cdCanvasText(canvas, w/2, h/2, "cdMin Draw (Á„Ì)");
-//  cdTextOrientation(0);
+  cdCanvasTextOrientation(canvas, 0);
 
   /* Prepare World Coordinates */
   wdCanvasViewport(canvas, 0,w-1,0,h-1);
@@ -936,124 +961,122 @@ int SimpleDrawAll(void)
   /* Draw the image on the top-right corner but increasing its actual size, and uses its full area */
   cdCanvasPutImageRectRGBA(canvas, IMAGE_SIZE, IMAGE_SIZE, red, green, blue, alpha, w - 400, h - 310, 3*IMAGE_SIZE, 3*IMAGE_SIZE, 0, 0, 0, 0);
 
-  cdSetAttribute("ROTATE", NULL);
+  cdCanvasSetAttribute(canvas, "ROTATE", NULL);
   if (use_transform)
     cdCanvasTransform(canvas, NULL);
-  cdClip(CD_CLIPOFF);
+  cdCanvasClip(canvas, CD_CLIPOFF);
 
   /* Adds a new page, or 
      flushes the file, or
      flushes the screen, or
      swap the double buffer. */
   cdCanvasFlush(canvas);
-
-  return 0;
 }
 
-void DrawVectorTextBox(int x, int y, char* text)
+void DrawVectorTextBox(cdCanvas* canvas, int x, int y, char* text)
 {
   int rect[8], draw_box;
 
-  cdLineWidth(1);
-  cdLineStyle(CD_CONTINUOUS);
+  cdCanvasLineWidth(canvas, 1);
+  cdCanvasLineStyle(canvas, CD_CONTINUOUS);
 
   draw_box = 0;
   if (draw_box)
   {
     int xmin, xmax, ymin, ymax;
-    cdCanvasGetVectorTextBox(cdActiveCanvas(), x, y, text, &xmin, &xmax, &ymin, &ymax);
-    cdForeground(CD_GREEN);
-    cdRect(xmin, xmax, ymin, ymax);
+    cdCanvasGetVectorTextBox(canvas, x, y, text, &xmin, &xmax, &ymin, &ymax);
+    cdCanvasForeground(canvas, CD_GREEN);
+    cdCanvasRect(canvas, xmin, xmax, ymin, ymax);
 
-    if (cdTextOrientation(CD_QUERY) == 0)
+    if (cdCanvasTextOrientation(canvas, CD_QUERY) == 0)
     {
-      cdForeground(CD_RED);
-      cdLine(xmin, y, xmax, y);
+      cdCanvasForeground(canvas, CD_RED);
+      cdCanvasLine(canvas, xmin, y, xmax, y);
     }
   }
   else
   {
     /* bounding box */
-    cdGetVectorTextBounds(text, x, y, rect);
-    cdForeground(CD_GREEN);
-    cdBegin(CD_CLOSED_LINES);
-    cdVertex(rect[0], rect[1]);
-    cdVertex(rect[2], rect[3]);
-    cdVertex(rect[4], rect[5]);
-    cdVertex(rect[6], rect[7]);
-    cdEnd();
+    cdCanvasGetVectorTextBounds(canvas, text, x, y, rect);
+    cdCanvasForeground(canvas, CD_GREEN);
+    cdCanvasBegin(canvas, CD_CLOSED_LINES);
+    cdCanvasVertex(canvas, rect[0], rect[1]);
+    cdCanvasVertex(canvas, rect[2], rect[3]);
+    cdCanvasVertex(canvas, rect[4], rect[5]);
+    cdCanvasVertex(canvas, rect[6], rect[7]);
+    cdCanvasEnd(canvas);
   }
 
   /* reference point */
-  cdForeground(CD_BLUE);
-  cdMarkType(CD_PLUS);
-  cdMarkSize(30);
-  cdMark(x, y);
+  cdCanvasForeground(canvas, CD_BLUE);
+  cdCanvasMarkType(canvas, CD_PLUS);
+  cdCanvasMarkSize(canvas, 30);
+  cdCanvasMark(canvas, x, y);
 
-  cdForeground(CD_BLACK);
-  cdVectorText(x, y, text);
+  cdCanvasForeground(canvas, CD_BLACK);
+  cdCanvasVectorText(canvas, x, y, text);
 }
 
-void DrawTextBox(int x, int y, char* text)
+void DrawTextBox(cdCanvas* canvas, int x, int y, char* text)
 {
   int rect[8], draw_box;
 
-  cdLineWidth(1);
-  cdLineStyle(CD_CONTINUOUS);
+  cdCanvasLineWidth(canvas, 1);
+  cdCanvasLineStyle(canvas, CD_CONTINUOUS);
 
   draw_box = 0;
   if (draw_box)
   {
     int xmin, xmax, ymin, ymax;
-    cdTextBox(x, y, text, &xmin, &xmax, &ymin, &ymax);
-    cdRect(xmin, xmax, ymin, ymax);
+    cdCanvasGetTextBox(canvas, x, y, text, &xmin, &xmax, &ymin, &ymax);
+    cdCanvasRect(canvas, xmin, xmax, ymin, ymax);
 
-    if (cdTextOrientation(CD_QUERY) == 0)
+    if (cdCanvasTextOrientation(canvas, CD_QUERY) == 0)
     {
-      cdForeground(CD_RED);
-      cdLine(xmin, y, xmax, y);
+      cdCanvasForeground(canvas, CD_RED);
+      cdCanvasLine(canvas, xmin, y, xmax, y);
     }
   }
   else
   {
     /* bounding box */
-    cdTextBounds(x, y, text, rect);
-    cdForeground(CD_GREEN);
-    cdBegin(CD_CLOSED_LINES);
-    cdVertex(rect[0], rect[1]);
-    cdVertex(rect[2], rect[3]);
-    cdVertex(rect[4], rect[5]);
-    cdVertex(rect[6], rect[7]);
-    cdEnd();
+    cdCanvasGetTextBounds(canvas, x, y, text, rect);
+    cdCanvasForeground(canvas, CD_GREEN);
+    cdCanvasBegin(canvas, CD_CLOSED_LINES);
+    cdCanvasVertex(canvas, rect[0], rect[1]);
+    cdCanvasVertex(canvas, rect[2], rect[3]);
+    cdCanvasVertex(canvas, rect[4], rect[5]);
+    cdCanvasVertex(canvas, rect[6], rect[7]);
+    cdCanvasEnd(canvas);
   }
 
   /* reference point */
-  cdForeground(CD_BLUE);
-  cdMarkType(CD_PLUS);
-  cdMarkSize(30);
-  cdMark(x, y);
+  cdCanvasForeground(canvas, CD_BLUE);
+  cdCanvasMarkType(canvas, CD_PLUS);
+  cdCanvasMarkSize(canvas, 30);
+  cdCanvasMark(canvas, x, y);
 
-  cdForeground(CD_BLACK);
-  cdText(x, y, text);
+  cdCanvasForeground(canvas, CD_BLACK);
+  cdCanvasText(canvas, x, y, text);
 }
 
-int SimpleDrawTextAlign(void)
+void SimpleDrawTextAlign(cdCanvas* canvas)
 {
   int w, h, i, xoff, yoff, use_vector;
 
   int text_aligment[] = {
-  CD_NORTH,
-  CD_SOUTH,
-  CD_EAST,
-  CD_WEST,
-  CD_NORTH_EAST,
-  CD_NORTH_WEST,
-  CD_SOUTH_EAST,
-  CD_SOUTH_WEST,
-  CD_CENTER,
-  CD_BASE_CENTER,
-  CD_BASE_RIGHT,
-  CD_BASE_LEFT
+    CD_NORTH,
+    CD_SOUTH,
+    CD_EAST,
+    CD_WEST,
+    CD_NORTH_EAST,
+    CD_NORTH_WEST,
+    CD_SOUTH_EAST,
+    CD_SOUTH_WEST,
+    CD_CENTER,
+    CD_BASE_CENTER,
+    CD_BASE_RIGHT,
+    CD_BASE_LEFT
   };
 
 #if 1
@@ -1088,90 +1111,83 @@ int SimpleDrawTextAlign(void)
   };
 #endif
 
-  cdGetCanvasSize(&w, &h, 0, 0);
+  cdCanvasGetSize(canvas, &w, &h, 0, 0);
 
-  cdBackground(CD_WHITE);
-  cdClear();
-
-  simple_draw = DRAW_TEXTALIGN;
+  cdCanvasBackground(canvas, CD_WHITE);
+  cdCanvasClear(canvas);
 
   use_vector = 0;
 
 #if 0
   if (use_vector)
-    cdVectorTextDirection(0, 0, 1, 1);
+    cdCanvasVectorTextDirection(canvas, 0, 0, 1, 1);
   else
-    cdTextOrientation(45);
+    cdCanvasTextOrientation(canvas, 45);
 #endif
 
   xoff = w/4;
   yoff = h/7;
 
   if (use_vector)
-    cdVectorCharSize(30);
+    cdCanvasVectorCharSize(canvas, 30);
   else
   {
-    //cdFont(CD_TIMES_ROMAN, CD_PLAIN, 14);
-    cdFont(CD_HELVETICA, CD_PLAIN, 24);
+    //cdCanvasFont(canvas, "Times", CD_PLAIN, 14);
+    cdCanvasFont(canvas, "Helvetica", CD_PLAIN, 24);
   }
 
   for (i = 0; i < 12; i++)
   {
-    cdTextAlignment(text_aligment[i]);
+    cdCanvasTextAlignment(canvas, text_aligment[i]);
     if (i < 6)
     {
       if (use_vector)
-        DrawVectorTextBox(xoff, yoff*(i+1), text_aligment_str[i]);
+        DrawVectorTextBox(canvas, xoff, yoff*(i+1), text_aligment_str[i]);
       else
-        DrawTextBox(xoff, yoff*(i+1), text_aligment_str[i]);
+        DrawTextBox(canvas, xoff, yoff*(i+1), text_aligment_str[i]);
     }
     else
     {
       if (use_vector)
-        DrawVectorTextBox(3*xoff, yoff*(i-5), text_aligment_str[i]);
+        DrawVectorTextBox(canvas, 3*xoff, yoff*(i-5), text_aligment_str[i]);
       else
-        DrawTextBox(3*xoff, yoff*(i-5), text_aligment_str[i]);
+        DrawTextBox(canvas, 3*xoff, yoff*(i-5), text_aligment_str[i]);
     }
   }
-
-  cdFlush();
-  return 0;
 }
 
-void DrawTextFont(int font, int size, int xoff, int yoff, char* text)
+void DrawTextFont(cdCanvas* canvas, const char* font, int size, int xoff, int yoff, char* text)
 {
-  cdFont(font, CD_PLAIN, size);
-  DrawTextBox(xoff, yoff, text);
+  cdCanvasFont(canvas, font, CD_PLAIN, size);
+  DrawTextBox(canvas, xoff, yoff, text);
 
-  cdFont(font, CD_BOLD, size);
-  DrawTextBox(2*xoff, yoff, text);
+  cdCanvasFont(canvas, font, CD_BOLD, size);
+  DrawTextBox(canvas, 2*xoff, yoff, text);
 
-  cdFont(font, CD_ITALIC, size);
-  DrawTextBox(3*xoff, yoff, text);
+  cdCanvasFont(canvas, font, CD_ITALIC, size);
+  DrawTextBox(canvas, 3*xoff, yoff, text);
 
-  cdFont(font, CD_BOLD_ITALIC, size);
-  DrawTextBox(4*xoff, yoff, text);
+  cdCanvasFont(canvas, font, CD_BOLD_ITALIC, size);
+  DrawTextBox(canvas, 4*xoff, yoff, text);
 }
 
-int SimpleDrawTextFonts(void)
+void SimpleDrawTextFonts(cdCanvas* canvas)
 {
   int xoff, yoff, size;
 
-  cdBackground(CD_WHITE);
-  cdClear();
-
-  simple_draw = DRAW_TEXTFONTS;
+  cdCanvasBackground(canvas, CD_WHITE);
+  cdCanvasClear(canvas);
 
   xoff = 470;
   yoff = 150;
   size = -30;
 
-  cdTextAlignment(CD_CENTER);
+  cdCanvasTextAlignment(canvas, CD_CENTER);
 
-  DrawTextFont(CD_COURIER, size, xoff, yoff, "Courier");
-  DrawTextFont(CD_TIMES_ROMAN, size, xoff, 2*yoff, "Times Roman");
-  DrawTextFont(CD_HELVETICA, size, xoff, 3*yoff, "Helvetica");
-  DrawTextFont(CD_SYSTEM, size, xoff, 4*yoff, "System");
+  DrawTextFont(canvas, "Courier", size, xoff, yoff, "Courier");
+  DrawTextFont(canvas, "Times", size, xoff, 2*yoff, "Times Roman");
+  DrawTextFont(canvas, "Helvetica", size, xoff, 3*yoff, "Helvetica");
+  DrawTextFont(canvas, "System", size, xoff, 4*yoff, "System");
 
   {
 //    static char native[50] = "Tecmedia, -60";
@@ -1204,26 +1220,21 @@ int SimpleDrawTextFonts(void)
   //cdText(10, 160, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   //cdText(10, 260, "1234567890");
   //cdText(500, 360, "'\"!@#$%®&*()_+-=[]^/;.,");
-
-  cdFlush();
-  return 0;
 }
 
-void SimpleDrawTest(void)
-//void SimpleDrawMainTest(void)
+void SimpleDrawTest(cdCanvas* canvas)
+//void SimpleDrawMainTest(cdCanvas* canvas)
 {
   long pattern[16];  /* 4x4 pattern */
   int w, h;
   int xmin, xmax, ymin, ymax;
 
-  simple_draw = DRAW_TEST;
-
 /* notice that if we are not using world coordinates 
    it is harder to position all the objetcs we want. */
-  cdGetCanvasSize(&w, &h, 0, 0);
+  cdCanvasGetSize(canvas, &w, &h, 0, 0);
 
-  cdBackground(CD_WHITE);
-  cdClear();
+  cdCanvasBackground(canvas, CD_WHITE);
+  cdCanvasClear(canvas);
 
 /* pattern initialization */
   pattern[0]  = CD_RED;    pattern[1]  = CD_RED;    /* first line */
@@ -1236,55 +1247,55 @@ void SimpleDrawTest(void)
   pattern[14] = CD_YELLOW; pattern[15] = CD_YELLOW;
 
 /* set the line attributes */
-  cdLineWidth(4);
-  cdLineStyle(CD_CONTINUOUS);
+  cdCanvasLineWidth(canvas, 4);
+  cdCanvasLineStyle(canvas, CD_CONTINUOUS);
 
 /* in the center draw a pattern pizza 
    with a slice mising */
-  cdPattern(4, 4, pattern);
-  cdSector(w/2, h/2, w/2, h/2, 45, 0);
+  cdCanvasPattern(canvas, 4, 4, pattern);
+  cdCanvasSector(canvas, w/2, h/2, w/2, h/2, 45, 0);
 /* draws a dark red border */
-  cdForeground(CD_DARK_RED);
-  cdInteriorStyle(CD_HOLLOW);
-  cdSector(w/2, h/2, w/2, h/2, 45, 0);
+  cdCanvasForeground(canvas, CD_DARK_RED);
+  cdCanvasInteriorStyle(canvas, CD_HOLLOW);
+  cdCanvasSector(canvas, w/2, h/2, w/2, h/2, 45, 0);
 
 /* on the left a red hash diamond */
 /* notice the the default back opacity is transparent
    and the pattern of the sector will still be visible
    inside the hatch where the two objects intersect */
-  cdForeground(CD_RED);
-  cdHatch(CD_DIAGCROSS); 
-  cdBegin(CD_FILL);
-  cdVertex(w/4, h/4); 
-  cdVertex(w/2-w/8, h/2); 
-  cdVertex(w/4, 3*h/4); 
-  cdVertex(w/8, h/2); 
-  cdEnd();
+  cdCanvasForeground(canvas, CD_RED);
+  cdCanvasHatch(canvas, CD_DIAGCROSS); 
+  cdCanvasBegin(canvas, CD_FILL);
+  cdCanvasVertex(canvas, w/4, h/4); 
+  cdCanvasVertex(canvas, w/2-w/8, h/2); 
+  cdCanvasVertex(canvas, w/4, 3*h/4); 
+  cdCanvasVertex(canvas, w/8, h/2); 
+  cdCanvasEnd(canvas);
 
 /* draws a blue roof.*/
-  cdForeground(CD_BLUE);
-  cdLine(w/8, h/2, w/4, 3*h/4);
-  cdLine(w/4, 3*h/4, w/2-w/8, h/2);
+  cdCanvasForeground(canvas, CD_BLUE);
+  cdCanvasLine(canvas, w/8, h/2, w/4, 3*h/4);
+  cdCanvasLine(canvas, w/4, 3*h/4, w/2-w/8, h/2);
 
 /* draws a dashed ribbon on the right 
    with a custom color */
-  cdForeground(cdEncodeColor(100, 25, 200));
-  cdLineStyle(CD_DASH_DOT);
-  cdBegin(CD_BEZIER);
-  cdVertex(3*w/4-20, h/2-50); 
-  cdVertex(3*w/4+150, 3*h/4-50); 
-  cdVertex(3*w/4-150, 3*h/4-50); 
-  cdVertex(3*w/4+20, h/2-50); 
-  cdEnd();
+  cdCanvasForeground(canvas, cdEncodeColor(100, 25, 200));
+  cdCanvasLineStyle(canvas, CD_DASH_DOT);
+  cdCanvasBegin(canvas, CD_BEZIER);
+  cdCanvasVertex(canvas, 3*w/4-20, h/2-50); 
+  cdCanvasVertex(canvas, 3*w/4+150, 3*h/4-50); 
+  cdCanvasVertex(canvas, 3*w/4-150, 3*h/4-50); 
+  cdCanvasVertex(canvas, 3*w/4+20, h/2-50); 
+  cdCanvasEnd(canvas);
 
-  cdFont(CD_HELVETICA, CD_BOLD, 40);
-  cdTextAlignment(CD_CENTER);
-  cdText(w/2, h/4-50, "Canvas Draw");
-  cdTextBox(w/2, h/4-50, "Canvas Draw", &xmin, &xmax, &ymin, &ymax);
-  cdRect(xmin, xmax, ymin, ymax);
-  cdFlush();
+  cdCanvasFont(canvas, "Helvetica", CD_BOLD, 40);
+  cdCanvasTextAlignment(canvas, CD_CENTER);
+  cdCanvasText(canvas, w/2, h/4-50, "Canvas Draw");
+  cdCanvasGetTextBox(canvas, w/2, h/4-50, "Canvas Draw", &xmin, &xmax, &ymin, &ymax);
+  cdCanvasRect(canvas, xmin, xmax, ymin, ymax);
 }
 
+#if 0
 void draw_wd(void)
 {
   char* text;
@@ -1324,18 +1335,14 @@ void draw_wd(void)
   wdVertex(rect[4], rect[5]);
   wdVertex(rect[6], rect[7]);
   cdEnd();
-
-  cdFlush();
 }
 
-//void SimpleDrawTest(void)
-void SimpleDrawTestHardCopy(void)
+//void SimpleDrawTest(cdCanvas* canvas)
+void SimpleDrawTestHardCopy(cdCanvas* canvas)
 {
   int w, h;
   cdGetCanvasSize(&w, &h, 0, 0);
   
-  simple_draw = DRAW_ALL;
-
   wdViewport(0,w-1,0,h-1);
   if (w>h)
     wdWindow(0,(double)w/(double)h,0,1);
@@ -1345,18 +1352,15 @@ void SimpleDrawTestHardCopy(void)
   draw_wd();
 
   //wdHardcopy(CD_CLIPBOARD, "800x600", cdActiveCanvas(), draw_wd );
-  //cdFlush();
 }
 
-//void SimpleDrawTest(void)
-void SimpleDrawTestImageRGB(void)
+//void SimpleDrawTest(cdCanvas* canvas)
+void SimpleDrawTestImageRGB(cdCanvas* canvas)
 {
   int size = 2048*2048;
   unsigned char *red, *green, *blue;
   cdCanvas* canvas = cdCreateCanvas(CD_IMAGERGB, "2048x2048");
   cdActivate(canvas);
-
-  simple_draw = DRAW_TEST;
 
   red = calloc(size, 1);
   green = calloc(size, 1);
@@ -1369,14 +1373,11 @@ void SimpleDrawTestImageRGB(void)
   free(blue);
 
   cdKillCanvas(canvas);
-  cdFlush();
 }
 
-//void SimpleDrawTest(void)
-void SimpleDrawVectorFont(void)
+//void SimpleDrawTest(cdCanvas* canvas)
+void SimpleDrawVectorFont(cdCanvas* canvas)
 {
-  simple_draw = DRAW_TEST;
-
   cdBackground(CD_WHITE);
   cdClear();
   cdLineStyle(CD_CONTINUOUS);
@@ -1431,16 +1432,13 @@ void SimpleDrawVectorFont(void)
   //    }
   //  }
   }
-  cdFlush();
 }
 
-//void SimpleDrawTest(void)
-void SimpleDrawPoly(void)
+//void SimpleDrawTest(cdCanvas* canvas)
+void SimpleDrawPoly(cdCanvas* canvas)
 {
   int w, h;
   cdGetCanvasSize(&w, &h, 0, 0);
-
-  simple_draw = DRAW_TEST;
 
   cdBackground(CD_WHITE);
   cdClear();
@@ -1465,3 +1463,4 @@ void SimpleDrawPoly(void)
 
   cdEnd();
 }
+#endif

@@ -381,7 +381,7 @@ void cdSimChord(cdCtxCanvas* ctxcanvas, int xc, int yc, int width, int height, d
 
 void cdfSimSector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
 {
-  sfElipse(ctxcanvas, xc, yc, w, h, a1, a2, 0);
+  sfElipse(ctxcanvas, xc, yc, w, h, a1, a2, 1);
 }
 
 void cdfSimChord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)

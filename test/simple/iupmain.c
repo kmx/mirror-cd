@@ -23,13 +23,15 @@ int cmdExit(void)
 
 void simple_loadled (void);
 
+#ifdef USE_OPENGL
 /* USE_OPENGL - add to linker:
-iupgl
-opengl32
-glu32
 cdgl
+iupgl
 ftgl
+glu32
+opengl32
 */
+
 void SimpleUpdateSize(cdCanvas* cnv)
 {
   Ihandle* canvas = IupGetHandle("SimpleCanvas");
@@ -52,6 +54,11 @@ void SimpleUpdateSize(cdCanvas* cnv)
   }
 }
 
+void SimpleFlush(void)
+{
+  IupGLSwapBuffers(IupGetHandle("SimpleCanvas"));
+}
+#endif
 
 int main(int argc, char** argv)
 {
@@ -126,12 +133,12 @@ int main(int argc, char** argv)
   IupSetFunction("SimpleContextPlus", (Icallback) SimpleContextPlus);
   IupSetFunction("SimpleTransform", (Icallback) SimpleTransform);
 
-  IupSetFunction("SimpleDrawAll", (Icallback) SimpleDrawAll);
-  IupSetFunction("SimpleDrawTextAlign", (Icallback) SimpleDrawTextAlign);
-  IupSetFunction("SimpleDrawTextFonts", (Icallback) SimpleDrawTextFonts);
-  IupSetFunction("SimpleDrawTest", (Icallback) SimpleDrawTest);
+  IupSetFunction("SimpleAll", (Icallback) SimpleAll);
+  IupSetFunction("SimpleTextAlign", (Icallback) SimpleTextAlign);
+  IupSetFunction("SimpleTextFonts", (Icallback) SimpleTextFonts);
+  IupSetFunction("SimpleTest", (Icallback) SimpleTest);
 
-  IupSetFunction("SimpleRepaint", (Icallback) SimpleDrawRepaint);
+  IupSetFunction("SimpleRepaint", (Icallback) SimpleRepaint);
 
   SimpleDrawWindow();
 

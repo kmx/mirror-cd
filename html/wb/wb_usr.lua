@@ -960,6 +960,10 @@ wb_usr.tree =
             {
               name= {nl= "Native Window"},
               link= "drv/native.html"
+            },
+            {
+              name= {nl= "OpenGL"},
+              link= "drv/gl.html"
             }
           }
         },

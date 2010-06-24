@@ -10,6 +10,9 @@
 .style1 {
 	margin-top: 0px;
 }
+.style2 {
+	font-family: Courier;
+}
 </style>
 </head>
 
@@ -17,13 +20,38 @@
 
 <h2>GL Driver</h2>
 
-  <p>This driver represents a basic driver for all system-dependent drivers 
-  implemented in the X-Windows system using the <a href="http://www.opengl.org/">
-  OpenGL</a> SDK. The implementation uses the OpenGL, GLU and GLX API functions. 
+  <p>This driver represents a driver for drawing using
+	<a href="http://www.opengl.org/">
+  OpenGL</a>. The implementation uses the OpenGL functions only. 
   For the font support, this driver uses the
   <a href="http://homepages.paradise.net.nz/henryj/code/index.html#FTGL">FTGL</a> 
   API functions, which it was written against the
   <a href="http://www.freetype.org/">Free Type</a> library.</p>
+<p>The driver is not dependent of system functions. It uses only the OpenGL 
+portable funtions. So if the window canvas changes its size the attribute &quot;SIZE&quot; 
+must be set with the new size or cdCanvasGetSize will return an incorrect value.</p>
+
+<h3>Use</h3>
+
+  <p>The canvas is created by means of a call to the function <font face="Courier">
+  <a href="../func/init.html#cdCreateCanvas"><strong>cdCreateCanvas</strong></a>(CD_GL, 
+  Data)</font>, after which other functions in the CD library can be called as usual. The <font face="Courier">Data</font> parameter string has the following format:</p>
+  
+    <pre><em>&quot;width<strong>x</strong>height [resolution]&quot;</em>      in C &quot;<em><strong><tt>%dx%d %g&quot;</tt></strong></em></pre>
+  
+  <p>It must include the initial canvas' dimensions.<font face="Courier"> Width</font> and <font face="Courier">height</font> 
+  are provided in pixels (note the lowercase &quot;x&quot; between them). The 
+	resolution is optional, its default value is &quot;3.78 pixels/mm&quot; (96 DPI).</p>
+  
+
+
+  <p>To use this driver, the application must be linked with the &quot;<strong>cdgl</strong>&quot;, 
+	the ftgl library 
+	and the OpenGL library. The FTGL library is dependent also on the GLU 
+	library.</p>
+  <p>In Lua, it is necessary to call function <font face="Courier"> <strong>cdluagl_open() </strong> </font>after a call 
+  to function <strong><font face="Courier">cdlua_open()</font></strong>, apart from linkediting with the &quot;<strong><font face="Courier">cdluagl</font></strong>&quot; 
+  library. This is not necessary if you do require&quot;cdluagl&quot;.&nbsp;</p>
 
 <h3>Behavior of Functions</h3>
 <h4>Control&nbsp; </h4>
@@ -79,9 +107,11 @@
     <font face="Courier"><strong>NativeFont</strong></font></a>: also accepts the 
   X-Windows font string format.</li>
     <li><a href="../func/text.html#cdFont">
-  <font face="Courier"><strong>Font</strong></font></a>: &quot;Courier&quot; is mapped to 
+  <font face="Courier"><strong>Font</strong></font></a>: In Windows, &quot;Courier&quot; is mapped to 
 	&quot;Courier New&quot;, &quot;Helvetica&quot; is mapped to &quot;Arial&quot;, and &quot;Times&quot; is mapped to 
-	&quot;Times New Roman&quot;. Underline and Strikeout are NOT supported.</li>
+	&quot;Times New Roman&quot;. In UNIX, &quot;Courier&quot; is mapped to 
+	&quot;freemono&quot;, &quot;Helvetica&quot; is mapped to &quot;freesans&quot;, and &quot;Times&quot; is mapped to 
+	&quot;freeserif&quot;. Underline and Strikeout are NOT supported.</li>
 </ul>
 <h4>Colors </h4>
 <ul>
@@ -92,6 +122,23 @@
 <h4>Exclusive Attributes</h4>
 
 <ul>
+  <li>&quot;<b><font face="Courier">ALPHA</font></b>&quot;:&nbsp;allows the usage of an alpha 
+	channel for the drawing shapes. Assumes values &quot;1&quot; (active) and &quot;0&quot; 
+	(inactive). Default value: &quot;1&quot;.</li>
+</ul>
+
+<ul>
+  <li>&quot;<b><font face="Courier">ANTIALIAS</font></b>&quot;:&nbsp;allows the use of 
+	anti-aliasing for the drawing shapes. Assumes values &quot;1&quot; (active) and &quot;0&quot; 
+	(inactive). Default value: &quot;1&quot;.</li>
+</ul>
+
+<ul>
+    <li><b><font face="Courier">&quot;GLVERSION&quot;: </font></b>returns a string with 
+  the OpenGL version or release number. It is empty if the OpenGL is not available.</li>
+</ul>
+
+<ul>
   <li>&quot;<b><font face="Courier">ROTATE</font></b>&quot;:&nbsp; allows the usage of 1 
   angle and 1 coordinate (x, y), that define a global rotation transformation 
   centered in the specified coordinate. Use 1 real and 2 integer values inside a 
@@ -99,8 +146,10 @@
 </ul>
 
 <ul>
-    <li><b><font face="Courier">&quot;GLVERSION&quot;: </font></b>returns a string with 
-  the OpenGL version or release number. It is empty if the OpenGL is not available.</li>
+  <li>&quot;<strong><span class="style2">SIZE</span></strong>&quot;: sets the canvas size. 
+	Must be used after the window is resized. The format is the same of the data 
+	parameter in cdCreateCanvas, <em>&quot;width<strong>x</strong>height [resolution]&quot;</em>      
+	or in C &quot;<em><strong><tt>%dx%d %g&quot;.</tt></strong></em></li>
 </ul>
 
 </body>

@@ -6,7 +6,9 @@
 
 void SimpleCreateCanvas(char* data);
 void SimpleKillCanvas(void);
+
 void SimpleUpdateSize(cdCanvas* cnv);
+void SimpleFlush(void);
 
 int SimplePlayClipboard(void);
 int SimplePlayCGMBin(void);
@@ -48,10 +50,10 @@ int SimpleClippingRegion(void);
 
 int SimpleTransform(void);
 int SimpleContextPlus(void);
-int SimpleDrawAll(void);
-int SimpleDrawTextAlign(void);
-int SimpleDrawTextFonts(void);
-void SimpleDrawTest(void);
-int SimpleDrawRepaint(void);
+int SimpleAll(void);
+int SimpleTextAlign(void);
+int SimpleTextFonts(void);
+int SimpleTest(void);
+int SimpleRepaint(void);
 
 #endif

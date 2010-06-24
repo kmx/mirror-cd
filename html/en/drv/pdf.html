@@ -46,6 +46,10 @@ or in C<em>
 
   <p>To use this driver, the application must be linked with the &quot;<strong>cdpdf</strong>&quot; 
 	and &quot;<strong>pdflib</strong>&quot; libraries. </p>
+  <p>In Lua, it is necessary to call function <font face="Courier"> <strong>cdluapdf_open() </strong> </font>after a call 
+  to function <strong><font face="Courier">cdlua_open()</font></strong>, apart from linkediting with the &quot;<strong><font face="Courier">cdluapdf</font></strong>&quot; 
+  library. This is not necessary if you do require&quot;cdluapdf&quot;.</p>
+
   <p><b>Paper Size - </b>The default paper size is A4. It is possible to change it by using one of the predefined sizes 
   - <strong><tt>CD_A0</tt></strong>, <strong><tt>CD_A1</tt></strong>, <strong><tt>CD_A2</tt></strong>, <strong><tt>CD_A3</tt></strong>,
   <strong><tt>CD_A4</tt></strong>, <strong><tt>CD_A5</tt></strong>, <strong><tt>CD_LETTER</tt></strong> and <strong><tt>
@@ -111,9 +115,6 @@ or in C<em>
   default value is 300 DPI.</p>
   <p><b>Orientation -</b> The page can be oriented as portrait or landscape. The default value is portrait, but when the 
   parameter &quot;-o&quot; is used, the horizontal and vertical values are switched.</p>
-  <p>In Lua, it is necessary to call function <strong><font face="Courier">cdluapdf_open() </strong> </font>after a call 
-  to function <strong><font face="Courier">cdlua_open()</font></strong>, apart from linkediting with the &quot;<strong><font face="Courier">cdluapdf</font></strong>&quot; 
-  library. This is not necessary if you do require&quot;cdluapdf&quot;.</p>
 
 <h3>Behavior of Functions</h3>
 <h4>Control</h4>

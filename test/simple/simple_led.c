@@ -95,10 +95,10 @@ void simple_loadled (void)
     IupItem( "OpenGL", "SimpleDrawGL" ),
   NULL), NULL );
   named[8] = decl( "mnPrimitives", IupMenu(
-    IupItem( "All", "SimpleDrawAll" ),
-    IupItem( "Text Align", "SimpleDrawTextAlign" ),
-    IupItem( "Text Fonts", "SimpleDrawTextFonts" ),
-    IupItem( "Test", "SimpleDrawTest" ),
+    IupItem( "All", "SimpleAll" ),
+    IupItem( "Text Align", "SimpleTextAlign" ),
+    IupItem( "Text Fonts", "SimpleTextFonts" ),
+    IupItem( "Test", "SimpleTest" ),
   NULL), NULL );
   named[9] = decl( "mnSimpleMenu", IupMenu(
     IupSubmenu( "File",
