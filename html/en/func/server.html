@@ -25,7 +25,7 @@
 	and Cairo, support server images.</p>
 
 <hr>
-<pre class="function"><span class="mainFunction">cdImage* <a name="cdCreateImage">cdCanvasCreateImage</a>(cdCanvas* canvas, int w, int h); [in C]</span>
+<div class="function"><pre class="function"><span class="mainFunction">cdImage* <a name="cdCreateImage">cdCanvasCreateImage</a>(cdCanvas* canvas, int w, int h); [in C]</span>
 
 canvas:CreateImage(w, h: number) -&gt; (image: cdImage) [in Lua]</pre>
 
@@ -36,14 +36,14 @@ canvas:CreateImage(w, h: number) -&gt; (image: cdImage) [in Lua]</pre>
   the same type as the canvas that was active when the image was created. The 
   default background is the same as the canvas, <strong><tt>CD_WHITE</tt></strong>.</p>
 
-<pre class="function"><span class="mainFunction">void <a name="cdKillImage">cdKillImage</a>(cdImage* image); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdKillImage">cdKillImage</a>(cdImage* image); [in C]</span>
 
 image:KillImage() [in Lua]</pre>
 
   <p>Liberates memory allocated for the image. If this function is not called in 
   Lua, the garbage collector will call it.</p>
 
-<pre class="function"><span class="mainFunction">void <a name="cdGetImage">cdCanvasGetImage</a>(cdCanvas* canvas, cdImage* image, int x, int y); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdGetImage">cdCanvasGetImage</a>(cdCanvas* canvas, cdImage* image, int x, int y); [in C]</span>
 
 canvas:GetImage(image: cdImage; x, y: number) [in Lua]</pre>
 
@@ -53,7 +53,7 @@ canvas:GetImage(image: cdImage; x, y: number) [in Lua]</pre>
   width and length of the rectangular region are defined in the image structure 
   (when the image is created).</p>
 
-<pre class="function"><span class="mainFunction">void <a name="cdPutImageRect">cdCanvasPutImageRect</a>(cdCanvas* canvas, cdImage* image, int x, int y, int xmin, int xmax, int ymin, int ymax); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdPutImageRect">cdCanvasPutImageRect</a>(cdCanvas* canvas, cdImage* image, int x, int y, int xmin, int xmax, int ymin, int ymax); [in C]</span>
 void wdCanvasPutImageRect(cdCanvas* canvas, cdImage* image, double x, double y, int xmin, int xmax, int ymin, int ymax); (WC) [in C]
 
 canvas:PutImageRect(image: cdImage; x, y, xmin, xmax, ymin, ymax: number) [in Lua]
@@ -66,7 +66,7 @@ canvas:wPutImageRect(image: cdImage; x, y, xmin, xmax, ymin, ymax: number) (WC) 
   and <strong><font>ymax</font></strong> are 0, then the whole 
   image is assumed.</p>
 
-<pre class="function"><span class="mainFunction">void <a name="cdScrollArea">cdCanvasScrollArea</a>(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, int dx, int dy); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdScrollArea">cdCanvasScrollArea</a>(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, int dx, int dy); [in C]</span>
 
 canvas:ScrollArea(xmin, xmax, ymin, ymax, dx, dy: number) [in Lua]</pre>
 
@@ -79,7 +79,7 @@ canvas:ScrollArea(xmin, xmax, ymin, ymax, dx, dy: number) [in Lua]</pre>
   to the second, remains unchanged (the function does not clean this region).
   </p>
 
-
+</div>
 </body>
 
 </html>

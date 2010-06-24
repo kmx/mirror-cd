@@ -39,7 +39,7 @@
 <p>Complex clipping regions are not saved by <strong>cdSaveState</strong>.</p>
 
 <hr>
-<pre class="function"><span class="mainFunction">int&nbsp;cdCanvasRegionCombineMode(cdCanvas* canvas, int mode); [in C]</span>
+<div class="function"><pre class="function"><span class="mainFunction">int&nbsp;cdCanvasRegionCombineMode(cdCanvas* canvas, int mode); [in C]</span>
 
 canvas:RegionCombineMode(mode: number) -&gt; (old_mode: number) [in Lua]</pre>
 
@@ -50,7 +50,7 @@ canvas:RegionCombineMode(mode: number) -&gt; (old_mode: number) [in Lua]</pre>
   <p align="center"><font size="4">Combine Modes<br>
   </font><img src="../../img/regions.gif" border="2" width="297" height="361"></p>
 
-<pre class="function"><span class="mainFunction">int&nbsp;cdCanvasIsPointInRegion(cdCanvas* canvas, int x, int y); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;cdCanvasIsPointInRegion(cdCanvas* canvas, int x, int y); [in C]</span>
 int wdCanvasIsPointInRegion(cdCanvas* canvas, double x, double y); (WC) [in C]
 
 canvas:IsPointInRegion(x, y: number) -&gt; (status: boolean) [in Lua]
@@ -59,7 +59,7 @@ canvas:wIsPointInRegion(x, y: number) -&gt; (status: boolean) [in Lua]</pre>
   <p>Returns a non zero value if the point is contained inside the current 
   region.</p>
 
-<pre class="function"><span class="mainFunction">void&nbsp;cdCanvasOffsetRegion(cdCanvas* canvas, int dx, int dy); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void&nbsp;cdCanvasOffsetRegion(cdCanvas* canvas, int dx, int dy); [in C]</span>
 void wdCanvasOffsetRegion(cdCanvas* canvas, double dx, double dy); (WC) [in C]
 
 canvas:OffsetRegion(dx, dy: number) [in Lua]
@@ -69,7 +69,7 @@ canvas:wOffsetRegion(dx, dy: number) (WC) [in Lua]</pre>
   moves to outside the canvas border, the part moved outside will be lost, the 
   region will need to be reconstructed.</p>
 
-<pre class="function"><span class="mainFunction">void&nbsp;cdCanvasGetRegionBox(cdCanvas* canvas, int *xmin, int *xmax, int *ymin, int *ymax); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void&nbsp;cdCanvasGetRegionBox(cdCanvas* canvas, int *xmin, int *xmax, int *ymin, int *ymax); [in C]</span>
 void wdCanvasGetRegionBox(cdCanvas* canvas, double *xmin, double *xmax, double *ymin, double *ymax); (WC) [in C]
 
 canvas:GetRegionBox() -&gt; (xmin, xmax, ymin, ymax, status: number) [in Lua]
@@ -79,7 +79,7 @@ canvas:wGetRegionBox() -&gt; (xmin, xmax, ymin, ymax, status: number) (WC) [in L
   necessary to provide all return pointers, you can provide only the desired 
   values and <i><tt>NULL</tt></i> for the others.</p>
 
-
+</div>
 </body>
 
 </html>

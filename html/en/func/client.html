@@ -21,7 +21,7 @@
     <p>The Put functions may do zoom in or out; zero order interpolation is used to 
       scale the image. It is not possible to specify a part of the image to be drawn.</p>
     <hr>
-    <pre class="function"><span class="mainFunction">void <a name="cdGetImageRGB">cdCanvasGetImageRGB</a>(cdCanvas* canvas, unsigned char *r, 
+  <div class="function"><pre class="function"><span class="mainFunction">void <a name="cdGetImageRGB">cdCanvasGetImageRGB</a>(cdCanvas* canvas, unsigned char *r, 
                    unsigned char *g, 
                    unsigned char *b, 
                    int x, int y, int w, int h); [in C]</span>
@@ -34,7 +34,7 @@ canvas:GetImageRGB(imagergb: cdImageRGB; x, y: number) [in Lua]</pre>
       library, the pixel <strong><tt>(0,0)</tt></strong> is at the bottom left 
       corner, and the pixel <strong><tt>(w-1,h-1)</tt></strong> is that the upper 
       right corner of the image rectangle.</p>
-    <pre class="function"><span class="mainFunction">void <a name="cdPutImageRectRGB">cdCanvasPutImageRectRGB</a>(cdCanvas* canvas, int iw, int ih, 
+    </div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdPutImageRectRGB">cdCanvasPutImageRectRGB</a>(cdCanvas* canvas, int iw, int ih, 
                        const unsigned char *r, 
                        const unsigned char *g, 
                        const unsigned char *b, 
@@ -69,7 +69,7 @@ canvas:wPutImageRectRGB(imagergb: cdImageRGB; x, y, w, h, xmin, xmax, ymin, ymax
     <p>If the driver has bpp &lt;=8 or only 256 colors or less, then the image is 
       converted to 256 optimal colors using the function <strong><font>cdRGB2Map</font></strong>
       and is drawn using <strong><font>cdPutImageRectMap</font></strong>.</p>
-    <pre class="function"><span class="mainFunction">void <a name="cdPutImageRectRGBA">cdCanvasPutImageRectRGBA</a>(cdCanvas* canvas, int iw, int ih, 
+    </div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdPutImageRectRGBA">cdCanvasPutImageRectRGBA</a>(cdCanvas* canvas, int iw, int ih, 
                         const unsigned char *r, 
                         const unsigned char *g, 
                         const unsigned char *b, 
@@ -96,7 +96,7 @@ canvas:wPutImageRectRGBA(imagergba: cdImageRGBA; x, y, w, h, xmin, xmax, ymin, y
     <p>If this function is not defined for a given driver or if alpha is <font>NULL</font>, 
       then the function <strong><font>cdPutImageRectRGB</font></strong> is used, as 
       long as it is defined.</p>
-    <pre class="function"><span class="mainFunction">void <a name="cdPutImageRectMap">cdCanvasPutImageRectMap</a>(cdCanvas* canvas, int iw, int ih, 
+    </div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdPutImageRectMap">cdCanvasPutImageRectMap</a>(cdCanvas* canvas, int iw, int ih, 
                        const unsigned char *index, 
                        const long int *colors, 
                        int x, int y, int w, int h, 
@@ -114,7 +114,7 @@ canvas:wPutImageRectMap(imagemap: cdImageMap; palette: cdPalette; x, y, w, h, xm
       (map). The color corresponding to a given index is given in&nbsp; <font><b>colors[index]</b></font>. 
       The map is also a matrix stored as a byte vector. If the color vector is null, 
       then a vector with 256 gray tones is assumed.</p>
-    <pre class="function"><span class="mainFunction">void <a name="cdRGB2Map">cdRGB2Map</a>(int iw, int ih, 
+    </div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdRGB2Map">cdRGB2Map</a>(int iw, int ih, 
                const unsigned char *r, 
                const unsigned char *g, 
                const unsigned char *b, 
@@ -126,7 +126,7 @@ cd.RGB2Map(imagergb: cdImageRGB, imagemap: cdImageMap, palette: cdPalette) [in L
       image must have the same size (width x length) as the RGB image. It is 
       necessary to allocate memory for the arrays <strong><font>map</font></strong> and
       <strong><font>colors</font></strong>. This is the same algorithm used in the IM 
-      library - in fact, the same code.</p>
+      library - in fact, the same code.</p></div>
     <h3>Extras</h3>
     <p>The following functions are used only for encapsulating the several types of 
       client images from the library in a single structure, simplifying their 
@@ -138,7 +138,7 @@ cd.RGB2Map(imagergb: cdImageRGB, imagemap: cdImageMap, palette: cdPalette) [in L
   int w      /* image width */
   int h      /* image heigth */
   int type   /* image type: CD_RGBA, CD_RGB or CD_MAP */</pre>
-    <pre class="function"><span class="mainFunction">cdBitmap* <a name="cdCreateBitmap">cdCreateBitmap</a>(int w, int h, int type); [in C]</span>
+    <div class="function"><pre class="function"><span class="mainFunction">cdBitmap* <a name="cdCreateBitmap">cdCreateBitmap</a>(int w, int h, int type); [in C]</span>
 
 cd.CreateBitmap(w, h, type: number) -&gt; (bitmap: cdBitmap) [in Lua]</pre>
     <p>Creates an image with width <strong>w</strong>, and height <strong>h</strong> and 
@@ -149,7 +149,7 @@ cd.CreateBitmap(w, h, type: number) -&gt; (bitmap: cdBitmap) [in Lua]</pre>
       Internally, the color palette is always allocated with 256 entries, which may 
       or may not be totally fulfilled. In this case, the value of <strong>type</strong> 
     can be changed as wished.</p>
-    <pre class="function"><span class="mainFunction">cdBitmap* <a name="cdInitBitmap">cdInitBitmap</a>(int w, int h, int type, ...); [in C]</span>
+    </div><div class="function"><pre class="function"><span class="mainFunction">cdBitmap* <a name="cdInitBitmap">cdInitBitmap</a>(int w, int h, int type, ...); [in C]</span>
 
 [There is no equivalent in Lua]</pre>
     <p>Similar to <strong><font>cdCreateBitmap</font></strong>, but it accepts the 
@@ -158,12 +158,12 @@ cd.CreateBitmap(w, h, type: number) -&gt; (bitmap: cdBitmap) [in Lua]</pre>
     <pre><font>CD_RGBA - (unsigned char* red, unsigned char* green, unsigned char* blue, unsigned char* alpha)
 CD_RGB - (unsigned char* red, unsigned char* green, unsigned char* blue)
 CD_MAP - (unsigned char* index, lont int* colors)</font></pre>
-    <pre class="function"><span class="mainFunction">void <a name="cdKillBitmap">cdKillBitmap</a>(cdBitmap* image); [in C]</span>
+    </div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdKillBitmap">cdKillBitmap</a>(cdBitmap* image); [in C]</span>
 
 cd.KillBitmap(bitmap: cdBitmap) [in Lua]</pre>
     <p>Liberates the memory allocated for the image. If this function is not 
     called in Lua, the garbage collector will call it.</p>
-    <pre class="function"><span class="mainFunction">unsigned char* <a name="cdBitmapGetData">cdBitmapGetData</a>(cdBitmap* image, int dataptr); [in C]</span>
+    </div><div class="function"><pre class="function"><span class="mainFunction">unsigned char* <a name="cdBitmapGetData">cdBitmapGetData</a>(cdBitmap* image, int dataptr); [in C]</span>
 
 cd.BitmapGetData(bitmap: cdBitmap; dataptr: number) -&gt; (data: cdImageChannel) [in Lua]</pre>
     <p>Returns a pointer to the image's data area according to <font><strong>dataptr</strong></font>. 
@@ -177,13 +177,13 @@ cd.BitmapGetData(bitmap: cdBitmap; dataptr: number) -&gt; (data: cdImageChannel)
     <p>In Lua, channels are also available as tables, see <a href="#DataAccess">Data 
         Access</a>.&nbsp;
     </p>
-    <pre class="function"><span class="mainFunction">void <a name="cdBitmapSetRect">cdBitmapSetRect</a>(cdBitmap* image, int xmin, int xmax, int ymin, int ymax); [in C]</span>
+    </div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdBitmapSetRect">cdBitmapSetRect</a>(cdBitmap* image, int xmin, int xmax, int ymin, int ymax); [in C]</span>
 
 cd.BitmapSetRect(bitmap: cdBitmap; xmin, xmax, ymin, ymax: number) [in Lua]</pre>
     <p>Allows specifying a region of interest inside the image to be used by the 
       function <b><font>cdPutBitmap</font></b>. If no region was defined, the whole 
       image is used, that is, (0, w-1, 0, h-1).</p>
-    <pre class="function"><span class="mainFunction">void <a name="cdPutBitmap">cdCanvasPutBitmap</a>(cdCanvas* canvas, cdBitmap* image, int x, int y, int w, int h); [in C]</span>
+    </div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdPutBitmap">cdCanvasPutBitmap</a>(cdCanvas* canvas, cdBitmap* image, int x, int y, int w, int h); [in C]</span>
 void wdCanvasPutBitmap(cdCanvas* canvas, cdBitmap* image, double x, double y, double w, double h); (WC) [in C]
 
 canvas:PutBitmap(image: cdBitmap; x, y, w, h: number) [in Lua]
@@ -197,35 +197,35 @@ canvas:wPutBitmap(bitmap: cdBitmap; x, y, w, h: number) (WC) [in Lua]</pre>
       image, increasing or decreasing its dimensions when drawn. If&nbsp; <strong>w</strong>
       and/or <strong>h</strong> are 0, then no scale change is assumed.
     </p>
-    <pre class="function"><span class="mainFunction">void <a name="cdGetBitmap">cdCanvasGetBitmap</a>(cdCanvas* canvas, cdBitmap* image, int x, int y); [in C]</span>
+    </div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdGetBitmap">cdCanvasGetBitmap</a>(cdCanvas* canvas, cdBitmap* image, int x, int y); [in C]</span>
 
 canvas:GetBitmap(bitmap: cdBitmap; x, y: number) [in Lua]</pre>
     <p>Encapsulates <strong><font>cdGetImageRGB</font></strong>. Nothing happens if 
       the image is MAP.</p>
-    <pre class="function"><span class="mainFunction">void <a name="cdBitmapRGB2Map">cdBitmapRGB2Map</a>(cdBitmap* image_rgb, cdBitmap* image_map); [in C]</span>
+    </div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdBitmapRGB2Map">cdBitmapRGB2Map</a>(cdBitmap* image_rgb, cdBitmap* image_map); [in C]</span>
 
 cd.BitmapRGB2Map(bitmap_rgb: cdBitmap, bitmap_map: cdBitmap) [in Lua]</pre>
     <p>Encapsulates <strong><font>cdRGB2Map</font></strong>. The images must be of 
-      types <font>RGB(A)</font> and <font>MAP</font>, respectively.</p>
+      types <font>RGB(A)</font> and <font>MAP</font>, respectively.</p></div>
     <h3>Extras in Lua (Deprecated)</h3>
-    <pre class="function"><a name="cdCreateImageRGB">cd.CreateImageRGB</a>(width, height: number) -&gt; (imagergb: cdImageRGB)</pre>
+    <div class="function"><pre class="function"><a name="cdCreateImageRGB">cd.CreateImageRGB</a>(width, height: number) -&gt; (imagergb: cdImageRGB)</pre>
     <p>Creates an RGB image in Lua. Deprecated use <strong>cd.CreateBitmap</strong>.</p>
-    <pre class="function"><a name="cdKillImageRGB">cd.KillImageRGB</a>(imagergb: cdImageRGB)</pre>
+    </div><div class="function"><pre class="function"><a name="cdKillImageRGB">cd.KillImageRGB</a>(imagergb: cdImageRGB)</pre>
     <p>Destroys the created RGB image and liberates allocated memory. If this 
     function is not called in Lua, the garbage collector will call it. Deprecated use <strong>
         cd.KillBitmap</strong>.</p>
-    <pre class="function"><a name="cdCreateImageRGBA">cd.CreateImageRGBA</a>(width, height: number) -&gt; (imagergba: cdImageRGBA)</pre>
+    </div><div class="function"><pre class="function"><a name="cdCreateImageRGBA">cd.CreateImageRGBA</a>(width, height: number) -&gt; (imagergba: cdImageRGBA)</pre>
     <p>Creates an RGBA image in Lua. Deprecated use <strong>cd.CreateBitmap</strong>.</p>
-    <pre class="function"><a name="cdKillImageRGBA">cd.KillImageRGBA</a>(imagergba: cdImageRGBA)</pre>
+    </div><div class="function"><pre class="function"><a name="cdKillImageRGBA">cd.KillImageRGBA</a>(imagergba: cdImageRGBA)</pre>
     <p>Destroys the created RGBA image and liberates allocated memory. If this 
     function is not called in Lua, the garbage collector will call it. Deprecated use <strong>
         cd.KillBitmap</strong>.</p>
-    <pre class="function"><a name="cdCreateImageMap">cd.CreateImageMap</a>(width, height: number) -&gt; (imagemap: cdImageMap)</pre>
+    </div><div class="function"><pre class="function"><a name="cdCreateImageMap">cd.CreateImageMap</a>(width, height: number) -&gt; (imagemap: cdImageMap)</pre>
     <p>Creates a Map image in Lua. Deprecated use <strong>cd.CreateBitmap</strong>.</p>
-    <pre class="function"><a name="cdKillImageMap">cd.KillImageMap</a>(imagemap: cdImageMap)</pre>
+    </div><div class="function"><pre class="function"><a name="cdKillImageMap">cd.KillImageMap</a>(imagemap: cdImageMap)</pre>
     <p>Destroys the created Map image and liberates allocated memory. If this 
     function is not called in Lua, the garbage collector will call it. Deprecated use <strong>
-        cd.KillBitmap</strong>.</p>
+        cd.KillBitmap</strong>.</p></div>
     <h3><a name="DataAccess">Data Access</a></h3>
     <p>Data access in Lua is done directly using the operator "<font>[y*width + x]</font>" 
       in image channels. Each channel works as a value table which should be 

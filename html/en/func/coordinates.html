@@ -11,14 +11,14 @@
 <body>
 
 <h2 align="center">Coordinate System</h2>
-<pre class="function"><span class="mainFunction">void&nbsp;<a name="cdGetCanvasSize">cdCanvasGetSize</a>(cdCanvas* canvas, int *width, int *height, double *width_mm, double *height_mm); [in C]</span>
+<div class="function"><pre class="function"><span class="mainFunction">void&nbsp;<a name="cdGetCanvasSize">cdCanvasGetSize</a>(cdCanvas* canvas, int *width, int *height, double *width_mm, double *height_mm); [in C]</span>
 
 canvas:GetSize() -&gt; (width, height, mm_width, mm_height: number) [in Lua]</pre>
 
   <p>Returns the canvas size in pixels and in millimeters. You can provide only 
   the desired values and <font>NULL</font> for the others.</p>
 
-<pre class="function"><span class="mainFunction">int&nbsp;<a name="cdYAxisMode">cdCanvasYAxisMode</a>(cdCanvas* canvas, int invert); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;<a name="cdYAxisMode">cdCanvasYAxisMode</a>(cdCanvas* canvas, int invert); [in C]</span>
 
 canvas:YAxisMode(invert: number) -&gt; (old_invert: number) [in Lua]</pre>
 
@@ -30,7 +30,7 @@ canvas:YAxisMode(invert: number) -&gt; (old_invert: number) [in Lua]</pre>
 	orientation, with that you can in fact invert the orientation of the CD 
 	primitives.</p>
 
-<pre class="function"><span class="mainFunction">int&nbsp;<a name="cdUpdateYAxis">cdCanvasUpdateYAxis</a>(cdCanvas* canvas, int *y); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;<a name="cdUpdateYAxis">cdCanvasUpdateYAxis</a>(cdCanvas* canvas, int *y); [in C]</span>
 double&nbsp;cdfCanvasUpdateYAxis(cdCanvas* canvas, double&nbsp;*y); [in C]
 int&nbsp;cdCanvasInvertYAxis(cdCanvas* canvas, int y); [in C]
 double&nbsp;cdfCanvasInvertYAxis(cdCanvas* canvas, double&nbsp;y); [in C]
@@ -45,7 +45,7 @@ canvas:InvertYAxis(yc: number) -&gt; (yr: number) [in Lua]</pre>
   the given value, the &quot;Update&quot; function will invert only if the canvas has the 
   Y axis inverted.</p>
 
-<pre class="function"><span class="mainFunction">void&nbsp;cdCanvasMM2Pixel(cdCanvas* canvas, double mm_dx, double mm_dy, int *dx, int *dy); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void&nbsp;cdCanvasMM2Pixel(cdCanvas* canvas, double mm_dx, double mm_dy, int *dx, int *dy); [in C]</span>
 void&nbsp;cdfCanvasMM2Pixel(cdCanvas* canvas, double mm_dx, double mm_dy, double *dx, double *dy); [in C]
 
 canvas:MM2Pixel(mm_dx, mm_dy: number) -&gt; (dx, dy: number) [in Lua]
@@ -55,7 +55,7 @@ canvas:fMM2Pixel(mm_dx, mm_dy: number) -&gt; (dx, dy: number) [in Lua]</pre>
   provide only the desired values and <font>NULL</font> for the 
   others.</p>
 
-<pre class="function"><span class="mainFunction">void&nbsp;cdCanvasPixel2MM(cdCanvas* canvas, int dx, int dy, double *mm_dx, double *mm_dy); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void&nbsp;cdCanvasPixel2MM(cdCanvas* canvas, int dx, int dy, double *mm_dx, double *mm_dy); [in C]</span>
 void&nbsp;cdfCanvasPixel2MM(cdCanvas* canvas, double dx, double dy, double *mm_dx, double *mm_dy); [in C]
 
 canvas:Pixel2MM(dx, dy: number) -&gt; (mm_dx, mm_dy: number) [in Lua]
@@ -68,7 +68,7 @@ canvas:fPixel2MM(dx, dy: number) -&gt; (mm_dx, mm_dy: number) [in Lua]</pre>
   <font>dy</font>. The resolution value is obtained using the 
   formula <strong><font>res=1.0/mm</font></strong>.</p>
 
-<pre class="function"><span class="mainFunction">void&nbsp;cdCanvasOrigin(cdCanvas* canvas, int x, int y); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void&nbsp;cdCanvasOrigin(cdCanvas* canvas, int x, int y); [in C]</span>
 void&nbsp;cdfCanvasOrigin(cdCanvas* canvas, double x, double y); [in C]
 
 canvas:Origin(x, y: number) [in Lua]
@@ -80,7 +80,7 @@ canvas:fOrigin(x, y: number) [in Lua]</pre>
   canvas in the respective driver. Default values: (0, 0)</p>
 
 
-<pre class="function"><span class="mainFunction">void&nbsp;cdCanvasGetOrigin(cdCanvas* canvas, int *x, int *y); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void&nbsp;cdCanvasGetOrigin(cdCanvas* canvas, int *x, int *y); [in C]</span>
 void&nbsp;cdfCanvasGetOrigin(cdCanvas* canvas, double *x, double *y); [in C]
 
 canvas:GetOrigin() -&gt; (x, y: number) [in Lua]
@@ -88,10 +88,10 @@ canvas:fGetOrigin() -&gt; (x, y: number) [in Lua]</pre>
 
   <p>Returns the origin.</p>
 
-
+</div>
 <h3>Transformation Matrix</h3>
 
-<pre class="function"><span class="mainFunction">void&nbsp;<a name="cdTransform">cdCanvasTransform</a>(cdCanvas* canvas, const double* matrix); [in C]</span>
+<div class="function"><pre class="function"><span class="mainFunction">void&nbsp;<a name="cdTransform">cdCanvasTransform</a>(cdCanvas* canvas, const double* matrix); [in C]</span>
 
 canvas:Transform(matrix: table) [in Lua]</pre>
 
@@ -113,46 +113,46 @@ functions. And those are affected if a transformation is set, just like other
 regular primitives.</p>
 
 
-<pre class="function"><span class="mainFunction">double*&nbsp;<a name="cdGetTransform">cdCanvasGetTransform</a>(cdCanvas* canvas); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">double*&nbsp;<a name="cdGetTransform">cdCanvasGetTransform</a>(cdCanvas* canvas); [in C]</span>
 
 canvas:GetTransformation() -&gt; (matrix: table) [in Lua]</pre>
 
   <p>Returns the transformation matrix. If the identity is set, returns NULL.</p>
 
 
-<pre class="function"><span class="mainFunction">void&nbsp;<a name="cdTransformMultiply">cdCanvasTransforMultiply</a>(cdCanvas* canvas, const double* matrix); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void&nbsp;<a name="cdTransformMultiply">cdCanvasTransforMultiply</a>(cdCanvas* canvas, const double* matrix); [in C]</span>
 
 canvas:TransformMultiply(matrix: table) [in Lua]</pre>
 
     <p>Left multiply the current transformation by the given transformation.</p>
 
-<pre class="function"><span class="mainFunction">void&nbsp;<a name="cdTransformTranslate">cdCanvasTransformTranslate</a>(cdCanvas* canvas, double dx, double dy); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void&nbsp;<a name="cdTransformTranslate">cdCanvasTransformTranslate</a>(cdCanvas* canvas, double dx, double dy); [in C]</span>
 
 canvas:TransformTranslate(dx, dy: number) [in Lua]</pre>
 
     <p>Applies a translation to the current transformation.</p>
 
-<pre class="function"><span class="mainFunction">void&nbsp;<a name="cdTransformScale">cdCanvasTransformScale</a>(cdCanvas* canvas, double sx, double sy); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void&nbsp;<a name="cdTransformScale">cdCanvasTransformScale</a>(cdCanvas* canvas, double sx, double sy); [in C]</span>
 
 canvas:TransformScale(sx, sy: number) [in Lua]</pre>
 
     <p>Applies a scale to the current transformation.</p>
 
-<pre class="function"><span class="mainFunction">void&nbsp;<a name="cdTransformRotate">cdCanvasTransformRotate</a>(cdCanvas* canvas, double angle); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void&nbsp;<a name="cdTransformRotate">cdCanvasTransformRotate</a>(cdCanvas* canvas, double angle); [in C]</span>
 
 canvas:TransformRotate(angle: number) [in Lua]</pre>
 
     <p>Applies a rotation to the current transformation. Angle is in degrees, 
     oriented counter-clockwise from the horizontal axis.</p>
 
-<pre class="function"><span class="mainFunction">void&nbsp;<a name="cdTransformPoint">cdCanvasTransformPoint</a>(cdCanvas* canvas, int x, int y, int *tx, int *ty); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void&nbsp;<a name="cdTransformPoint">cdCanvasTransformPoint</a>(cdCanvas* canvas, int x, int y, int *tx, int *ty); [in C]</span>
 void cdfCanvasTransformPoint(cdCanvas* canvas, double x, double y, double *tx, double *ty); [in C]
 
 canvas:TransformPoint(x, y: number) -&gt; (tx, ty: number) [in Lua]
 canvas:fTransformPoint(x, y: number) -&gt; (tx, ty: number) [in Lua]</pre>
 
     <p>Applies a transformation to a given point.</p>
-
+</div>
 </body>
 
 </html>

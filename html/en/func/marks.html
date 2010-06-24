@@ -15,10 +15,10 @@
   <p>A mark is a punctual representation. It can have different sizes and types. 
   All types are affected only by mark attributes and by the foreground color.</p>
 <p>All marks in all drivers are simulated using other CD primitives, except
-<strong>cdPixel</strong>.</p>
+<strong>cdCanvasPixel</strong>.</p>
 
 <hr>
-<pre class="function"><span class="mainFunction">void <a name="cdPixel">cdCanvasPixel</a>(cdCanvas* canvas, int x, int y, long int color); [in C]</span>
+<div class="function"><pre class="function"><span class="mainFunction">void <a name="cdPixel">cdCanvasPixel</a>(cdCanvas* canvas, int x, int y, long int color); [in C]</span>
 void wdCanvasPixel(cdCanvas* canvas, double x, double y, long int color); (WC) [in C]
 
 canvas:Pixel(x, y: number, color: lightuserdata) [in Lua]
@@ -28,7 +28,7 @@ canvas:wPixel(x, y: number, color: lightuserdata) (WC) [in Lua]</pre>
   on global attributes of the canvas. It can be very slow on some drivers. 
 	Sometimes it is implemented as a rectangle with size 1x1.</p>
 
-<pre class="function"><span class="mainFunction">void <a name="cdMark">cdCanvasMark</a>(cdCanvas* canvas, int x, int y); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdMark">cdCanvasMark</a>(cdCanvas* canvas, int x, int y); [in C]</span>
 void wdCanvasMark(cdCanvas* canvas, double x, double y); (WC) [in C]
 
 canvas:Mark(x, y: number) [in Lua]
@@ -36,27 +36,26 @@ canvas:wMark(x, y: number) (WC) [in Lua]</pre>
 
   <p>Draws a mark in <b><b>(x,y)</b> </b>using the current foreground color. 
   It is not possible to use this function between a call to functions
-  <font><b>cdBegin</b></font> and <font><b>cdEnd</b></font> 
+  <font><b>cdCanvasBegin</b></font> and <font><b>cdCanvasEnd</b></font> 
   if the type of mark is set to <b>CD_DIAMOND</b>. If the active driver 
   does not include this primitive, it will be simulated using other primitives 
-  from the library, such as <strong><font>cdLine</font></strong>.</p>
-  <p>If you will call function <strong><font>cdMark</font></strong> 
-  or <strong><font>wdMark</font></strong> several times in a 
+  from the library, such as <strong><font>cdCanvasLine</font></strong>.</p>
+  <p>If you will call this function several times in a 
   sequence, then it is recommended that the application changes the filling and 
-  line attributes to those used by the <strong><font>cdMark</font></strong> 
+  line attributes to those used by this 
   function:</p>
   
-<pre>cdInteriorStyle(CD_SOLID);
-cdLineStyle(CD_CONTINUOUS);
-cdLineWidth(1);</pre>
+<pre>cdCanvasInteriorStyle(canvas, CD_SOLID);
+cdCanvasLineStyle(canvas, CD_CONTINUOUS);
+cdCanvasLineWidth(canvas, 1);</pre>
   
   <p>This will greatly increase this function's performance. Also in this case, 
-  if the mark is very small, we suggest using the <font>cdPixel</font> 
+  if the mark is very small, we suggest using the <font><strong>cdCanvasPixel</strong></font> 
   function so that the application itself draws the mark. In many cases, this 
   also increases this function's performance.</p>
-
+</div>
 <h3>Attributes</h3>
-<pre class="function"><span class="mainFunction">int <a name="cdMarkType">cdCanvasMarkType</a>(cdCanvas* canvas, int type); [in C]</span>
+<div class="function"><pre class="function"><span class="mainFunction">int <a name="cdMarkType">cdCanvasMarkType</a>(cdCanvas* canvas, int type); [in C]</span>
 
 canvas:MarkType(type: number) -&gt; (old_type: number) [in Lua]</pre>
 
@@ -69,7 +68,7 @@ canvas:MarkType(type: number) -&gt; (old_type: number) [in Lua]</pre>
   <p align="center"><font size="4">Mark Types</font><br>
   <img src="../../img/marks.gif" border="2" width="148" height="193"></p>
 
-<pre class="function"><span class="mainFunction">int <a name="cdMarkSize">cdCanvasMarkSize</a>(cdCanvas* canvas, int size); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">int <a name="cdMarkSize">cdCanvasMarkSize</a>(cdCanvas* canvas, int size); [in C]</span>
 double wdCanvasMarkSize(cdCanvas* canvas, double size); (WC) [in C]
 
 canvas:MarkSize(size: number) -&gt; (old_size: number) [in Lua]
@@ -79,7 +78,7 @@ canvas:wMarkSize(size: number) -&gt; (old_size: number) (WC) [in Lua]</pre>
   value: 10. Value <b><b>CD_QUERY</b> </b>simply returns the current value. 
   Valid width interval: &gt;= 1.</p>
   <p>In WC, it configures the current line width in millimeters.&nbsp;</p>
-
+</div>
 
 </body>
 

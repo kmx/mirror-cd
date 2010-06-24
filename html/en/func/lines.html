@@ -20,7 +20,7 @@
   opacity attribute and by the background color.</p>
 
 <hr>
-<pre class="function"><span class="mainFunction">void <a name="cdLine">cdCanvasLine</a>(cdCanvas* canvas, int x1, int y1, int x2, int y2); [in C]
+<div class="function"><pre class="function"><span class="mainFunction">void <a name="cdLine">cdCanvasLine</a>(cdCanvas* canvas, int x1, int y1, int x2, int y2); [in C]
 </span>void cdfCanvasLine(cdCanvas* canvas, double x1, double y1, double x2, double y2); [in C]<br>void wdCanvasLine(cdCanvas* canvas, double x1, double y1, double x2, double y2); (WC) [in C]
 
 canvas:Line(x1, y1, x2, y2: <em>number</em>) [in Lua]
@@ -31,7 +31,7 @@ canvas:wLine(x1, y1, x2, y2: <em>number</em>)<font><font> (WC) [in Lua]</font></
   the current foreground color and line width and style. Both points are 
   included in the line. </p>
 
-<pre class="function"><a name="Polygons"><strong>Polygons</strong></a><strong> and Bezier Lines</strong></pre>
+</div><div class="function"><pre class="function"><a name="Polygons"><strong>Polygons</strong></a><strong> and Bezier Lines</strong></pre>
 
   <p>Open polygons can be created using <font><strong>cdBegin(</strong></font><b>CD_OPEN_LINES</b><font><strong>)/cdVertex(x,y)/.../cdEnd()</strong></font>.</p>
   <p>Closed polygons use the same number of vertices but the last point is 
@@ -44,7 +44,7 @@ canvas:wLine(x1, y1, x2, y2: <em>number</em>)<font><font> (WC) [in Lua]</font></
   bezier will be used as the start point.</p>
   <p>See the documentation of <a href="polygon.html">cdBegin/cdVertex/cdEnd</a>.</p>
 
-<pre class="function"><span class="mainFunction">void <a name="cdRect">cdCanvasRect</a>(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax); [in C]<br></span>void cdfCanvasRect(cdCanvas* canvas, double xmin, double xmax, double ymin, double ymax); [in C]
+</div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdRect">cdCanvasRect</a>(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax); [in C]<br></span>void cdfCanvasRect(cdCanvas* canvas, double xmin, double xmax, double ymin, double ymax); [in C]
 void wdCanvasRect(cdCanvas* canvas, double xmin, double xmax, double ymin, double ymax); (WC) [in C]
 
 canvas:Rect(xmin, xmax, ymin, ymax: <em>number</em>) [in Lua]
@@ -56,7 +56,7 @@ canvas:fRect(xmin, xmax, ymin, ymax: <em>number</em>) [in Lua]<br>canvas:wRect(x
   If the active driver does not include this primitive, it will be simulated 
   using the <strong><font>cdLine</font></strong> primitive.</p>
 
-<pre class="function"><span class="mainFunction">void <a name="cdArc">cdCanvasArc</a></span><span class="mainFunction">(cdCanvas* canvas, int xc, int yc, int w, int h, double angle1, double angle2); [in C]<br></span>void cdfCanvasArc(cdCanvas* canvas, double xc, double yc, double w, double h, double angle1, double angle2); [in C]<strong>
+</div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdArc">cdCanvasArc</a></span><span class="mainFunction">(cdCanvas* canvas, int xc, int yc, int w, int h, double angle1, double angle2); [in C]<br></span>void cdfCanvasArc(cdCanvas* canvas, double xc, double yc, double w, double h, double angle1, double angle2); [in C]<strong>
 </strong>void wdCanvasArc(cdCanvas* canvas, double xc, double yc, double w, double h, double angle1, double angle2); (WC) [in C]
 
 canvas:Arc(xc, yc, w, h, angle1, angle2: <em>number</em>) [in Lua]
@@ -87,9 +87,9 @@ canvas:wArc(xc, yc, w, h, angle1, angle2: <em>number</em>)<font><font> (WC) [in 
   to multiply the value in radians before passing the angle to CD.</p>
   <p align="center"><font size="4">Arc Parameters<br>
   </font>&nbsp;<img src="../../img/arc.gif" border="2" width="161" height="160"></p>
-
+</div>
 <h3>Attributes</h3>
-<pre class="function"><span class="mainFunction">int <a name="cdLineStyle">cdCanvasLineStyle</a>(cdCanvas* canvas, int style); [in C]</span>
+<div class="function"><pre class="function"><span class="mainFunction">int <a name="cdLineStyle">cdCanvasLineStyle</a>(cdCanvas* canvas, int style); [in C]</span>
 
 canvas:LineStyle(style: <em>number</em>) -&gt; (old_style: <em>number</em>) [in Lua]</pre>
 
@@ -104,7 +104,7 @@ canvas:LineStyle(style: <em>number</em>) -&gt; (old_style: <em>number</em>) [in 
   <p align="center"><font size="4">Line Styles</font><br>
   <img src="../../img/lines.gif" border="2" width="243" height="62"></p>
 
-<pre class="function"><span class="mainFunction">void <a name="cdLineStyleDashes">cdCanvasLineStyleDashes</a>(cdCanvas* canvas, const int* dashes, int count); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdLineStyleDashes">cdCanvasLineStyleDashes</a>(cdCanvas* canvas, const int* dashes, int count); [in C]</span>
 
 canvas:LineStyleDashes(dashes: table, count: number) -&gt; (old_style: number) [in Lua]</pre>
 
@@ -113,7 +113,7 @@ canvas:LineStyleDashes(dashes: table, count: number) -&gt; (old_style: number) [
   example: &quot;10 2 5 2&quot; means dash size 10, space size 2, dash size 5, space size 
   2, and repeats the pattern. Sizes are in pixels.</p>
 
-<pre class="function"><span class="mainFunction">int <a name="cdLineWidth">cdCanvasLineWidth</a>(cdCanvas* canvas, int width); [in C]<br></span>double wdCanvasLineWidth(cdCanvas* canvas, double width_mm); (WC) [in C]
+</div><div class="function"><pre class="function"><span class="mainFunction">int <a name="cdLineWidth">cdCanvasLineWidth</a>(cdCanvas* canvas, int width); [in C]<br></span>double wdCanvasLineWidth(cdCanvas* canvas, double width_mm); (WC) [in C]
 
 canvas:LineWidth(width: number) -&gt; (old_width: number) [in Lua]
 canvas:wLineWidth(width_mm: number) -&gt; (old_width_mm: number) (WC) [in Lua]</pre>
@@ -123,7 +123,7 @@ canvas:wLineWidth(width_mm: number) -&gt; (old_width_mm: number) (WC) [in Lua]</
   current value. Valid width interval: &gt;= 1.</p>
   <p>In WC, it configures the current line width in millimeters.&nbsp;</p>
 
-<pre class="function"><span class="mainFunction">int <a name="cdLineJoin">cdCanvasLineJoin</a>(cdCanvas* canvas, int style); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">int <a name="cdLineJoin">cdCanvasLineJoin</a>(cdCanvas* canvas, int style); [in C]</span>
 
 canvas:LineJoin(style: number) -&gt; (old_style: number) [in Lua]</pre>
 
@@ -134,7 +134,7 @@ canvas:LineJoin(style: number) -&gt; (old_style: number) [in Lua]</pre>
   <p align="center"><font size="4">Line Joins</font><br>
   <img src="../../img/linejoin.gif" border="2" width="111" height="138"></p>
 
-<pre class="function"><span class="mainFunction">int <a name="cdLineCap">cdCanvasLineCap</a>(cdCanvas* canvas, int style); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">int <a name="cdLineCap">cdCanvasLineCap</a>(cdCanvas* canvas, int style); [in C]</span>
 
 canvas:LineCap(style: number) -&gt; (old_style: number) [in Lua]</pre>
 
@@ -145,7 +145,7 @@ canvas:LineCap(style: number) -&gt; (old_style: number) [in Lua]</pre>
   <p align="center"><font size="4">Line Caps</font><br>
   <img src="../../img/linecap.gif" border="2" width="211" height="166"></p>
 
-
+</div>
 </body>
 
 </html>

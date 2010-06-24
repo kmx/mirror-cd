@@ -19,7 +19,7 @@
       texts.</p>
     <p>The <b>Clip</b> function activates and deactivaes the clipping.</p>
     <hr>
-    <pre class="function"><span class="mainFunction">int&nbsp;cdCanvasClip(cdCanvas* canvas, int mode); [in C]</span>
+    <div class="function"><pre class="function"><span class="mainFunction">int&nbsp;cdCanvasClip(cdCanvas* canvas, int mode); [in C]</span>
 
 canvas:Clip(mode: number) -&gt; (old_mode: number) [in Lua]</pre>
     <p>Activates or deactivates clipping. Returns the previous status. Values: <b>CD_CLIPAREA, 
@@ -41,7 +41,7 @@ canvas:Clip(mode: number) -&gt; (old_mode: number) [in Lua]</pre>
 	polygon and complex region without having to define them again. Also if the 
 	active clipping region is re-defined it immediately becomes the current 
 	clipping region.</p>
-    <pre class="function"><span class="mainFunction">void cdCanvasClipArea(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax); [in C]</span>
+    </div><div class="function"><pre class="function"><span class="mainFunction">void cdCanvasClipArea(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax); [in C]</span>
 void cdfCanvasClipArea(cdCanvas* canvas, double xmin, double xmax, double ymin, double ymax); [in C]
 void wdCanvasClipArea(cdCanvas* canvas, double xmin, double xmax, double ymin, double ymax); (WC) [in C]
 
@@ -51,7 +51,7 @@ canvas:wClipArea(xmin, xmax, ymin, ymax: number) (WC) [in Lua]</pre>
           x &lt;= xmax</b></i> and<b> </b><i><b>ymin &lt;= y &lt;= ymax</b></i> will 
       be printed. Default region: (0, w-1, 0, h-1).
     </p>
-    <pre class="function"><span class="mainFunction">int&nbsp;cdCanvasGetClipArea(cdCanvas* canvas, int *xmin, int *xmax, int *ymin, int *ymax); [in C]</span>
+    </div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;cdCanvasGetClipArea(cdCanvas* canvas, int *xmin, int *xmax, int *ymin, int *ymax); [in C]</span>
 int cdfCanvasGetClipArea(cdCanvas* canvas, double *xmin, double *xmax, double *ymin, double *ymax); [in C]
 int wdCanvasGetClipArea(cdCanvas* canvas, double *xmin, double *xmax, double *ymin, double *ymax); (WC) [in C]
 
@@ -59,9 +59,9 @@ canvas:GetClipArea() -&gt; (xmin, xmax, ymin, ymax, status: number) [in Lua]
 canvas:wGetClipArea() -&gt; (xmin, xmax, ymin, ymax, status: number) (WC) [in Lua]</pre>
     <p>Returns the rectangle and the clipping status. It is not necessary to provide 
       all return pointers, you can provide only the desired values and <i><b>NULL</b></i>
-      for the others.</p>
-    <h4><a name="Polygons">Polygons</a></h4>
+      for the others.</p></div>
+    <div class="function"><pre class="function"><span class="mainFunction"><a name="Polygons">Polygons</a></span></pre>
     <p>A polygon for clipping can be created using <font face="Courier"><strong>cdBegin(</strong>CD_CLIP<strong>)/cdVertex(x,y)/.../cdEnd()</strong></font>.</p>
-    <p>See the documentation of <a href="polygon.html">cdBegin/cdVertex/cdEnd</a>.</p>
+    <p>See the documentation of <a href="polygon.html">cdBegin/cdVertex/cdEnd</a>.</p></div>
     </body>
 </html>

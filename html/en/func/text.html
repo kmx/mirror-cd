@@ -34,7 +34,7 @@
   <font><strong>TextAligment</strong></font> function. </p>
 
 <hr>
-<pre class="function"><span class="mainFunction">void <a name="cdText">cdCanvasText</a>(cdCanvas* canvas, int x, int y, const char* text); [in C]</span>
+<div class="function"><pre class="function"><span class="mainFunction">void <a name="cdText">cdCanvasText</a>(cdCanvas* canvas, int x, int y, const char* text); [in C]</span>
 void cdfCanvasText(cdCanvas* canvas, double x, double y, const char* text); [in C]
 void wdCanvasText(cdCanvas* canvas, double x, double y, const char* text); (WC) [in C]
 
@@ -44,9 +44,9 @@ canvas:wText(x, y: number, text: string) (WC) [in Lua]</pre>
 
   <p>Draws a text in the position <b><tt>(x,y)</tt></b> according to the current font and 
   text alignment. It expects an ANSI string. Can have line breaks.</p>
-
+</div>
 <h3>Attributes</h3>
-<pre class="function"><span class="mainFunction">void <a name="cdFont">cdCanvasFont</a>(cdCanvas* canvas, const char* typeface, int style, int size); [in C]</span>
+<div class="function"><pre class="function"><span class="mainFunction">void <a name="cdFont">cdCanvasFont</a>(cdCanvas* canvas, const char* typeface, int style, int size); [in C]</span>
 void wdCanvasFont(cdCanvas* canvas, const char* typeface, int style, double size); (WD) [in C]
 
 canvas:Font(typeface, style, size: number) [in Lua]
@@ -89,7 +89,7 @@ driver.</p>
     </center>
   </div>
 
-<pre class="function"><span class="mainFunction">void <a name="cdGetFont">cdCanvasGetFont</a>(cdCanvas* canvas, char* typeface, int *style, int *size); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdGetFont">cdCanvasGetFont</a>(cdCanvas* canvas, char* typeface, int *style, int *size); [in C]</span>
 void wdCanvasGetFont(cdCanvas* canvas, char* typeface, int *style, double *size); (WC) [in C]
 
 canvas:GetFont() -&gt; (typeface: string, style, size: number) [in Lua]
@@ -99,7 +99,7 @@ canvas:wGetFont() -&gt; (typeface: string, style, size: number) (WC) [in Lua]</p
   return pointers; you can provide only the desired values.</p>
   <p>In WC, the size is returned in millimeters.</p>
 
-<pre class="function"><span class="mainFunction">char* <a name="cdNativeFont">cdCanvasNativeFont</a>(cdCanvas* canvas, const char* nativefont); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">char* <a name="cdNativeFont">cdCanvasNativeFont</a>(cdCanvas* canvas, const char* nativefont); [in C]</span>
 
 canvas:NativeFont(font: string) -&gt; (old_font: string) [in Lua]</pre>
 
@@ -127,7 +127,7 @@ and platforms.</p>
   <p>Using &quot;(char*)CD_QUERY&quot; as a parameter, it returns the current selected 
   font in the common format definition.</p>
 
-<pre class="function"><span class="mainFunction">int <a name="cdTextAlignment">cdCanvasTextAlignment</a>(cdCanvas* canvas, int alignment); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">int <a name="cdTextAlignment">cdCanvasTextAlignment</a>(cdCanvas* canvas, int alignment); [in C]</span>
 
 canvas:TextAlignment(alignment: number) -&gt; (old_alignment: number) [in Lua]</pre>
 
@@ -139,16 +139,16 @@ canvas:TextAlignment(alignment: number) -&gt; (old_alignment: number) [in Lua]</
   <p align="center"><font size="4">Text Alignment</font><br>
   <img src="../../img/align.gif" border="2" width="273" height="227"></p>
 
-<pre class="function"><span class="mainFunction">double <a name="cdTextOrientation">cdCanvasTextOrientation</a>(cdCanvas* canvas, double angle); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">double <a name="cdTextOrientation">cdCanvasTextOrientation</a>(cdCanvas* canvas, double angle); [in C]</span>
 
 canvas:TextOrientation(angle: number) -&gt; (old_angle: number) [in Lua]</pre>
 
   <p>Defines the text orientation, which is an angle provided in degrees relative to the horizontal line according to 
   which the text is drawn. Returns the previous value. Value <tt><b>CD_QUERY</b> </tt>simply returns the current value. 
   The default value is 0.</p>
-
+</div>
 <h3>Properties</h3>
-<pre class="function"><span class="mainFunction">void <a name="cdFontDim">cdCanvasGetFontDim</a>(cdCanvas* canvas, int *max_width, int *height, int *ascent, int *descent); [in C]</span>
+<div class="function"><pre class="function"><span class="mainFunction">void <a name="cdFontDim">cdCanvasGetFontDim</a>(cdCanvas* canvas, int *max_width, int *height, int *ascent, int *descent); [in C]</span>
 void wdCanvasGetFontDim(cdCanvas* canvas, double *max_width, double *height, double *ascent, double *descent); (WC) [in C]
 
 canvas:GetFontDim() -&gt; (max_width, height, ascent, descent: number) [in Lua]
@@ -163,7 +163,7 @@ canvas:wGetFontDim() -&gt; (max_width, height, ascent, descent: number) (WC) [in
   <p align="center"><font size="4">Font Dimension Attributes<br>
   </font><img src="../../img/font_dim.gif" border="2" width="300" height="139"></p>
 
-<pre class="function"><span class="mainFunction">void <a name="cdTextSize">cdCanvasGetTextSize</a>(cdCanvas* canvas, const char* text, int *width, int *height); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdTextSize">cdCanvasGetTextSize</a>(cdCanvas* canvas, const char* text, int *width, int *height); [in C]</span>
 void wdCanvasGetTextSize(cdCanvas* canvas, const char* text, double *width, double *height); (WC) [in C]
 
 canvas:GetTextSize(text: string) -&gt; (width, heigth: number) [in Lua]
@@ -173,7 +173,7 @@ canvas:wGetTextSize(text: string) -&gt; (width, heigth: number) (WC) [in Lua]</p
       not necessary to provide all return pointers, you can provide only the desired 
       values and <font>NULL</font> for the others.</p>
 
-<pre class="function"><span class="mainFunction">void <a name="cdTextBounds">cdCanvasGetTextBounds</a>(cdCanvas* canvas, int x, int y, const char *text, int *rect); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdTextBounds">cdCanvasGetTextBounds</a>(cdCanvas* canvas, int x, int y, const char *text, int *rect); [in C]</span>
 void wdCanvasGetTextBounds(cdCanvas* canvas, double x, double y, const char* text, double *rect); (WC) [in C]
 
 canvas:GetTextBounds(x, y: number, text: string) -&gt; (rect: table) [in Lua]
@@ -185,7 +185,7 @@ canvas:wGetTextBounds(x, y: number, text: string) -&gt; (rect: table) (WC) [in L
   order starting with the bottom left corner, arranged (x0,y0,x1,y1,x2,y2,x3,y3).</p>
 
 
-<pre class="function"><span class="mainFunction">void <a name="cdTextBox">cdCanvasGetTextBox</a>(cdCanvas* canvas, int x, int y, const char* text, int *xmin, int *xmax, int *ymin, int *ymax); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdTextBox">cdCanvasGetTextBox</a>(cdCanvas* canvas, int x, int y, const char* text, int *xmin, int *xmax, int *ymin, int *ymax); [in C]</span>
 void wdCanvasGetTextBox(cdCanvas* canvas, double x, double y, const char* text, double *xmin, double *xmax, double *ymin, double *ymax); (WC) [in C]
 
 canvas:GetTextBox(x, y: number, text: string) -&gt; (xmin, xmax, ymin, ymax: number) [in Lua]
@@ -195,7 +195,7 @@ canvas:wGetTextBox(x, y: number, text: string) -&gt; (xmin, xmax, ymin, ymax: nu
 	position. If orientation is not 0 then its area is always larger than the 
 	area of the rectangle returned by <strong>GetTextBounds</strong>. It is not necessary 
   to provide all return pointers, you can provide only the desired values and <i><tt>NULL</tt></i> for the others.</p>
-
+</div>
 
 </body>
 

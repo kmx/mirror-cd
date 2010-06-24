@@ -26,7 +26,7 @@ Regions Creation</h2>
   that can contains one or more polygons inside. </p>
 
 <hr>
-<pre class="function"><span class="mainFunction">void <a name="cdBegin">cdCanvasBegin</a>(cdCanvas* canvas, int mode); [in C]</span>
+<div class="function"><pre class="function"><span class="mainFunction">void <a name="cdBegin">cdCanvasBegin</a>(cdCanvas* canvas, int mode); [in C]</span>
 
 canvas:Begin(mode: number) [in Lua]</pre>
 
@@ -70,7 +70,7 @@ canvas:Begin(mode: number) [in Lua]</pre>
 </font><img src="../../img/polygon.gif" border="2" width="249" height="116"></p>
 <p align="center"><font size="4">Bezier Lines<br>
 </font><img src="../../img/bezier.gif" border="2" width="241" height="220"></p>
-<pre class="function"><span class="mainFunction">void <a name="cdVertex">cdCanvasVertex</a>(cdCanvas* canvas, int x, int y); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdVertex">cdCanvasVertex</a>(cdCanvas* canvas, int x, int y); [in C]</span>
 void cdfCanvasVertex(cdCanvas* canvas, double x, double y); [in C]
 void wdCanvasVertex(cdCanvas* canvas, double x, double y); (WC) [in C]
 
@@ -79,14 +79,14 @@ canvas:wVertex(x, y: number) (WC) [in Lua]</pre>
 
   <p>Adds a vertex to the polygon definition.</p>
 
-<pre class="function"><span class="mainFunction">void <a name="cdEnd">cdCanvasEnd</a>(cdCanvas* canvas); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdEnd">cdCanvasEnd</a>(cdCanvas* canvas); [in C]</span>
 
 canvas:End() [in Lua]</pre>
 
   <p>Ends the polygon's definition and draws it.</p>
 
 
-<pre class="function"><span class="mainFunction">void <a name="cdPathSet">cdCanvasPathSet</a>(cdCanvas* canvas, int action); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">void <a name="cdPathSet">cdCanvasPathSet</a>(cdCanvas* canvas, int action); [in C]</span>
 
 canvas:PathSet(action: number) [in Lua]</pre>
 
@@ -151,7 +151,7 @@ cdCanvasVertex(canvas, x8, y8);  /* start angle, end angle (degrees / 1000) */
 cdCanvasPathSet(canvas, CD_PATH_STROKE);
 cdCanvasEnd(canvas);</pre>
 	
-
+</div>
 </body>
 
 </html>

@@ -11,7 +11,7 @@
 <body>
 
 <h2 align="center">System</h2>
-<pre class="function"><span class="mainFunction">char*&nbsp;<a name="cdVersion">cdVersion</a>(void); [in C]</span>
+<div class="function"><pre class="function"><span class="mainFunction">char*&nbsp;<a name="cdVersion">cdVersion</a>(void); [in C]</span>
 
 cd.Version() -&gt; (version: string) [in Lua]</pre>
 
@@ -24,15 +24,15 @@ cd.Version() -&gt; (version: string) [in Lua]</pre>
   functions added to the library; and the build version number represents one or 
   more corrected bugs.</p>
 
-<pre class="function"><span class="mainFunction">char* cdVersionDate(void); [in C]
+</div><div class="function"><pre class="function"><span class="mainFunction">char* cdVersionDate(void); [in C]
 </span>
 cd.VersionDate() -&gt; (versiondate: string) [in Lua]</pre>
 <p>Returns the release date of the current version of the library.</p>
-<pre class="function"><span class="mainFunction">int cdVersionNumber(void); [in C]
+</div><div class="function"><pre class="function"><span class="mainFunction">int cdVersionNumber(void); [in C]
 </span>
 cd.VersionNumber() -&gt; (version: number) [in Lua]</pre>
 <p>Returns the current version number of the library.</p>
-<pre class="function">[in C]
+</div><div class="function"><pre class="function">[in C]
 <span class="mainFunction">CD_NAME</span>           &quot;CD - Canvas Draw&quot;
 <span class="mainFunction">CD_DESCRIPTION</span>    &quot;A 2D Graphics Library&quot;
 <span class="mainFunction">CD_COPYRIGHT</span>      &quot;Copyright (C) 1994-2007 Tecgraf/PUC-Rio and PETROBRAS S/A&quot;
@@ -50,10 +50,10 @@ cd._VERSION_NUMBER</pre>
 
   <p>Useful definitions. They have the same value returned by <b>cdVersion</b>* 
   functions, except that they do not include the build number.</p>
-
+</div>
 <hr>
 <h2 align="center">Metafile Interpretation</h2>
-<pre class="function"><span class="mainFunction">int&nbsp;cdCanvasPlay(cdCanvas* canvas, cdContext* ctx, int xmin, int xmax, int ymin, int ymax, void *data); [in C]</span>
+<div class="function"><pre class="function"><span class="mainFunction">int&nbsp;cdCanvasPlay(cdCanvas* canvas, cdContext* ctx, int xmin, int xmax, int ymin, int ymax, void *data); [in C]</span>
 
 canvas:Play(ctx, xmin, xmax, ymin, ymax: number, data: string) -&gt; (status: number) [in Lua]</pre>
 
@@ -90,7 +90,7 @@ canvas:Play(ctx, xmin, xmax, ymin, ymax: number, data: string) -&gt; (status: nu
     is a <strong>cdCanvas</strong><b>*</b> of the Picture canvas.</li>
   </ul>
 
-<pre class="function"><span class="mainFunction">int&nbsp;cdContextRegisterCallback(cdContext *ctx, int cb, int(*func)(cdCanvas* canvas, ...)); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;cdContextRegisterCallback(cdContext *ctx, int cb, int(*func)(cdCanvas* canvas, ...)); [in C]</span>
 
 cd.ContextRegisterCallback(ctx, cb: number, func: function) -&gt; (status: number) [in Lua]</pre>
 
@@ -114,7 +114,7 @@ cd.ContextRegisterCallback(ctx, cb: number, func: function) -&gt; (status: numbe
   create the canvas inside the callback. It works as a&nbsp; <b>
   <font>cdCanvasGetSize</font></b> function.</p>
 
-
+</div>
 </body>
 
 </html>
