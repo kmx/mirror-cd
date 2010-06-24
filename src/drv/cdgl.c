@@ -262,6 +262,22 @@ static int cdinteriorstyle(cdCtxCanvas *ctxcanvas, int style)
   return style;
 }
 
+static void cdpattern(cdCtxCanvas *ctxcanvas, int n, int m, const long int *pattern)
+{
+  (void)pattern;
+  (void)m;
+  (void)n;
+  cdinteriorstyle(ctxcanvas, CD_SOLID);
+}
+
+static void cdstipple(cdCtxCanvas *ctxcanvas, int n, int m, const unsigned char *stipple)
+{
+  (void)stipple;
+  (void)m;
+  (void)n;
+  cdinteriorstyle(ctxcanvas, CD_SOLID);
+}
+
 static int cdlinestyle(cdCtxCanvas *ctxcanvas, int style)
 {
   switch (style)
@@ -312,14 +328,6 @@ static int cdlinewidth(cdCtxCanvas *ctxcanvas, int width)
 
   (void)ctxcanvas;
   return width;
-}
-
-static int cdbackopacity(cdCtxCanvas *ctxcanvas, int opaque)
-{
-  ctxcanvas->canvas->back_opacity = opaque;
-  cdinteriorstyle(ctxcanvas, ctxcanvas->canvas->interior_style);
-  cdlinestyle(ctxcanvas, ctxcanvas->canvas->line_style);
-  return opaque;
 }
 
 /***********************************************************************************/
@@ -1443,9 +1451,10 @@ static void cdinittable(cdCanvas* canvas)
   canvas->cxWriteMode = cdwritemode;
   canvas->cxLineStyle = cdlinestyle;
   canvas->cxLineWidth = cdlinewidth;
-  canvas->cxBackOpacity   = cdbackopacity;
   canvas->cxInteriorStyle = cdinteriorstyle;
   canvas->cxHatch = cdhatch;
+  canvas->cxStipple = cdstipple;
+  canvas->cxPattern = cdpattern;
   canvas->cxForeground = cdforeground;
   canvas->cxTransform  = cdtransform;
 
