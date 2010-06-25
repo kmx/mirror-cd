@@ -16,6 +16,7 @@ else
 
   LIBS = Xrender Xft
   USE_X11 = Yes
+  CHECK_XRENDER = Yes
 
   INCLUDES = . sim drv freetype2 x11
 endif

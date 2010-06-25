@@ -7,6 +7,7 @@ DEFINES = CD_NO_OLD_INTERFACE
 SRCDIR = lua5
 SRC = cdluacairo5.c
 DEF_FILE = cdluacairo5.def
+CHECK_GTK = Yes
 
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )
   # In Win32 will work only for the Win32 base driver, 

@@ -3,6 +3,7 @@ LIBNAME = cdcairo
 OPT = YES
 
 DEFINES = CD_NO_OLD_INTERFACE
+CHECK_GTK = Yes
 
 INCLUDES = . cairo drv
 SRCDIR = cairo
@@ -16,6 +17,7 @@ ifneq ($(findstring Win, $(TEC_SYSNAME)), )
 else
   SRC += cdcaironative_x11.c   
   DEFINES += CAIRO_X11  
+  CHECK_GTK = Yes
 endif
 
 INCLUDES += $(GTK)/include/cairo $(GTK)/include/pango-1.0 $(GTK)/include/glib-2.0 $(GTK)/lib/glib-2.0/include  

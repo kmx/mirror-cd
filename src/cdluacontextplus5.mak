@@ -8,6 +8,11 @@ SRCDIR = lua5
 SRC = cdluacontextplus5.c
 DEF_FILE = cdluacontextplus5.def
 
+ifeq ($(findstring Win, $(TEC_SYSNAME)), )
+  # Check for XRender availability if NOT Windows
+  CHECK_XRENDER = Yes
+endif
+
 LIBS = cdcontextplus
 
 ifdef USE_LUA52

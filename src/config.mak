@@ -64,6 +64,7 @@ INCLUDES = . drv x11 win32 intcgm freetype2 sim cairo ../include
 ifdef USE_GDK
   SRC += $(SRCGDK) $(SRCNULL) $(SRCCAIRO)
   USE_GTK = Yes
+  CHECK_GTK = Yes
   LIBS = pangocairo-1.0 cairo
   ifeq ($(findstring Win, $(TEC_SYSNAME)), )
     SRC += cairo/cdcairoprn_unix.c
