@@ -7,7 +7,7 @@ SRC = drv/cdgl.c
 
 INCLUDES = . sim ftgl freetype2
 LIBS = ftgl
-ifneq ($(findstring Win, $(TEC_SYSNAME)), )
+ifeq ($(findstring Win, $(TEC_SYSNAME)), )
   LIBS += iconv
 endif
 

@@ -2,6 +2,8 @@ PROJNAME = cd
 LIBNAME = ftgl
 OPT = YES
 
+DEF_FILE = cd_ftgl.def
+
 ftglyph_sources = \
     FTGlyph/FTGlyph.cpp \
     FTGlyph/FTGlyphGlue.cpp \
@@ -48,10 +50,10 @@ INCLUDES := ftgl freetype2
 DEFINES = FTGL_LIBRARY_STATIC
 USE_OPENGL = Yes
 LIBS = freetype
+LDIR = ../lib/$(TEC_UNAME)
 
 ifneq ($(findstring dll, $(TEC_UNAME)), )
   DEFINES = FTGL_LIBRARY
-  SRC += cd_ftgl.rc
 endif
 
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )

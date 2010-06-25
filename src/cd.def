@@ -399,3 +399,14 @@ EXPORTS
   
   cdInitContextPlusList
   cdGetContextPlus
+  
+  cdfSimPolyPath
+  cdSimArc
+  cdSimPolyPath
+  cdfRotatePoint
+  cdSimSector
+  cdfSimArc
+  cdfSimSector
+  cdfSimChord
+  cdSimChord
+  
