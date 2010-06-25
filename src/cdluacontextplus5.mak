@@ -8,8 +8,9 @@ SRCDIR = lua5
 SRC = cdluacontextplus5.c
 DEF_FILE = cdluacontextplus5.def
 
-ifeq ($(findstring Win, $(TEC_SYSNAME)), )
-  # Check for XRender availability if NOT Windows
+ifneq ($(findstring Win, $(TEC_SYSNAME)), )
+  CHECK_GDIPLUS = Yes
+else
   CHECK_XRENDER = Yes
 endif
 

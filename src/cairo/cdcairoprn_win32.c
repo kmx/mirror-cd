@@ -16,6 +16,10 @@
 #include "cairo-win32.h"
 
 
+#ifndef DC_COLORDEVICE
+#define DC_COLORDEVICE          32   /* declared only if WINVER 0x0500 */
+#endif
+
 static void cdkillcanvas(cdCtxCanvas *ctxcanvas)
 {
   cairo_surface_t* surface = cairo_get_target(ctxcanvas->cr);

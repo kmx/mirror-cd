@@ -11,6 +11,7 @@ ifneq ($(findstring Win, $(TEC_SYSNAME)), )
 
   INCLUDES = . gdiplus drv
   LIBS = gdiplus
+  CHECK_GDIPLUS = Yes
 else
   SRC = xrender/cdxrender.c xrender/cdxrplus.c
 
