@@ -192,11 +192,6 @@ EXPORTS
   wdVectorText
   wdMultiLineVectorText
   wdGetVectorTextBounds
-
-  cdwCreateCanvas
-  cdwInitTable
-  cdwKillCanvas
-  cdwRestoreDC
   
   cdLineStyleDashes
   cdRegionBox
@@ -226,6 +221,8 @@ EXPORTS
   cdCanvasGetArcBox
   cdCanvasGetArcStartEnd
   cdfCanvasGetArcStartEnd
+  cdStrEqualNoCasePartial
+  cdGetFontFileName
   
   wdCanvasLineWidth
   wdCanvasMarkSize
@@ -410,3 +407,7 @@ EXPORTS
   cdfSimChord
   cdSimChord
   
+  cdwCreateCanvas
+  cdwInitTable
+  cdwKillCanvas
+  cdwRestoreDC

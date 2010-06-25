@@ -48,7 +48,7 @@ must be set with the new size or cdCanvasGetSize will return an incorrect value.
   <p>To use this driver, the application must be linked with the &quot;<strong>cdgl</strong>&quot;, 
 	the ftgl library 
 	and the OpenGL library. The FTGL library is dependent also on the GLU 
-	library.</p>
+	library. In UNIX <strong>cdgl</strong> is also dependent on <strong>iconv</strong>.</p>
   <p>In Lua, it is necessary to call function <font face="Courier"> <strong>cdluagl_open() </strong> </font>after a call 
   to function <strong><font face="Courier">cdlua_open()</font></strong>, apart from linkediting with the &quot;<strong><font face="Courier">cdluagl</font></strong>&quot; 
   library. This is not necessary if you do require&quot;cdluagl&quot;.&nbsp;</p>
@@ -111,7 +111,10 @@ must be set with the new size or cdCanvasGetSize will return an incorrect value.
 	&quot;Courier New&quot;, &quot;Helvetica&quot; is mapped to &quot;Arial&quot;, and &quot;Times&quot; is mapped to 
 	&quot;Times New Roman&quot;. In UNIX, &quot;Courier&quot; is mapped to 
 	&quot;freemono&quot;, &quot;Helvetica&quot; is mapped to &quot;freesans&quot;, and &quot;Times&quot; is mapped to 
-	&quot;freeserif&quot;. Underline and Strikeout are NOT supported.</li>
+	&quot;freeserif&quot;. Underline and Strikeout are NOT supported. If not 
+	found then the font file is searched used the same logic of the <a href="sim.html">Simulation</a> 
+	driver, but <strong>ADDFONTMAP</strong> is not supported. If still is not 
+	found then the typeface is used as file name for the font. </li>
 </ul>
 <h4>Colors </h4>
 <ul>

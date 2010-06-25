@@ -137,6 +137,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdluapdf52", "cdluapdf52.vcproj", "{B4823266-DF8C-ABC1-DF8C-12688C234EAC}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "cdgl", "cdgl.vcproj", "{8441F69D-7135-AB59-1F94-4522123C8467}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1D758EEA-59C3-46E4-BEF5-16DCCA8C0B21} = {1D758EEA-59C3-46E4-BEF5-16DCCA8C0B21}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ftgl", "cd_ftgl.vcproj", "{1D758EEA-59C3-46E4-BEF5-16DCCA8C0B21}"
 EndProject

@@ -33,6 +33,9 @@
 
 static const unsigned int BEZIER_STEPS = 5;
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 void FTContour::AddPoint(FTPoint point)
 {

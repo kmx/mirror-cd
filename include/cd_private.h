@@ -273,10 +273,12 @@ int cdfCheckBoxSize(double *xmin, double *xmax, double *ymin, double *ymax);
 void cdNormalizeLimits(int w, int h, int *xmin, int *xmax, int *ymin, int *ymax);
 int cdGetFileName(const char* strdata, char* filename);
 int cdStrEqualNoCase(const char* str1, const char* str2);
+int cdStrEqualNoCasePartial(const char* str1, const char* str2);
 int cdStrLineCount(const char* str);
 char* cdStrDup(const char* str);
 char* cdStrDupN(const char* str, int len);
 void cdSetPaperSize(int size, double *w_pt, double *h_pt);
+int cdGetFontFileName(const char* font, char* filename);
 
 void cdCanvasPoly(cdCanvas* canvas, int mode, cdPoint* points, int n);
 void cdCanvasGetArcBox(int xc, int yc, int w, int h, double a1, double a2, int *xmin, int *xmax, int *ymin, int *ymax);

@@ -17,15 +17,6 @@ EXPORTS
   cdContextDebug
   cdContextSVG
 
-  cdContextCairoImage
-  cdContextCairoImageRGB
-  cdContextCairoPS
-  cdContextCairoNativeWindow
-  cdContextCairoDBuffer
-  cdContextCairoSVG
-  cdContextCairoPDF
-  cdInitContextPlus
-  
   cdRedImage
   cdGreenImage
   cdBlueImage
@@ -201,7 +192,7 @@ EXPORTS
   wdVectorText
   wdMultiLineVectorText
   wdGetVectorTextBounds
-
+  
   cdLineStyleDashes
   cdRegionBox
   wdRegionBox
@@ -223,6 +214,15 @@ EXPORTS
   cdGetFontSizePixels
   cdGetFontSizePoints
   cdStrEqualNoCase
+  cdSetPaperSize
+  cdCanvasGetArcPath
+  cdfCanvasGetArcPath
+  cdCanvasGetArcPathF
+  cdCanvasGetArcBox
+  cdCanvasGetArcStartEnd
+  cdfCanvasGetArcStartEnd
+  cdStrEqualNoCasePartial
+  cdGetFontFileName
   
   wdCanvasLineWidth
   wdCanvasMarkSize
@@ -364,6 +364,7 @@ EXPORTS
   cdCanvasVectorTextDirection
   cdCanvasVectorTextSize
   cdCanvasVertex
+  cdCanvasPathSet
   
   cdfCanvasGetClipArea
   cdfCanvasArc
@@ -390,6 +391,28 @@ EXPORTS
   cdCanvasSetBackground
   cdCanvasTransformPoint
   cdfCanvasTransformPoint
-
+  cdRound
+  cdStrDup
+  
   cdInitContextPlusList
   cdGetContextPlus
+  
+  cdfSimPolyPath
+  cdSimArc
+  cdSimPolyPath
+  cdfRotatePoint
+  cdSimSector
+  cdfSimArc
+  cdfSimSector
+  cdfSimChord
+  cdSimChord
+
+  cdContextCairoImage
+  cdContextCairoImageRGB
+  cdContextCairoPS
+  cdContextCairoNativeWindow
+  cdContextCairoDBuffer
+  cdContextCairoSVG
+  cdContextCairoPDF
+  cdInitContextPlus
+  

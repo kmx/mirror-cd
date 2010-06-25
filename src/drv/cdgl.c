@@ -57,7 +57,6 @@ struct _cdCtxCanvas
   cdCanvas* canvas;
 
   FTGLfont *font;
-  char fontfilename[10240];
 
   char* glLastConvertUTF8;
 
@@ -71,7 +70,7 @@ struct _cdCtxCanvas
 
 /******************************************************/
 
-static char* cdglStrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, unsigned int len)
+static char* cdglStrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, int len)
 {
   if (ctxcanvas->glLastConvertUTF8)
     free(ctxcanvas->glLastConvertUTF8);
@@ -102,7 +101,8 @@ static char* cdglStrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, unsig
 	  /* Based on http://www.lemoda.net/c/iconv-example/iconv-example.html
 		   Last access: June 15th, 2010. */
     iconv_t cd;
-    unsigned int utf8len = len*2;
+    size_t ulen = (size_t)len;
+    size_t utf8len = ulen*2;
     char* utf8 = calloc(utf8len, 1);
 
     cd = iconv_open("UTF-8", "ISO-8859-1");
@@ -110,7 +110,7 @@ static char* cdglStrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, unsig
       return (char*)str;
 
     ctxcanvas->glLastConvertUTF8 = utf8;
-		iconv(cd, (char**)&str, &len, &utf8, &utf8len);
+		iconv(cd, (char**)&str, &ulen, &utf8, &utf8len);
 
 		iconv_close(cd);
   }
@@ -347,6 +347,7 @@ static LONG cdglWGetNextNameValue(HKEY key, LPCTSTR subkey, LPTSTR szName, LPTST
       RegCloseKey(hkey);
   
     hkey = NULL;
+    dwIndex = 0;
     return ERROR_SUCCESS;
   }
 
@@ -382,43 +383,78 @@ static LONG cdglWGetNextNameValue(HKEY key, LPCTSTR subkey, LPTSTR szName, LPTST
   return retval;
 }
 
-static int cdglWGetFontFileName(LPCTSTR lpszFontName, int bold, int italic, char* fileName)
+static int sReadStringKey(HKEY base_key, char* key_name, char* value_name, char* value)
+{
+	HKEY key;
+	DWORD max_size = 512;
+
+	if (RegOpenKeyEx(base_key, key_name, 0, KEY_READ, &key) != ERROR_SUCCESS)
+		return 0;
+
+  if (RegQueryValueEx(key, value_name, NULL, NULL, (LPBYTE)value, &max_size) != ERROR_SUCCESS)
+  {
+    RegCloseKey(key);
+		return 0;
+  }
+
+	RegCloseKey(key);
+	return 1;
+}
+
+static char* sGetFontDir(void)
+{
+  static char font_dir[1024];
+  if (!sReadStringKey(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "Fonts", font_dir))
+    return "";
+  else
+    return font_dir;
+}
+
+static int sGetFontFileName(const char *font_name, int bold, int italic, char* fileName)
 {
   TCHAR szName[2 * MAX_PATH];
   TCHAR szData[2 * MAX_PATH];
-  TCHAR displayName[2 * MAX_PATH];
   LPCTSTR strFont = "Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts";
   char localFontName[256];
   int bResult = 0;
 
-  sprintf(localFontName, "%s", lpszFontName);
+  if (cdStrEqualNoCase(font_name, "Courier") || cdStrEqualNoCase(font_name, "Monospace"))
+    font_name = "Courier New";
+  else if (cdStrEqualNoCase(font_name, "Times") || cdStrEqualNoCase(font_name, "Serif"))
+    font_name = "Times New Roman";
+  else if (cdStrEqualNoCase(font_name, "Helvetica") || cdStrEqualNoCase(font_name, "Sans"))
+    font_name = "Arial";
 
-  if( bold )
+  strcpy(localFontName, font_name);
+
+  if (bold)
     strcat(localFontName, " Bold");
 
-  if( italic )
+  if (italic)
     strcat(localFontName, " Italic");
 
   while (cdglWGetNextNameValue(HKEY_LOCAL_MACHINE, strFont, szName, szData) == ERROR_SUCCESS)
   {
-    if (_strnicmp(localFontName, szName, strlen(localFontName)) == 0)
+    if (cdStrEqualNoCasePartial(szName, localFontName))
     {
-      sprintf(displayName, "%s", szName);
-      sprintf(fileName, "%s", szData);
+      //"%s/%s.ttf"
+      sprintf(fileName, "%s\\%s", sGetFontDir(), szData);
       bResult = 1;
       break;
     }
-    strFont = "";
+    strFont = NULL;
   }
+
   /* close the registry key */
   cdglWGetNextNameValue(HKEY_LOCAL_MACHINE, NULL, NULL, NULL);
 
   return bResult;
 }
 #else
+#ifndef NO_FONTCONFIG
 #include <fontconfig/fontconfig.h>
 
-static int cdglXGetFontFileName(const char *font_name, int bold, int italic, char* fileName)
+static int sGetFontFileName(const char *font_name, int bold, int italic, char* fileName)
 {
   char styles[4][20];
   int style_size;
@@ -427,30 +463,37 @@ static int cdglXGetFontFileName(const char *font_name, int bold, int italic, cha
   FcPattern *pat;
   int bResult = 0;
 
+  if (cdStrEqualNoCase(font_name, "Courier") || cdStrEqualNoCase(font_name, "Courier New") || cdStrEqualNoCase(font_name, "Monospace"))
+    font_name = "freemono";
+  else if (cdStrEqualNoCase(font_name, "Times") || cdStrEqualNoCase(font_name, "Times New Roman")|| cdStrEqualNoCase(font_name, "Serif"))
+    font_name = "freeserif";
+  else if (cdStrEqualNoCase(font_name, "Helvetica") || cdStrEqualNoCase(font_name, "Arial") || cdStrEqualNoCase(font_name, "Sans"))
+    font_name = "freesans";
+
   if( bold && italic )
   {
-    sprintf(styles[0], "%s", "BoldItalic");
-    sprintf(styles[1], "%s", "Bold Italic");
-    sprintf(styles[2], "%s", "Bold Oblique");
-    sprintf(styles[3], "%s", "BoldOblique");
+    strcpy(styles[0], "BoldItalic");
+    strcpy(styles[1], "Bold Italic");
+    strcpy(styles[2], "Bold Oblique");
+    strcpy(styles[3], "BoldOblique");
     style_size = 4;
   }
   else if( bold )
   {
-    sprintf(styles[0], "%s", "Bold");
+    strcpy(styles[0], "Bold");
     style_size = 1;
   }
   else if( italic )
   {
-    sprintf(styles[0], "%s", "Italic");
-    sprintf(styles[1], "%s", "Oblique");
+    strcpy(styles[0], "Italic");
+    strcpy(styles[1], "Oblique");
     style_size = 2;
   }
   else
   {
-    sprintf(styles[0], "%s", "Regular");
-    sprintf(styles[1], "%s", "Normal");
-    sprintf(styles[2], "%s", "Medium");
+    strcpy(styles[0], "Regular");
+    strcpy(styles[1], "Normal");
+    strcpy(styles[2], "Medium");
     style_size = 3;
   }
 
@@ -474,22 +517,21 @@ static int cdglXGetFontFileName(const char *font_name, int bold, int italic, cha
       FcPatternGetString(fs->fonts[j], FC_STYLE, 0, &style );
       FcPatternGetString(fs->fonts[j], FC_FAMILY, 0, &family );
 
-      if (strncasecmp(font_name, (char*)family, strlen(font_name)) == 0)
+      if (cdStrEqualNoCasePartial((char*)family, font_name))
       {
         /* check if the font is of the correct type. */
         for(s = 0; s < style_size; s++ )
         {
-          if (strcasecmp(styles[s], (char*)style ) == 0)
+          if (cdStrEqualNoCase(styles[s], (char*)style))
           {
-            sprintf(fileName, "%s", (char*)file);
+            strcpy(fileName, (char*)file);
             bResult = 1;
             FcFontSetDestroy (fs);
-
             return bResult;
           }
 
           /* set value to use if no more correct font of same family is found. */
-          sprintf(fileName, "%s", (char*)file);
+          strcpy(fileName, (char*)file);
           bResult = 1;
         }
       }
@@ -499,12 +541,22 @@ static int cdglXGetFontFileName(const char *font_name, int bold, int italic, cha
 
   return bResult;
 }
+#else
+static int sGetFontFileName(const char *font_name, int bold, int italic, char* fileName)
+{
+  (void)font_name;
+  (void)bold;
+  (void)italic;
+  (void)fileName;
+  return 0;
+}
+#endif
 #endif
 
 static int cdfont(cdCtxCanvas *ctxcanvas, const char *typeface, int style, int size)
 {
   int is_italic = 0, is_bold = 0;   /* default is CD_PLAIN */
-  char strFontFileName[256];
+  char strFontFileName[10240];
 
   if (style & CD_BOLD)
     is_bold = 1;
@@ -512,34 +564,44 @@ static int cdfont(cdCtxCanvas *ctxcanvas, const char *typeface, int style, int s
   if (style & CD_ITALIC)
     is_italic = 1;
 
-#ifdef WIN32
-  if (cdStrEqualNoCase(typeface, "Courier") || cdStrEqualNoCase(typeface, "Monospace"))
-    typeface = "Courier New";
-  else if (cdStrEqualNoCase(typeface, "Times") || cdStrEqualNoCase(typeface, "Serif"))
-    typeface = "Times New Roman";
-  else if (cdStrEqualNoCase(typeface, "Helvetica") || cdStrEqualNoCase(typeface, "Sans"))
-    typeface = "Arial";
+  /* search for the font in the system */
+  if (!sGetFontFileName(typeface, is_bold, is_italic, strFontFileName))
+  {
+    /* try typeface as a file title, compose to get a filename */
+    if (!cdGetFontFileName(typeface, strFontFileName))
+    {
+      /* try the same configuration of the simulation driver */
+      static char * cd_ttf_font_style[4] = {
+        "",
+        "bd",
+        "i",
+        "bi"};
+      char* face = NULL;
 
-  if(!cdglWGetFontFileName(typeface, is_bold, is_italic, strFontFileName))
-    return 0;
+      /* check for the pre-defined names */
+      if (cdStrEqualNoCase(typeface, "System"))
+        face = "cour";
+      else if (cdStrEqualNoCase(typeface, "Courier"))
+        face = "cour";
+      else if (cdStrEqualNoCase(typeface, "Times"))
+        face = "times";
+      else if (cdStrEqualNoCase(typeface, "Helvetica"))
+        face = "arial";
 
-  sprintf(ctxcanvas->fontfilename, "%s\\fonts\\%s", getenv("windir"), strFontFileName);
-#else
-  if (cdStrEqualNoCase(typeface, "Courier") || cdStrEqualNoCase(typeface, "Courier New") || cdStrEqualNoCase(typeface, "Monospace"))
-    typeface = "freemono";
-  else if (cdStrEqualNoCase(typeface, "Times") || cdStrEqualNoCase(typeface, "Times New Roman")|| cdStrEqualNoCase(typeface, "Serif"))
-    typeface = "freeserif";
-  else if (cdStrEqualNoCase(typeface, "Helvetica") || cdStrEqualNoCase(typeface, "Arial") || cdStrEqualNoCase(typeface, "Sans"))
-    typeface = "freesans";
+      if (face)
+      {
+        /* create a shortname for the file title */
+        char shorname[100];
+        sprintf(shorname, "%s%s", face, cd_ttf_font_style[style&3]);
+        if (!cdGetFontFileName(shorname, strFontFileName))
+          strcpy(strFontFileName, typeface);  /* try the typeface as file name */
+      }
+      else
+        strcpy(strFontFileName, typeface);  /* try the typeface as file name */
+    }
+  }
 
-  if(!cdglXGetFontFileName(typeface, is_bold, is_italic, strFontFileName))
-    return 0;
-
-  sprintf(ctxcanvas->fontfilename, "%s", strFontFileName);
-#endif
-
-  ctxcanvas->font = ftglCreateBufferFont(ctxcanvas->fontfilename);
-  
+  ctxcanvas->font = ftglCreateBufferFont(strFontFileName);
   if (!ctxcanvas->font)
     return 0;
 
@@ -650,9 +712,9 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
 
 static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, int len)
 {
-  int dir = -1, stipple = 0;
+  int stipple = 0;
   float bounds[6];
-  int w, h, desc;
+  int w, h, descent, baseline;
   double x_origin = x;
   double y_origin = y;
 
@@ -662,9 +724,10 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, i
   s = cdglStrConvertToUTF8(ctxcanvas, s, len);
   ftglGetFontBBox(ctxcanvas->font, s, len, bounds);
 
-  desc = (int)ftglGetFontDescender(ctxcanvas->font);
+  descent = (int)ftglGetFontDescender(ctxcanvas->font);
   w = (int)ceil(bounds[3] - bounds[0]);
   h = (int)ceil(bounds[4] - bounds[1]);
+  baseline = (int)ftglGetFontLineHeight(ctxcanvas->font) - (int)ftglGetFontAscender(ctxcanvas->font);
 
   switch (ctxcanvas->canvas->text_alignment)
   {
@@ -688,9 +751,6 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, i
       break;
   }
 
-  if (ctxcanvas->canvas->invert_yaxis)
-    dir = 1;
-
   switch (ctxcanvas->canvas->text_alignment)
   {
     case CD_BASE_LEFT:
@@ -701,17 +761,17 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, i
     case CD_SOUTH_EAST:
     case CD_SOUTH_WEST:
     case CD_SOUTH:
-      y = y + dir * desc;
+      y = y - descent;
       break;
     case CD_NORTH_EAST:
     case CD_NORTH:
     case CD_NORTH_WEST:
-      y = y + dir * (h + desc);
+      y = y - h/2 - baseline;
       break;
     case CD_CENTER:
     case CD_EAST:
     case CD_WEST:
-      y = y + dir * (h / 2);
+      y = y - baseline;
       break;
   }
 

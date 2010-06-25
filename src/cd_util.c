@@ -308,6 +308,8 @@ void cdRotatePointY(cdCanvas* canvas, int x, int y, int cx, int cy, int *ry, dou
   *ry = *ry + cy;
 }
 
+/* Copied from IUP3 */
+
 int cdStrEqualNoCase(const char* str1, const char* str2) 
 {
   int i = 0;
@@ -317,6 +319,20 @@ int cdStrEqualNoCase(const char* str1, const char* str2)
   while (str1[i] && str2[i] && tolower(str1[i])==tolower(str2[i])) 
     i++;
   if (str1[i] == str2[i]) return 1; 
+
+  return 0;
+}
+
+int cdStrEqualNoCasePartial(const char* str1, const char* str2) 
+{
+  int i = 0;
+  if (str1 == str2) return 1;
+  if (!str1 || !str2 || tolower(*str1) != tolower(*str2)) return 0;
+
+  while (str1[i] && str2[i] && tolower(str1[i])==tolower(str2[i])) 
+    i++;
+  if (str1[i] == str2[i]) return 1; 
+  if (str2[i] == 0) return 1;
 
   return 0;
 }
@@ -398,3 +414,82 @@ void cdSetPaperSize(int size, double *w_pt, double *h_pt)
   *h_pt = (double)paper[size].h_pt;
 }
 
+#ifdef WIN32
+#include <windows.h>
+static int sReadStringKey(HKEY base_key, char* key_name, char* value_name, char* value)
+{
+	HKEY key;
+	DWORD max_size = 512;
+
+	if (RegOpenKeyEx(base_key, key_name, 0, KEY_READ, &key) != ERROR_SUCCESS)
+		return 0;
+
+  if (RegQueryValueEx(key, value_name, NULL, NULL, (LPBYTE)value, &max_size) != ERROR_SUCCESS)
+  {
+    RegCloseKey(key);
+		return 0;
+  }
+
+	RegCloseKey(key);
+	return 1;
+}
+
+static char* sGetFontDir(void)
+{
+  static char font_dir[512];
+  if (!sReadStringKey(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "Fonts", font_dir))
+    return "";
+  else
+  {
+    int i, size = (int)strlen(font_dir);
+    for(i = 0; i < size; i++)
+    {
+      if (font_dir[i] == '\\')
+        font_dir[i] = '/';
+    }
+    return font_dir;
+  }
+}
+#endif
+
+int cdGetFontFileName(const char* font, char* filename)
+{
+  FILE *file;
+
+  /* current directory */
+  sprintf(filename, "%s.ttf", font);
+  file = fopen(filename, "r");
+
+  if (file)
+    fclose(file);
+  else
+  {
+    /* CD environment */
+    char* env = getenv("CDDIR");
+    if (env)
+    {
+      sprintf(filename, "%s/%s.ttf", env, font);
+      file = fopen(filename, "r");
+    }
+
+    if (file)
+      fclose(file);
+    else
+    {
+#ifdef WIN32
+      /* Windows Font folder */
+      sprintf(filename, "%s/%s.ttf", sGetFontDir(), font);
+      file = fopen(filename, "r");
+
+      if (file)
+        fclose(file);
+      else
+        return 0;
+#else
+      return 0;
+#endif
+    }
+  }
+
+  return 1;
+}

@@ -8,12 +8,24 @@ SRC = drv/cdgl.c
 INCLUDES = . sim ftgl freetype2
 LIBS = ftgl
 ifeq ($(findstring Win, $(TEC_SYSNAME)), )
-  LIBS += iconv
+#  LIBS += iconv
 endif
 
 USE_OPENGL = YES
 USE_CD = YES
 CD = ..
+
+ifneq ($(findstring AIX, $(TEC_UNAME)), )
+  NO_FONTCONFIG = Yes
+endif
+
+ifneq ($(findstring IRIX, $(TEC_UNAME)), )
+  NO_FONTCONFIG = Yes
+endif
+
+ifneq ($(findstring SunOS, $(TEC_UNAME)), )
+  NO_FONTCONFIG = Yes
+endif
 
 ifneq ($(findstring MacOS, $(TEC_UNAME)), )
   ifeq ($(TEC_SYSMINOR), 5)

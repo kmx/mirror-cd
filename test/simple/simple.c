@@ -559,6 +559,9 @@ void SimpleDraw(cdCanvas* canvas)
     SimpleUpdateSize(canvas);
 #endif
 
+  /* refresh CD canvas size, when window size has changed */
+  cdCanvasActivate(canvas);
+
   if (simple_draw == DRAW_TEXTFONTS)
     SimpleDrawTextFonts(canvas);
   else if (simple_draw == DRAW_TEXTALIGN)
@@ -568,6 +571,10 @@ void SimpleDraw(cdCanvas* canvas)
   else
     SimpleDrawAll(canvas);
 
+  /* Adds a new page, or 
+     flushes the file, or
+     flushes the screen, or
+     swap the double buffer. */
   cdCanvasFlush(canvas);
 
 #ifdef USE_OPENGL
@@ -712,7 +719,7 @@ void SimpleDrawAll(cdCanvas* canvas)
      Notice that in some drivers the bounding box is not precise. */
   {
     int rect[8];
-    cdCanvasGetTextBounds(canvas, w/2, h/2, "cdMin Draw (Á„Ì)", rect);
+    cdCanvasGetTextBounds(canvas, w/2, h/2, "Simple Draw (pÁ„Ì)", rect);
     cdCanvasForeground(canvas, CD_RED);
     cdCanvasBegin(canvas, CD_CLOSED_LINES);
     cdCanvasVertex(canvas, rect[0], rect[1]);
@@ -722,7 +729,7 @@ void SimpleDrawAll(cdCanvas* canvas)
     cdCanvasEnd(canvas);
   }
   cdCanvasForeground(canvas, CD_BLUE);
-  cdCanvasText(canvas, w/2, h/2, "cdMin Draw (Á„Ì)");
+  cdCanvasText(canvas, w/2, h/2, "Simple Draw (pÁ„Ì)");
   cdCanvasTextOrientation(canvas, 0);
 
   /* Prepare World Coordinates */
@@ -965,12 +972,6 @@ void SimpleDrawAll(cdCanvas* canvas)
   if (use_transform)
     cdCanvasTransform(canvas, NULL);
   cdCanvasClip(canvas, CD_CLIPOFF);
-
-  /* Adds a new page, or 
-     flushes the file, or
-     flushes the screen, or
-     swap the double buffer. */
-  cdCanvasFlush(canvas);
 }
 
 void DrawVectorTextBox(cdCanvas* canvas, int x, int y, char* text)
@@ -1081,18 +1082,18 @@ void SimpleDrawTextAlign(cdCanvas* canvas)
 
 #if 1
   char* text_aligment_str[] = {
-  "North (√yj)\nSecond Line (√yj)",
-  "South (√yj)\nSecond Line (√yj)",
-  "East (√yj)\nSecond Line (√yj)",
-  "West (√yj)\nSecond Line (√yj)",
-  "North East (√yj)\nSecond Line (√yj)",
-  "North West (√yj)\nSecond Line (√yj)",
-  "South East (√yj)\nSecond Line (√yj)",
-  "South West (√yj)\nSecond Line (√yj)",
-  "Center (√yj)\nSecond Line (√yj)",
-  "Base Center (√yj)\nSecond Line (√yj)",
-  "Base Right (√yj)\nSecond Line (√yj)",
-  "Base Left (√yj)\nSecond Line (√yj)"
+  "North (√yj)\nSecond Line (√yj)\nThird Line",
+  "South (√yj)\nSecond Line (√yj)\nThird Line",
+  "East (√yj)\nSecond Line (√yj)\nThird Line",
+  "West (√yj)\nSecond Line (√yj)\nThird Line",
+  "North East (√yj)\nSecond Line (√yj)\nThird Line",
+  "North West (√yj)\nSecond Line (√yj)\nThird Line",
+  "South East (√yj)\nSecond Line (√yj)\nThird Line",
+  "South West (√yj)\nSecond Line (√yj)\nThird Line",
+  "Center (√yj)\nSecond Line (√yj)\nThird Line",
+  "Base Center (√yj)\nSecond Line (√yj)\nThird Line",
+  "Base Right (√yj)\nSecond Line (√yj)\nThird Line",
+  "Base Left (√yj)\nSecond Line (√yj)\nThird Line"
   };
 #else
   char* text_aligment_str[] = {

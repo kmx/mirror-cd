@@ -9,91 +9,22 @@
 #include <memory.h>
 #include <stdio.h>
 
+#include "cd.h"
+#include "cd_private.h"
 #include "cd_truetype.h"
 
 /*******************************************
         Inicializa o Rasterizador
 ********************************************/
 
-#ifdef WIN32
-#include <windows.h>
-static int ReadStringKey(HKEY base_key, char* key_name, char* value_name, char* value)
-{
-	HKEY key;
-	DWORD max_size = 512;
-
-	if (RegOpenKeyEx(base_key, key_name, 0, KEY_READ, &key) != ERROR_SUCCESS)
-		return 0;
-
-  if (RegQueryValueEx(key, value_name, NULL, NULL, (LPBYTE)value, &max_size) != ERROR_SUCCESS)
-  {
-    RegCloseKey(key);
-		return 0;
-  }
-
-	RegCloseKey(key);
-	return 1;
-}
-
-char* GetFontDir(void)
-{
-  static char font_dir[512];
-  if (!ReadStringKey(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "Fonts", font_dir))
-    return "";
-  else
-  {
-    int i, size = (int)strlen(font_dir);
-    for(i = 0; i < size; i++)
-    {
-      if (font_dir[i] == '\\')
-        font_dir[i] = '/';
-    }
-    return font_dir;
-  }
-}
-#endif
-
 int cdTT_load(cdTT_Text * tt_text, const char *font, int size, double xres, double yres)
 {
   char filename[10240];
-  FILE *file;  /* usado apenas para procurar pelo arquivo */
   FT_Error error;
   FT_Face face;          
 
-  /* abre arq. no dir. corrente */
-  sprintf(filename, "%s.ttf", font);
-  file = fopen(filename, "r");
-
-  if (file)
-    fclose(file);
-  else
-  {
-    /* se nao conseguiu, abre arq. no dir. do cd, */
-    char* env = getenv("CDDIR");
-    if (env)
-    {
-      sprintf(filename, "%s/%s.ttf", env, font);
-      file = fopen(filename, "r");
-    }
-
-    if (file)
-      fclose(file);
-    else
-    {
-#ifdef WIN32
-      /* no caso do Windows procura no seu diretorio de fontes. */
-      sprintf(filename, "%s/%s.ttf", GetFontDir(), font);
-      file = fopen(filename, "r");
-
-      if (file)
-        fclose(file);
-      else
-        return 0;
-#else
-      return 0;
-#endif
-    }
-  }
+  if (!cdGetFontFileName(font, filename))
+    return 0;
 
   error = FT_New_Face(tt_text->library, filename, 0, &face );
   if (error) 
