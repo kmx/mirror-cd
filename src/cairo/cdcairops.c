@@ -126,10 +126,12 @@ static void cdcreatecanvas(cdCanvas* canvas, void* data)
 
   surface = cairo_ps_surface_create(filename, w_pt, h_pt);
 
+#if (CAIRO_VERSION_MAJOR>1 || (CAIRO_VERSION_MAJOR==1 && CAIRO_VERSION_MINOR>=6))
   if (level == 2)
     cairo_ps_surface_restrict_to_level(surface, CAIRO_PS_LEVEL_2);
   else if (level == 3)
     cairo_ps_surface_restrict_to_level(surface, CAIRO_PS_LEVEL_3);
+#endif
 
   if (eps)
     cairo_ps_surface_set_eps(surface, 1);

@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <gtk/gtk.h>
 #include <gtk/gtkprintunixdialog.h>
 
 #include "cdcairoctx.h"
@@ -147,8 +148,13 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   canvas->w_mm = (int)gtk_page_setup_get_page_width(page_setup, GTK_UNIT_MM);
   canvas->h_mm = (int)gtk_page_setup_get_page_height(page_setup, GTK_UNIT_MM);
   canvas->bpp  = 24;
+#if GTK_CHECK_VERSION(2, 16, 0)
   canvas->xres = (double)gtk_print_settings_get_resolution_x(settings) / 25.4;
   canvas->yres = (double)gtk_print_settings_get_resolution_y(settings) / 25.4;
+#else
+  canvas->xres = (double)gtk_print_settings_get_int (settings, GTK_PRINT_SETTINGS_RESOLUTION) / 25.4;
+  canvas->yres = (double)gtk_print_settings_get_int (settings, GTK_PRINT_SETTINGS_RESOLUTION) / 25.4;
+#endif
   canvas->w = cdRound(canvas->w_mm*canvas->xres);
   canvas->h = cdRound(canvas->h_mm*canvas->yres);
 
