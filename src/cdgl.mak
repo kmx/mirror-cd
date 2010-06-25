@@ -16,15 +16,15 @@ USE_CD = YES
 CD = ..
 
 ifneq ($(findstring AIX, $(TEC_UNAME)), )
-  NO_FONTCONFIG = Yes
+  DEFINES += NO_FONTCONFIG
 endif
 
 ifneq ($(findstring IRIX, $(TEC_UNAME)), )
-  NO_FONTCONFIG = Yes
+  DEFINES += NO_FONTCONFIG
 endif
 
 ifneq ($(findstring SunOS, $(TEC_UNAME)), )
-  NO_FONTCONFIG = Yes
+  DEFINES += NO_FONTCONFIG
 endif
 
 ifneq ($(findstring MacOS, $(TEC_UNAME)), )
