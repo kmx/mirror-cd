@@ -62,16 +62,25 @@ SRC = $(SRCCOMM) $(SRCSVG) $(SRCINTCGM) $(SRCDRV) $(SRCSIM)
 INCLUDES = . drv x11 win32 intcgm freetype2 sim cairo ../include
 
 ifdef USE_GDK
-  SRC += $(SRCGDK) $(SRCNULL) $(SRCCAIRO)
+  SRC += $(SRCGDK) $(SRCNULL) 
   USE_GTK = Yes
   CHECK_GTK = Yes
-  LIBS = pangocairo-1.0 cairo
+  # Temporarily to build inside Tecgraf
+  ADD_CAIRO = Yes
+  ifdef ADD_CAIRO
+    LIBS = pangocairo-1.0 cairo
+    SRC += $(SRCCAIRO)
+  endif
   ifneq ($(findstring Win, $(TEC_SYSNAME)), )
-    SRC += cairo/cdcairoprn_win32.c cdcairoemf.c
+    ifdef ADD_CAIRO
+      SRC += cairo/cdcairoprn_win32.c cdcairoemf.c
+    endif
     LIBS += freetype6
   else
     ifeq ($(findstring MacOS, $(TEC_UNAME)), )
-      SRC += cairo/cdcairoprn_unix.c
+      ifdef ADD_CAIRO
+        SRC += cairo/cdcairoprn_unix.c
+      endif
       INCLUDES += /usr/include/gtk-unix-print-2.0
     endif
     LIBS += freetype
