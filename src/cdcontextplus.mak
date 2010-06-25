@@ -22,6 +22,9 @@ else
   INCLUDES = . sim drv freetype2 x11
 endif
 
+ifneq ($(findstring MacOS, $(TEC_UNAME)), )
+  BUILD_DYLIB=Yes
+endif
 
 USE_CD = YES
 CD = ..

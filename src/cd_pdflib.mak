@@ -128,3 +128,7 @@ SRC := pdflib/pdflib/pdflib.c $(SRCPDFLIB) $(SRCPDCORE) $(SRCFLATE) $(SRCFONT)
 ifneq ($(findstring dll, $(TEC_UNAME)), )
   SRC += cd_pdflib.rc
 endif
+
+ifneq ($(findstring MacOS, $(TEC_UNAME)), )
+  BUILD_DYLIB=Yes
+endif

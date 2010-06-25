@@ -103,12 +103,17 @@ the makefiles and projects expect the following directory tree:</p>
           -&gt; <strong><span class="style4">Xrender</span></strong> <strong><span class="style4">Xft</span></strong> (system - UNIX)
 <em>cdcairo*</em> -&gt; <span class="style1"><strong>cairo-2</strong></span> (system - Windows/UNIX)
 cdpdf    -&gt; <strong><span class="style2">pdflib</span></strong> (included as separate library)
+<em>cd</em>gl     -&gt; <span class="style1">opengl32</span> (system - Windows)
+         -&gt; <span class="style1">GL</span> (system - UNIX)
+         -&gt; <strong><span class="style2">ftgl</span></strong> (included as separate library)
 cdlua51  -&gt; cd
          -&gt; <strong><span class="style3">lua5.1</span></strong>
 cdluaim51 -&gt; cdlua51
           -&gt; <strong><span class="style3">imlua51</span></strong> 
 cdluapdf51 -&gt; cdlua51
            -&gt; cdpdf
+cdluagl51 -&gt; cdlua51
+          -&gt; cdgl
 
 (*) In Windows, &quot;<strong>cdwin</strong>&quot; is called &quot;<strong>cd</strong>&quot;. 
     In Linux and BSD &quot;<strong>cdgdk</strong>&quot; is called &quot;<strong>cd</strong>&quot;. 

@@ -61,3 +61,13 @@ endif
 ifneq ($(findstring cygw, $(TEC_UNAME)), )
   LIBS = freetype-6
 endif
+
+ifneq ($(findstring MacOS, $(TEC_UNAME)), )
+  ifeq ($(TEC_SYSMINOR), 5)
+    #Darwin9 Only - OpenGL bug fix for Fink, when the message bellow appears
+    #   ld: cycle in dylib re-exports with /usr/X11R6/lib/libGL.dylib
+    LFLAGS=-dylib_file /System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib:/System/Library/Frameworks/OpenGL.framework/Versions/A/Libraries/libGL.dylib
+  endif
+  
+  BUILD_DYLIB=Yes
+endif

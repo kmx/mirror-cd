@@ -66,13 +66,15 @@ ifdef USE_GDK
   USE_GTK = Yes
   CHECK_GTK = Yes
   LIBS = pangocairo-1.0 cairo
-  ifeq ($(findstring Win, $(TEC_SYSNAME)), )
-    SRC += cairo/cdcairoprn_unix.c
-    INCLUDES += /usr/include/gtk-unix-print-2.0
-    LIBS += freetype
-  else
+  ifneq ($(findstring Win, $(TEC_SYSNAME)), )
     SRC += cairo/cdcairoprn_win32.c cdcairoemf.c
     LIBS += freetype6
+  else
+    ifeq ($(findstring MacOS, $(TEC_UNAME)), )
+      SRC += cairo/cdcairoprn_unix.c
+      INCLUDES += /usr/include/gtk-unix-print-2.0
+    endif
+    LIBS += freetype
   endif
 else
 ifdef USE_X11
@@ -86,6 +88,10 @@ endif
 
 ifneq ($(findstring dll, $(TEC_UNAME)), )
   SRC += cd.rc
+endif
+
+ifneq ($(findstring MacOS, $(TEC_UNAME)), )
+  BUILD_DYLIB=Yes
 endif
 
 LDIR = ../lib/$(TEC_UNAME)

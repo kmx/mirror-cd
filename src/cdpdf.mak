@@ -10,3 +10,7 @@ LIBS = pdflib
 
 USE_CD = YES
 CD = ..
+
+ifneq ($(findstring MacOS, $(TEC_UNAME)), )
+  BUILD_DYLIB=Yes
+endif

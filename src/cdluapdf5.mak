@@ -21,3 +21,9 @@ NO_LUALINK = Yes
 USE_CD = YES
 USE_CDLUA = YES
 CD = ..
+
+ifneq ($(findstring MacOS, $(TEC_UNAME)), )
+  USE_CDLUA:=
+  INCLUDES += ../include
+  LDIR = ../lib/$(TEC_UNAME)
+endif
