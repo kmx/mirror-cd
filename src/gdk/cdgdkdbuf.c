@@ -121,8 +121,7 @@ static int cdactivate(cdCtxCanvas* ctxcanvas)
     if (canvas->stipple) canvas->cxStipple(ctxcanvas, canvas->stipple_w, canvas->stipple_h, canvas->stipple);
     if (canvas->pattern) canvas->cxPattern(ctxcanvas, canvas->pattern_w, canvas->pattern_h, canvas->pattern);
     canvas->cxInteriorStyle(ctxcanvas, canvas->interior_style);
-    if (canvas->native_font[0] == 0) canvas->cxFont(ctxcanvas, canvas->font_type_face, canvas->font_style, canvas->font_size);
-    else canvas->cxNativeFont(ctxcanvas, canvas->native_font);
+    canvas->cxFont(ctxcanvas, canvas->font_type_face, canvas->font_style, canvas->font_size);
 /*    canvas->cxTextAlignment(ctxcanvas, canvas->text_alignment);     */
 /*    canvas->cxTextOrientation(ctxcanvas, canvas->text_orientation); */
     if (canvas->clip_mode == CD_CLIPAREA && canvas->cxClipArea) canvas->cxClipArea(ctxcanvas, canvas->clip_rect.xmin, canvas->clip_rect.xmax, canvas->clip_rect.ymin, canvas->clip_rect.ymax);
