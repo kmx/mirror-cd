@@ -43,7 +43,9 @@ static void cdkillcanvas(cdCtxCanvas *ctxcanvas)
 
   remove(filename);
 
+#if GTK_CHECK_VERSION(2, 6, 0)
   gtk_clipboard_store(clipboard);
+#endif
 }
 
 static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *data)

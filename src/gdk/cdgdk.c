@@ -16,6 +16,10 @@
 #define HATCH_WIDTH  8
 #define HATCH_HEIGHT 8
 
+#ifndef PANGO_VERSION_CHECK
+#define PANGO_VERSION_CHECK(x,y,z) (0)
+#endif
+
 /* 
 ** 6 predefined patterns to be accessed through cdHatch(
    CD_HORIZONTAL | CD_VERTICAL | CD_FDIAGONAL | CD_BDIAGONAL |
@@ -837,7 +841,9 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
     pango_layout_context_changed (ctxcanvas->fontlayout);
 
     pango_layout_get_pixel_extents(ctxcanvas->fontlayout, NULL, &rect);
+#if PANGO_VERSION_CHECK(1,16,0)
     pango_matrix_transform_pixel_rectangle(&ctxcanvas->fontmatrix, &rect);
+#endif
 
     if (ctxcanvas->canvas->text_orientation)
       cdRotatePoint(ctxcanvas->canvas, x, y, ox, oy, &x, &y, sin_angle, cos_angle);
@@ -1569,7 +1575,11 @@ static cdAttribute gc_attrib =
 static char* get_pangoversion_attrib(cdCtxCanvas* ctxcanvas)
 {
   (void)ctxcanvas;
+#if PANGO_VERSION_CHECK(1,16,0)
   return (char*)pango_version_string();
+#else
+  return "1.0";
+#endif
 }
 
 static cdAttribute pangoversion_attrib =
@@ -1597,7 +1607,9 @@ cdCtxCanvas *cdgdkCreateCanvas(cdCanvas* canvas, GdkDrawable* wnd, GdkScreen* sc
   }
 
   ctxcanvas->fontcontext = gdk_pango_context_get();
+#if PANGO_VERSION_CHECK(1,16,0)
   pango_context_set_language(ctxcanvas->fontcontext, pango_language_get_default());
+#endif
 
   ctxcanvas->canvas = canvas;
   canvas->ctxcanvas = ctxcanvas;
