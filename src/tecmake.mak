@@ -753,15 +753,14 @@ endif
 ifdef USE_CD
   CDSUFX := 
   override USE_X11 = Yes
-  USE_CD_NEW := Yes
-  ifdef USE_CD_NEW
-    ifdef USE_GDK
-      ifndef GTK_DEFAULT
-        CDSUFX := gdk
+  ifndef USE_CD_OLD  
+    ifdef GTK_DEFAULT
+      ifdef USE_MOTIF
+        CDSUFX := x11
       endif
     else
-      ifdef GTK_DEFAULT
-        CDSUFX := x11
+      ifdef USE_GTK
+        CDSUFX := gdk
       endif
     endif
   endif
@@ -1091,7 +1090,7 @@ $(TARGETDIR)/$(TARGETAPPNAME) : $(LOHS) $(OBJS) $(EXTRADEPS)
 	$(ECHO)$(LINKER) -o $@ $(OBJS) $(SLIB) $(LFLAGS)
 	@if [ ! -z "$(STRIP)" ]; then \
 	   echo ''; echo 'Tecmake: striping debug information' ;\
-	   $(ECHO)strip $@ ;\
+	   strip $@ ;\
 	 fi
 	@echo ''; echo 'Tecmake: Application ($@) Done.'; echo ''
 
