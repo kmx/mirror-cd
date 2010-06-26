@@ -130,5 +130,7 @@ ifneq ($(findstring dll, $(TEC_UNAME)), )
 endif
 
 ifneq ($(findstring MacOS, $(TEC_UNAME)), )
-  BUILD_DYLIB=Yes
+  ifneq ($(TEC_SYSMINOR), 4)
+    BUILD_DYLIB=Yes
+  endif
 endif

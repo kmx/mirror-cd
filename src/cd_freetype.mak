@@ -42,6 +42,8 @@ ifneq ($(findstring bc5, $(TEC_UNAME)), )
 endif
 
 ifneq ($(findstring MacOS, $(TEC_UNAME)), )
-  BUILD_DYLIB=Yes
+  ifneq ($(TEC_SYSMINOR), 4)
+    BUILD_DYLIB=Yes
+  endif
   DEFINES += DARWIN_NO_CARBON
 endif

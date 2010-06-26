@@ -12,5 +12,7 @@ USE_CD = YES
 CD = ..
 
 ifneq ($(findstring MacOS, $(TEC_UNAME)), )
-  BUILD_DYLIB=Yes
+  ifneq ($(TEC_SYSMINOR), 4)
+    BUILD_DYLIB=Yes
+  endif
 endif
