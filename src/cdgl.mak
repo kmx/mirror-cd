@@ -7,13 +7,18 @@ SRC = drv/cdgl.c
 
 INCLUDES = . sim ftgl freetype2
 LIBS = ftgl
-ifeq ($(findstring Win, $(TEC_SYSNAME)), )
-#  LIBS += iconv
-endif
 
 USE_OPENGL = YES
 USE_CD = YES
 CD = ..
+
+ifneq ($(findstring Win, $(TEC_SYSNAME)), )
+  ifeq ($(findstring dll, $(TEC_UNAME)), )
+    DEFINES += FTGL_LIBRARY_STATIC
+  endif
+else
+#  LIBS += iconv
+endif
 
 ifneq ($(findstring AIX, $(TEC_UNAME)), )
   DEFINES += NO_FONTCONFIG

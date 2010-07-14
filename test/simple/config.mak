@@ -37,8 +37,6 @@ USE_STATIC = Yes
 #IUP = ../../../iup
 #CD = ../..
 
-#USE_IM = Yes
-
 USE_OPENGL = Yes
 ifdef USE_OPENGL
   DEFINES += USE_OPENGL
@@ -50,7 +48,7 @@ ifneq ($(findstring Win, $(TEC_SYSNAME)), )
     LIBS += cdcontextplus gdiplus
   endif
   ifdef USE_OPENGL
-    LIBS += cdgl ftgl
+    LIBS += ftgl cdgl
   endif
 else
   ifdef DBG_DIR
