@@ -398,7 +398,7 @@ static int cdlua5_gettransform(lua_State *L)
 {
   int i;
   double* matrix = cdCanvasGetTransform(cdlua_checkcanvas(L, 1));
-  lua_newtable(L);
+  lua_createtable(L, 6, 0);
   for (i=0; i < 6; i++)
   {
     lua_pushnumber(L, matrix[i]);
@@ -1505,7 +1505,7 @@ static int cdlua5_gettextbounds(lua_State *L)
   int i;
 
   cdCanvasGetTextBounds(cdlua_checkcanvas(L, 1), x, y, s, rect);
-  lua_newtable(L);
+  lua_createtable(L, 8, 0);
   for (i=0; i < 8; i++)
   {
     lua_pushnumber(L, rect[i]);
@@ -1526,7 +1526,7 @@ static int wdlua5_gettextbounds(lua_State *L)
   int i;
 
   wdCanvasGetTextBounds(cdlua_checkcanvas(L, 1), x, y, s, rect);
-  lua_newtable(L);
+  lua_createtable(L, 8, 0);
   for (i=0; i < 8; i++)
   {
     lua_pushnumber(L, rect[i]);
@@ -1631,7 +1631,7 @@ static int cdlua5_vectortexttransform(lua_State *L)
   }
 
   old_matrix = cdCanvasVectorTextTransform(cdlua_checkcanvas(L, 1), matrix);
-  lua_newtable(L);
+  lua_createtable(L, 6, 0);
   for (i=0; i < 6; i++)
   {
     lua_pushnumber(L, old_matrix[i]);
@@ -1746,7 +1746,7 @@ static int cdlua5_getvectortextbounds(lua_State *L)
   int rect[8], i;
 
   cdCanvasGetVectorTextBounds(cdlua_checkcanvas(L, 1), s, x, y, rect);
-  lua_newtable(L);
+  lua_createtable(L, 8, 0);
   for (i=0; i < 8; i++)
   {
     lua_pushnumber(L, rect[i]);
@@ -1767,7 +1767,7 @@ static int wdlua5_getvectortextbounds(lua_State *L)
   int i;
   
   wdCanvasGetVectorTextBounds(cdlua_checkcanvas(L, 1), s, x, y, rect);
-  lua_newtable(L);
+  lua_createtable(L, 8, 0);
   for (i=0; i < 8; i++)
   {
     lua_pushnumber(L, rect[i]);

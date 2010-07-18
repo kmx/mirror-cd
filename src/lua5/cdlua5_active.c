@@ -479,7 +479,7 @@ static int cdlua5_getclippoly(lua_State *L)
   {
     lua_pushnumber(L, n);
 
-    lua_newtable(L);
+    lua_createtable(L, 2*n, 0);
     for (i=0; i < 2*n; i++)
     {
       lua_pushnumber(L, i+1);
@@ -509,7 +509,7 @@ static int wdlua5_getclippoly(lua_State *L)
   {
     lua_pushnumber(L, n);
 
-    lua_newtable(L);
+    lua_createtable(L, 2*n, 0);
     for (i=0; i < 2*n; i++)
     {
       lua_pushnumber(L, i+1);
@@ -1390,7 +1390,7 @@ static int cdlua5_vectortexttransform(lua_State *L)
   }
 
   old_matrix = cdVectorTextTransform(matrix);
-  lua_newtable(L);
+  lua_createtable(L, 6, 0);
   for (i=0; i < 6; i++)
   {
     lua_pushnumber(L, old_matrix[i]);
@@ -1489,7 +1489,7 @@ static int cdlua5_vectortextbounds(lua_State *L)
   int rect[8], i;
 
   cdGetVectorTextBounds(s, x, y, rect);
-  lua_newtable(L);
+  lua_createtable(L, 8, 0);
   for (i=0; i < 8; i++)
   {
     lua_pushnumber(L, rect[i]);
@@ -1510,7 +1510,7 @@ static int wdlua5_vectortextbounds(lua_State *L)
   int i;
   
   wdGetVectorTextBounds(s, x, y, rect);
-  lua_newtable(L);
+  lua_createtable(L, 8, 0);
   for (i=0; i < 8; i++)
   {
     lua_pushnumber(L, rect[i]);
