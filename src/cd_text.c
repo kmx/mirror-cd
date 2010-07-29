@@ -292,9 +292,6 @@ char* cdCanvasNativeFont(cdCanvas* canvas, const char* font)
 
   strcpy(native_font, canvas->native_font);
 
-  if (!font || font[0] == 0)
-    return native_font;
-
   if (font == (char*)CD_QUERY)
   {
     char style[200] = " ";
@@ -310,6 +307,9 @@ char* cdCanvasNativeFont(cdCanvas* canvas, const char* font)
     sprintf(native_font, "%s,%s %d", canvas->font_type_face, style, canvas->font_size);
     return native_font;
   }
+
+  if (!font || font[0] == 0)
+    return native_font;
 
   if (canvas->cxNativeFont)
   {
