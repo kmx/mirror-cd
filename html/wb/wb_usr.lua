@@ -129,6 +129,10 @@ wb_usr.tree =
         },
         { link= "", name= {en= "" } },
         {
+          name= {en= "Building in Linux"},
+          link= "building.html"
+        },
+        {
           name= {en= "Internal Architecture", pt= "Arquitetura Interna"},
           link= "internal.html"
         },
