@@ -2592,12 +2592,16 @@ static void set_aa_attrib(cdCtxCanvas* ctxcanvas, char* data)
     ctxcanvas->graphics->SetInterpolationMode(InterpolationModeBilinear);
     ctxcanvas->graphics->SetSmoothingMode(SmoothingModeAntiAlias);
     if (Is_WinXP_or_WinSrv03())
+      /* Microsoft Windows XP and Windows Server 2003 only: 
+         ClearType rendering is supported only on Windows XP and Windows Server 2003. 
+         Therefore, TextRenderingHintClearTypeGridFit is ignored on other operating systems. */
       ctxcanvas->graphics->SetTextRenderingHint(TextRenderingHintClearTypeGridFit);
     else
       ctxcanvas->graphics->SetTextRenderingHint(TextRenderingHintAntiAliasGridFit);
-/*    ctxcanvas->graphics->SetPixelOffsetMode(PixelOffsetModeHalf);
-  Do NOT set PixelOffsetMode because some graphic objects move their position and size.
-*/
+
+    /* Do NOT set PixelOffsetMode because some graphic objects move their position and size.
+       ctxcanvas->graphics->SetPixelOffsetMode(PixelOffsetModeHalf); */
+
     ctxcanvas->antialias = 1;
   }
 }
