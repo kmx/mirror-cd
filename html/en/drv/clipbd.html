@@ -28,11 +28,12 @@
   varies according to the metafile created. See each metafile's documentation, 
   but remember to exclude parameter <font face="Courier">&quot;filename&quot;.</font></p>
   <p>In the Windows environment, if the string &quot;<font face="Courier">-b</font>&quot; 
-  is present, it means that a <b>Bitmap</b> must be created instead of a 
-  metafile, and, if the string <font face="Courier">&quot;-m&quot;</font> is specified, a
+  is present at the end, it means that a <b>Bitmap</b> must be created instead of a 
+  metafile, and, if the string <font face="Courier">&quot;-m&quot;</font> is 
+	present at the end, a
   <b>CD Metafile</b> will be created. For a <b>Bitmap</b> the remaining string 
-  must contains the bitmap size and optionally its resolution: <em>&quot;-b 
-  widthxheight [resolution]&quot;</em> or in C &quot;<tt><em><strong>%dx%d %g&quot;</strong></em></tt>, 
+  must contains the bitmap size and optionally its resolution: <em>&quot;widthxheight [resolution] 
+	-b&quot;</em> or in C &quot;<tt><em><strong>%dx%d %g -b&quot;</strong></em></tt>, 
   the resolution default is the screen resolution.</p>
   <p>In the X-Windows environment, the Display <font face="Courier">(&quot;%p&quot;)</font> 
   where the data will be stored must be passed as a parameter before the <b>CD 
