@@ -376,6 +376,12 @@ static int cdlua5_transform(lua_State *L)
   double matrix[6];
   int i;
 
+  if (lua_isnil(L, 2))
+  {
+    cdCanvasTransform(cdlua_checkcanvas(L, 1), NULL);
+    return 0;
+  }
+
   if (!lua_istable(L, 2))
     luaL_argerror(L, 2, "invalid matrix, must be a table");
 

@@ -77,7 +77,8 @@ canvas:fOrigin(x, y: number) [in Lua]</pre>
   <p>Allows translating the origin - for instance, to the center of the canvas. 
   The function profits from the architecture of the library to simulate a 
   translation of the origin, which in fact is never actually passed to the 
-  canvas in the respective driver. Default values: (0, 0)</p>
+  canvas in the respective driver. It is not related with WD nor Transformation 
+	Matrix. Default values: (0, 0)</p>
 
 
 </div><div class="function"><pre class="function"><span class="mainFunction">void&nbsp;cdCanvasGetOrigin(cdCanvas* canvas, int *x, int *y); [in C]</span>
