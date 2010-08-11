@@ -139,9 +139,7 @@ static void sUpdateFillBrush(cdCtxCanvas* ctxcanvas)
     {
       // only stipple depends on Foreground and Background Color.
       if (ctxcanvas->canvas->interior_style == CD_STIPPLE)
-      {
         cdstipple(ctxcanvas, ctxcanvas->canvas->stipple_w, ctxcanvas->canvas->stipple_h, ctxcanvas->canvas->stipple);
-      }
       break;
     }
   }
@@ -158,18 +156,17 @@ static long int cdforeground(cdCtxCanvas* ctxcanvas, long int color)
   return color;
 }
 
-static Color sSetAlpha(const Color& c, BYTE alpha)
+static Color sTranspAlpha(const Color& c)
 {
-  return Color(alpha, c.GetRed(), c.GetGreen(), c.GetBlue());
+  return Color(0, c.GetRed(), c.GetGreen(), c.GetBlue());
 }
 
 static long int cdbackground(cdCtxCanvas* ctxcanvas, long int color)
 {
   ctxcanvas->bg = sColor2Windows(color);
 
-  if ((ctxcanvas->canvas->back_opacity == CD_TRANSPARENT) &&
-    (cdAlpha(ctxcanvas->canvas->background) == 255)) 
-    ctxcanvas->bg = sSetAlpha(ctxcanvas->bg, (BYTE)0);
+  if (ctxcanvas->canvas->back_opacity == CD_TRANSPARENT) 
+    ctxcanvas->bg = sTranspAlpha(ctxcanvas->bg);  /* set background as full transparent */
 
   sUpdateFillBrush(ctxcanvas);
 
@@ -181,10 +178,10 @@ static int cdbackopacity(cdCtxCanvas* ctxcanvas, int opacity)
   switch (opacity)
   {
   case CD_TRANSPARENT:
-    ctxcanvas->bg = sSetAlpha(ctxcanvas->bg, (BYTE)0);
+    ctxcanvas->bg = sTranspAlpha(ctxcanvas->bg);  /* set background as full transparent */
     break;
   case CD_OPAQUE:
-    ctxcanvas->bg = sSetAlpha(ctxcanvas->bg, (BYTE)255);
+    ctxcanvas->bg = sColor2Windows(ctxcanvas->canvas->background);
     break;
   }
 
@@ -1619,7 +1616,8 @@ static void cdclear(cdCtxCanvas* ctxcanvas)
   if (ctxcanvas->canvas->clip_mode != CD_CLIPOFF) 
     ctxcanvas->graphics->ResetClip();
   
-  ctxcanvas->graphics->Clear(sSetAlpha(ctxcanvas->bg, (BYTE)255));
+  /* do NOT use "ctxcanvas->bg" here, because it depends on backopacity */
+  ctxcanvas->graphics->Clear(sColor2Windows(ctxcanvas->canvas->background));
   
   if (ctxcanvas->canvas->clip_mode != CD_CLIPOFF) 
     cdclip(ctxcanvas, ctxcanvas->canvas->clip_mode);
@@ -2717,8 +2715,8 @@ cdCtxCanvas *cdwpCreateCanvas(cdCanvas* canvas, Graphics* graphics, int wtype)
 
   set_aa_attrib(ctxcanvas, "1");  // default is ANTIALIAS=1
 
-  ctxcanvas->fg = Color(); // black
-  ctxcanvas->bg = Color(255, 255, 255); // white
+  ctxcanvas->fg = Color(); // black,opaque
+  ctxcanvas->bg = Color(255, 255, 255); // white,opaque => used only for fill
 
   canvas->invert_yaxis = 1;
 

@@ -430,7 +430,8 @@ static void cdclear(cdCtxCanvas* ctxcanvas)
   memset(ctxcanvas->red, cdRed(ctxcanvas->canvas->background), size);
   memset(ctxcanvas->green, cdGreen(ctxcanvas->canvas->background), size);
   memset(ctxcanvas->blue, cdBlue(ctxcanvas->canvas->background), size);
-  if (ctxcanvas->alpha) memset(ctxcanvas->alpha, cdAlpha(ctxcanvas->canvas->background), size);  /* here is the normal alpha coding */
+  if (ctxcanvas->alpha) 
+    memset(ctxcanvas->alpha, cdAlpha(ctxcanvas->canvas->background), size);  /* here is the normal alpha coding */
 }
 
 static void irgPostProcessIntersect(unsigned char* clip, int size)

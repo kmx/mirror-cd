@@ -638,10 +638,11 @@ static long int cdforeground(cdCtxCanvas *ctxcanvas, long int color)
 
 static void cdclear(cdCtxCanvas* ctxcanvas)
 {
-  unsigned char r, g, b;
+  unsigned char r, g, b, a;
   cdDecodeColor(ctxcanvas->canvas->background, &r, &g, &b);
-  glClearColor((GLclampf)((double)r/255.0), (GLclampf)((double)g/255.0), (GLclampf)((double)b/255.0), 0);
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  a = cdDecodeAlpha(ctxcanvas->canvas->background);
+  glClearColor((GLclampf)r/255.0f, (GLclampf)g/255.0f, (GLclampf)b/255.0f, (GLclampf)a/255.0f);
+  glClear(GL_COLOR_BUFFER_BIT);
 }
 
 static void cdfline(cdCtxCanvas *ctxcanvas, double x1, double y1, double x2, double y2)
