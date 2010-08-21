@@ -732,7 +732,7 @@ static void cdrect(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int yma
   }
 
   cdgdkCheckSolidStyle(ctxcanvas, 1);
-  gdk_draw_rectangle(ctxcanvas->wnd, ctxcanvas->gc, FALSE, xmin, ymin, xmax-xmin, ymax-ymin);
+  gdk_draw_rectangle(ctxcanvas->wnd, ctxcanvas->gc, FALSE, xmin, ymin, xmax-xmin, ymax-ymin);  /* outlined rectangle is actually of size w+1,h+1 */
   cdgdkCheckSolidStyle(ctxcanvas, 0);
 }
 
