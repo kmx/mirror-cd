@@ -390,6 +390,8 @@ static void simAddHxx(int *hh, int *hh_count, int x1, int x2)
 
   int i, count = *hh_count;
 
+  assert(count%2==0);
+
   if (x1 > x2)
   {
     int t = x2;
@@ -423,6 +425,8 @@ static void simMergeHxx(int *xx, int *xx_count, int *hh, int hh_count)
 {
   int hh_i;
 
+  assert(hh_count%2==0);
+
   if (*xx_count == 0)
   {
     memcpy(xx, hh, hh_count*sizeof(int));
@@ -444,7 +448,7 @@ int simPolyFindHorizontalIntervals(simLineSegment *segments, int n_seg, int* xx,
   simLineSegment *seg_i;
   int i, hh_count = 0;
   int xx_count = 0;  /* count the number of points in the horizontal line,
-                       each pair will form an horizontal interval */
+                        each pair will form an horizontal interval */
 
   /* for all segments, calculates the intervals to be filled 
      from the intersection with the horizontal line y. */
@@ -481,9 +485,15 @@ int simPolyFindHorizontalIntervals(simLineSegment *segments, int n_seg, int* xx,
         simAddHxx(hh, &hh_count, seg_i_next->x1, seg_i_next->x2);
 
         i++;
-        i_next = (i==n_seg-1)? 0: i+1;
-        seg_i_next = segments + i_next;
+        if (i < n_seg)
+        {
+          i_next = (i==n_seg-1)? 0: i+1;
+          seg_i_next = segments + i_next;
+        }
       }
+
+      if (i == n_seg)
+        break;
 
       /* save the next y, not in the horizontal line */
       if (seg_i_next->y1 == y)
