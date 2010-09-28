@@ -1000,6 +1000,9 @@ void simfLineThin(cdCanvas* canvas, double x1, double y1, double x2, double y2, 
   DeltaX = fabs(x2 - x1);
   DeltaY = fabs(y2 - y1);
 
+  if (DeltaX == 0 && DeltaY == 0) /* p1==p2 */
+    return;
+
   if (DeltaX > 0.0001)
   {
     a = (y1-y2)/(x1-x2);
