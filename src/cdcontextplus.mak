@@ -18,6 +18,10 @@ else
   LIBS = Xrender Xft
   USE_X11 = Yes
   CHECK_XRENDER = Yes
+  
+  ifdef GTK_DEFAULT
+    CD_SUFFIX := x11
+  endif
 
   INCLUDES = . sim drv freetype2 x11
 endif

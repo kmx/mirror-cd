@@ -10,11 +10,15 @@ DEF_FILE = cdluacontextplus5.def
 
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )
   CHECK_GDIPLUS = Yes
+  LIBS = cdcontextplus
 else
-  CHECK_XRENDER = Yes
+  ifdef GTK_DEFAULT
+    CHECK_GTK = Yes
+  else
+    CHECK_XRENDER = Yes
+    LIBS = cdcontextplus
+  endif
 endif
-
-LIBS = cdcontextplus
 
 ifdef USE_LUA52
   LIBNAME := $(LIBNAME)52

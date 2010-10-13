@@ -18,6 +18,10 @@ else
   SRC += cdcaironative_x11.c   
   DEFINES += CAIRO_X11  
   CHECK_GTK = Yes
+  
+  ifdef GTK_DEFAULT
+    CD_SUFFIX := x11
+  endif
 endif
 
 INCLUDES += $(GTK)/include/cairo $(GTK)/include/pango-1.0 $(GTK)/include/glib-2.0 $(GTK)/lib/glib-2.0/include  
