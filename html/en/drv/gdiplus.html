@@ -9,20 +9,21 @@
 
 <body>
 
-<h2>Microsoft Windows Base <em style="font-style: normal">Driver</em> Using GDI+</h2>
+<h2>GDI+ Base <em style="font-style: normal">Driver</em></h2>
 
   <p>This driver represents a base driver for all system-dependent drivers implemented in the Microsoft Windows system, 
   but uses a new API called GDI+. The drivers <b>Clipboard, Native Window</b>, <b>IUP</b>, <b>Image</b>, <b>Printer</b>,
   <b>EMF</b> and <b>Double Buffer</b> were implemented. The driver <b>WMF</b>, and the function <font face="Courier">
   <strong>cdPlay</strong></font> of the <b>Clipboard</b> and <b>EMF</b> drivers were not implemented using GDI+.</p>
+<p>It can be used only as the context plus driver of the GDI based drivers.</p>
   <p>The main motivation for the use of GDI+ was transparency for all the primitives. Beyond that we got other features 
   like anti-aliasing, gradient filling, bezier lines and filled cardinal splines.</p>
   <p>This driver still does not completely replace the GDI Windows base driver, because GDI+ does not have support for 
   XOR. Also the applications need to adapt the rendering of text that is slightly different from GDI. It is know that 
   GDI+ can be slower than GDI in some cases and faster in other cases, Microsoft does not make this clear.</p>
   <p>So we let the programmer to choose what to use. We created the function <font face="Courier"><strong>
-  cdUseContextPlus</strong></font> that allows to activate or to deactivate the use of GDI+ for the available 
-	Windows based drivers. 
+  <a href="../func/init.html#cdUseContextPlus">cdUseContextPlus</a> </strong></font> that allows to activate or to deactivate the use of GDI+ for the 
+	GDI based drivers. 
   This function affects only the <font face="Courier"><strong>cdCreateCanvas</strong></font> function call, once created 
   the canvas will be always a GDI+ canvas. In fact the function affects primary the definitions 
 	<font face="Courier"><strong>CD_NATIVEWINDOW</strong></font>, 
@@ -35,7 +36,7 @@
   <p>Using GDI+ it is allowed to create more that one canvas at the same time for the same Window. And they can co-exist 
   with a standard GDI canvas.</p>
   <p>To enable the use of GDI+ based drivers you must call the initialization function <font face="Courier"><strong>
-  cdInitContextPlus()</strong></font> once and link to the libraries &quot;<strong>cdcontextplus.lib</strong>&quot; and &quot;<strong>gdiplus.lib</strong>&quot;. 
+  <a href="../func/init.html#cdInitContextPlus">cdInitContextPlus</a></strong></font> once and link to the libraries &quot;<strong>cdcontextplus.lib</strong>&quot; and &quot;<strong>gdiplus.lib</strong>&quot;. 
   Also the file &quot;<strong>gdiplus.dll</strong>&quot; must be available in your system. These files already came with Visual 
   C++ 7 and Windows XP. For other compilers or systems you will need to copy the &quot;.lib&quot; file for you libraries area, and 
   you will need to copy the DLL for the Windows\System (Win98/Me) or Windows\System32 (Win2000/NT4-SP6) folder. The 

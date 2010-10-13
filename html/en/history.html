@@ -29,6 +29,15 @@
 <h2>History of Changes</h2>
 <h3>CVS (05/Aug/2010)</h3>
 <ul>
+	<li><strong><span style="color: #FF0000">IMPORTANT:</span></strong> since the previous 
+	version CDLua dynamic libraries in Linux are dependent on GDK, because they 
+	depend on the main library, that now contains the GDK base drivers. i.e. the 
+	X-Win base drivers can NOT be used anymore in dynamic libraries when using 
+	Lua in Linux.</li>
+	<li>
+		<span class="hist_changed">Changed:</span> the Cairo context plus driver 
+		in Lua is now the default library when using &quot;cdluacontextplus&quot; in 
+		Linux.</li>
 	<li>
 		<span class="hist_fixed">Fixed:</span> CD_GL static library for Visual 
 		C++ compilers were incorrectly using FTGL as dynamic library.</li>

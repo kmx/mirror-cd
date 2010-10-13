@@ -1,5 +1,5 @@
 <!doctype HTML PUBLIC "-//IETF//DTD HTML//EN">
-<html>
+<html xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
 
 <head>
 <meta http-equiv="Content-Language" content="en-us">
@@ -23,24 +23,24 @@
   canvas based on an existing system canvas. The parameter <font face="Courier">Data</font> is a pointer to a handle of 
   the canvas. It is system-dependent, having a different meaning in each platform:</p>
   
-    <p><strong>Microsoft Windows</strong>: can be the handle of the Windows window (<font face="Courier">HWND</font>), 
+    <p><strong>GDI and GDI+</strong>: can be the handle of the Windows window (<font face="Courier">HWND</font>), 
     or the handle of a previously created Device Context (<font face="Courier">HDC</font>), or can be a string in the 
     format &quot;<font face="Courier">hdc width height</font>&quot; or, in C, &quot;<font face="Courier">%p %d %d</font>&quot;. 
     To get the entire screen use a NULL data.<br>
-    <strong>X-Windows</strong>: It is a string in the format &quot;<font face="Courier">display window</font>&quot; or, in C, &quot;<font face="Courier"><tt>%p 
-    %lu</tt></font>&quot; (uses the default screen).</p>
+    <strong>X-Windows</strong>: is a string in the format &quot;<font face="Courier">display window</font>&quot; or, in C, &quot;<font face="Courier"><tt>%p 
+    %lu</tt></font>&quot; (uses the default screen).<br>
+	<strong>GDK and Cairo</strong>: is a <font SIZE="3">GdkDrawable* handle.</p>
+</font>
   
-  <p>The given parameters must exists until <font face="Courier"><strong>cdKillCanvas</strong></font> is called. The
+  <p>The given parameters must exists until <font face="Courier"><strong>cdKillCanvas</strong></font> is called. 
+	In Windows, the
   <font face="Courier">HDC</font> is released only if created inside <font face="Courier"><strong>cdCreateCanvas</strong></font> 
   from an <font face="Courier">HWND</font> or when data is NULL.</p>
   <p>Any amount of such canvases may exist simultaneously, but they should not use the same window, except if you are 
   using a GDI canvas and a GDI+ canvas at the same time for the same window.</p>
   
-  <p>In CDLUA, the creation parameter must be a string in X-Windows and a userdata in Microsoft Windows.</p>
-<p>To use this driver in Windows using GDI+ is necessary to call 
-<font face="Courier"><strong>
-  cdUseContextPlus</strong></font><strong><font face="Courier">(1)</font></strong> 
-before creating the canvas.</p>
+  <p>In CDLUA, the creation parameter must be a string in X-Windows and a userdata in 
+	others.</p>
 
 <h3>Exclusive Functions</h3>
 <h4><font face="Courier">void cdGetScreenSize(int *width, int *height, double *width_mm, double *height_mm); [in C]<br>
@@ -60,10 +60,18 @@ before creating the canvas.</p>
 
 <h3>Behavior of Functions</h3>
 
-  <p>This driver is greatly platform-dependent. For further detail, see the <b>Behavior of Functions</b> in each 
-  platform: <a href="win32.html">Microsoft Windows (GDI)</a>, <a href="gdiplus.html">Windows Using GDI+</a>,
-  <a href="xwin.html">X-Windows (XLIB)</a>, <a href="gdk.html">GDK</a>. However, it should be noted that some functions behave differently from the 
-  basic functions of each platform.</p>
+  <p>This driver is very platform-dependent. </p>
+
+  <p>For further detail, see the <b>
+  Behavior of Functions</b> in each base driver: <a href="win32.html">GDI</a>, 
+	<a href="gdk.html">GDK</a> and <a href="xwin.html">X-Win</a>. To use this driver 
+	with a context plus base driver is necessary to call 
+  <font face="Courier"><strong>
+  cdUseContextPlus</strong></font><strong><font face="Courier">(1)</font></strong> 
+  before creating the canvas, see the <a href="../drv/gdiplus.html">GDI+</a>,&nbsp;<a href="../drv/cairo.html">Cairo</a> 
+and <a href="../drv/xrender.html">XRender</a> base drivers.</p>
+<p>However, it should be noted that some functions behave differently from the 
+basic functions of each platform.</p>
 
 <h4>Control</h4>
 <ul>

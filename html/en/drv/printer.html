@@ -13,7 +13,7 @@
 <h2 style="text-align: left">CD_PRINTER - Printer Driver (cdprint.h)</h2>
 
   <p>This driver provides access to a System Default Printer. </p>
-  <p>Currently, it works only in Microsoft Windows platforms, but it is possible 
+  <p>The driver works only with the GDI, GDI+ and Cairo base drivers, but it is possible 
   to use it in other platforms without the risk of compilation error. If you 
   attempt to create a canvas in another platform, the function
   <a href="../func/init.html#cdCreateCanvas">
@@ -32,7 +32,7 @@
   
   <p><font face="Courier">name</font> is an optional document name that will 
   appear in the printer queue. Optionally, <font face="Courier">-d</font> 
-  displays the System Printer dialogue box before starting to print, allowing 
+  displays the system pre-defined printer dialog before starting to print, allowing 
   you to configure the printer's parameters. When using this parameter and the 
   return canvas is NULL, one must assume that the print was canceled by the 
   user.</p>
@@ -45,20 +45,21 @@
   <a href="../func/control.html#cdFlush">
   <font face="Courier"><strong>Flush</strong></font></a> to change to a new 
   page. You can draw first on page 1, then on page 2 and so forth.</p>
-<p>To use this driver in Windows using GDI+ is necessary to call 
-<font face="Courier"><strong>
-  cdUseContextPlus</strong></font><strong><font face="Courier">(1)</font></strong> 
-before creating the canvas.</p>
 
 <h3>Behavior of Functions</h3>
 
-  <p>This driver is greatly platform-dependent. For further detail, see the <b>
-  Behavior of Functions</b> in each platform: <a href="win32.html">Microsoft 
-  Windows (GDI)</a>, <a href="gdiplus.html">Windows Using GDI+</a>,
-  and <a href="cairo.html">Cairo</a> (over GDK). However, it should be noted that 
-  some functions behave differently from the basic functions of each platform.</p>
-  <p>A printer created in Win32s has the same limitations as the
-  <a href="wmf.html">WMF driver</a>. In Windows 95 or NT, it has the same 
+  <p>This driver is very platform-dependent.</p>
+
+  <p>For further detail, see the <b>
+  Behavior of Functions</b> in each base driver: <a href="win32.html">GDI</a>. To use this driver 
+	with a context plus base driver is necessary to call 
+  <font face="Courier"><strong>
+  cdUseContextPlus</strong></font><strong><font face="Courier">(1)</font></strong> 
+  before creating the canvas, see the <a href="../drv/gdiplus.html">GDI+</a> and
+	<a href="../drv/cairo.html">Cairo</a> base drivers.</p>
+<p>However, it should be noted that some functions behave differently from the 
+basic functions of each platform.</p>
+<p>A printer created in Windows has the same 
   limitations as the <a href="emf.html">EMF driver</a>.</p>
 
 <h4>Control</h4>

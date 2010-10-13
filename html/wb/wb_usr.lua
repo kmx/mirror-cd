@@ -1068,7 +1068,7 @@ wb_usr.tree =
               link= "drv/gdk.html"
             },
             {
-              name= {nl= "Win32"},
+              name= {nl= "GDI"},
               link= "drv/win32.html"
             },
             {

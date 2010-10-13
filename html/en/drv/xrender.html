@@ -15,14 +15,15 @@
   <p>This driver represents a basic driver for all system-dependent drivers 
   implemented in the X-Windows system using the XRender extension. The implementation uses the 
 	XRender and Xft API functions.</p>
+<p>It can be used only as the context plus driver of the X-Win based drivers.</p>
   <p>The main motivation for the use of XRender was transparency for all the primitives. Beyond that we got other features 
   like anti-aliasing, gradient filling and transformations.</p>
   <p>This driver still does not completely replace the X-Windows base driver, because 
 	XRender does not have support for 
   XOR and for line styles.</p>
   <p>So we let the programmer to choose what to use. We created the function <font face="Courier"><strong>
-  cdUseContextPlus</strong></font> that allows to activate or to deactivate the use of 
-	X-Render for the available X-Windows based drivers. 
+  <a href="../func/init.html#cdUseContextPlus">cdUseContextPlus</a> </strong></font> that allows to activate or to deactivate the use of 
+	X-Render for the available X-Win based drivers. 
   This function affects only the <font face="Courier"><strong>cdCreateCanvas</strong></font> function call, once created 
   the canvas will be always a XRender canvas. In fact the function affects primary the definitions 
 	<font face="Courier"><strong>CD_NATIVEWINDOW</strong></font>, 
@@ -32,7 +33,7 @@
   <p>Using XRender it is allowed to create more that one canvas at the same time for the same Window. And they can co-exist 
   with a standard X-Windows canvas.</p>
   <p>To enable the use of XRender based drivers you must call the initialization function <font face="Courier"><strong>
-  cdInitContextPlus()</strong></font> once and link to the libraries &quot;<strong>cdcontextplus</strong>&quot;, &quot;<strong>Xrender</strong>&quot and &quot;<strong>Xft</strong>&quot;. 
+  <a href="../func/init.html#cdInitContextPlus">cdInitContextPlus</a></strong></font> once and link to the libraries &quot;<strong>cdcontextplus</strong>&quot;, &quot;<strong>Xrender</strong>&quot and &quot;<strong>Xft</strong>&quot;. 
   Also the libraries &quot;<strong>Xrender</strong>&quot and &quot;<strong>Xft</strong>&quot; 
 	must be installed in your system. The XRender extension must be available in 
 	the X-Windows server for the driver to work.</p>
@@ -42,7 +43,7 @@ IRIX.</p>
   <p>In CDLua it is not necessary any additional initialization, but the 
 	application must still be linked with the <strong>cdcontextplus.lib</strong> 
 	library or a <strong>require&quot;cdluacontextplus&quot;</strong> can be used when 
-	using dynamic libraries.</p>
+	using dynamic libraries. When using require, it is NOT available in Linux.</p>
 
 <h3>Behavior of Functions</h3>
 <h4>Control&nbsp; </h4>
