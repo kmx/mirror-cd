@@ -31,6 +31,7 @@ struct _cdCtxCanvas
   char linestyle[50];
   char pattern[50];
 
+  char* old_locale;
   char* font_weight;
   char* font_style;
   char* font_decoration;
@@ -57,6 +58,12 @@ static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix);
 
 static void cdkillcanvas(cdCtxCanvas* ctxcanvas)
 {
+  if (ctxcanvas->old_locale)
+  {
+    setlocale(LC_NUMERIC, ctxcanvas->old_locale);
+    free(ctxcanvas->old_locale);
+  }
+
   if (ctxcanvas->clip_control)
     fprintf(ctxcanvas->file, "</g>\n");  /* close clipping container */
 
@@ -1234,6 +1241,10 @@ static void cdcreatecanvas(cdCanvas *canvas, void *data)
 
   ctxcanvas = (cdCtxCanvas *)malloc(sizeof(cdCtxCanvas));
   memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
+
+  /* SVN specification states that number must use dot as decimal separator */
+  ctxcanvas->old_locale = cdStrDup(setlocale(LC_NUMERIC, NULL));
+  setlocale(LC_NUMERIC, "English");
 
   ctxcanvas->file = fopen(filename, "w");
   if (!ctxcanvas->file)
