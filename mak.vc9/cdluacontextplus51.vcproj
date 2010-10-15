@@ -89,10 +89,6 @@
 	</References>
 	<Files>
 		<File
-			RelativePath="..\include\cdluacontextplus.h"
-			>
-		</File>
-		<File
 			RelativePath="..\src\lua5\cdluacontextplus5.c"
 			>
 		</File>

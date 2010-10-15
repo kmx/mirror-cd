@@ -20,10 +20,35 @@ static void cdkillcanvas(cdCtxCanvas *ctxcanvas)
 
 int cdactivate(cdCtxCanvas *ctxcanvas)
 {
-  gdk_drawable_get_size(ctxcanvas->drawable, &ctxcanvas->canvas->w, &ctxcanvas->canvas->h);
+  cdCanvas* canvas = ctxcanvas->canvas;
+  int old_w = canvas->w;
+  int old_h = canvas->h;
 
-  ctxcanvas->canvas->w_mm = ((double)ctxcanvas->canvas->w) / ctxcanvas->canvas->xres;
-  ctxcanvas->canvas->h_mm = ((double)ctxcanvas->canvas->h) / ctxcanvas->canvas->yres;
+  gdk_drawable_get_size(ctxcanvas->drawable, &canvas->w, &canvas->h);
+
+  ctxcanvas->canvas->w_mm = ((double)canvas->w) / canvas->xres;
+  ctxcanvas->canvas->h_mm = ((double)canvas->h) / canvas->yres;
+
+  if (old_w != canvas->w || old_h != canvas->h)
+  {
+    cairo_destroy(ctxcanvas->cr);
+    ctxcanvas->cr = gdk_cairo_create(ctxcanvas->drawable);
+
+    ctxcanvas->last_source = -1;
+
+    cairo_save(ctxcanvas->cr);
+    cairo_set_operator(ctxcanvas->cr, CAIRO_OPERATOR_OVER);
+
+    /* update canvas attributes */
+    canvas->cxForeground(ctxcanvas, canvas->foreground);
+    canvas->cxLineStyle(ctxcanvas, canvas->line_style);
+    canvas->cxLineWidth(ctxcanvas, canvas->line_width);
+    canvas->cxLineCap(ctxcanvas, canvas->line_cap);
+    canvas->cxLineJoin(ctxcanvas, canvas->line_join);
+    canvas->cxInteriorStyle(ctxcanvas, canvas->interior_style);
+    if (canvas->clip_mode != CD_CLIPOFF) canvas->cxClip(ctxcanvas, canvas->clip_mode);
+    if (canvas->use_matrix) canvas->cxTransform(ctxcanvas, canvas->matrix);
+  }
 
   return CD_OK;
 }
@@ -34,6 +59,9 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 	cairo_t* cr;
   GdkScreen* screen;
   GdkDrawable* drawable = (GdkDrawable*)data;
+
+  if (!GDK_IS_DRAWABLE(drawable))
+    return;
 
   cr = gdk_cairo_create(drawable);
   if (!cr) 
