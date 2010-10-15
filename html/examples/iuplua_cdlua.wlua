@@ -1,7 +1,7 @@
 require"cdlua"
 require"iuplua"
 require"iupluacd"
-require"cdluacontextplus"
+--require"cdluacontextplus"
 
 cnv = iup.canvas {size = "200x100"}
 
@@ -14,9 +14,9 @@ box = iup.vbox{
 dlg = iup.dialog{box; title="Example IUPLUA/CDLUA"}
 
 function cnv:map_cb()
-  cd.UseContextPlus(true)
+  --cd.UseContextPlus(true)
   canvas = cd.CreateCanvas(cd.IUP, self)
-  cd.UseContextPlus(false)
+  --cd.UseContextPlus(false)
   self.canvas = canvas     -- store the CD canvas in a IUP attribute
 end
 
