@@ -58,12 +58,6 @@ static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix);
 
 static void cdkillcanvas(cdCtxCanvas* ctxcanvas)
 {
-  if (ctxcanvas->old_locale)
-  {
-    setlocale(LC_NUMERIC, ctxcanvas->old_locale);
-    free(ctxcanvas->old_locale);
-  }
-
   if (ctxcanvas->clip_control)
     fprintf(ctxcanvas->file, "</g>\n");  /* close clipping container */
 
@@ -74,6 +68,12 @@ static void cdkillcanvas(cdCtxCanvas* ctxcanvas)
   fprintf(ctxcanvas->file, "</svg>\n");
 
   fclose(ctxcanvas->file);
+
+  if (ctxcanvas->old_locale)
+  {
+    setlocale(LC_NUMERIC, ctxcanvas->old_locale);
+    free(ctxcanvas->old_locale);
+  }
 
   memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
   free(ctxcanvas);

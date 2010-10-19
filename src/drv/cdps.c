@@ -9,6 +9,7 @@
 #include <string.h>
 #include <time.h>
 #include <math.h>
+#include <locale.h>
 
 #include "cd.h"
 #include "cd_private.h"
@@ -64,6 +65,7 @@ struct _cdCtxCanvas
   int level1;            /* if true generates level 1 only function calls */
   int landscape;         /* page orientation */
   int debug;             /* print debug strings in the file */
+  char* old_locale;
 
   float  rotate_angle;
   int    rotate_center_x,
@@ -390,6 +392,12 @@ static void cdkillcanvas(cdCtxCanvas *ctxcanvas)
   fprintf(ctxcanvas->file,"%%%%EOF");
 
   fclose(ctxcanvas->file);
+
+  if (ctxcanvas->old_locale)
+  {
+    setlocale(LC_NUMERIC, ctxcanvas->old_locale);
+    free(ctxcanvas->old_locale);
+  }
 
   memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
   free(ctxcanvas);
@@ -1964,6 +1972,10 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 
   ctxcanvas = (cdCtxCanvas *)malloc(sizeof(cdCtxCanvas));
   memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
+
+  /* SVN specification states that number must use dot as decimal separator */
+  ctxcanvas->old_locale = cdStrDup(setlocale(LC_NUMERIC, NULL));
+  setlocale(LC_NUMERIC, "C");
 
   line += cdGetFileName(line, filename);
   if (filename[0] == 0)
