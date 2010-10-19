@@ -38,7 +38,7 @@
   cdKillCanvas</strong></font></a> is required to <b>close</b> the file properly.</p>
 <p><strong>IMPORTANT:</strong> because the SVG specification states that 
 floating point number must use dots &quot;.&quot; for floating point separators, we set 
-the numeric locale to &quot;English&quot; when the canvas is created, and restore it when 
+the numeric locale to &quot;C&quot; when the canvas is created, and restore it when 
 it is destroyed. But since it uses the global C function <strong>setlocale</strong> 
 if you use other C functions that are locale dependent while the SVG canvas is 
 being used then be aware that they will be affected.</p>

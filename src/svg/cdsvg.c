@@ -1244,7 +1244,7 @@ static void cdcreatecanvas(cdCanvas *canvas, void *data)
 
   /* SVN specification states that number must use dot as decimal separator */
   ctxcanvas->old_locale = cdStrDup(setlocale(LC_NUMERIC, NULL));
-  setlocale(LC_NUMERIC, "English");
+  setlocale(LC_NUMERIC, "C");
 
   ctxcanvas->file = fopen(filename, "w");
   if (!ctxcanvas->file)
