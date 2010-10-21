@@ -20,3 +20,4 @@ Makefile
 *.opt
 *.user
 svg
+simple.svg

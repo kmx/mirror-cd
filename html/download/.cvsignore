@@ -2,3 +2,6 @@ cd.chm
 cd.pdf
 gdiplus.*
 PDFlib-Lite-license.pdf
+install_dev
+install
+config_lua_module
