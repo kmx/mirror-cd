@@ -79,7 +79,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   GtkPrintUnixDialog* dialog = NULL;
   GtkPrinter* printer;
   GtkPrintSettings* settings;
-  GtkPageSetup* page_setup;
+  GtkPageSetup* page_setup = NULL;
   GtkPrintJob* job;
   int show_dialog = 0;
 
@@ -136,7 +136,9 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
     gtk_enumerate_printers((GtkPrinterFunc)print_enum, &printer, NULL, TRUE);
     if (!printer)
       return;
+#if GTK_CHECK_VERSION(2, 13, 0)
     page_setup = gtk_printer_get_default_page_size(printer);
+#endif
     if (!page_setup)
       page_setup = gtk_page_setup_new();  /* ?????? */
 
