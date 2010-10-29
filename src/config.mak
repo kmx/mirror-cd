@@ -81,18 +81,22 @@ ifdef USE_GDK
       ifdef ADD_CAIRO
         SRC += cairo/cdcairoprn_unix.c
       endif
-      INCLUDES += /usr/include/gtk-unix-print-2.0
+      INCLUDES += $(GTK_BASE)/include/gtk-unix-print-2.0
     endif
     LIBS += freetype
   endif
 else
-ifdef USE_X11
-  SRC += $(SRCX11) $(SRCNULL)
-  LIBS = freetype
-else
-  SRC += $(SRCWIN32)
-  LIBS = freetype6
-endif
+  ifdef USE_X11
+    SRC += $(SRCX11) $(SRCNULL)
+    LIBS = freetype
+  else
+    SRC += $(SRCWIN32)
+    ifneq ($(findstring cygw, $(TEC_UNAME)), )
+      LIBS = freetype-6
+    else
+      LIBS = freetype6
+    endif
+  endif
 endif
 
 ifneq ($(findstring dll, $(TEC_UNAME)), )

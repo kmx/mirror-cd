@@ -1,9 +1,11 @@
 
-.PHONY: do_all cd_freetype cd cdx11 cdgdk cd_pdflib cdpdf cdgl cdcontextplus cdcairo cdlua3 cdluapdf3 cdluagl3 cdlua5 cdluapdf5 cdluagl5 cdluacontextplus5 cdluacairo5 cdluaim5
-do_all: cd_freetype cd cd_pdflib cdpdf cdgl cdlua5 cdluapdf5 cdluagl5 cdluaim5
+.PHONY: do_all cd_freetype cd_ftgl cd cdx11 cdgdk cd_pdflib cdpdf cdgl cdcontextplus cdcairo cdlua3 cdluapdf3 cdluagl3 cdlua5 cdluapdf5 cdluagl5 cdluacontextplus5 cdluacairo5 cdluaim5
+do_all: cd_freetype cd_ftgl cd cd_pdflib cdpdf cdgl cdlua5 cdluapdf5 cdluagl5 cdluaim5
 
 cd_freetype:
 	@$(MAKE) --no-print-directory -f tecmake.mak MF=cd_freetype
+cd_ftgl:
+	@$(MAKE) --no-print-directory -f tecmake.mak MF=cd_ftgl
 cd:
 	@$(MAKE) --no-print-directory -f tecmake.mak
 cdx11:
