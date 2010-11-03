@@ -117,7 +117,8 @@ void cdcairoKillCanvas(cdCtxCanvas *ctxcanvas)
   if (ctxcanvas->strLastConvertUTF8)
     g_free(ctxcanvas->strLastConvertUTF8);
 
-  cairo_destroy(ctxcanvas->cr);
+  if (ctxcanvas->cr)
+    cairo_destroy(ctxcanvas->cr);
 
   memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
   free(ctxcanvas);
@@ -213,7 +214,7 @@ static int cdclip(cdCtxCanvas *ctxcanvas, int mode)
 
 #define CD_ALPHAPRE(_src, _alpha) (((_src)*(_alpha))/255)
 
-static unsigned long sEncodeRGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
+static unsigned int sEncodeRGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 {
   /* Pre-multiplied alpha */
   if (a != 255)
@@ -223,23 +224,32 @@ static unsigned long sEncodeRGBA(unsigned char r, unsigned char g, unsigned char
     b = CD_ALPHAPRE(b, a);
   }
 
-  return (((unsigned long)a) << 24) |
-         (((unsigned long)r) << 16) |
-         (((unsigned long)g) <<  8) |
-         (((unsigned long)b) <<  0);
+  return (((unsigned int)a) << 24) |
+         (((unsigned int)r) << 16) |
+         (((unsigned int)g) <<  8) |
+         (((unsigned int)b) <<  0);
 }
 
 static void make_pattern(cdCtxCanvas *ctxcanvas, int n, int m, void* userdata, int (*data2rgb)(cdCtxCanvas *ctxcanvas, int n, int i, int j, void* userdata, unsigned char*r, unsigned char*g, unsigned char*b, unsigned char*a))
 {
-  int i, j, offset, ret;
+  int i, j, offset, ret, stride;
   unsigned char r, g, b, a;
   cairo_surface_t* pattern_surface;
-  unsigned long* data;
+  unsigned int* data;
 
+  /* CAIRO_FORMAT_ARGB32 each pixel is a 32-bit quantity, with alpha in the upper 8 bits, then red, then green, then blue. 
+     The 32-bit quantities are stored native-endian. 
+     Pre-multiplied alpha is used. (That is, 50% transparent red is 0x80800000, not 0x80ff0000.) */
   pattern_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, n, m);
+  if (cairo_surface_status(pattern_surface) != CAIRO_STATUS_SUCCESS)
+  {
+    cairo_surface_destroy(pattern_surface);
+    return;
+  }
 
-  data = (unsigned long*)cairo_image_surface_get_data(pattern_surface);
-  offset = cairo_image_surface_get_stride(pattern_surface)/4 - n;
+  data = (unsigned int*)cairo_image_surface_get_data(pattern_surface);
+  stride = cairo_image_surface_get_stride(pattern_surface);
+  offset = stride/4 - n;
 
   for (j = 0; j < m; j++)
   {
@@ -284,7 +294,7 @@ static int long2rgb(cdCtxCanvas *ctxcanvas, int n, int i, int j, void* data, uns
   return 1;
 }
 
-static void cdpattern(cdCtxCanvas *ctxcanvas, int n, int m, const long int *pattern)
+static void cdpattern(cdCtxCanvas *ctxcanvas, int n, int m, const long *pattern)
 {
   make_pattern(ctxcanvas, n, m, (void*)pattern, long2rgb);
   cairo_set_source(ctxcanvas->cr, ctxcanvas->pattern);
@@ -572,7 +582,7 @@ static void cdgetfontdim(cdCtxCanvas *ctxcanvas, int *max_width, int *height, in
   pango_font_metrics_unref(metrics); 
 }
 
-static long int cdforeground(cdCtxCanvas *ctxcanvas, long int color)
+static long cdforeground(cdCtxCanvas *ctxcanvas, long color)
 {
   if (ctxcanvas->solid)
     cairo_pattern_destroy(ctxcanvas->solid);
@@ -1288,8 +1298,8 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 
 static void cdgetimagergb(cdCtxCanvas *ctxcanvas, unsigned char *r, unsigned char *g, unsigned char *b, int x, int y, int w, int h)
 {
-  int i, j, pos, offset;
-  unsigned long* data;
+  int i, j, pos, offset, stride;
+  unsigned int* data;
   cairo_surface_t* image_surface;
   cairo_t* cr;
 
@@ -1304,7 +1314,15 @@ static void cdgetimagergb(cdCtxCanvas *ctxcanvas, unsigned char *r, unsigned cha
   /* y is the bottom-left of the image in CD, must be at upper-left */
   y -= h-1;
 
+  /* CAIRO_FORMAT_RGB24	each pixel is a 32-bit quantity, with the upper 8 bits unused. 
+     Red, Green, and Blue are stored in the remaining 24 bits in that order. */
   image_surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, w, h);
+  if (cairo_surface_status(image_surface) != CAIRO_STATUS_SUCCESS)
+  {
+    cairo_surface_destroy(image_surface);
+    return;
+  }
+
   cr = cairo_create(image_surface);
 
   /* creates a pattern from the canvas and sets it as source in the image. */
@@ -1314,8 +1332,9 @@ static void cdgetimagergb(cdCtxCanvas *ctxcanvas, unsigned char *r, unsigned cha
   cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
   cairo_paint(cr);  /* paints the current source everywhere within the current clip region. */
 
-  data = (unsigned long*)cairo_image_surface_get_data(image_surface);
-  offset = cairo_image_surface_get_stride(image_surface)/4 - w;
+  data = (unsigned int*)cairo_image_surface_get_data(image_surface);
+  stride = cairo_image_surface_get_stride(image_surface);
+  offset = stride/4 - w;
 
   for (i=0; i<h; i++)
   {
@@ -1351,8 +1370,8 @@ static void sFixImageY(cdCanvas* canvas, int *topdown, int *y, int h)
 
 static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
-  int i, j, rw, rh, pos, offset, topdown;
-  unsigned long* data;
+  int i, j, rw, rh, pos, offset, topdown, stride;
+  unsigned int* data;
   cairo_surface_t* image_surface;
 
   if (xmin<0 || ymin<0 || xmax-xmin+1>iw || ymax-ymin+1>ih) return;
@@ -1360,10 +1379,18 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   rw = xmax-xmin+1;
   rh = ymax-ymin+1;
 
+  /* CAIRO_FORMAT_RGB24	each pixel is a 32-bit quantity, with the upper 8 bits unused. 
+     Red, Green, and Blue are stored in the remaining 24 bits in that order. */
   image_surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, rw, rh);
+  if (cairo_surface_status(image_surface) != CAIRO_STATUS_SUCCESS)
+  {
+    cairo_surface_destroy(image_surface);
+    return;
+  }
 
-  data = (unsigned long*)cairo_image_surface_get_data(image_surface);
-  offset = cairo_image_surface_get_stride(image_surface)/4 - rw;
+  data = (unsigned int*)cairo_image_surface_get_data(image_surface);
+  stride = cairo_image_surface_get_stride(image_surface);
+  offset = stride/4 - rw;
 
   sFixImageY(ctxcanvas->canvas, &topdown, &y, h);
 
@@ -1404,8 +1431,8 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 
 static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
-  int i, j, rw, rh, pos, offset, topdown;
-  unsigned long* data;
+  int i, j, rw, rh, pos, offset, topdown, stride;
+  unsigned int* data;
   cairo_surface_t* image_surface;
 
   if (xmin<0 || ymin<0 || xmax-xmin+1>iw || ymax-ymin+1>ih) return;
@@ -1413,10 +1440,19 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
   rw = xmax-xmin+1;
   rh = ymax-ymin+1;
 
+  /* CAIRO_FORMAT_ARGB32 each pixel is a 32-bit quantity, with alpha in the upper 8 bits, then red, then green, then blue. 
+     The 32-bit quantities are stored native-endian. 
+     Pre-multiplied alpha is used. (That is, 50% transparent red is 0x80800000, not 0x80ff0000.) */
   image_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, rw, rh);
+  if (cairo_surface_status(image_surface) != CAIRO_STATUS_SUCCESS)
+  {
+    cairo_surface_destroy(image_surface);
+    return;
+  }
 
-  data = (unsigned long*)cairo_image_surface_get_data(image_surface);
-  offset = cairo_image_surface_get_stride(image_surface)/4 - rw;
+  data = (unsigned int*)cairo_image_surface_get_data(image_surface);
+  stride = cairo_image_surface_get_stride(image_surface);
+  offset = stride/4 - rw;
 
   sFixImageY(ctxcanvas->canvas, &topdown, &y, h);
 
@@ -1469,10 +1505,11 @@ static int sCalcPalSize(int size, const unsigned char *index)
   return pal_size;
 }
 
-static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *index, const long int *colors, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
+static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *index, const long *colors, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
-  int i, j, rw, rh, pos, offset, pal_size, topdown;
-  unsigned long* data, cairo_colors[256], c;
+  int i, j, rw, rh, pos, offset, pal_size, topdown, stride;
+  unsigned int* data, cairo_colors[256];
+  long c;
   cairo_surface_t* image_surface;
 
   if (xmin<0 || ymin<0 || xmax-xmin+1>iw || ymax-ymin+1>ih) return;
@@ -1480,10 +1517,18 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   rw = xmax-xmin+1;
   rh = ymax-ymin+1;
 
+  /* CAIRO_FORMAT_RGB24	each pixel is a 32-bit quantity, with the upper 8 bits unused. 
+     Red, Green, and Blue are stored in the remaining 24 bits in that order. */
   image_surface = cairo_image_surface_create(CAIRO_FORMAT_RGB24, rw, rh);
+  if (cairo_surface_status(image_surface) != CAIRO_STATUS_SUCCESS)
+  {
+    cairo_surface_destroy(image_surface);
+    return;
+  }
 
-  data = (unsigned long*)cairo_image_surface_get_data(image_surface);
-  offset = cairo_image_surface_get_stride(image_surface)/4 - rw;
+  data = (unsigned int*)cairo_image_surface_get_data(image_surface);
+  stride = cairo_image_surface_get_stride(image_surface);
+  offset = stride/4 - rw;
 
   pal_size = sCalcPalSize(iw*ih, index);
   for (i=0; i<pal_size; i++)
@@ -1529,7 +1574,7 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   cairo_restore (ctxcanvas->cr);
 }
 
-static void cdpixel(cdCtxCanvas *ctxcanvas, int x, int y, long int color)
+static void cdpixel(cdCtxCanvas *ctxcanvas, int x, int y, long color)
 {
   cairo_pattern_t* old_source = cairo_get_source(ctxcanvas->cr);
   cairo_set_source_rgba(ctxcanvas->cr, cdCairoGetRed(color), cdCairoGetGreen(color), cdCairoGetBlue(color), cdCairoGetAlpha(color));

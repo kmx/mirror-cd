@@ -114,35 +114,14 @@ static int cdactivate(cdCtxCanvas *ctxcanvas)
     }
 
     /* remove the old image and canvas */
-    cdKillImage(old_image_dbuffer);
-    cdwKillCanvas(old_ctxcanvas);
+    cdwKillCanvas(old_ctxcanvas);  /* ctxcanvas e ctxcanvas->hDC released in each driver */
+    cdKillImage(old_image_dbuffer); /* the ctxcanvas->hDC is released here, so do it after the cdwKillCanvas */
     free(old_ctxcanvas);
 
     ctxcanvas = canvas->ctxcanvas;
 
     /* update canvas attributes */
-    canvas->cxBackground(ctxcanvas, canvas->background);
-    canvas->cxForeground(ctxcanvas, canvas->foreground);
-    canvas->cxBackOpacity(ctxcanvas, canvas->back_opacity);
-    canvas->cxWriteMode(ctxcanvas, canvas->write_mode);
-    canvas->cxLineStyle(ctxcanvas, canvas->line_style);
-    canvas->cxLineWidth(ctxcanvas, canvas->line_width);
-    canvas->cxLineCap(ctxcanvas, canvas->line_cap);
-    canvas->cxLineJoin(ctxcanvas, canvas->line_join);
-    canvas->cxHatch(ctxcanvas, canvas->hatch_style);
-    if (canvas->stipple) canvas->cxStipple(ctxcanvas, canvas->stipple_w, canvas->stipple_h, canvas->stipple);
-    if (canvas->pattern) canvas->cxPattern(ctxcanvas, canvas->pattern_w, canvas->pattern_h, canvas->pattern);
-    canvas->cxInteriorStyle(ctxcanvas, canvas->interior_style);
-    if (canvas->native_font[0] == 0) canvas->cxFont(ctxcanvas, canvas->font_type_face, canvas->font_style, canvas->font_size);
-    else canvas->cxNativeFont(ctxcanvas, canvas->native_font);
-    canvas->cxTextAlignment(ctxcanvas, canvas->text_alignment);
-    canvas->cxTextOrientation(ctxcanvas, canvas->text_orientation);
-    if (canvas->use_matrix && canvas->cxTransform) canvas->cxTransform(ctxcanvas, canvas->matrix);
-    if (canvas->clip_mode == CD_CLIPAREA && canvas->cxClipArea) canvas->cxClipArea(ctxcanvas, canvas->clip_rect.xmin, canvas->clip_rect.xmax, canvas->clip_rect.ymin, canvas->clip_rect.ymax);
-/*    if (canvas->clip_mode == CD_CLIPAREA && canvas->cxFClipArea) canvas->cxFClipArea(ctxcanvas, canvas->clip_frect.xmin, canvas->clip_frect.xmax, canvas->clip_frect.ymin, canvas->clip_frect.ymax); */
-    if (canvas->clip_mode == CD_CLIPPOLYGON && canvas->clip_poly) canvas->cxPoly(ctxcanvas, CD_CLIP, canvas->clip_poly, canvas->clip_poly_n);
-/*    if (canvas->clip_mode == CD_CLIPPOLYGON && canvas->clip_fpoly) canvas->cxFPoly(ctxcanvas, CD_CLIP, canvas->clip_fpoly, canvas->clip_poly_n); */
-    if (canvas->clip_mode != CD_CLIPOFF) canvas->cxClip(ctxcanvas, canvas->clip_mode);
+    cdUpdateAttributes(canvas);
   }
 
   return CD_OK;

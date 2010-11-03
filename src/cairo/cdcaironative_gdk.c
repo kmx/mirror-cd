@@ -31,6 +31,7 @@ int cdactivate(cdCtxCanvas *ctxcanvas)
 
   if (old_w != canvas->w || old_h != canvas->h)
   {
+    /* Re-create the context so internal size is updated. */
     cairo_destroy(ctxcanvas->cr);
     ctxcanvas->cr = gdk_cairo_create(ctxcanvas->drawable);
 

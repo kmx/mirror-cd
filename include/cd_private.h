@@ -244,6 +244,7 @@ int cdBaseDriver(void);
 /* attributes  */
 /***************/
 void cdRegisterAttribute(cdCanvas* canvas, cdAttribute* attrib);
+void cdUpdateAttributes(cdCanvas* canvas);
 
 /***************/
 /* vector font */

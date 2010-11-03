@@ -109,26 +109,7 @@ static int cdactivate(cdCtxCanvas* ctxcanvas)
     ctxcanvas = canvas->ctxcanvas;
 
     /* update canvas attributes */
-    canvas->cxBackground(ctxcanvas, canvas->background);
-    canvas->cxForeground(ctxcanvas, canvas->foreground);
-    canvas->cxBackOpacity(ctxcanvas, canvas->back_opacity);
-    canvas->cxWriteMode(ctxcanvas, canvas->write_mode);
-    canvas->cxLineStyle(ctxcanvas, canvas->line_style);
-    canvas->cxLineWidth(ctxcanvas, canvas->line_width);
-    canvas->cxLineCap(ctxcanvas, canvas->line_cap);
-    canvas->cxLineJoin(ctxcanvas, canvas->line_join);
-    canvas->cxHatch(ctxcanvas, canvas->hatch_style);
-    if (canvas->stipple) canvas->cxStipple(ctxcanvas, canvas->stipple_w, canvas->stipple_h, canvas->stipple);
-    if (canvas->pattern) canvas->cxPattern(ctxcanvas, canvas->pattern_w, canvas->pattern_h, canvas->pattern);
-    canvas->cxInteriorStyle(ctxcanvas, canvas->interior_style);
-    canvas->cxFont(ctxcanvas, canvas->font_type_face, canvas->font_style, canvas->font_size);
-/*    canvas->cxTextAlignment(ctxcanvas, canvas->text_alignment);     */
-/*    canvas->cxTextOrientation(ctxcanvas, canvas->text_orientation); */
-    if (canvas->clip_mode == CD_CLIPAREA && canvas->cxClipArea) canvas->cxClipArea(ctxcanvas, canvas->clip_rect.xmin, canvas->clip_rect.xmax, canvas->clip_rect.ymin, canvas->clip_rect.ymax);
-/*    if (canvas->clip_mode == CD_CLIPAREA && canvas->cxFClipArea) canvas->cxFClipArea(ctxcanvas, canvas->clip_frect.xmin, canvas->clip_frect.xmax, canvas->clip_frect.ymin, canvas->clip_frect.ymax); */
-    if (canvas->clip_mode == CD_CLIPPOLYGON && canvas->clip_poly) canvas->cxPoly(ctxcanvas, CD_CLIP, canvas->clip_poly, canvas->clip_poly_n);
-/*    if (canvas->clip_mode == CD_CLIPPOLYGON && canvas->clip_fpoly) canvas->cxFPoly(ctxcanvas, CD_CLIP, canvas->clip_fpoly, canvas->clip_poly_n); */
-    if (canvas->clip_mode != CD_CLIPOFF) canvas->cxClip(ctxcanvas, canvas->clip_mode);
+    cdUpdateAttributes(canvas);
   }
 
   return CD_OK;

@@ -93,23 +93,39 @@ static void cd_setdefaultattrib(cdCanvas* canvas)
   /* o resto recebeu zero no memset */
 }
 
-static void cd_updatedefaultattrib(cdCanvas* canvas)
+void cdUpdateAttributes(cdCanvas* canvas)
 {
-  cdCanvasActivate(canvas);
+  cdCtxCanvas* ctxcanvas = canvas->ctxcanvas;
 
-  if (canvas->cxBackground) canvas->cxBackground(canvas->ctxcanvas, canvas->background);
-  if (canvas->cxForeground) canvas->cxForeground(canvas->ctxcanvas, canvas->foreground);
-  if (canvas->cxBackOpacity) canvas->cxBackOpacity(canvas->ctxcanvas, canvas->back_opacity);
-  if (canvas->cxWriteMode) canvas->cxWriteMode(canvas->ctxcanvas, canvas->write_mode);
-  if (canvas->cxLineStyle) canvas->cxLineStyle(canvas->ctxcanvas, canvas->line_style);
-  if (canvas->cxLineWidth) canvas->cxLineWidth(canvas->ctxcanvas, canvas->line_width);
-  if (canvas->cxLineCap) canvas->cxLineCap(canvas->ctxcanvas, canvas->line_cap);
-  if (canvas->cxLineJoin) canvas->cxLineJoin(canvas->ctxcanvas, canvas->line_join);
-  if (canvas->cxHatch) canvas->cxHatch(canvas->ctxcanvas, canvas->hatch_style);
-  if (canvas->cxInteriorStyle) canvas->cxInteriorStyle(canvas->ctxcanvas, canvas->interior_style);
-  if (canvas->cxFont) canvas->cxFont(canvas->ctxcanvas, canvas->font_type_face, canvas->font_style, canvas->font_size);
-  if (canvas->cxTextAlignment) canvas->cxTextAlignment(canvas->ctxcanvas, canvas->text_alignment);
-  if (canvas->cxTextOrientation) canvas->cxTextOrientation(canvas->ctxcanvas, canvas->text_orientation);
+  if (canvas->cxBackground) canvas->cxBackground(ctxcanvas, canvas->background);
+  if (canvas->cxForeground) canvas->cxForeground(ctxcanvas, canvas->foreground);
+  if (canvas->cxBackOpacity) canvas->cxBackOpacity(ctxcanvas, canvas->back_opacity);
+  if (canvas->cxWriteMode) canvas->cxWriteMode(ctxcanvas, canvas->write_mode);
+
+  if (canvas->cxLineStyle) canvas->cxLineStyle(ctxcanvas, canvas->line_style);
+  if (canvas->cxLineWidth) canvas->cxLineWidth(ctxcanvas, canvas->line_width);
+  if (canvas->cxLineCap) canvas->cxLineCap(ctxcanvas, canvas->line_cap);
+  if (canvas->cxLineJoin) canvas->cxLineJoin(ctxcanvas, canvas->line_join);
+
+  if (canvas->cxHatch) canvas->cxHatch(ctxcanvas, canvas->hatch_style);
+  if (canvas->stipple && canvas->cxStipple) canvas->cxStipple(ctxcanvas, canvas->stipple_w, canvas->stipple_h, canvas->stipple);
+  if (canvas->pattern && canvas->cxPattern) canvas->cxPattern(ctxcanvas, canvas->pattern_w, canvas->pattern_h, canvas->pattern);
+  if (canvas->cxInteriorStyle) canvas->cxInteriorStyle(ctxcanvas, canvas->interior_style);
+
+  if (canvas->native_font[0] && canvas->cxNativeFont)
+    canvas->cxNativeFont(ctxcanvas, canvas->native_font);
+  else if (canvas->cxFont) 
+    canvas->cxFont(ctxcanvas, canvas->font_type_face, canvas->font_style, canvas->font_size);
+  if (canvas->cxTextAlignment) canvas->cxTextAlignment(ctxcanvas, canvas->text_alignment);
+  if (canvas->cxTextOrientation) canvas->cxTextOrientation(ctxcanvas, canvas->text_orientation);
+
+  if (canvas->use_matrix && canvas->cxTransform) canvas->cxTransform(ctxcanvas, canvas->matrix);
+
+  if (canvas->clip_mode == CD_CLIPAREA && canvas->cxClipArea) canvas->cxClipArea(ctxcanvas, canvas->clip_rect.xmin, canvas->clip_rect.xmax, canvas->clip_rect.ymin, canvas->clip_rect.ymax);
+  if (canvas->clip_mode == CD_CLIPAREA && canvas->cxFClipArea) canvas->cxFClipArea(ctxcanvas, canvas->clip_frect.xmin, canvas->clip_frect.xmax, canvas->clip_frect.ymin, canvas->clip_frect.ymax);
+  if (canvas->clip_mode == CD_CLIPPOLYGON && canvas->clip_poly) canvas->cxPoly(ctxcanvas, CD_CLIP, canvas->clip_poly, canvas->clip_poly_n);
+  if (canvas->clip_mode == CD_CLIPPOLYGON && canvas->clip_fpoly) canvas->cxFPoly(ctxcanvas, CD_CLIP, canvas->clip_fpoly, canvas->clip_poly_n);
+  if (canvas->clip_mode != CD_CLIPOFF && canvas->cxClip) canvas->cxClip(ctxcanvas, canvas->clip_mode);
 }
 
 cdCanvas* cdCreateCanvasf(cdContext *context, const char* format, ...)
@@ -172,7 +188,8 @@ cdCanvas *cdCreateCanvas(cdContext* context, void *data_str)
   context->cxInitTable(canvas);
 
   /* update the default atributes, must be after InitTable */
-  cd_updatedefaultattrib(canvas);
+  cdCanvasActivate(canvas);
+  cdUpdateAttributes(canvas);
 
   /* must be after creating the canvas, so that we know canvas width and height */
   canvas->clip_rect.xmax = canvas->w-1;

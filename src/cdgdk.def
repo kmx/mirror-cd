@@ -49,6 +49,7 @@ EXPORTS
   cdSetfAttribute
   cdGetAttribute
   cdRegisterAttribute
+  cdUpdateAttributes
   cdReleaseState
 
   cdRegisterCallback
