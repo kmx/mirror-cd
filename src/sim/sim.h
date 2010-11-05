@@ -40,7 +40,7 @@ typedef struct _simLineSegment
   int x1, y1;   /* always y1 < y2 */
   int x2, y2;   /* (x2,y2) is not included in the segment to avoid duplicated intersections */
   int x;        /* incremental x from x2 to x1 */
-  int DeltaX, DeltaY, XDir;
+  int DeltaX, DeltaY, XDir, Swap;
   unsigned short ErrorInc, ErrorAcc;
 } simLineSegment;
 

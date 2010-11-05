@@ -86,7 +86,10 @@ int simAddSegment(simLineSegment* segment, int x1, int y1, int x2, int y2, int *
   {
     _cdSwapInt(y1, y2);
     _cdSwapInt(x1, x2);
+    segment->Swap = 1;
   }
+  else
+    segment->Swap = 0;
 
   segment->x1 = x1;
   segment->y1 = y1;
@@ -473,18 +476,13 @@ int simPolyFindHorizontalIntervals(simLineSegment *segments, int n_seg, int* xx,
 
       simAddHxx(hh, &hh_count, seg_i->x1, seg_i->x2);
 
-      /* save the previous y, not in the horizontal line */
-      if (seg_i_prev->y1 == y)
-        prev_y = seg_i_prev->y2;
-      else
-        prev_y = seg_i_prev->y1;
-
       /* include horizontal segments that are in a sequence */
       while (seg_i_next->y1 == seg_i_next->y2 && i < n_seg)
       {
         simAddHxx(hh, &hh_count, seg_i_next->x1, seg_i_next->x2);
 
         i++;
+
         if (i < n_seg)
         {
           i_next = (i==n_seg-1)? 0: i+1;
@@ -494,6 +492,12 @@ int simPolyFindHorizontalIntervals(simLineSegment *segments, int n_seg, int* xx,
 
       if (i == n_seg)
         break;
+
+      /* save the previous y, not in the horizontal line */
+      if (seg_i_prev->y1 == y)
+        prev_y = seg_i_prev->y2;
+      else
+        prev_y = seg_i_prev->y1;
 
       /* save the next y, not in the horizontal line */
       if (seg_i_next->y1 == y)
@@ -533,8 +537,9 @@ int simPolyFindHorizontalIntervals(simLineSegment *segments, int n_seg, int* xx,
       /* Normally do nothing, because this point is duplicated in another segment,    
          i.e only save the intersection point for (y2) if not handled by (y1) of another segment.   
          The exception is the top-corner points (^). */
-      if ((seg_i_next->y2 == y && seg_i_next->x2 == seg_i->x2 && seg_i_next->y1 != y) || 
-          (seg_i_prev->y2 == y && seg_i_prev->x2 == seg_i->x2 && seg_i_prev->y1 != y))
+      /* first find if p2 is connected to next or previous */
+      if ((seg_i_next->Swap && seg_i_next->y2 == y && seg_i_next->x2 == seg_i->x2 && seg_i_next->y1 != y) || 
+          (!seg_i_prev->Swap && seg_i_prev->y2 == y && seg_i_prev->x2 == seg_i->x2 && seg_i_prev->y1 != y))
       {
         xx[xx_count++] = seg_i->x2;     /* save the intersection point */
       }
@@ -626,7 +631,7 @@ void simPolyFill(cdSimulation* simulation, cdPoint* poly, int n)
       simLineIntervallAdd(line_il, xx[i], xx[i+1]);
 
       if ((fill_mode == CD_WINDING) &&                     /* NOT EVENODD */
-          ((i+2 < xx_count) && (xx[i+1] < xx[i+2])) && /* avoid point intervals */
+          ((i+2 < xx_count) && (xx[i+1] < xx[i+2])) && /* avoid single point intervals */
            simIsPointInPolyWind(poly, n, (xx[i+1]+xx[i+2])/2, y)) /* the next interval is inside the polygon */
       {
         simFillHorizLine(simulation, xx[i+1], y, xx[i+2]);
@@ -669,6 +674,11 @@ void simPolyFill(cdSimulation* simulation, cdPoint* poly, int n)
     _canvas->cxPixel(_canvas->ctxcanvas, _x1, _y1, _fgcolor);   \
 }
 
+static double myhypot ( double x, double y )
+{
+ return sqrt ( x*x + y*y );
+}
+
 void simLineThick(cdCanvas* canvas, int x1, int y1, int x2, int y2)
 {
   const int interior = canvas->interior_style;
@@ -678,7 +688,7 @@ void simLineThick(cdCanvas* canvas, int x1, int y1, int x2, int y2)
   const int dx = x2-x1;
   const int dy = y2-y1;
 
-  const double len = hypot(dx,dy);
+  const double len = myhypot(dx,dy);
 
   const double dnx = dx/len;
   const double dny = dy/len;
@@ -732,7 +742,7 @@ void simfLineThick(cdCanvas* canvas, double x1, double y1, double x2, double y2)
   const double dx = x2-x1;
   const double dy = y2-y1;
 
-  const double len = hypot(dx,dy);
+  const double len = myhypot(dx,dy);
 
   const double dnx = dx/len;
   const double dny = dy/len;
