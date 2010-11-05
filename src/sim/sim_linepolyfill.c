@@ -538,8 +538,8 @@ int simPolyFindHorizontalIntervals(simLineSegment *segments, int n_seg, int* xx,
          i.e only save the intersection point for (y2) if not handled by (y1) of another segment.   
          The exception is the top-corner points (^). */
       /* first find if p2 is connected to next or previous */
-      if ((seg_i_next->Swap && seg_i_next->y2 == y && seg_i_next->x2 == seg_i->x2 && seg_i_next->y1 != y) || 
-          (!seg_i_prev->Swap && seg_i_prev->y2 == y && seg_i_prev->x2 == seg_i->x2 && seg_i_prev->y1 != y))
+      if ((!seg_i->Swap && seg_i_next->Swap && seg_i_next->y2 == y && seg_i_next->x2 == seg_i->x2 && seg_i_next->y1 != y) || 
+          (seg_i->Swap && !seg_i_prev->Swap && seg_i_prev->y2 == y && seg_i_prev->x2 == seg_i->x2 && seg_i_prev->y1 != y))
       {
         xx[xx_count++] = seg_i->x2;     /* save the intersection point */
       }
@@ -616,9 +616,6 @@ void simPolyFill(cdSimulation* simulation, cdPoint* poly, int n)
   /* for all horizontal lines between y_max and y_min */
   for(y = y_max; y >= y_min; y--)
   {
-    if (y == 206)
-      y=y;
-
     xx_count = simPolyFindHorizontalIntervals(segments, n_seg, xx, hh, y, height);
     if (xx_count < 2)
       continue;
