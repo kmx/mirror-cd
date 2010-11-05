@@ -616,6 +616,9 @@ void simPolyFill(cdSimulation* simulation, cdPoint* poly, int n)
   /* for all horizontal lines between y_max and y_min */
   for(y = y_max; y >= y_min; y--)
   {
+    if (y == 206)
+      y=y;
+
     xx_count = simPolyFindHorizontalIntervals(segments, n_seg, xx, hh, y, height);
     if (xx_count < 2)
       continue;
