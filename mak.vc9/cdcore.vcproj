@@ -469,10 +469,6 @@
 			>
 		</File>
 		<File
-			RelativePath=".\cd.vcproj"
-			>
-		</File>
-		<File
 			RelativePath="..\src\cd_active.c"
 			>
 			<FileConfiguration
