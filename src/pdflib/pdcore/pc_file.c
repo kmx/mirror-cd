@@ -53,7 +53,7 @@
 #include <ssdef.h>
 #endif
 
-#if defined(WIN32) && !defined(__BORLANDC__)
+#if defined(WIN32) && !defined(__BORLANDC__) && !defined(__CYGWIN__)
 
 #ifndef _IOB_ENTRIES
 #define _IOB_ENTRIES 20

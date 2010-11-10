@@ -37,3 +37,7 @@ ifneq ($(findstring MacOS, $(TEC_UNAME)), )
     BUILD_DYLIB=Yes
   endif
 endif
+
+ifneq ($(findstring cygw, $(TEC_UNAME)), )
+  LIBS += iconv fontconfig
+endif
