@@ -9,11 +9,14 @@
 #include <string.h>
 
 #include <gtk/gtk.h>
+#if GTK_CHECK_VERSION(2, 10, 0)
 #include <gtk/gtkprintunixdialog.h>
+#endif
 
 #include "cdcairoctx.h"
 #include "cdprint.h"
 
+#if GTK_CHECK_VERSION(2, 10, 0)
 static gboolean print_enum(GtkPrinter *printer, GtkPrinter **ret_printer)
 {
   if (gtk_printer_is_default(printer))
@@ -173,6 +176,12 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 
   g_object_unref(settings);
 }
+#else
+static void cdcreatecanvas(cdCanvas* canvas, void *data)
+{
+  /* do nothing */
+}
+#endif
 
 static void cdinittable(cdCanvas* canvas)
 {
