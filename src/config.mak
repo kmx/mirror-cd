@@ -81,7 +81,7 @@ ifdef USE_GDK
       ifdef ADD_CAIRO
         SRC += cairo/cdcairoprn_unix.c
       endif
-      INCLUDES += $(GTK_BASE)/include/gtk-unix-print-2.0
+      INCLUDES += $(GTK)/include/gtk-unix-print-2.0
     endif
     LIBS += freetype
   endif
