@@ -19,12 +19,15 @@ else
   DEFINES += CAIRO_X11  
   CHECK_GTK = Yes
   
+  USE_X11 = Yes
+  
   ifdef GTK_DEFAULT
     CD_SUFFIX := x11
   endif
 endif
 
-INCLUDES += $(GTK)/include/cairo $(GTK)/include/pango-1.0 $(GTK)/include/glib-2.0 $(GTK)/lib/glib-2.0/include  
+# Can NOT use USE_GTK because gtk will be included for linking
+INCLUDES += $(GTK)/include/cairo $(GTK)/include/pango-1.0 $(GTK)/include/glib-2.0 $(GTK)/lib/glib-2.0/include $(GTK)/lib64/glib-2.0/include
 LDIR = $(GTK)/lib
 LIBS = pangocairo-1.0 cairo pango-1.0 gobject-2.0 glib-2.0
 

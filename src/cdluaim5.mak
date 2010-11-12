@@ -14,14 +14,14 @@ else
   LIBNAME := $(LIBNAME)51
 endif
 
-USE_CD = YES
 USE_CDLUA = YES
-USE_IM = YES
 USE_IMLUA = YES
 NO_LUALINK = Yes
 CD = ..
 
 ifneq ($(findstring MacOS, $(TEC_UNAME)), )
+  USE_IM = YES
+  USE_CD = YES
   USE_IMLUA:=
   USE_CDLUA:=
   INCLUDES += ../include $(IM)/include
