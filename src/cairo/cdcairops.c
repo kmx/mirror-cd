@@ -131,10 +131,10 @@ static void cdcreatecanvas(cdCanvas* canvas, void* data)
     cairo_ps_surface_restrict_to_level(surface, CAIRO_PS_LEVEL_2);
   else if (level == 3)
     cairo_ps_surface_restrict_to_level(surface, CAIRO_PS_LEVEL_3);
-#endif
 
   if (eps)
     cairo_ps_surface_set_eps(surface, 1);
+#endif
 
   cairo_ps_surface_dsc_comment(surface, "%%Title: CanvasDraw");
   cairo_ps_surface_dsc_begin_setup (surface);

@@ -1918,6 +1918,7 @@ static char* get_linegradient_attrib(cdCtxCanvas* ctxcanvas)
 {
   double x1, y1, x2, y2;
 
+#if (CAIRO_VERSION_MAJOR>1 || (CAIRO_VERSION_MAJOR==1 && CAIRO_VERSION_MINOR>=4))
   if (cairo_pattern_get_linear_points(ctxcanvas->pattern, &x1, &y1, &x2, &y2) == CAIRO_STATUS_SUCCESS)
   {
     static char data[100];
@@ -1925,6 +1926,7 @@ static char* get_linegradient_attrib(cdCtxCanvas* ctxcanvas)
     return data;
   }
   else
+#endif
     return NULL;
 }
 
@@ -1988,6 +1990,7 @@ static char* get_radialgradient_attrib(cdCtxCanvas* ctxcanvas)
 {
   double cx1, cy1, rad1, cx2, cy2, rad2;
 
+#if (CAIRO_VERSION_MAJOR>1 || (CAIRO_VERSION_MAJOR==1 && CAIRO_VERSION_MINOR>=4))
   if (cairo_pattern_get_radial_circles(ctxcanvas->pattern, &cx1, &cy1, &rad1, &cx2, &cy2, &rad2) == CAIRO_STATUS_SUCCESS)
   {
     static char data[100];
@@ -1995,6 +1998,7 @@ static char* get_radialgradient_attrib(cdCtxCanvas* ctxcanvas)
     return data;
   }
   else
+#endif
     return NULL;
 }
 
@@ -2065,6 +2069,16 @@ static cdAttribute cairodc_attrib =
   get_cairodc_attrib
 }; 
 
+#if !PANGO_VERSION_CHECK(1,22,0)
+static PangoContext * cd_pango_cairo_create_context (cairo_t *cr)
+{
+  PangoFontMap *fontmap = pango_cairo_font_map_get_default ();
+  PangoContext *context = pango_context_new();
+  pango_context_set_font_map (context, fontmap);
+  pango_cairo_update_context (cr, context);
+  return context;
+}
+#endif
 
 cdCtxCanvas *cdcairoCreateCanvas(cdCanvas* canvas, cairo_t* cr)
 {
@@ -2079,8 +2093,14 @@ cdCtxCanvas *cdcairoCreateCanvas(cdCanvas* canvas, cairo_t* cr)
   canvas->ctxcanvas = ctxcanvas;
   canvas->invert_yaxis = 1;
 
+#if PANGO_VERSION_CHECK(1,22,0)
   ctxcanvas->fontcontext = pango_cairo_create_context(ctxcanvas->cr);
+#else
+  ctxcanvas->fontcontext = cd_pango_cairo_create_context(ctxcanvas->cr);
+#endif
+#if PANGO_VERSION_CHECK(1,16,0)
   pango_context_set_language(ctxcanvas->fontcontext, pango_language_get_default());
+#endif
 
   cdRegisterAttribute(canvas, &rotate_attrib);
   cdRegisterAttribute(canvas, &version_attrib);
