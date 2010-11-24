@@ -16,6 +16,10 @@
 #include "cdcairoctx.h"
 
 
+#ifndef PANGO_VERSION_CHECK
+#define PANGO_VERSION_CHECK(x,y,z) (0)
+#endif
+
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
