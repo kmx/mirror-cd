@@ -49,7 +49,7 @@ static void cdkillcanvas(cdCtxCanvas *ctxcanvas)
 
 static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *data)
 {
-  char filename[1024]; 
+  char filename[10240]; 
   char* buffer;
   int dwSize;
   FILE* file;
@@ -58,7 +58,9 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
   if (!buffer)
     return CD_ERROR;
 
-  tmpnam(filename);
+  if (!cdStrTmpFileName(filename))
+    return CD_ERROR;
+
   file = fopen(filename, "w");
   fwrite(buffer, dwSize, 1, file);
   fclose(file);
@@ -74,7 +76,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
 
 static void cdcreatecanvas(cdCanvas* canvas, void *data)
 {
-  char tmpPath[512];
+  char tmpPath[10240];
   char* str = (char*)data;
   Display* dpy = NULL;
 
@@ -96,7 +98,8 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
     return;
 
   str++;
-  tmpnam(tmpPath);
+  if (!cdStrTmpFileName(tmpPath))
+    return;
 
   strcat(tmpPath, " ");
   strcat(tmpPath, str);

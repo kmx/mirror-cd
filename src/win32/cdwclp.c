@@ -36,8 +36,7 @@ Interpreta os dados do clipboard, seja metafile ou bitmap.
 */
 static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *data)
 {
-  char tmpPath[512];
-  char filename[1024]; 
+  char filename[10240]; 
   HANDLE hFile;
   DWORD dwSize, nBytesWrite;
   int err;
@@ -48,8 +47,8 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
   {
     HANDLE Handle;
     
-    GetTempPath(512, tmpPath);
-    GetTempFileName(tmpPath, "~cd", 0, filename);
+    if (!cdStrTmpFileName(filename))
+      return CD_ERROR;
     
     OpenClipboard(NULL);
     Handle = GetClipboardData(CF_TEXT);
@@ -82,8 +81,8 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
   {
     HENHMETAFILE Handle;
     
-    GetTempPath(512, tmpPath);
-    GetTempFileName(tmpPath, "~cd", 0, filename);
+    if (!cdStrTmpFileName(filename))
+      return CD_ERROR;
     
     OpenClipboard(NULL);
     Handle = (HENHMETAFILE)GetClipboardData(CF_ENHMETAFILE);
@@ -119,8 +118,8 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
     HANDLE Handle;
     METAFILEPICT* lpMFP;
     
-    GetTempPath(512, tmpPath);
-    GetTempFileName(tmpPath, "~cd", 0, filename);
+    if (!cdStrTmpFileName(filename))
+      return CD_ERROR;
     
     OpenClipboard(NULL);
     Handle = GetClipboardData(CF_METAFILEPICT);
@@ -476,12 +475,11 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   
   if (wtype == -1)
   {
-    char filename[1024]; 
-    char tmpPath[512];
-    char str[1024];
+    char filename[10240]; 
+    char str[10240];
     
-    GetTempPath(512, tmpPath);
-    GetTempFileName(tmpPath, "~cd", 0, filename);
+    if (!cdStrTmpFileName(filename))
+      return;
     
     sprintf(str, "%s %s", filename, strsize);
     cdcreatecanvasMF(canvas, str);

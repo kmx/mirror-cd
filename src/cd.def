@@ -394,6 +394,7 @@ EXPORTS
   cdfCanvasTransformPoint
   cdRound
   cdStrDup
+  cdStrTmpFileName
   
   cdInitContextPlusList
   cdGetContextPlus

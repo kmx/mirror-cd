@@ -493,3 +493,17 @@ int cdGetFontFileName(const char* font, char* filename)
 
   return 1;
 }
+
+int cdStrTmpFileName(char* filename)
+{
+#ifdef WIN32
+  char tmpPath[10240];
+  if (GetTempPath(10240, tmpPath)==0)
+    return 0;
+  if (GetTempFileName(tmpPath, "~cd", 0, filename)==0)
+    return 0;
+  return 1;
+#else
+  return tmpnam(filename)!=NULL;
+#endif
+}

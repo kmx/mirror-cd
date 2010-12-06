@@ -26,7 +26,7 @@ struct _cdCtxCanvas
   cdCanvas* canvas;
   CGM  *cgm;
   
-  char filename[256];   /* Arquivo CGM */
+  char filename[10240];   /* Arquivo CGM */
 
   int  codificacao;     /* Codificacao */
   int  vdc_int_prec;

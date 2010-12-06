@@ -1583,7 +1583,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   {
     FILE *seed=NULL;
     char *cd_dir = getenv("CDDIR");
-    static char newfilename[512];
+    static char newfilename[10240];
 
     if(cd_dir == NULL)
       cd_dir = ".";

@@ -146,12 +146,11 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   
   if (wtype == -1)
   {
-    char filename[1024]; 
-    char tmpPath[512];
-    char str[1024];
+    char filename[10240]; 
+    char str[10240];
     
-    GetTempPath(512, tmpPath);
-    GetTempFileName(tmpPath, "~cd", 0, filename);
+    if (!cdStrTmpFileName(filename))
+      return;
     
     sprintf(str, "%s %s", filename, strsize);
     cdcreatecanvasMF(canvas, str);

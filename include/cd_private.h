@@ -280,6 +280,7 @@ char* cdStrDup(const char* str);
 char* cdStrDupN(const char* str, int len);
 void cdSetPaperSize(int size, double *w_pt, double *h_pt);
 int cdGetFontFileName(const char* font, char* filename);
+int cdStrTmpFileName(char* filename);
 
 void cdCanvasPoly(cdCanvas* canvas, int mode, cdPoint* points, int n);
 void cdCanvasGetArcBox(int xc, int yc, int w, int h, double a1, double a2, int *xmin, int *xmax, int *ymin, int *ymax);
