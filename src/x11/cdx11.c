@@ -70,7 +70,8 @@ static void update_colors(cdCtxCanvas *ctxcanvas)
 static int find_color(cdCtxCanvas *ctxcanvas, XColor* xc1)
 {
   int pos = 0, i;
-  unsigned long min_dist = ULONG_MAX, this_dist;
+  unsigned long min_dist = ULONG_MAX, /* just a very big value */
+    this_dist;
   int dr, dg, db;
   XColor* xc2;
 
