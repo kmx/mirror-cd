@@ -135,9 +135,9 @@ cd.RGB2Map(imagergb: cdImageRGB, imagemap: cdImageMap, palette: cdPalette) [in L
       which will store the image. From this structure, the following fields are 
       officially defined:</p>
     <pre>cdBitmap:
-  int w      /* image width */
-  int h      /* image heigth */
-  int type   /* image type: CD_RGBA, CD_RGB or CD_MAP */</pre>
+  int w      -image width                              bitmap:Width() -&gt; w: number   [in Lua]
+  int h      -image heigth                             bitmap:Height() -&gt; h: number   [in Lua]
+  int type   -image type: CD_RGBA, CD_RGB or CD_MAP    bitmap:Type() -&gt; type: number   [in Lua]</pre>
     <div class="function"><pre class="function"><span class="mainFunction">cdBitmap* <a name="cdCreateBitmap">cdCreateBitmap</a>(int w, int h, int type); [in C]</span>
 
 cd.CreateBitmap(w, h, type: number) -&gt; (bitmap: cdBitmap) [in Lua]</pre>

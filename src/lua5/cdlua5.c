@@ -542,6 +542,27 @@ static int cdlua5_bitmapgetdata(lua_State *L)
   return 1;
 }
 
+static int cdlua5_BitmapWidth(lua_State *L)
+{
+  cdBitmap* bitmap = cdlua_checkbitmap(L, 1);
+  lua_pushinteger(L, bitmap->w);
+  return 1;
+}
+
+static int cdlua5_BitmapHeight(lua_State *L)
+{
+  cdBitmap* bitmap = cdlua_checkbitmap(L, 1);
+  lua_pushinteger(L, bitmap->h);
+  return 1;
+}
+
+static int cdlua5_BitmapType(lua_State *L)
+{
+  cdBitmap* bitmap = cdlua_checkbitmap(L, 1);
+  lua_pushinteger(L, bitmap->type);
+  return 1;
+}
+
 static int cdlua5_bitmapsetrect(lua_State *L)
 {
   cdBitmap* bitmap = cdlua_checkbitmap(L, 1);
@@ -1683,6 +1704,15 @@ static void initmetatables(lua_State *L)
   lua_settable(L, -3);
   lua_pushliteral(L, "__tostring");
   lua_pushcfunction(L, cdlua5_tostringbitmap);
+  lua_settable(L, -3);
+  lua_pushliteral(L, "Width");
+  lua_pushcfunction(L, cdlua5_BitmapWidth);
+  lua_settable(L, -3);
+  lua_pushliteral(L, "Height");
+  lua_pushcfunction(L, cdlua5_BitmapHeight);
+  lua_settable(L, -3);
+  lua_pushliteral(L, "Type");
+  lua_pushcfunction(L, cdlua5_BitmapType);
   lua_settable(L, -3);
   lua_pop(L, 1);
 
