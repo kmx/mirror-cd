@@ -68,7 +68,8 @@ struct _cdImage
 struct _cdContext
 {
   unsigned long caps;  /* canvas capabilities, combination of CD_CAP_*  */
-  int plus; /* indicates if the canvas is context plus */
+  int plus; /* indicates if the context is a context plus */
+  int type; /* context type WINDOW, DEVICE, IMAGE or FILE */
 
   /* can NOT be NULL */
   void  (*cxCreateCanvas)(cdCanvas* canvas, void *data);
@@ -262,7 +263,7 @@ void wdSetDefaults(cdCanvas* canvas);
 /********************/
 void cdInitContextPlusList(cdContext* ctx_list[]);
 cdContext* cdGetContextPlus(int ctx);
-enum{CD_CTX_NATIVEWINDOW, CD_CTX_IMAGE, CD_CTX_DBUFFER, CD_CTX_PRINTER, CD_CTX_EMF, CD_CTX_CLIPBOARD}; 
+enum{CD_CTXPLUS_NATIVEWINDOW, CD_CTXPLUS_IMAGE, CD_CTXPLUS_DBUFFER, CD_CTXPLUS_PRINTER, CD_CTXPLUS_EMF, CD_CTXPLUS_CLIPBOARD}; 
 #define NUM_CONTEXTPLUS 6
 
 /*************/

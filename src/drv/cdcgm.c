@@ -1136,6 +1136,7 @@ static cdContext cdCGMContext =
                  CD_CAP_IMAGERGBA | CD_CAP_GETIMAGERGB | 
                  CD_CAP_TEXTORIENTATION | CD_CAP_PATH | CD_CAP_BEZIER),
   0,
+  CD_CTX_FILE,
   cdcreatecanvas,
   cdinittable,
   cdplayCGM,

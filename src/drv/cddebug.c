@@ -821,6 +821,7 @@ static cdContext cdDebugContext =
 {
   CD_CAP_ALL,
   0,
+  CD_CTX_FILE,
   cdcreatecanvas,
   cdinittable,
   NULL,

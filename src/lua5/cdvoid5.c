@@ -117,6 +117,7 @@ static cdContext cdVoidContext =
 {
   0,
   0,
+  0,
   cdcreatecanvas,
   cdinittable,
   NULL,

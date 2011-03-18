@@ -14,7 +14,7 @@ cdContext* cdContextEMF(void)
 {
   if (cdUseContextPlus(CD_QUERY))
   {
-    cdContext* ctx = cdGetContextPlus(CD_CTX_EMF);
+    cdContext* ctx = cdGetContextPlus(CD_CTXPLUS_EMF);
     if (ctx != NULL)
       return ctx;
   }

@@ -1364,6 +1364,7 @@ static cdContext cdDXFContext =
                  CD_CAP_HATCH | CD_CAP_STIPPLE | CD_CAP_PATTERN |
                  CD_CAP_IMAGERGBA | CD_CAP_GETIMAGERGB),
   0,
+  CD_CTX_FILE,
   cdcreatecanvas,
   cdinittable,
   NULL,

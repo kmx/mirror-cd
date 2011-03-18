@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\include;..\src;..\src\drv;..\src\freetype2;..\src\intcgm;..\src\iup;..\src\sim;&quot;d:\lng\gtk\include\atk-1.0&quot;;d:\lng\gtk\include\cairo;&quot;d:\lng\gtk\include\glib-2.0&quot;;&quot;d:\lng\gtk\include\pango-1.0&quot;;&quot;d:\lng\gtk\include\gtk-2.0&quot;;&quot;d:\lng\gtk\lib\glib-2.0\include&quot;;&quot;d:\lng\gtk\lib\gtk-2.0\include&quot;;D:\LNG\x11inc"
+				AdditionalIncludeDirectories="..\include;..\src;..\src\drv;..\src\freetype2;..\src\intcgm;..\src\iup;..\src\sim;&quot;d:\lng\gtk\include\atk-1.0&quot;;d:\lng\gtk\include\cairo;&quot;d:\lng\gtk\include\glib-2.0&quot;;&quot;d:\lng\gtk\include\pango-1.0&quot;;&quot;d:\lng\gtk\include\gdk-pixbuf-2.0&quot;;&quot;d:\lng\gtk\include\gtk-2.0&quot;;&quot;d:\lng\gtk\lib\glib-2.0\include&quot;;&quot;d:\lng\gtk\lib\gtk-2.0\include&quot;;D:\LNG\x11inc"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;CD_NO_OLD_INTERFACE;FT2_BUILD_LIBRARY;_CRT_SECURE_NO_DEPRECATE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"

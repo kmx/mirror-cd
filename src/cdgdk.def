@@ -38,6 +38,8 @@ EXPORTS
   cdKillCanvas
   cdGetContext
   cdContextCaps
+  cdContextIsPlus
+  cdContextType
   cdActivate
   cdActiveCanvas
   cdSimulate

@@ -57,6 +57,8 @@ void        cdInitContextPlus(void);   /* need an external library */
 typedef int (*cdCallback)(cdCanvas* canvas, ...);
 int cdContextRegisterCallback(cdContext *context, int cb, cdCallback func);
 unsigned long cdContextCaps(cdContext *context);
+int cdContextIsPlus(cdContext *context);
+int cdContextType(cdContext *context);
 
 /* control */
 int      cdCanvasSimulate(cdCanvas* canvas, int mode);
@@ -394,7 +396,7 @@ enum {                          /* some font sizes */
  CD_LARGE    = 18
 };
 
-/* Canvas Capabilities */
+/* Context Capabilities */
 #define CD_CAP_NONE             0x00000000
 #define CD_CAP_FLUSH            0x00000001
 #define CD_CAP_CLEAR            0x00000002
@@ -429,6 +431,14 @@ enum {                          /* some font sizes */
 #define CD_CAP_PATH             0x40000000
 #define CD_CAP_BEZIER           0x80000000
 #define CD_CAP_ALL              0xFFFFFFFF
+
+/* Context Types */
+enum { 
+  CD_CTX_WINDOW, 
+  CD_CTX_DEVICE, 
+  CD_CTX_IMAGE,
+  CD_CTX_FILE
+};
 
 /* cdPlay definitions */
 #define CD_SIZECB 0        /* size callback */

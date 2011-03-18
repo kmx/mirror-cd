@@ -38,7 +38,8 @@ static void cdinittable(cdCanvas* canvas)
 static cdContext cdImageContext =
 {
   CD_CAP_ALL & ~(CD_CAP_PLAY | CD_CAP_YAXIS | CD_CAP_REGION | CD_CAP_WRITEMODE | CD_CAP_PALETTE ),
-  0,
+  1,
+  CD_CTX_IMAGE,
   cdcreatecanvas,
   cdinittable,
   NULL,

@@ -264,6 +264,20 @@ unsigned long cdContextCaps(cdContext *context)
   return context->caps;
 }
 
+int cdContextIsPlus(cdContext *context)
+{
+  if (!context)
+    return (unsigned long)CD_ERROR;
+  return context->plus;
+}
+
+int cdContextType(cdContext *context)
+{
+  if (!context)
+    return (unsigned long)CD_ERROR;
+  return context->type;
+}
+
 int cdCanvasSimulate(cdCanvas* canvas, int mode)
 {
   int sim_mode;

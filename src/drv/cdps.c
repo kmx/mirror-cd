@@ -2128,6 +2128,7 @@ static cdContext cdPSContext =
                  CD_CAP_FONTDIM | CD_CAP_TEXTSIZE | 
                  CD_CAP_IMAGERGBA | CD_CAP_GETIMAGERGB),
   0,
+  CD_CTX_FILE,
   cdcreatecanvas,
   cdinittable,
   NULL,

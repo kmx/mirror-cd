@@ -108,7 +108,8 @@ static cdContext cdEMFCairoContext =
 {
   CD_CAP_ALL & ~(CD_CAP_PLAY | CD_CAP_YAXIS | CD_CAP_REGION | CD_CAP_GETIMAGERGB |
                  CD_CAP_WRITEMODE | CD_CAP_PALETTE | CD_CAP_IMAGESRV),
-  0,
+  1,
+  CD_CTX_FILE,
   cdcreatecanvas,
   cdinittable,
   NULL,

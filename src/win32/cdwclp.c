@@ -531,6 +531,7 @@ static cdContext cdClipboardContext =
                  CD_CAP_IMAGERGBA | CD_CAP_GETIMAGERGB | CD_CAP_IMAGESRV | 
                  CD_CAP_FPRIMTIVES ),
   0,
+  CD_CTX_DEVICE,
   cdcreatecanvas,  
   cdinittable,
   cdplay,          
@@ -541,7 +542,7 @@ cdContext* cdContextClipboard(void)
 {
   if (cdUseContextPlus(CD_QUERY))
   {
-    cdContext* ctx = cdGetContextPlus(CD_CTX_CLIPBOARD);
+    cdContext* ctx = cdGetContextPlus(CD_CTXPLUS_CLIPBOARD);
     if (ctx != NULL)
       return ctx;
   }

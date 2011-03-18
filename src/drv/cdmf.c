@@ -1263,6 +1263,7 @@ static cdContext cdMetafileContext =
   CD_CAP_ALL & ~(CD_CAP_GETIMAGERGB | CD_CAP_IMAGESRV | 
                  CD_CAP_REGION | CD_CAP_FONTDIM | CD_CAP_TEXTSIZE),
   0,
+  CD_CTX_FILE,
   cdcreatecanvasMF,
   cdinittableMF,
   cdplay,

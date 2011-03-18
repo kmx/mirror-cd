@@ -189,6 +189,7 @@ static cdContext cdClipboardContext =
   CD_CAP_ALL & ~(CD_CAP_CLEAR | CD_CAP_FLUSH | CD_CAP_YAXIS | CD_CAP_PLAY |
                  CD_CAP_IMAGERGBA | CD_CAP_GETIMAGERGB | CD_CAP_IMAGESRV ),
   1,
+  CD_CTX_DEVICE,
   cdcreatecanvas,  
   cdinittable,
   NULL,          

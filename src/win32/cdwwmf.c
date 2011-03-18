@@ -97,6 +97,7 @@ static cdContext cdWMFContext =
                  CD_CAP_LINECAP | CD_CAP_LINEJOIN |
                  CD_CAP_FPRIMTIVES ),
   0,
+  CD_CTX_FILE,
   cdcreatecanvas,  
   cdinittable,
   cdplayWMF,          

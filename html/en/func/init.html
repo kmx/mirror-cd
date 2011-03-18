@@ -132,13 +132,13 @@ transparency.</p>
 <p>In Lua, when using require&quot;cdluacontextplus&quot; this function will be 
 automatically called.</p>
 
-</div><hr><div class="function"><pre class="function"><span class="mainFunction">cdContext*&nbsp;cdCanvasGetContext(cdCanvas *canvas); [in C]</span>
+</div><hr><div class="function"><pre class="function"><span class="mainFunction">cdContext*&nbsp;<a name="cdCanvasGetContext">cdCanvasGetContext</a>(cdCanvas *canvas); [in C]</span>
 
 canvas:GetContext(canvas: cdCanvas) -&gt; (ctx: number) [in Lua]</pre>
 
   <p>Returns the context of a given canvas, which can be compared with the predefined contexts, such as &quot;CD_PS&quot;.</p>
 
-</div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;cdContextCaps(cdContext* ctx); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;<a name="cdContextCaps">cdContextCaps</a>(cdContext* ctx); [in C]</span>
 
 cd.ContextCaps(ctx: number) -&gt; (caps: number) [in Lua]</pre>
 
@@ -181,7 +181,26 @@ cd.ContextCaps(ctx: number) -&gt; (caps: number) [in Lua]</pre>
     (Native Window and IUP).</p>
   
 
-</div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;cdCanvasSimulate(cdCanvas* canvas, int mode); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;<a name="cdContextType">cdContextType</a>(cdContext* ctx); [in C]</span>
+
+cd.ContextType(ctx: number) -&gt; (type: number) [in Lua]</pre>
+
+  <p>Returns the type of the context:</p>
+  
+    <p>CD_CTX_WINDOW - GUI window based<br>
+CD_CTX_DEVICE - device based (clipboard, printer, picture)<br>
+CD_CTX_IMAGE - server or client image based, including double buffer based <br>
+    CD_CTX_FILE - metafile based</p>
+  
+
+</div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;<a name="cdContextIsPlus">cdContextIsPlus</a>(cdContext* ctx); [in C]</span>
+
+cd.ContextIsPlus(ctx: number) -&gt; (plus: boolean) [in Lua]</pre>
+
+  <p>Returns if it is a context plus.</p>
+  
+
+</div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;<a name="cdCanvasSimulate">cdCanvasSimulate</a>(cdCanvas* canvas, int mode); [in C]</span>
 
 canvas:Simulate(mode: number) -&gt; (old_mode: number) [in Lua]</pre>
 

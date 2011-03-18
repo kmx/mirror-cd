@@ -16,14 +16,14 @@ void cdInitContextPlus(void)
   cdContext* ctx_list[NUM_CONTEXTPLUS];
   memset(ctx_list, 0, sizeof(ctx_list));
 
-  ctx_list[CD_CTX_NATIVEWINDOW] = cdContextCairoNativeWindow();
-  ctx_list[CD_CTX_IMAGE] = cdContextCairoImage();
-  ctx_list[CD_CTX_DBUFFER] = cdContextCairoDBuffer();
+  ctx_list[CD_CTXPLUS_NATIVEWINDOW] = cdContextCairoNativeWindow();
+  ctx_list[CD_CTXPLUS_IMAGE] = cdContextCairoImage();
+  ctx_list[CD_CTXPLUS_DBUFFER] = cdContextCairoDBuffer();
 #ifndef CAIRO_X11
-  ctx_list[CD_CTX_PRINTER] = cdContextCairoPrinter();
+  ctx_list[CD_CTXPLUS_PRINTER] = cdContextCairoPrinter();
 #endif
 #ifdef WIN32
-  ctx_list[CD_CTX_EMF] = cdContextCairoEMF();
+  ctx_list[CD_CTXPLUS_EMF] = cdContextCairoEMF();
 #endif
 
   cdInitContextPlusList(ctx_list);

@@ -186,6 +186,7 @@ static cdContext cdPrinterContext =
                  CD_CAP_IMAGERGBA | CD_CAP_GETIMAGERGB | CD_CAP_IMAGESRV | 
                  CD_CAP_FPRIMTIVES ),
   0,
+  CD_CTX_DEVICE,
   cdcreatecanvas,  
   cdinittable,
   NULL,                 
@@ -196,7 +197,7 @@ cdContext* cdContextPrinter(void)
 {
   if (cdUseContextPlus(CD_QUERY))
   {
-    cdContext* ctx = cdGetContextPlus(CD_CTX_PRINTER);
+    cdContext* ctx = cdGetContextPlus(CD_CTXPLUS_PRINTER);
     if (ctx != NULL)
       return ctx;
   }

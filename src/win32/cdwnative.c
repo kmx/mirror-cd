@@ -186,6 +186,7 @@ static cdContext cdNativeContext =
 {
   CD_CAP_ALL & ~(CD_CAP_PLAY | CD_CAP_YAXIS | CD_CAP_FPRIMTIVES ),
   0,
+  CD_CTX_WINDOW,
   cdcreatecanvas,
   cdinittable,
   NULL,              
@@ -196,7 +197,7 @@ cdContext* cdContextNativeWindow(void)
 {
   if (cdUseContextPlus(CD_QUERY))
   {
-    cdContext* ctx = cdGetContextPlus(CD_CTX_NATIVEWINDOW);
+    cdContext* ctx = cdGetContextPlus(CD_CTXPLUS_NATIVEWINDOW);
     if (ctx != NULL)
       return ctx;
   }

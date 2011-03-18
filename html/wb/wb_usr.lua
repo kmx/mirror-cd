@@ -198,6 +198,14 @@ wb_usr.tree =
               link= "func/init.html#cdContextCaps"
             },
             {
+              name= {nl= "ContextType"},
+              link= "func/init.html#cdContextType"
+            },
+            {
+              name= {nl= "ContextIsPlus"},
+              link= "func/init.html#cdContextIsPlus"
+            },
+            {
               name= {nl= "Simulate"},
               link= "func/init.html#cdSimulate"
             },

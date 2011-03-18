@@ -64,6 +64,7 @@ static cdContext cdImageContext =
   CD_CAP_ALL & ~(CD_CAP_PLAY | CD_CAP_YAXIS | 
                  CD_CAP_FPRIMTIVES ),
   0,
+  CD_CTX_IMAGE,
   cdcreatecanvas,  
   cdinittable,
   NULL,             
@@ -74,7 +75,7 @@ cdContext* cdContextImage(void)
 {
   if (cdUseContextPlus(CD_QUERY))
   {
-    cdContext* ctx = cdGetContextPlus(CD_CTX_IMAGE);
+    cdContext* ctx = cdGetContextPlus(CD_CTXPLUS_IMAGE);
     if (ctx != NULL)
       return ctx;
   }

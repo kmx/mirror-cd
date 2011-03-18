@@ -98,6 +98,7 @@ static cdContext cdEMFContext =
                  CD_CAP_IMAGERGBA | CD_CAP_GETIMAGERGB | CD_CAP_IMAGESRV | 
                  CD_CAP_FPRIMTIVES ),
   0,
+  CD_CTX_FILE,
   cdcreatecanvas,  
   cdinittable,
   cdplayEMF,          
@@ -108,7 +109,7 @@ cdContext* cdContextEMF(void)
 {
   if (cdUseContextPlus(CD_QUERY))
   {
-    cdContext* ctx = cdGetContextPlus(CD_CTX_EMF);
+    cdContext* ctx = cdGetContextPlus(CD_CTXPLUS_EMF);
     if (ctx != NULL)
       return ctx;
   }

@@ -335,7 +335,21 @@ void cdlua_pushbitmap(lua_State* L, cdBitmap* bitmap)
 static int cdlua5_contextcaps(lua_State * L)
 {
   cdluaContext* cdlua_ctx = cdlua_getcontext(L, 1);
-  lua_pushnumber(L, cdContextCaps(cdlua_ctx->ctx()));
+  lua_pushinteger(L, cdContextCaps(cdlua_ctx->ctx()));
+  return 1;
+}
+
+static int cdlua5_contexttype(lua_State * L)
+{
+  cdluaContext* cdlua_ctx = cdlua_getcontext(L, 1);
+  lua_pushinteger(L, cdContextType(cdlua_ctx->ctx()));
+  return 1;
+}
+
+static int cdlua5_contextisplus(lua_State * L)
+{
+  cdluaContext* cdlua_ctx = cdlua_getcontext(L, 1);
+  lua_pushboolean(L, cdContextIsPlus(cdlua_ctx->ctx()));
   return 1;
 }
 
@@ -1315,6 +1329,8 @@ static const struct luaL_reg cdlib[] = {
 
   /* Initialization */
   {"ContextCaps"   , cdlua5_contextcaps},
+  {"ContextType"   , cdlua5_contexttype},
+  {"ContextIsPlus" , cdlua5_contextisplus},
 
   /* Control */
   {"ReleaseState"  , cdlua5_releasestate},
@@ -1553,38 +1569,45 @@ static const struct cdlua5_constant cdlibconstant[] = {
   {"LARGE"   , CD_LARGE},
 
   /* Canvas Capabilities */
-  {"CAP_NONE"           , CD_CAP_NONE},
-  {"CAP_FLUSH"          , CD_CAP_FLUSH},
-  {"CAP_CLEAR"          , CD_CAP_CLEAR},
-  {"CAP_PLAY"           , CD_CAP_PLAY},
-  {"CAP_YAXIS"          , CD_CAP_YAXIS},
-  {"CAP_CLIPAREA"       , CD_CAP_CLIPAREA},
-  {"CAP_CLIPPOLY"       , CD_CAP_CLIPPOLY},
-  {"CAP_RECT"           , CD_CAP_RECT},
-  {"CAP_IMAGERGB"       , CD_CAP_IMAGERGB},
-  {"CAP_IMAGERGBA"      , CD_CAP_IMAGERGBA},
-  {"CAP_IMAGEMAP"       , CD_CAP_IMAGEMAP},
-  {"CAP_GETIMAGERGB"    , CD_CAP_GETIMAGERGB},
-  {"CAP_IMAGESRV"       , CD_CAP_IMAGESRV},
-  {"CAP_BACKGROUND"     , CD_CAP_BACKGROUND},
-  {"CAP_BACKOPACITY"    , CD_CAP_BACKOPACITY},
-  {"CAP_WRITEMODE"      , CD_CAP_WRITEMODE},
-  {"CAP_LINESTYLE"      , CD_CAP_LINESTYLE},
-  {"CAP_LINEWITH"       , CD_CAP_LINEWITH},
-  {"CAP_WD"             , CD_CAP_FPRIMTIVES},
-  {"CAP_HATCH"          , CD_CAP_HATCH},
-  {"CAP_STIPPLE"        , CD_CAP_STIPPLE},
-  {"CAP_PATTERN"        , CD_CAP_PATTERN},
-  {"CAP_FONT"           , CD_CAP_FONT},
-  {"CAP_FONTDIM"        , CD_CAP_FONTDIM},
-  {"CAP_TEXTSIZE"       , CD_CAP_TEXTSIZE},
-  {"CAP_TEXTORIENTATION", CD_CAP_TEXTORIENTATION},
-  {"CAP_PALETTE"        , CD_CAP_PALETTE},
-  {"CAP_LINECAP"        , CD_CAP_LINECAP},
-  {"CAP_LINEJOIN"       , CD_CAP_LINEJOIN},
-  {"CAP_REGION"         , CD_CAP_REGION},
+  {"CAP_NONE"           , CD_CAP_NONE},                                 
+  {"CAP_FLUSH"          , CD_CAP_FLUSH},                                
+  {"CAP_CLEAR"          , CD_CAP_CLEAR},                                
+  {"CAP_PLAY"           , CD_CAP_PLAY},                                 
+  {"CAP_YAXIS"          , CD_CAP_YAXIS},                                
+  {"CAP_CLIPAREA"       , CD_CAP_CLIPAREA},                             
+  {"CAP_CLIPPOLY"       , CD_CAP_CLIPPOLY},                             
+  {"CAP_REGION"         , CD_CAP_REGION},                             
+  {"CAP_RECT"           , CD_CAP_RECT},  
   {"CAP_CHORD"          , CD_CAP_CHORD},
-  {"CAP_ALL"            , CD_CAP_ALL},
+  {"CAP_IMAGERGB"       , CD_CAP_IMAGERGB},                                  
+  {"CAP_IMAGERGBA"      , CD_CAP_IMAGERGBA},                                
+  {"CAP_IMAGEMAP"       , CD_CAP_IMAGEMAP},                              
+  {"CAP_GETIMAGERGB"    , CD_CAP_GETIMAGERGB},                          
+  {"CAP_IMAGESRV"       , CD_CAP_IMAGESRV},                              
+  {"CAP_BACKGROUND"     , CD_CAP_BACKGROUND},                         
+  {"CAP_BACKOPACITY"    , CD_CAP_BACKOPACITY},                           
+  {"CAP_WRITEMODE"      , CD_CAP_WRITEMODE},                           
+  {"CAP_LINESTYLE"      , CD_CAP_LINESTYLE},                          
+  {"CAP_LINEWITH"       , CD_CAP_LINEWITH},                             
+  {"CAP_WD"             , CD_CAP_FPRIMTIVES},                           
+  {"CAP_HATCH"          , CD_CAP_HATCH},                                 
+  {"CAP_STIPPLE"        , CD_CAP_STIPPLE},                             
+  {"CAP_PATTERN"        , CD_CAP_PATTERN},                                  
+  {"CAP_FONT"           , CD_CAP_FONT},                                   
+  {"CAP_FONTDIM"        , CD_CAP_FONTDIM},                                
+  {"CAP_TEXTSIZE"       , CD_CAP_TEXTSIZE},                                  
+  {"CAP_TEXTORIENTATION", CD_CAP_TEXTORIENTATION},                        
+  {"CAP_PALETTE"        , CD_CAP_PALETTE},                               
+  {"CAP_LINECAP"        , CD_CAP_LINECAP},                        
+  {"CAP_LINEJOIN"       , CD_CAP_LINEJOIN},                               
+  {"CAP_PATH"           , CD_CAP_PATH},                                                                        
+  {"CAP_BEZIER"         , CD_CAP_BEZIER},                                 
+  {"CAP_ALL"            , CD_CAP_ALL},                                       
+
+  {"CTX_WINDOW"         , CD_CTX_WINDOW},                                     
+  {"CTX_DEVICE"         , CD_CTX_DEVICE},
+  {"CTX_IMAGE"          , CD_CTX_IMAGE},
+  {"CTX_FILE"           , CD_CTX_FILE},
 
   /* cdPlay definitions */
   {"SIZECB",   CD_SIZECB},

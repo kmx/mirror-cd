@@ -981,9 +981,9 @@ static void xrCreateContextPlus(cdCtxCanvas *ctxcanvas)
 
 /*******************************************************************************************************/
 
-static cdContext cdDBufferContext = {0,0,NULL,NULL,NULL,NULL};
-static cdContext cdNativeWindowContext = {0,0,NULL,NULL,NULL,NULL};
-static cdContext cdImageContext = {0,0,NULL,NULL,NULL,NULL};
+static cdContext cdDBufferContext = {0,0,0,NULL,NULL,NULL,NULL};
+static cdContext cdNativeWindowContext = {0,0,0,NULL,NULL,NULL,NULL};
+static cdContext cdImageContext = {0,0,0,NULL,NULL,NULL,NULL};
 
 static void (*cdcreatecanvasDBUFFER)(cdCanvas* canvas, void* data) = NULL;
 static void (*cdcreatecanvasNATIVE)(cdCanvas* canvas, void* data) = NULL;

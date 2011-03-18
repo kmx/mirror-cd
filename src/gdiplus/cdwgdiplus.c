@@ -28,12 +28,12 @@ void cdInitContextPlus(void)
   cdContext* ctx_list[NUM_CONTEXTPLUS];
   memset(ctx_list, 0, sizeof(ctx_list));
 
-  ctx_list[CD_CTX_NATIVEWINDOW] = cdContextNativeWindowPlus();
-  ctx_list[CD_CTX_IMAGE] = cdContextImagePlus();
-  ctx_list[CD_CTX_DBUFFER] = cdContextDBufferPlus();
-  ctx_list[CD_CTX_PRINTER] = cdContextPrinterPlus();
-  ctx_list[CD_CTX_EMF] = cdContextEMFPlus();
-  ctx_list[CD_CTX_CLIPBOARD] = cdContextClipboardPlus();
+  ctx_list[CD_CTXPLUS_NATIVEWINDOW] = cdContextNativeWindowPlus();
+  ctx_list[CD_CTXPLUS_IMAGE] = cdContextImagePlus();
+  ctx_list[CD_CTXPLUS_DBUFFER] = cdContextDBufferPlus();
+  ctx_list[CD_CTXPLUS_PRINTER] = cdContextPrinterPlus();
+  ctx_list[CD_CTXPLUS_EMF] = cdContextEMFPlus();
+  ctx_list[CD_CTXPLUS_CLIPBOARD] = cdContextClipboardPlus();
 
   cdInitContextPlusList(ctx_list);
 
