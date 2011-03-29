@@ -267,14 +267,14 @@ unsigned long cdContextCaps(cdContext *context)
 int cdContextIsPlus(cdContext *context)
 {
   if (!context)
-    return (unsigned long)CD_ERROR;
+    return CD_ERROR;
   return context->plus;
 }
 
 int cdContextType(cdContext *context)
 {
   if (!context)
-    return (unsigned long)CD_ERROR;
+    return CD_ERROR;
   return context->type;
 }
 
