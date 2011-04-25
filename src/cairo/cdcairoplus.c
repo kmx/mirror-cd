@@ -13,7 +13,7 @@
 
 void cdInitContextPlus(void)
 {
-  cdContext* ctx_list[NUM_CONTEXTPLUS];
+  cdContext* ctx_list[CD_CTXPLUS_COUNT];
   memset(ctx_list, 0, sizeof(ctx_list));
 
   ctx_list[CD_CTXPLUS_NATIVEWINDOW] = cdContextCairoNativeWindow();

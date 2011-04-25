@@ -1878,7 +1878,6 @@ static cdContext cdImageRGBContext =
   CD_CAP_ALL & ~(CD_CAP_FLUSH | CD_CAP_PLAY | 
                  CD_CAP_LINECAP | CD_CAP_LINEJOIN | 
                  CD_CAP_PALETTE ),
-  0,
   CD_CTX_IMAGE,
   cdcreatecanvas,
   cdinittable,
@@ -1975,7 +1974,6 @@ static cdContext cdDBufferRGBContext =
   CD_CAP_ALL & ~(CD_CAP_PLAY |  
                  CD_CAP_LINECAP | CD_CAP_LINEJOIN | 
                  CD_CAP_PALETTE ),
-  0,
   CD_CTX_IMAGE,
   cdcreatecanvasDB,  
   cdinittableDB,

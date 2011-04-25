@@ -96,8 +96,7 @@ static cdContext cdWMFContext =
                  CD_CAP_IMAGERGBA | CD_CAP_GETIMAGERGB | CD_CAP_IMAGESRV | 
                  CD_CAP_LINECAP | CD_CAP_LINEJOIN |
                  CD_CAP_FPRIMTIVES ),
-  0,
-  CD_CTX_FILE,
+  CD_CTX_FILE|CD_CTX_PLUS,
   cdcreatecanvas,  
   cdinittable,
   cdplayWMF,          

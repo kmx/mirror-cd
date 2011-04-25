@@ -146,8 +146,7 @@ static void cdinittable(cdCanvas* canvas)
 static cdContext cdCairoImageRGBContext =
 {
   CD_CAP_ALL & ~(CD_CAP_PLAY | CD_CAP_YAXIS | CD_CAP_REGION | CD_CAP_WRITEMODE | CD_CAP_PALETTE),
-  0,  /* not a plus driver */
-  CD_CTX_IMAGE,
+  CD_CTX_IMAGE,  /* not a plus driver */
   cdcreatecanvas,  
   cdinittable,
   NULL,                 

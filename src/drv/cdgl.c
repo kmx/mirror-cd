@@ -1547,7 +1547,6 @@ static cdContext cdGLContext =
 {
   CD_CAP_ALL & ~(CD_CAP_PLAY | CD_CAP_PALETTE | CD_CAP_LINEJOIN | CD_CAP_LINECAP |
                  CD_CAP_REGION | CD_CAP_STIPPLE | CD_CAP_PATTERN),
-  0,
   CD_CTX_WINDOW,
   cdcreatecanvas,
   cdinittable,

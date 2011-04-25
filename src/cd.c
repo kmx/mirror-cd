@@ -268,14 +268,14 @@ int cdContextIsPlus(cdContext *context)
 {
   if (!context)
     return CD_ERROR;
-  return context->plus;
+  return context->type&CD_CTX_PLUS? 1: 0;
 }
 
 int cdContextType(cdContext *context)
 {
   if (!context)
     return CD_ERROR;
-  return context->type;
+  return context->type&0x00FF;
 }
 
 int cdCanvasSimulate(cdCanvas* canvas, int mode)
@@ -752,7 +752,7 @@ void cdfCanvasPixel2MM(cdCanvas* canvas, double dx, double dy, double *mm_dx, do
 /***** Context Plus Functions ********/
 
 static int use_context_plus = 0;
-static cdContext* context_plus[NUM_CONTEXTPLUS] = {NULL, NULL, NULL, NULL, NULL, NULL};
+static cdContext* context_plus[CD_CTXPLUS_COUNT] = {NULL, NULL, NULL, NULL, NULL, NULL};
 
 int cdUseContextPlus(int use)
 {
@@ -768,14 +768,14 @@ int cdUseContextPlus(int use)
 void cdInitContextPlusList(cdContext* ctx_list[])
 {
   int ctx;
-  for (ctx = 0; ctx < NUM_CONTEXTPLUS; ctx++)
+  for (ctx = 0; ctx < CD_CTXPLUS_COUNT; ctx++)
     if (ctx_list[ctx] != NULL)
       context_plus[ctx] = ctx_list[ctx];
 }
 
 cdContext* cdGetContextPlus(int ctx)
 {
-  if (ctx < 0 || ctx >= NUM_CONTEXTPLUS)
+  if (ctx < 0 || ctx >= CD_CTXPLUS_COUNT)
     return NULL;
 
   return context_plus[ctx];

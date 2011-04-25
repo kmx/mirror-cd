@@ -119,6 +119,11 @@ and <strong>ScrollArea</strong>.</p>
 and <strong>Origin</strong> 
 functions. And those are affected if a transformation is set, just like other 
 regular primitives.</p>
+	<p>The transformation matrix and world coordinates perform similar 
+	functions.&nbsp;World coordinates were developed before the transformation matrix 
+	support.&nbsp;The transformation matrix operates at a lower level than world 
+	coordinates, and, as such, might be faster, but might behave differently on 
+	different platforms.&nbsp;World coordinates behave consistently across platforms.</p>
 
 
 </div><div class="function"><pre class="function"><span class="mainFunction">double*&nbsp;<a name="cdGetTransform">cdCanvasGetTransform</a>(cdCanvas* canvas); [in C]</span>

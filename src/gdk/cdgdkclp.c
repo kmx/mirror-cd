@@ -121,7 +121,6 @@ static void cdinittable(cdCanvas* canvas)
 static cdContext cdClipboardContext =
 {
   CD_CAP_ALL & ~(CD_CAP_GETIMAGERGB | CD_CAP_IMAGESRV | CD_CAP_FONTDIM | CD_CAP_TEXTSIZE ),  /* same as CD_MF */
-  0,
   CD_CTX_DEVICE,
   cdcreatecanvas,  
   cdinittable,

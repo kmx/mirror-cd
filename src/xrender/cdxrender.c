@@ -1013,11 +1013,11 @@ static void xrInitTableDBUFFER(cdCanvas* canvas)
 
 cdContext* cdContextDBufferPlus(void)
 {
-  if (!cdDBufferContext.plus)
+  if (!(cdDBufferContext.type & CD_CTX_PLUS))
   {
     int old_plus = cdUseContextPlus(0);  /* disable context plus */
     cdDBufferContext = *cdContextDBuffer();  /* copy original context */
-    cdDBufferContext.plus = 1; /* mark as plus */
+    cdDBufferContext.type |= CD_CTX_PLUS; /* mark as plus */
     cdDBufferContext.caps |= CD_CAP_FPRIMTIVES;
 
     /* save original methods */
@@ -1049,7 +1049,7 @@ static void xrInitTableNATIVE(cdCanvas* canvas)
 
 cdContext* cdContextNativeWindowPlus(void)
 {
-  if (!cdNativeWindowContext.plus)
+  if (!(cdNativeWindowContext.type & CD_CTX_PLUS))
   {
     int old_plus = cdUseContextPlus(0);
     cdNativeWindowContext = *cdContextNativeWindow();
@@ -1057,7 +1057,7 @@ cdContext* cdContextNativeWindowPlus(void)
     cdinittableNATIVE = cdNativeWindowContext.cxInitTable;
     cdNativeWindowContext.cxCreateCanvas = xrCreateCanvasNATIVE;
     cdNativeWindowContext.cxInitTable = xrInitTableNATIVE;
-    cdNativeWindowContext.plus = 1;
+    cdNativeWindowContext.type |= CD_CTX_PLUS;
     cdNativeWindowContext.caps |= CD_CAP_FPRIMTIVES;
     cdUseContextPlus(old_plus);
   }
@@ -1080,7 +1080,7 @@ static void xrInitTableIMAGE(cdCanvas* canvas)
 
 cdContext* cdContextImagePlus(void)
 {
-  if (!cdImageContext.plus)
+  if (!(cdImageContext.type & CD_CTX_PLUS))
   {
     int old_plus = cdUseContextPlus(0);
     cdImageContext = *cdContextImage();
@@ -1088,7 +1088,7 @@ cdContext* cdContextImagePlus(void)
     cdinittableIMAGE = cdImageContext.cxInitTable;
     cdImageContext.cxCreateCanvas = xrCreateCanvasIMAGE;
     cdImageContext.cxInitTable = xrInitTableIMAGE;
-    cdImageContext.plus = 1;
+    cdImageContext.type |= CD_CTX_PLUS;
     cdImageContext.caps |= CD_CAP_FPRIMTIVES;
     cdUseContextPlus(old_plus);
   }

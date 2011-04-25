@@ -141,7 +141,6 @@ static cdContext cdDBufferContext =
 {
   CD_CAP_ALL & ~(CD_CAP_PLAY | CD_CAP_YAXIS | 
                  CD_CAP_FPRIMTIVES ),
-  0,
   CD_CTX_IMAGE,
   cdcreatecanvas,  
   cdinittable,
