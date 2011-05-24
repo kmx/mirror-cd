@@ -12,6 +12,7 @@
 
 static void cdkillcanvas(cdCtxCanvas* ctxcanvas)
 {
+  ctxcanvas->cr = NULL; /* avoid to destroy it twice */
   cdcairoKillCanvas(ctxcanvas);
 }
 
