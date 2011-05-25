@@ -6,7 +6,7 @@
 
 #---------------------------------#
 # Tecmake Version
-VERSION = 4.4
+VERSION = 4.5
 
 
 #---------------------------------#
@@ -486,7 +486,9 @@ endif
 
 ifneq ($(findstring IRIX, $(TEC_UNAME)), )
   UNIX_POSIX = Yes
-  LD = ld
+  ifndef NO_LOCAL_LD
+    LD = ld
+  endif
   STDLDFLAGS := -elf -shared -rdata_shared -soname lib$(TARGETNAME).so
   RANLIB := /bin/true
   X11_LIBS := Xmu Xt X11
@@ -533,7 +535,9 @@ endif
 
 ifneq ($(findstring SunOS, $(TEC_UNAME)), )
   UNIX_POSIX = Yes
-  LD = ld
+  ifndef NO_LOCAL_LD
+    LD = ld
+  endif
   STDLDFLAGS := -G
   X11_INC := /usr/openwin/share/include
   X11_LIB := /usr/openwin/lib
@@ -548,6 +552,15 @@ ifneq ($(findstring SunOS, $(TEC_UNAME)), )
       # have to force these PATHs because of a conflict with standard PATHs
       STDLDFLAGS += -64 -L/usr/lib/64 -L/usr/ucblib/sparcv9
       LINKER += -xarch=v9
+    endif
+  endif
+  ifdef USE_CC
+    ifdef DBG
+      STDFLAGS += -g
+    else
+      ifdef OPT
+#        STDFLAGS +=  ????
+      endif
     endif
   endif
 endif
@@ -653,12 +666,16 @@ ifdef USE_LUA52
   NO_LUALIB := Yes
 endif
 
+ifdef USE_IUP
+  override USE_IUP3 = Yes
+endif
 ifdef USE_IUP3
   override USE_IUP = Yes
-# Inside Tecgraf only
-  ifndef IUP3_BUILD
-#    IUP := $(IUP)3
-  endif
+endif
+
+ifdef USE_IUP2
+  override USE_IUP = Yes
+  IUP := $(IUP)2
 endif
 
 ifdef USE_IUPBETA
@@ -869,9 +886,6 @@ ifdef USE_CD
     else
       ifneq ($(findstring cygw, $(TEC_UNAME)), )
         SLIB += $(CD_LIB)/libfreetype-6.a
-      else
-        # Use freetype from the system
-        LIBS += freetype
       endif
     endif
   else
@@ -992,17 +1006,22 @@ ifdef USE_GTK
     endif
 
     LIBS += gdk_pixbuf-2.0 pango-1.0 gobject-2.0 gmodule-2.0 glib-2.0
-    STDINCS += $(GTK)/include/atk-1.0 $(GTK)/include/gtk-2.0 $(GTK)/include/gdk-pixbuf-2.0 $(GTK)/include/cairo $(GTK)/include/pango-1.0 $(GTK)/include/glib-2.0
+    STDINCS += $(GTK)/include/atk-1.0 $(GTK)/include/gtk-2.0 $(GTK)/include/gdk-pixbuf-2.0 
+    STDINCS += $(GTK)/include/cairo $(GTK)/include/pango-1.0 $(GTK)/include/glib-2.0
 
     ifeq ($(TEC_SYSARCH), x64)
       STDINCS += $(GTK)/lib64/glib-2.0/include $(GTK)/lib64/gtk-2.0/include
       # Add also these to avoid errors in systems that lib64 does not exists
       STDINCS += $(GTK)/lib/glib-2.0/include $(GTK)/lib/gtk-2.0/include
+      # Add also support for newer instalations
+      STDINCS += $(GTK)/lib/x86_64-linux-gnu/glib-2.0/include
     else
     ifeq ($(TEC_SYSARCH), ia64)
       STDINCS += $(GTK)/lib64/glib-2.0/include $(GTK)/lib64/gtk-2.0/include
     else
       STDINCS += $(GTK)/lib/glib-2.0/include $(GTK)/lib/gtk-2.0/include
+      # Add also support for newer instalations
+      STDINCS += $(GTK)/lib/i386-linux-gnu/glib-2.0/include
     endif
     endif
     ifneq ($(findstring FreeBSD, $(TEC_UNAME)), )
