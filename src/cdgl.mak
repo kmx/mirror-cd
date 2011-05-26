@@ -33,6 +33,10 @@ ifneq ($(findstring SunOS, $(TEC_UNAME)), )
 endif
 
 ifneq ($(findstring MacOS, $(TEC_UNAME)), )
+  ifdef USE_MACOS_OPENGL
+    LFLAGS = -framework OpenGL
+    USE_OPENGL :=
+  endif
   ifneq ($(TEC_SYSMINOR), 4)
     BUILD_DYLIB=Yes
   endif

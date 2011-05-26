@@ -15,7 +15,11 @@
 #include <iconv.h>
 #endif
 
+#if defined (__APPLE__) || defined (OSX)
+#include <OpenGL/gl.h>
+#else
 #include <GL/gl.h>
+#endif
 
 #include <FTGL/ftgl.h>
 
