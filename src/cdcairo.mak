@@ -27,7 +27,9 @@ else
 endif
 
 # Can NOT use USE_GTK because gtk will be included for linking
-INCLUDES += $(GTK)/include/cairo $(GTK)/include/pango-1.0 $(GTK)/include/glib-2.0 $(GTK)/lib/glib-2.0/include $(GTK)/lib64/glib-2.0/include
+INCLUDES += $(GTK)/include/cairo $(GTK)/include/pango-1.0 $(GTK)/include/glib-2.0 
+INCLUDES += $(GTK)/lib/glib-2.0/include $(GTK)/lib64/glib-2.0/include
+INCLUDES += $(GTK)/lib/i386-linux-gnu/glib-2.0/include $(GTK)/lib/x86_64-linux-gnu/glib-2.0/include
 LDIR = $(GTK)/lib
 LIBS = pangocairo-1.0 cairo pango-1.0 gobject-2.0 glib-2.0
 
