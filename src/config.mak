@@ -77,12 +77,12 @@ ifdef USE_GDK
     endif
     LIBS += freetype6
   else
-    ifeq ($(findstring MacOS, $(TEC_UNAME)), )
+#    ifeq ($(findstring MacOS, $(TEC_UNAME)), )
       ifdef ADD_CAIRO
         SRC += cairo/cdcairoprn_unix.c
       endif
       INCLUDES += $(GTK)/include/gtk-unix-print-2.0
-    endif
+#    endif
     LIBS += freetype
   endif
 else
