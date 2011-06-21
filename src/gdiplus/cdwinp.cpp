@@ -2745,8 +2745,8 @@ cdCtxCanvas *cdwpCreateCanvas(cdCanvas* canvas, Graphics* graphics, int wtype)
 }
 
 static ULONG_PTR cd_gdiplusToken = NULL;
-
-static void __stdcall DebugEvent(DebugEventLevel level, char* msg)
+                                    
+static void __stdcall cd_DebugEvent(int level, char* msg)
 {
   (void)level;
   MessageBox(NULL, msg, "GDI+ Debug", 0);
@@ -2758,7 +2758,7 @@ void cdwpGdiPlusStartup(int debug)
   {
     GdiplusStartupInput input;
     if (debug)
-      input.DebugEventCallback = DebugEvent;
+      input.DebugEventCallback = (DebugEventProc)cd_DebugEvent;
 
     // Initialize GDI+.
     GdiplusStartup(&cd_gdiplusToken, &input, NULL);

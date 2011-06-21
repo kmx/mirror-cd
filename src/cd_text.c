@@ -216,11 +216,11 @@ void cdfCanvasText(cdCanvas* canvas, double x, double y, const char *s)
 int cdGetFontSizePixels(cdCanvas* canvas, int size)
 {
   if (size < 0)
-    size = -size;
+    size = -size;  /* size already in pixels */
   else
   {
-    double size_mm = (double)size/CD_MM2PT;
-    size = cdRound(size_mm*canvas->xres);
+    double size_mm = (double)size/CD_MM2PT;     /* size in points, convert to mm first */
+    size = cdRound(size_mm*canvas->xres);       /* from mm to pixels */
   }
 
   if (size == 0)
@@ -233,8 +233,8 @@ int cdGetFontSizePoints(cdCanvas* canvas, int size)
 {
   if (size < 0)
   {
-    double size_mm = ((double)-size)/canvas->xres;
-    size = cdRound(size_mm * CD_MM2PT);
+    double size_mm = ((double)-size)/canvas->xres;   /* size in pixels, convert to mm first */
+    size = cdRound(size_mm * CD_MM2PT);   /* from mm to points */
   }
 
   if (size == 0)
