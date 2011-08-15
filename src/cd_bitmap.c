@@ -135,7 +135,7 @@ cdBitmap* cdInitBitmap(int w, int h, int type, ...)
 
   va_start(arglist, type);
 
-  if (type == CD_RGB)
+  if (type == CD_RGB || type == CD_RGBA)
   {
     data->r = va_arg(arglist, unsigned char*);
     data->g = va_arg(arglist, unsigned char*);
