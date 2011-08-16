@@ -39,9 +39,27 @@
     <pre><code>cdCanvas* canvas = cdCreateCanvasf(CD_IMAGERGB, &quot;%dx%d&quot;, width, height);
 </code>cd<code>Canvas</code>LineStyle(<code>canvas, </code>CD_DASHED); 
 cd<code>Canvas</code>Line(<code>canvas, </code>10, 10, 50, 50); 
-unsigned char* red = cdCanvasGetAttribute(canvas, &quot;REDIMAGE&quot;);
-// do something with the raw image data
-cdKillCanvas(canvas); 
+cdKillCanvas(canvas); </pre>
+<p>To save the contents of the CD_IMAGERGB canvas in a file using IM, after 
+drawing and before destroying the canvas do:</p>
+<pre>unsigned char* data = cdCanvasGetAttribute(canvas, &quot;REDIMAGE&quot;); // Also a pointer to the full buffer
+imImage* image = <strong>imImageInit</strong>(width, height, IM_RGB, IM_BYTE, data, NULL, 0); 
+// Can use also IM_RGB|IM_ALPHA is canvas has support for alpha
+<strong>imFileImageSave</strong>(file_name, &quot;PNG&quot;, image);
+image-&gt;data[0] = NULL; // to avoid duplicate memory release
+<strong>imImageDestroy</strong>(image);</pre>
+<p>Or using another approach:</p>
+<pre>imImage* image = <strong>imImageCreate</strong>(width, height, IM_RGB, IM_BYTE);
+// Can also call <strong>imImageAddAlpha</strong> if alpha support is wanted
+
+<code>cdCanvas* canvas = cdCreateCanvasf(CD_IMAGERGB, &quot;%dx%d %p %p %p&quot;, width, height, 
+                                   image-&gt;data[0], image-&gt;data[1], image-&gt;data[2]);
+</code>cd<code>Canvas</code>LineStyle(<code>canvas, </code>CD_DASHED); 
+cd<code>Canvas</code>Line(<code>canvas, </code>10, 10, 50, 50); 
+cdKillCanvas(canvas);
+
+<strong>imFileImageSave</strong>(file_name, &quot;PNG&quot;, image);
+<strong>imImageDestroy</strong>(image);
 </pre>
   
 
