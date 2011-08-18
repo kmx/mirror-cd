@@ -79,7 +79,7 @@ cdBitmap* cdCreateBitmap(int w, int h, int type)
     return NULL;
   }
 
-  if (type == CD_RGB)
+  if (type == CD_RGB || type == CD_RGBA)
   {
     data->r = data->buffer;
     data->g = data->r + size;
