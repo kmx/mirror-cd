@@ -636,7 +636,8 @@ int cdCanvasYAxisMode(cdCanvas* canvas, int invert)
     return canvas->invert_yaxis;
 
   old_invert_yaxis = canvas->invert_yaxis;
-  canvas->invert_yaxis = invert;
+  if (!(canvas->context->caps & CD_CAP_YAXIS))
+    canvas->invert_yaxis = invert;
   return old_invert_yaxis;
 }
 

@@ -441,8 +441,7 @@ static int sGetFontFileName(const char *font_name, int bold, int italic, char* f
   {
     if (cdStrEqualNoCasePartial(szName, localFontName))
     {
-      //"%s/%s.ttf"
-      sprintf(fileName, "%s\\%s", sGetFontDir(), szData);
+      sprintf(fileName, "%s\\%s", sGetFontDir(), szData);  // szData already includes file extension
       bResult = 1;
       break;
     }

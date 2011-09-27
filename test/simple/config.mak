@@ -37,7 +37,7 @@ USE_STATIC = Yes
 #IUP = ../../../iup
 #CD = ../..
 
-USE_OPENGL = Yes
+#USE_OPENGL = Yes
 ifdef USE_OPENGL
   DEFINES += USE_OPENGL
 endif

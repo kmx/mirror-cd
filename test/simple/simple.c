@@ -562,6 +562,8 @@ void SimpleDraw(cdCanvas* canvas)
   /* refresh CD canvas size, when window size has changed */
   cdCanvasActivate(canvas);
 
+//  cdCanvasYAxisMode(canvas, 0);
+
   if (simple_draw == DRAW_TEXTFONTS)
     SimpleDrawTextFonts(canvas);
   else if (simple_draw == DRAW_TEXTALIGN)

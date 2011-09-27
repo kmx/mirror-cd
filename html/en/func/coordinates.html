@@ -22,13 +22,16 @@ canvas:GetSize() -&gt; (width, height, mm_width, mm_height: number) [in Lua]</pr
 
 canvas:YAxisMode(invert: number) -&gt; (old_invert: number) [in Lua]</pre>
 
-  <p>Controls the orientation of the Y axis. Internally in some drivers the 
+  <p>Returns the orientation of the Y axis. Internally in some drivers the 
 	native axis orientation is top-bottom, so the CD primitives must invert the 
 	Y axis since the CD orientation is bottom-top. Using CD_QUERY will return 
-	the current Y axis mode, if needs to be invert or not. Using 1 or 0 you can 
-	control if the Y axis should be inverted or not independent from the native 
-	orientation, with that you can in fact invert the orientation of the CD 
-	primitives.</p>
+	the current Y axis mode, if needs to be inverted internally or not.</p>
+	<p>Using 1 or 0 you can 
+	control if the Y axis will be inverted or not. But this is <strong>not</strong> 
+	recommended, because it has several limitations. Only drivers that the 
+	native axis orientation is inverted can be controlled, drivers that has the 
+	same orientation of the CD library can not be controlled. If changed Vector 
+	Text will always displays the text upside down.</p>
 
 </div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;<a name="cdUpdateYAxis">cdCanvasUpdateYAxis</a>(cdCanvas* canvas, int *y); [in C]</span>
 double&nbsp;cdfCanvasUpdateYAxis(cdCanvas* canvas, double&nbsp;*y); [in C]
