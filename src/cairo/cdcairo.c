@@ -220,7 +220,9 @@ static int cdclip(cdCtxCanvas *ctxcanvas, int mode)
 
 static unsigned int sEncodeRGBA(unsigned char r, unsigned char g, unsigned char b, unsigned char a)
 {
-  /* Pre-multiplied alpha */
+  /* CAIRO_FORMAT_ARGB32 each pixel is a 32-bit quantity, with alpha in the upper 8 bits, then red, then green, then blue. 
+     The 32-bit quantities are stored native-endian. 
+     Pre-multiplied alpha is used. (That is, 50% transparent red is 0x80800000, not 0x80ff0000.) */
   if (a != 255)
   {
     r = CD_ALPHAPRE(r, a);
@@ -240,10 +242,8 @@ static void make_pattern(cdCtxCanvas *ctxcanvas, int n, int m, void* userdata, i
   unsigned char r, g, b, a;
   cairo_surface_t* pattern_surface;
   unsigned int* data;
+  cairo_pattern_t *pattern;
 
-  /* CAIRO_FORMAT_ARGB32 each pixel is a 32-bit quantity, with alpha in the upper 8 bits, then red, then green, then blue. 
-     The 32-bit quantities are stored native-endian. 
-     Pre-multiplied alpha is used. (That is, 50% transparent red is 0x80800000, not 0x80ff0000.) */
   pattern_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, n, m);
   if (cairo_surface_status(pattern_surface) != CAIRO_STATUS_SUCCESS)
   {
@@ -251,6 +251,7 @@ static void make_pattern(cdCtxCanvas *ctxcanvas, int n, int m, void* userdata, i
     return;
   }
 
+  cairo_surface_flush(pattern_surface);
   data = (unsigned int*)cairo_image_surface_get_data(pattern_surface);
   stride = cairo_image_surface_get_stride(pattern_surface);
   offset = stride/4 - n;
@@ -278,12 +279,18 @@ static void make_pattern(cdCtxCanvas *ctxcanvas, int n, int m, void* userdata, i
       data += offset;
   }
 
-  if (ctxcanvas->pattern)
-    cairo_pattern_destroy(ctxcanvas->pattern);
+  cairo_surface_mark_dirty(pattern_surface);
 
-  ctxcanvas->pattern = cairo_pattern_create_for_surface(pattern_surface);
-  cairo_pattern_reference(ctxcanvas->pattern);
-  cairo_pattern_set_extend(ctxcanvas->pattern, CAIRO_EXTEND_REPEAT);
+  pattern = cairo_pattern_create_for_surface(pattern_surface);
+  if (cairo_pattern_status(pattern) == CAIRO_STATUS_SUCCESS)
+  {
+    if (ctxcanvas->pattern)
+      cairo_pattern_destroy(ctxcanvas->pattern);
+
+    ctxcanvas->pattern = pattern;
+    cairo_pattern_reference(ctxcanvas->pattern);
+    cairo_pattern_set_extend(ctxcanvas->pattern, CAIRO_EXTEND_REPEAT);
+  }
 
   cairo_surface_destroy(pattern_surface);
 }
@@ -1336,6 +1343,7 @@ static void cdgetimagergb(cdCtxCanvas *ctxcanvas, unsigned char *r, unsigned cha
   cairo_set_operator(cr, CAIRO_OPERATOR_SOURCE);
   cairo_paint(cr);  /* paints the current source everywhere within the current clip region. */
 
+  cairo_surface_flush(image_surface);
   data = (unsigned int*)cairo_image_surface_get_data(image_surface);
   stride = cairo_image_surface_get_stride(image_surface);
   offset = stride/4 - w;
@@ -1392,6 +1400,7 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
     return;
   }
 
+  cairo_surface_flush(image_surface);
   data = (unsigned int*)cairo_image_surface_get_data(image_surface);
   stride = cairo_image_surface_get_stride(image_surface);
   offset = stride/4 - rw;
@@ -1412,6 +1421,8 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
     if (offset)
       data += offset;
   }
+
+  cairo_surface_mark_dirty(image_surface);
 
   cairo_save (ctxcanvas->cr);
 
@@ -1444,9 +1455,6 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
   rw = xmax-xmin+1;
   rh = ymax-ymin+1;
 
-  /* CAIRO_FORMAT_ARGB32 each pixel is a 32-bit quantity, with alpha in the upper 8 bits, then red, then green, then blue. 
-     The 32-bit quantities are stored native-endian. 
-     Pre-multiplied alpha is used. (That is, 50% transparent red is 0x80800000, not 0x80ff0000.) */
   image_surface = cairo_image_surface_create(CAIRO_FORMAT_ARGB32, rw, rh);
   if (cairo_surface_status(image_surface) != CAIRO_STATUS_SUCCESS)
   {
@@ -1454,6 +1462,7 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
     return;
   }
 
+  cairo_surface_flush(image_surface);
   data = (unsigned int*)cairo_image_surface_get_data(image_surface);
   stride = cairo_image_surface_get_stride(image_surface);
   offset = stride/4 - rw;
@@ -1474,6 +1483,8 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
     if (offset)
       data += offset;
   }
+
+  cairo_surface_mark_dirty(image_surface);
 
   cairo_save (ctxcanvas->cr);
 
@@ -1530,6 +1541,7 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
     return;
   }
 
+  cairo_surface_flush(image_surface);
   data = (unsigned int*)cairo_image_surface_get_data(image_surface);
   stride = cairo_image_surface_get_stride(image_surface);
   offset = stride/4 - rw;
@@ -1557,6 +1569,8 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
     if (offset)
       data += offset;
   }
+
+  cairo_surface_mark_dirty(image_surface);
 
   cairo_save (ctxcanvas->cr);
 

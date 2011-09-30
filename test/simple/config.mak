@@ -61,6 +61,7 @@ else
   ifndef GDK_CAIRO
     SLIB += $(CDLIB)/libcdcontextplus.a
     LIBS = Xrender Xft
+#    USE_CAIRO=Yes
   endif
   ifdef USE_OPENGL
     SLIB += $(CDLIB)/libcdgl.a $(CDLIB)/libftgl.a

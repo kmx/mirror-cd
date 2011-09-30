@@ -129,6 +129,13 @@
 		<File
 			RelativePath="..\src\cairo\cdcaironative_gdk.c"
 			>
+			<FileConfiguration
+				Name="Debug|Win32"
+				>
+				<Tool
+					Name="VCCLCompilerTool"
+				/>
+			</FileConfiguration>
 		</File>
 		<File
 			RelativePath="..\src\cairo\cdcaironative_win32.c"

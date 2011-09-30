@@ -964,9 +964,9 @@ void SimpleDrawAll(cdCanvas* canvas)
 //  cdPutImageRectRGB(16, 16, red, green, blue, 10, 10, 608, 608, 5, 10, 5, 10);
 //  cdPutImageRectRGB(16, 16, red, green, blue, 10, 10, 64, 64, 5, 10, 5, 10);
 
-//  cdPutImageRGB(IMAGE_SIZE, IMAGE_SIZE, red, green, blue, 100, h - 200, IMAGE_SIZE, IMAGE_SIZE);
-//  cdPutImageRGBA(IMAGE_SIZE, IMAGE_SIZE, red, green, blue, alpha, 100, h - 200, IMAGE_SIZE, IMAGE_SIZE);
-//  cdPutImageRGB(IMAGE_SIZE, IMAGE_SIZE, red, green, blue, w - 400, h - 310, 3*IMAGE_SIZE, 3*IMAGE_SIZE);
+//  cdCanvasPutImageRectRGB(canvas, IMAGE_SIZE, IMAGE_SIZE, red, green, blue, 100, h - 200, IMAGE_SIZE, IMAGE_SIZE, 0, 0, 0, 0);
+//  cdCanvasPutImageRectRGBA(canvas, IMAGE_SIZE, IMAGE_SIZE, red, green, blue, alpha, 100, h - 200, IMAGE_SIZE, IMAGE_SIZE, 0, 0, 0, 0);
+//  cdCanvasPutImageRectRGB(canvas, IMAGE_SIZE, IMAGE_SIZE, red, green, blue, w - 400, h - 310, 3*IMAGE_SIZE, 3*IMAGE_SIZE, 0, 0, 0, 0);
   /* Draw the image on the top-right corner but increasing its actual size, and uses its full area */
   cdCanvasPutImageRectRGBA(canvas, IMAGE_SIZE, IMAGE_SIZE, red, green, blue, alpha, w - 400, h - 310, 3*IMAGE_SIZE, 3*IMAGE_SIZE, 0, 0, 0, 0);
 
