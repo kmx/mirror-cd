@@ -1142,6 +1142,13 @@ static void cdarc(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a
     return;
   }
 
+  if (!ctxcanvas->canvas->invert_yaxis)
+  {
+    /* change orientation */
+    a1 *= -1;
+    a2 *= -1;
+  }
+
   /* angles in 1/64ths of degrees counterclockwise, similar to CD */
 
   cdxCheckSolidStyle(ctxcanvas, 1);
@@ -1155,6 +1162,13 @@ static void cdsector(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, doubl
   {
     cdSimSector(ctxcanvas, xc, yc, w, h, a1, a2);
     return;
+  }
+
+  if (!ctxcanvas->canvas->invert_yaxis)
+  {
+    /* change orientation */
+    a1 *= -1;
+    a2 *= -1;
   }
 
   if (ctxcanvas->canvas->new_region)
@@ -1237,6 +1251,8 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
 
   if (ctxcanvas->canvas->text_orientation != 0)
   {
+    double angle = (ctxcanvas->canvas->invert_yaxis)? ctxcanvas->canvas->text_orientation: -ctxcanvas->canvas->text_orientation;
+
     cdxCheckSolidStyle(ctxcanvas, 1);
   
     if (ctxcanvas->canvas->use_matrix)
@@ -1245,13 +1261,13 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
     if (ctxcanvas->canvas->new_region)
     {
       sPrepareRegion(ctxcanvas);
-      XRotDrawString(ctxcanvas->dpy, ctxcanvas->font, ctxcanvas->canvas->text_orientation, 
+      XRotDrawString(ctxcanvas->dpy, ctxcanvas->font, angle, 
                      ctxcanvas->region_aux, ctxcanvas->region_aux_gc, x, y, s, len,
                      cd2xvertex[ctxcanvas->canvas->text_alignment], 0);
       sCombineRegion(ctxcanvas);
     }
     else
-      XRotDrawString(ctxcanvas->dpy, ctxcanvas->font, ctxcanvas->canvas->text_orientation, 
+      XRotDrawString(ctxcanvas->dpy, ctxcanvas->font, angle, 
                      ctxcanvas->wnd, ctxcanvas->gc, x, y, s, len,
                      cd2xvertex[ctxcanvas->canvas->text_alignment], 0);
 
@@ -1417,7 +1433,12 @@ static int byte_order(void)
 static void cdgetimagergb(cdCtxCanvas *ctxcanvas, unsigned char *r, unsigned char *g, unsigned char *b, int x, int y, int w, int h)
 {
   int col, lin, pos;
-  XImage *xi = XGetImage(ctxcanvas->dpy, ctxcanvas->wnd, x, y-h+1, w, h, ULONG_MAX, ZPixmap);
+  XImage *xi;
+
+  if (!ctxcanvas->canvas->invert_yaxis) 
+    y = _cdInvertYAxis(ctxcanvas->canvas, y);
+
+  xi = XGetImage(ctxcanvas->dpy, ctxcanvas->wnd, x, y-h+1, w, h, ULONG_MAX, ZPixmap);
   if (!xi)
   {
     fprintf(stderr, "CanvasDraw: error getting image\n");
@@ -1455,7 +1476,7 @@ static long int* get_data_buffer(cdCtxCanvas *ctxcanvas, int size)
   return ctxcanvas->xidata;
 }
   
-static XImage *map2ximage(cdCtxCanvas *ctxcanvas, int ew, int eh, const unsigned char *index, const long int * colors, int by, int bx, int bw, int bh, int iw)
+static XImage *cdxCreateXImageMap(cdCtxCanvas *ctxcanvas, int ew, int eh, const unsigned char *index, const long int * colors, int by, int bx, int bw, int bh, int iw, int topdown)
 {
   long int match_table[256];
   int i, j, pal_size;
@@ -1493,14 +1514,14 @@ static XImage *map2ximage(cdCtxCanvas *ctxcanvas, int ew, int eh, const unsigned
   {
   case 8: 
     {
-      unsigned char  *imagedata, *ip;
-      int imew, nullCount;
+      unsigned char *imagedata, *line_data;
+      int bperline, nullCount;
     
       nullCount = (4 - (ew % 4)) & 0x03;  /* # of padding bytes per line */
-      imew = ew + nullCount;
+      bperline = ew + nullCount;
     
       /* Now get the image data - pad each scanline as necessary */
-      imagedata = (unsigned char*)get_data_buffer(ctxcanvas, eh * imew);
+      imagedata = (unsigned char*)get_data_buffer(ctxcanvas, eh * bperline);
       if (!imagedata) 
       {
         fprintf(stderr, "CanvasDraw: not enough memory putting image\n");
@@ -1509,16 +1530,19 @@ static XImage *map2ximage(cdCtxCanvas *ctxcanvas, int ew, int eh, const unsigned
     
       for (i=0; i<eh; i++) 
       {
-        ip = imagedata + (eh-1-i)*imew;
+        if (topdown)
+          line_data = imagedata + i * bperline;
+        else
+          line_data = imagedata + (eh-1 - i) * bperline;
 
-        for (j=0; j<ew; j++, ip++) 
+        for (j=0; j<ew; j++, line_data++) 
         {
           src = (fy[i])*iw + fx[j];
-          *ip = (unsigned char) match_table[index[src]];
+          *line_data = (unsigned char) match_table[index[src]];
         }
       }
     
-      xim = XCreateImage(ctxcanvas->dpy,ctxcanvas->vis,ctxcanvas->depth,ZPixmap,0, (char *) imagedata,  ew,  eh, 32, imew);
+      xim = XCreateImage(ctxcanvas->dpy,ctxcanvas->vis,ctxcanvas->depth,ZPixmap,0, (char *) imagedata,  ew,  eh, 32, bperline);
       if (!xim) 
       {
         fprintf(stderr, "CanvasDraw: not enough memory putting image\n");
@@ -1532,7 +1556,7 @@ static XImage *map2ximage(cdCtxCanvas *ctxcanvas, int ew, int eh, const unsigned
   case 16: 
     {
       unsigned char *imagedata;
-      unsigned short *ip, *tip;
+      unsigned short *line_data;
     
       /* Now get the image data - pad each scanline as necessary */
       imagedata = (unsigned char*)get_data_buffer(ctxcanvas, 2*ew*eh);
@@ -1557,27 +1581,28 @@ static XImage *map2ximage(cdCtxCanvas *ctxcanvas, int ew, int eh, const unsigned
         return NULL;
       }
     
-      ip = (unsigned short*)(imagedata + (eh-1)*xim->bytes_per_line);
-
       for (i=0; i<eh; i++) 
       {
-        for (j=0, tip=ip; j<ew; j++) 
+        if (topdown)
+          line_data = (unsigned short*)(imagedata + i * xim->bytes_per_line);
+        else
+          line_data = (unsigned short*)(imagedata + (eh-1 - i) * xim->bytes_per_line);
+
+        for (j=0; j<ew; j++) 
         {
           src = (fy[i])*iw + fx[j];
           xcol = match_table[index[src]];
           
           if (xim->byte_order == MSBFirst) 
           {
-            *tip++ = (unsigned short)(xcol & 0xffff);
+            *line_data++ = (unsigned short)(xcol & 0xffff);
           }
           else
           {
-            /*  WAS *tip++ = ((xcol>>8) & 0xff) | ((xcol&0xff) << 8);  */
-            *tip++ = (unsigned short)(xcol);
+            /*  WAS *line_data++ = ((xcol>>8) & 0xff) | ((xcol&0xff) << 8);  */
+            *line_data++ = (unsigned short)(xcol);
           }
         }
-
-        ip -= ew;
       }
     }
     break;
@@ -1585,7 +1610,7 @@ static XImage *map2ximage(cdCtxCanvas *ctxcanvas, int ew, int eh, const unsigned
   case 24:
   case 32: 
     {
-      unsigned char  *imagedata, *ip, *tip;
+      unsigned char *imagedata, *line_data;
       int do32;
     
       /* Now get the image data - pad each scanline as necessary */
@@ -1605,32 +1630,33 @@ static XImage *map2ximage(cdCtxCanvas *ctxcanvas, int ew, int eh, const unsigned
     
       do32 = (xim->bits_per_pixel == 32? 1: 0);
     
-      ip = imagedata + (eh-1)*xim->bytes_per_line;
-
       for (i=0; i<eh; i++) 
       {
-        for (j=0, tip=ip; j<ew; j++) 
+        if (topdown)
+          line_data = imagedata + i * xim->bytes_per_line;
+        else
+          line_data = imagedata + (eh-1 - i) * xim->bytes_per_line;
+
+        for (j=0; j<ew; j++) 
         {
           src = (fy[i])*iw + fx[j];
           xcol = match_table[index[src]];
         
           if (xim->byte_order == MSBFirst) 
           {
-            if (do32) *tip++ = 0;
-            *tip++ = (unsigned char)((xcol>>16) & 0xff);
-            *tip++ = (unsigned char)((xcol>>8)  & 0xff);
-            *tip++ = (unsigned char)( xcol      & 0xff);
+            if (do32) *line_data++ = 0;
+            *line_data++ = (unsigned char)((xcol>>16) & 0xff);
+            *line_data++ = (unsigned char)((xcol>>8)  & 0xff);
+            *line_data++ = (unsigned char)( xcol      & 0xff);
           }
           else 
           {  /* LSBFirst */
-            *tip++ = (unsigned char)( xcol      & 0xff);
-            *tip++ = (unsigned char)((xcol>>8)  & 0xff);
-            *tip++ = (unsigned char)((xcol>>16) & 0xff);
-            if (do32) *tip++ = 0;
+            *line_data++ = (unsigned char)( xcol      & 0xff);
+            *line_data++ = (unsigned char)((xcol>>8)  & 0xff);
+            *line_data++ = (unsigned char)((xcol>>16) & 0xff);
+            if (do32) *line_data++ = 0;
           }
         }
-
-        ip -= xim->bytes_per_line;
       }
     }
     break;
@@ -1661,7 +1687,10 @@ static XImage *map2ximage(cdCtxCanvas *ctxcanvas, int ew, int eh, const unsigned
         for (j=0; j<ew; j++) 
         {
           src = (fy[i])*iw + fx[j];
-          dst = (eh-1 - i)*ew + j;
+          if (topdown)
+            dst = i*ew + j;
+          else
+            dst = (eh-1 - i)*ew + j;
           imagedata[dst] = match_table[index[src]];
         }
       }
@@ -1675,10 +1704,10 @@ static XImage *map2ximage(cdCtxCanvas *ctxcanvas, int ew, int eh, const unsigned
   return(xim);
 }
 
-static XImage *rgb2ximage(cdCtxCanvas *ctxcanvas, int ew, int eh, 
+static XImage *cdxCreateXImageRGB(cdCtxCanvas *ctxcanvas, int ew, int eh, 
                           const unsigned char *red, const unsigned char *green, const unsigned char *blue, 
                           const unsigned char *alpha, XImage *oxi, 
-                          int by, int bx, int bw, int bh, int iw)
+                          int by, int bx, int bw, int bh, int iw, int topdown)
 {
 /*
 * if we're displaying on a TrueColor
@@ -1692,7 +1721,7 @@ static XImage *rgb2ximage(cdCtxCanvas *ctxcanvas, int ew, int eh,
   unsigned long r, g, b, rmask, gmask, bmask, xcol;
   int           rshift, gshift, bshift, bperpix, bperline, byte_order, cshift;
   int           maplen, src;
-  unsigned char *lip, *ip, *imagedata, or, ob, og, al;
+  unsigned char *line_data, *imagedata, or, ob, og, al;
   int *fx, *fy;
   
   /* compute various shifting constants that we'll need... */
@@ -1738,17 +1767,25 @@ static XImage *rgb2ximage(cdCtxCanvas *ctxcanvas, int ew, int eh,
 
   xim->data = (char *) imagedata;
   
-  lip = imagedata + (eh-1)*bperline;
-
-  for (i=0; i<eh; i++, lip -= bperline) 
+  for (i=0; i<eh; i++) 
   {
-    for (j=0, ip=lip; j<ew; j++) 
+    if (topdown)
+      line_data = imagedata + i * bperline;
+    else
+      line_data = imagedata + (eh-1 - i) * bperline;
+
+    for (j=0; j<ew; j++) 
     {
       src = fy[i]*iw + fx[j];
 
       if (alpha)
       {
-        cdxGetRGB(ctxcanvas, XGetPixel(oxi, j, eh-i-1), &or, &og, &ob);
+        unsigned long pixel;
+        if (topdown)
+          pixel = XGetPixel(oxi, j, i);
+        else
+          pixel = XGetPixel(oxi, j, eh-1 - i);
+        cdxGetRGB(ctxcanvas, pixel, &or, &og, &ob);
         al = alpha[src];
         r = CD_ALPHA_BLEND(red[src], or, al);
         g = CD_ALPHA_BLEND(green[src], og, al);
@@ -1797,49 +1834,49 @@ static XImage *rgb2ximage(cdCtxCanvas *ctxcanvas, int ew, int eh,
       if (bperpix == 32) 
       {
         if (byte_order == MSBFirst) {
-          *ip++ = (unsigned char)((xcol>>24) & 0xff);
-          *ip++ = (unsigned char)((xcol>>16) & 0xff);
-          *ip++ = (unsigned char)((xcol>>8)  & 0xff);
-          *ip++ = (unsigned char)( xcol      & 0xff);
+          *line_data++ = (unsigned char)((xcol>>24) & 0xff);
+          *line_data++ = (unsigned char)((xcol>>16) & 0xff);
+          *line_data++ = (unsigned char)((xcol>>8)  & 0xff);
+          *line_data++ = (unsigned char)( xcol      & 0xff);
         }
         else 
         {  /* LSBFirst */
-          *ip++ = (unsigned char)( xcol      & 0xff);
-          *ip++ = (unsigned char)((xcol>>8)  & 0xff);
-          *ip++ = (unsigned char)((xcol>>16) & 0xff);
-          *ip++ = (unsigned char)((xcol>>24) & 0xff);
+          *line_data++ = (unsigned char)( xcol      & 0xff);
+          *line_data++ = (unsigned char)((xcol>>8)  & 0xff);
+          *line_data++ = (unsigned char)((xcol>>16) & 0xff);
+          *line_data++ = (unsigned char)((xcol>>24) & 0xff);
         }
       }
       else if (bperpix == 24) 
       {
         if (byte_order == MSBFirst) 
         {
-          *ip++ = (unsigned char)((xcol>>16) & 0xff);
-          *ip++ = (unsigned char)((xcol>>8)  & 0xff);
-          *ip++ = (unsigned char)( xcol      & 0xff);
+          *line_data++ = (unsigned char)((xcol>>16) & 0xff);
+          *line_data++ = (unsigned char)((xcol>>8)  & 0xff);
+          *line_data++ = (unsigned char)( xcol      & 0xff);
         }
         else 
         {  /* LSBFirst */
-          *ip++ = (unsigned char)( xcol      & 0xff);
-          *ip++ = (unsigned char)((xcol>>8)  & 0xff);
-          *ip++ = (unsigned char)((xcol>>16) & 0xff);
+          *line_data++ = (unsigned char)( xcol      & 0xff);
+          *line_data++ = (unsigned char)((xcol>>8)  & 0xff);
+          *line_data++ = (unsigned char)((xcol>>16) & 0xff);
         }
       }
       else if (bperpix == 16) 
       {
         if (byte_order == MSBFirst) 
         {
-          *ip++ = (unsigned char)((xcol>>8)  & 0xff);
-          *ip++ = (unsigned char)( xcol      & 0xff);
+          *line_data++ = (unsigned char)((xcol>>8)  & 0xff);
+          *line_data++ = (unsigned char)( xcol      & 0xff);
         }
         else {  /* LSBFirst */
-          *ip++ = (unsigned char)( xcol      & 0xff);
-          *ip++ = (unsigned char)((xcol>>8)  & 0xff);
+          *line_data++ = (unsigned char)( xcol      & 0xff);
+          *line_data++ = (unsigned char)((xcol>>8)  & 0xff);
         }
       }
       else if (bperpix == 8) 
       {
-        *ip++ =  (unsigned char)(xcol      & 0xff);
+        *line_data++ =  (unsigned char)(xcol      & 0xff);
       }
     }
   }
@@ -1902,21 +1939,37 @@ static void cdputimagerectrgba_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, co
   }
 
   {
+    int topdown;
     int ex = t_xmin, 
         ey = t_ymin + eh-1;  /* XImage origin is at top-left */
     XImage *xi, *oxi = NULL;
     Pixmap clip_polygon, clip_mask = 0;
     XPoint pnt[4];
 
-    /* Since the transformation used was the original transformation, */
-    /* must invert the Y axis here. */
-    ey = _cdInvertYAxis(ctxcanvas->canvas, ey);
+    if(ctxcanvas->canvas->invert_yaxis)
+    {
+      topdown = 0;
 
-    /* use clipping to select only the transformed rectangle */
-    pnt[0].x = (short)rect[0]; pnt[0].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[1]);
-    pnt[1].x = (short)rect[2]; pnt[1].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[3]);
-    pnt[2].x = (short)rect[4]; pnt[2].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[5]);
-    pnt[3].x = (short)rect[6]; pnt[3].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[7]);
+      /* Since the transformation used was the original transformation, */
+      /* must invert the Y axis here. */
+      ey = _cdInvertYAxis(ctxcanvas->canvas, ey);
+
+      /* use clipping to select only the transformed rectangle */
+      pnt[0].x = (short)rect[0]; pnt[0].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[1]);
+      pnt[1].x = (short)rect[2]; pnt[1].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[3]);
+      pnt[2].x = (short)rect[4]; pnt[2].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[5]);
+      pnt[3].x = (short)rect[6]; pnt[3].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[7]);
+    }
+    else
+    {
+      topdown = 1;
+
+      /* use clipping to select only the transformed rectangle */
+      pnt[0].x = (short)rect[0]; pnt[0].y = (short)rect[1];
+      pnt[1].x = (short)rect[2]; pnt[1].y = (short)rect[3];
+      pnt[2].x = (short)rect[4]; pnt[2].y = (short)rect[5];
+      pnt[3].x = (short)rect[6]; pnt[3].y = (short)rect[7];
+    }
     clip_polygon = build_clip_polygon(ctxcanvas, pnt, 4);
 
     /* combine with the existing clipping */
@@ -1941,7 +1994,7 @@ static void cdputimagerectrgba_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, co
       }
     }
 
-    xi = rgb2ximage(ctxcanvas, ew, eh, dst_r, dst_g, dst_b, dst_a, oxi, 0, 0, ew, eh, ew);
+    xi = cdxCreateXImageRGB(ctxcanvas, ew, eh, dst_r, dst_g, dst_b, dst_a, oxi, 0, 0, ew, eh, ew, topdown);
     if (!xi)
       return;
 
@@ -2003,21 +2056,37 @@ static void cdputimagerectmap_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, con
   }
 
   {
+    int topdown;
     int ex = t_xmin, 
         ey = t_ymin + eh-1;  /* XImage origin is at top-left */
     XImage *xi;
     Pixmap clip_polygon, clip_mask = 0;
     XPoint pnt[4];
 
-    /* Since the transformation used was the original transformation, */
-    /* must invert the Y axis here. */
-    ey = _cdInvertYAxis(ctxcanvas->canvas, ey);
+    if(ctxcanvas->canvas->invert_yaxis)
+    {
+      topdown = 0;
 
-    /* use clipping to select only the transformed rectangle */
-    pnt[0].x = (short)rect[0]; pnt[0].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[1]);
-    pnt[1].x = (short)rect[2]; pnt[1].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[3]);
-    pnt[2].x = (short)rect[4]; pnt[2].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[5]);
-    pnt[3].x = (short)rect[6]; pnt[3].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[7]);
+      /* Since the transformation used was the original transformation, */
+      /* must invert the Y axis here. */
+      ey = _cdInvertYAxis(ctxcanvas->canvas, ey);
+
+      /* use clipping to select only the transformed rectangle */
+      pnt[0].x = (short)rect[0]; pnt[0].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[1]);
+      pnt[1].x = (short)rect[2]; pnt[1].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[3]);
+      pnt[2].x = (short)rect[4]; pnt[2].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[5]);
+      pnt[3].x = (short)rect[6]; pnt[3].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[7]);
+    }
+    else
+    {
+      topdown = 1;
+
+      /* use clipping to select only the transformed rectangle */
+      pnt[0].x = (short)rect[0]; pnt[0].y = (short)rect[1];
+      pnt[1].x = (short)rect[2]; pnt[1].y = (short)rect[3];
+      pnt[2].x = (short)rect[4]; pnt[2].y = (short)rect[5];
+      pnt[3].x = (short)rect[6]; pnt[3].y = (short)rect[7];
+    }
     clip_polygon = build_clip_polygon(ctxcanvas, pnt, 4);
 
     /* combine with the existing clipping */
@@ -2031,7 +2100,7 @@ static void cdputimagerectmap_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, con
     XSetClipMask(ctxcanvas->dpy, ctxcanvas->gc, clip_polygon);
     cdwritemode(ctxcanvas, ctxcanvas->canvas->write_mode); /* reset XSetFunction */
 
-    xi = map2ximage(ctxcanvas, ew, eh, dst_index, colors, 0, 0, ew, eh, ew);
+    xi = cdxCreateXImageMap(ctxcanvas, ew, eh, dst_index, colors, 0, 0, ew, eh, ew, topdown);
     if (!xi)
       return;
 
@@ -2048,11 +2117,22 @@ static void cdputimagerectmap_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, con
   free(dst_index);
 }
 
+static void sFixImageY(cdCanvas* canvas, int *topdown, int *y, int h)
+{
+  if (canvas->invert_yaxis)
+    *topdown = 0;
+  else
+    *topdown = 1;
+
+  if (!(*topdown))
+    *y -= (h - 1);  /* move Y to top-left corner, since it was at the bottom of the image */
+}
+
 static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
   int ew = w, eh = h, ex = x, ey = y;
   int bw = iw, bh = ih, bx = 0, by = 0;
-  int rw, rh;
+  int rw, rh, topdown;
   XImage *xi;
 
   if (ctxcanvas->canvas->use_matrix)
@@ -2063,7 +2143,7 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 
   rw = xmax-xmin+1;
   rh = ymax-ymin+1;
-  y -= (h - 1);        /* XImage origin is at top-left */
+  sFixImageY(ctxcanvas->canvas, &topdown, &y, h);
 
   if (!cdCalcZoom(ctxcanvas->canvas->w, x, w, &ex, &ew, xmin, rw, &bx, &bw, 1))
     return;
@@ -2071,7 +2151,7 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   if (!cdCalcZoom(ctxcanvas->canvas->h, y, h, &ey, &eh, ymin, rh, &by, &bh, 0))
     return;
 
-  xi = rgb2ximage(ctxcanvas, ew, eh, r, g, b, NULL, NULL, by, bx, bw, bh, iw);
+  xi = cdxCreateXImageRGB(ctxcanvas, ew, eh, r, g, b, NULL, NULL, by, bx, bw, bh, iw, topdown);
   if (!xi)
     return;
 
@@ -2086,7 +2166,7 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
   XImage *xi, *oxi;
   int ew = w, eh = h, ex = x, ey = y;
   int bw = iw, bh = ih, bx = 0, by = 0;
-  int rw, rh;
+  int rw, rh, topdown;
 
   if (ctxcanvas->canvas->use_matrix)
   {
@@ -2096,7 +2176,7 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
 
   rw = xmax-xmin+1;
   rh = ymax-ymin+1;
-  y -= (h - 1);        /* XImage origin is at top-left */
+  sFixImageY(ctxcanvas->canvas, &topdown, &y, h);
 
   if (!cdCalcZoom(ctxcanvas->canvas->w, x, w, &ex, &ew, xmin, rw, &bx, &bw, 1))
     return;
@@ -2111,7 +2191,7 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
     return;
   }
 
-  xi = rgb2ximage(ctxcanvas, ew, eh, r, g, b, a, oxi, by, bx, bw, bh, iw);
+  xi = cdxCreateXImageRGB(ctxcanvas, ew, eh, r, g, b, a, oxi, by, bx, bw, bh, iw, topdown);
   if (!xi)
     return;
 
@@ -2126,7 +2206,7 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 {
   int ew = w, eh = h, ex = x, ey = y;
   int bw = iw, bh = ih, bx = 0, by = 0;
-  int rw, rh;
+  int rw, rh, topdown;
   XImage *xi;
 
   if (ctxcanvas->canvas->use_matrix)
@@ -2137,7 +2217,7 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 
   rw = xmax-xmin+1;
   rh = ymax-ymin+1;
-  y -= (h - 1);        /* XImage origin is at top-left */
+  sFixImageY(ctxcanvas->canvas, &topdown, &y, h);
 
   if (!cdCalcZoom(ctxcanvas->canvas->w, x, w, &ex, &ew, xmin, rw, &bx, &bw, 1))
     return;
@@ -2145,7 +2225,7 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   if (!cdCalcZoom(ctxcanvas->canvas->h, y, h, &ey, &eh, ymin, rh, &by, &bh, 0))
     return;
 
-  xi = map2ximage(ctxcanvas, ew, eh, index, colors, by, bx, bw, bh, iw);
+  xi = cdxCreateXImageMap(ctxcanvas, ew, eh, index, colors, by, bx, bw, bh, iw, topdown);
   if (!xi)
     return;
 
@@ -2198,6 +2278,9 @@ static cdCtxImage *cdcreateimage (cdCtxCanvas *ctxcanvas, int w, int h)
 
 static void cdgetimage (cdCtxCanvas *ctxcanvas, cdCtxImage *ctximage, int x, int y)
 {
+  if (!ctxcanvas->canvas->invert_yaxis)  // if 0, invert because the transform was reset here
+    y = _cdInvertYAxis(ctxcanvas->canvas, y);
+
   /* y is the bottom-left of the image in CD, must be at upper-left */
   y -= ctximage->h-1;
 
@@ -2219,6 +2302,14 @@ static void cdkillimage (cdCtxImage *ctximage)
 
 static void cdscrollarea (cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax, int dx, int dy)
 {
+  if (!ctxcanvas->canvas->invert_yaxis)  
+  {
+    dy = -dy;
+    ymin = _cdInvertYAxis(ctxcanvas->canvas, ymin);
+    ymax = _cdInvertYAxis(ctxcanvas->canvas, ymax);
+    _cdSwapInt(ymin, ymax);
+  }
+
   XCopyArea(ctxcanvas->dpy, ctxcanvas->wnd, ctxcanvas->wnd, ctxcanvas->gc,
             xmin, ymin,
             xmax-xmin+1, ymax-ymin+1,

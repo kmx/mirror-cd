@@ -829,10 +829,11 @@ static void sGetTransformTextHeight(cdCanvas* canvas, int x, int y, int w, int h
   xmax = xmin + w-1;
   ymax = ymin + h-1;
 
-  if (canvas->text_orientation)
+  if (canvas->text_orientation != 0)
   {
-    double cos_theta = cos(canvas->text_orientation*CD_DEG2RAD);
-    double sin_theta = sin(canvas->text_orientation*CD_DEG2RAD);
+    double angle = ((canvas->invert_yaxis)? canvas->text_orientation: -canvas->text_orientation)*CD_DEG2RAD;
+    double cos_theta = cos(angle);
+    double sin_theta = sin(angle);
     int rectY[4];
 
     cdRotatePointY(canvas, xmin, ymin, x, y, &rectY[0], sin_theta, cos_theta);
@@ -886,7 +887,7 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, i
   metrics = pango_context_get_metrics(ctxcanvas->fontcontext, ctxcanvas->fontdesc, pango_context_get_language(ctxcanvas->fontcontext));
   desc = (((pango_font_metrics_get_descent(metrics)) + PANGO_SCALE/2) / PANGO_SCALE);
 
-  if (ctxcanvas->canvas->text_orientation || 
+  if (ctxcanvas->canvas->text_orientation != 0 || 
       ctxcanvas->canvas->use_matrix ||
       ctxcanvas->rotate_angle)
     reset_transform = 1;
@@ -900,10 +901,11 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, i
       cairo_scale(ctxcanvas->cr, 0.25, 0.25);  /* ??? */
   }
 
-  if (ctxcanvas->canvas->text_orientation)
+  if (ctxcanvas->canvas->text_orientation != 0)
   {
+    double angle = ((ctxcanvas->canvas->invert_yaxis)? ctxcanvas->canvas->text_orientation: -ctxcanvas->canvas->text_orientation)*CD_DEG2RAD;
     cairo_translate(ctxcanvas->cr, x, y);
-    cairo_rotate(ctxcanvas->cr, -ctxcanvas->canvas->text_orientation*CD_DEG2RAD);
+    cairo_rotate(ctxcanvas->cr, -angle);
     cairo_translate(ctxcanvas->cr, -x, -y);
   }
 
@@ -1319,7 +1321,7 @@ static void cdgetimagergb(cdCtxCanvas *ctxcanvas, unsigned char *r, unsigned cha
   /* reset to the identity. */
   cairo_identity_matrix(ctxcanvas->cr);
 
-  if (ctxcanvas->canvas->invert_yaxis==0) /* if 0, invert because the transform was reset here */
+  if (!ctxcanvas->canvas->invert_yaxis) 
     y = _cdInvertYAxis(ctxcanvas->canvas, y);
 
   /* y is the bottom-left of the image in CD, must be at upper-left */
@@ -1650,7 +1652,7 @@ static void cdgetimage (cdCtxCanvas *ctxcanvas, cdCtxImage *ctximage, int x, int
 
   cairo_reset_clip(ctximage->cr);
 
-  if (ctxcanvas->canvas->invert_yaxis==0)  /* if 0, invert because the transform was reset here */
+  if (!ctxcanvas->canvas->invert_yaxis)  
     y = _cdInvertYAxis(ctxcanvas->canvas, y);
 
   /* y is the bottom-left of the image in CD, must be at upper-left */
@@ -1695,7 +1697,7 @@ static void cdscrollarea (cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, 
   /* reset to identity */
   cairo_identity_matrix(ctxcanvas->cr);
 
-  if (ctxcanvas->canvas->invert_yaxis==0)  /* if 0, invert because the transform was reset here */
+  if (!ctxcanvas->canvas->invert_yaxis)  
   {
     dy = -dy;
     ymin = _cdInvertYAxis(ctxcanvas->canvas, ymin);

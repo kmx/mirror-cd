@@ -574,9 +574,9 @@ static int cdfont(cdCtxCanvas *ctxcanvas, const char *type_face, int style, int 
   else if (cdStrEqualNoCase(type_face, "Helvetica") || cdStrEqualNoCase(type_face, "Arial"))
     type_face = "sans";
 
-  if (ctxcanvas->canvas->text_orientation)
+  if (ctxcanvas->canvas->text_orientation != 0)
   {
-    double angle = CD_DEG2RAD*ctxcanvas->canvas->text_orientation;
+    double angle = ((ctxcanvas->canvas->invert_yaxis)? ctxcanvas->canvas->text_orientation: -ctxcanvas->canvas->text_orientation)*CD_DEG2RAD;
     double cos_angle = cos(angle);
     double sin_angle = sin(angle);
 
@@ -593,7 +593,7 @@ static int cdfont(cdCtxCanvas *ctxcanvas, const char *type_face, int style, int 
   if (ctxcanvas->ctxplus->font)
     XftFontClose(ctxcanvas->dpy, ctxcanvas->ctxplus->font);
 
-  if (ctxcanvas->canvas->text_orientation)
+  if (ctxcanvas->canvas->text_orientation != 0)
   {
     /* XftTextExtents8 will return the size of the rotated text, but we want the size without orientation.
        So create a font without orientation just to return the correct text size. */
@@ -676,7 +676,7 @@ static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *text, int len, int
   if (!ctxcanvas->ctxplus->font) 
     return;
 
-  if (ctxcanvas->canvas->text_orientation)
+  if (ctxcanvas->canvas->text_orientation != 0)
     XftTextExtents8(ctxcanvas->dpy, ctxcanvas->ctxplus->flat_font, (XftChar8*)text, len, &extents);
   else
     XftTextExtents8(ctxcanvas->dpy, ctxcanvas->ctxplus->font, (XftChar8*)text, len, &extents);
@@ -693,7 +693,7 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *text, int l
   if (!ctxcanvas->ctxplus->font)
     return;
 
-  if (ctxcanvas->canvas->text_orientation)
+  if (ctxcanvas->canvas->text_orientation != 0)
     XftTextExtents8(ctxcanvas->dpy, ctxcanvas->ctxplus->flat_font, (XftChar8*)text, len, &extents);
   else
     XftTextExtents8(ctxcanvas->dpy, ctxcanvas->ctxplus->font, (XftChar8*)text, len, &extents);
@@ -754,9 +754,9 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *text, int l
     break;
   }
 
-  if (ctxcanvas->canvas->text_orientation)
+  if (ctxcanvas->canvas->text_orientation != 0)
   {
-    double angle = CD_DEG2RAD*ctxcanvas->canvas->text_orientation;
+    double angle = ((ctxcanvas->canvas->invert_yaxis)? ctxcanvas->canvas->text_orientation: -ctxcanvas->canvas->text_orientation)*CD_DEG2RAD;
     double cos_angle = cos(angle);
     double sin_angle = sin(angle);
 
@@ -981,9 +981,9 @@ static void xrCreateContextPlus(cdCtxCanvas *ctxcanvas)
 
 /*******************************************************************************************************/
 
-static cdContext cdDBufferContext = {0,0,0,NULL,NULL,NULL,NULL};
-static cdContext cdNativeWindowContext = {0,0,0,NULL,NULL,NULL,NULL};
-static cdContext cdImageContext = {0,0,0,NULL,NULL,NULL,NULL};
+static cdContext cdDBufferContext = {0,0,0,NULL,NULL,NULL};
+static cdContext cdNativeWindowContext = {0,0,0,NULL,NULL,NULL};
+static cdContext cdImageContext = {0,0,0,NULL,NULL,NULL};
 
 static void (*cdcreatecanvasDBUFFER)(cdCanvas* canvas, void* data) = NULL;
 static void (*cdcreatecanvasNATIVE)(cdCanvas* canvas, void* data) = NULL;

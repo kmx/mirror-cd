@@ -1110,9 +1110,9 @@ static void sTextOutBlt(cdCtxCanvas* ctxcanvas, int px, int py, const char* s, i
   HBITMAP hBitmap, hOldBitmap;
   HFONT hOldFont;
   int w, h, wt, ht, x, y, off, px_off = 0, py_off = 0;
-  double teta = ctxcanvas->canvas->text_orientation*CD_DEG2RAD;
-  double cos_teta = cos(teta);
-  double sin_teta = sin(teta);
+  double angle = ((ctxcanvas->canvas->invert_yaxis)? ctxcanvas->canvas->text_orientation: -ctxcanvas->canvas->text_orientation)*CD_DEG2RAD;
+  double cos_teta = cos(angle);
+  double sin_teta = sin(angle);
   
   cdgettextsize(ctxcanvas, s, len, &w, &h);
   wt = w;
@@ -1320,10 +1320,11 @@ static void cdwCanvasGetTextHeight(cdCanvas* canvas, int x, int y, const char *s
   xmax = xmin + w-1;
   ymax = ymin + h-1;
 
-  if (canvas->text_orientation)
+  if (canvas->text_orientation != 0)
   {
-    double cos_theta = cos(canvas->text_orientation*CD_DEG2RAD);
-    double sin_theta = sin(canvas->text_orientation*CD_DEG2RAD);
+    double angle = ((canvas->invert_yaxis)? canvas->text_orientation: -canvas->text_orientation)*CD_DEG2RAD;
+    double cos_theta = cos(angle);
+    double sin_theta = sin(angle);
     int rectY[4];
 
     *hoff = (int)(*hoff * cos_theta);
@@ -1395,8 +1396,9 @@ static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s, int len)
 
       if (ctxcanvas->canvas->text_orientation != 0)
       {
-        y += (int)(off * cos(ctxcanvas->canvas->text_orientation*CD_DEG2RAD));
-        x += (int)(off * sin(ctxcanvas->canvas->text_orientation*CD_DEG2RAD));
+        double angle = ((ctxcanvas->canvas->invert_yaxis)? ctxcanvas->canvas->text_orientation: -ctxcanvas->canvas->text_orientation)*CD_DEG2RAD;
+        y += (int)(off * cos(angle));
+        x += (int)(off * sin(angle));
       }
       else
         y += off;
@@ -1648,11 +1650,16 @@ static int cdnativefont (cdCtxCanvas* ctxcanvas, const char* nativefont)
 
 static double cdtextorientation(cdCtxCanvas* ctxcanvas, double angle)
 {
-  if (ctxcanvas->font_angle == angle) /* first time angle=0, do not create font twice */
+  int font_angle = (int)(angle * 10);
+  if (!ctxcanvas->canvas->invert_yaxis)
+    font_angle *= -1;
+
+  if (ctxcanvas->font_angle == font_angle) /* first time angle=0, do not create font twice */
     return angle;
 
-  ctxcanvas->font_angle = (int)(angle * 10);
+  ctxcanvas->font_angle = font_angle;
 
+  /* recreate the font, because angle changed */
   cdfont(ctxcanvas, ctxcanvas->canvas->font_type_face, ctxcanvas->canvas->font_style, ctxcanvas->canvas->font_size);
 
   return angle;
@@ -1722,7 +1729,7 @@ static void cdgetimagergb(cdCtxCanvas* ctxcanvas, unsigned char *red, unsigned c
     ModifyWorldTransform(ctxcanvas->hDC, NULL, MWT_IDENTITY);
   }
 
-  if (ctxcanvas->canvas->invert_yaxis==0) /* if 0, invert because the transform was reset here */
+  if (!ctxcanvas->canvas->invert_yaxis) 
     y = _cdInvertYAxis(ctxcanvas->canvas, y);
   
   yr = y - (h - 1);  /* y starts at the bottom of the image */
@@ -2029,7 +2036,7 @@ static void cdgetimage(cdCtxCanvas* ctxcanvas, cdCtxImage *ctximage, int x, int 
     ModifyWorldTransform(ctxcanvas->hDC, NULL, MWT_IDENTITY);
   }
 
-  if (ctxcanvas->canvas->invert_yaxis==0)  /* if 0, invert because the transform was reset here */
+  if (!ctxcanvas->canvas->invert_yaxis)  
     y = _cdInvertYAxis(ctxcanvas->canvas, y);
 
   /* y is the bottom-left of the image in CD, must be at upper-left */
@@ -2109,7 +2116,7 @@ static void cdscrollarea(cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, i
     ModifyWorldTransform(ctxcanvas->hDC, NULL, MWT_IDENTITY);
   }
 
-  if (ctxcanvas->canvas->invert_yaxis==0)  /* if 0, invert because the transform was reset here */
+  if (!ctxcanvas->canvas->invert_yaxis)  
   {
     dy = -dy;
     ymin = _cdInvertYAxis(ctxcanvas->canvas, ymin);
