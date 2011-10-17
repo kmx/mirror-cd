@@ -145,40 +145,38 @@ cd.ContextCaps(ctx: number) -&gt; (caps: number) [in Lua]</pre>
   <p>Returns the resources available for that context. To verify if a given resource is available, perform a binary AND 
   ('&amp;.html with the following values:</p>
   
-    <p><font>CD_CAP_FLUSH<br>
-    CD_CAP_CLEAR <br>
-    CD_CAP_PLAY <br>
-    CD_CAP_YAXIS</font> - The Y axis has the same orientation as the CD axis.<br>
-    <font>CD_CAP_CLIPAREA <br>
-    CD_CAP_CLIPPOLY</font> - Usually is not implemented.<br>
-    <font>CD_CAP_MARK</font> - Marks are implemented directly in the driver (they are usually simulated).<br>
-    <font>CD_CAP_RECT</font> - Rectangles are implemented directly in the driver (they are usually 
-    simulated).<br>
-    <font>CD_CAP_VECTORTEXT</font> - Vector text is implemented directly in the driver (it is usually 
-    simulated).<br>
-    <font>CD_CAP_IMAGERGB <br>
-    CD_CAP_IMAGERGBA</font> - If this is not implemented, but <font>cdGetImageRGB</font> is, then it is 
-    simulated using <font>cdGetImageRGB</font> and <font>cdPutImageRGB</font>.<br>
-    <font>CD_CAP_IMAGEMAP <br>
-    CD_CAP_GETIMAGERGB <br>
-    CD_CAP_IMAGESRV</font> - Usually is only implemented in contexts of window graphics systems (Native Window and IUP).<br>
-    <font>CD_CAP_BACKGROUND <br>
-    CD_CAP_BACKOPACITY <br>
-    CD_CAP_WRITEMODE <br>
-    CD_CAP_LINESTYLE <br>
-    CD_CAP_LINEWITH <br>
-    CD_CAP_WD</font> - Functions of world coordinates are implemented directly in the driver (they are usually 
-    simulated).<br>
-    <font>CD_CAP_HATCH <br>
-    CD_CAP_STIPPLE <br>
-    CD_CAP_PATTERN <br>
-    CD_CAP_FONT <br>
-    CD_CAP_FONTDIM</font> - If not defined, the function is implemented using an internal heuristics of the library.<br>
-    <font>CD_CAP_TEXTSIZE</font> - If not defined, the function is implemented using an internal 
-    heuristics of the library.<br>
-    <font>CD_CAP_TEXTORIENTATION</font> - Usually is not implemented.<br>
-    <font>CD_CAP_PALETTE</font> - Usually is only implemented in contexts of window graphics systems 
-    (Native Window and IUP).</p>
+<pre>CD_CAP_FLUSH
+CD_CAP_CLEAR 
+CD_CAP_PLAY 
+CD_CAP_YAXIS - The native Y axis orientation is bottom-up.
+CD_CAP_CLIPAREA 
+CD_CAP_CLIPPOLY - Usually is not implemented.
+CD_CAP_REGION - Usually is not implemented. 
+CD_CAP_RECT - Rectangles are implemented directly in the driver (they are usually simulated).
+CD_CAP_CHORD
+CD_CAP_IMAGERGB 
+CD_CAP_IMAGERGBA - If this is not implemented, but cdGetImageRGB is, then it is simulated using cdGetImageRGB and cdPutImageRGB.
+CD_CAP_IMAGEMAP 
+CD_CAP_GETIMAGERGB 
+CD_CAP_IMAGESRV - Usually is only implemented in contexts of window graphics systems (Native Window and IUP).
+CD_CAP_BACKGROUND 
+CD_CAP_BACKOPACITY 
+CD_CAP_WRITEMODE 
+CD_CAP_LINESTYLE 
+CD_CAP_LINEWITH 
+CD_CAP_FPRIMTIVES - Primitives using floatig point coordinates are implemented directly in the driver (they are usually simulated).
+CD_CAP_HATCH 
+CD_CAP_STIPPLE 
+CD_CAP_PATTERN 
+CD_CAP_FONT 
+CD_CAP_FONTDIM - If not defined, the function is implemented using an internal heuristics of the library.
+CD_CAP_TEXTSIZE - If not defined, the function is implemented using an internal heuristics of the library.
+CD_CAP_TEXTORIENTATION - Usually is not implemented.
+CD_CAP_PALETTE - Usually is only implemented in contexts of window graphics systems (Native Window and IUP).
+CD_CAP_LINECAP   
+CD_CAP_LINEJOIN
+CD_CAP_PATH  
+CD_CAP_BEZIER</pre>
   
 
 </div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;<a name="cdContextType">cdContextType</a>(cdContext* ctx); [in C]</span>
@@ -187,10 +185,10 @@ cd.ContextType(ctx: number) -&gt; (type: number) [in Lua]</pre>
 
   <p>Returns the type of the context:</p>
   
-    <p>CD_CTX_WINDOW - GUI window based<br>
-CD_CTX_DEVICE - device based (clipboard, printer, picture)<br>
-CD_CTX_IMAGE - server or client image based, including double buffer based <br>
-    CD_CTX_FILE - metafile based</p>
+    <pre>CD_CTX_WINDOW - GUI window based
+CD_CTX_DEVICE - device based (clipboard, printer, picture)
+CD_CTX_IMAGE - server or client image based, including double buffer based
+CD_CTX_FILE - metafile based</pre>
   
 
 </div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;<a name="cdContextIsPlus">cdContextIsPlus</a>(cdContext* ctx); [in C]</span>
@@ -213,22 +211,19 @@ canvas:Simulate(mode: number) -&gt; (old_mode: number) [in Lua]</pre>
   <p>See in the Simulation sub-driver the information on how each simulation is performed.</p>
   <p>To activate a given simulation, perform a binary OR ('|.html using one or more of the following values (in Lua, the 
   values must be added '+.html:</p>
-  <p><font>CD_SIM_NONE</font> - Deactivates all kinds of simulation.<br>
-  <font>CD_SIM_LINE <br>
-  CD_SIM_RECT <br>
-  CD_SIM_BOX <br>
-  CD_SIM_ARC <br>
-  CD_SIM_SECTOR <br>
-  CD_SIM_CHORD <br>
-  CD_SIM_POLYLINE <br>
-  CD_SIM_POLYGON <br>
-  CD_SIM_TEXT <br>
-  CD_SIM_ALL</font> - Activates all simulation options. <br>
-  <font>CD_SIM_LINES</font> - Combination of <font>CD_SIM_LINE, CD_SIM_RECT, CD_SIM_ARC</font> 
-  and <font>CD_SIM_POLYLINE</font>.<br>
-  <font>CD_SIM_FILLS</font> - Combination of <font>CD_SIM_BOX, CD_SIM_SECTOR, CD_SIM_</font>CHORD and
-  <font>CD_SIM_POLYGON</font>.<br>
-  </p>
+    <pre>CD_SIM_NONE - Deactivates all kinds of simulation.
+CD_SIM_LINE 
+CD_SIM_RECT 
+CD_SIM_BOX 
+CD_SIM_ARC 
+CD_SIM_SECTOR 
+CD_SIM_CHORD 
+CD_SIM_POLYLINE 
+CD_SIM_POLYGON 
+CD_SIM_TEXT 
+CD_SIM_ALL - Activates all simulation options. 
+CD_SIM_LINES - Combination of CD_SIM_LINE, CD_SIM_RECT, CD_SIM_ARC and CD_SIM_POLYLINE.
+CD_SIM_FILLS - Combination of CD_SIM_BOX, CD_SIM_SECTOR, CD_SIM_CHORD and CD_SIM_POLYGON.</pre>
 </div>
 <h3>Extras</h3>
 <div class="function"><pre class="function">int <strong><span style="font-size: 110%"><a name="cdlua_open">cdlua_open</a></span></strong>(lua_State* L); [for Lua 5]</pre>

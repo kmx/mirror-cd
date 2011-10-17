@@ -513,8 +513,8 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 
 static void cdinittable(cdCanvas* canvas)
 {
-  if (canvas->invert_yaxis == 0) /* a simple way to distinguish MF from WIN */
-  {
+  if (canvas->invert_yaxis == 0)  /* a simple way to distinguish MF from WIN during inittable */
+  {                               /* can NOT use cdCtxCanvas, because they are different structures */
     cdinittableMF(canvas);
     canvas->cxKillCanvas = cdkillcanvasCLIPBDMF;
   }

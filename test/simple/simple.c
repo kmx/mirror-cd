@@ -562,7 +562,7 @@ void SimpleDraw(cdCanvas* canvas)
   /* refresh CD canvas size, when window size has changed */
   cdCanvasActivate(canvas);
 
-//  cdCanvasYAxisMode(canvas, 0);
+  cdCanvasYAxisMode(canvas, 0);
 
   if (simple_draw == DRAW_TEXTFONTS)
     SimpleDrawTextFonts(canvas);
@@ -1082,7 +1082,7 @@ void SimpleDrawTextAlign(cdCanvas* canvas)
     CD_BASE_LEFT
   };
 
-#if 1
+#if 0
   char* text_aligment_str[] = {
   "North (Ãyj)\nSecond Line (Ãyj)\nThird Line",
   "South (Ãyj)\nSecond Line (Ãyj)\nThird Line",
@@ -1135,8 +1135,8 @@ void SimpleDrawTextAlign(cdCanvas* canvas)
     cdCanvasVectorCharSize(canvas, 30);
   else
   {
-    //cdCanvasFont(canvas, "Times", CD_PLAIN, 14);
-    cdCanvasFont(canvas, "Helvetica", CD_PLAIN, 24);
+    cdCanvasFont(canvas, "Times", CD_PLAIN, 14);
+    //cdCanvasFont(canvas, "Helvetica", CD_PLAIN, 24);
   }
 
   for (i = 0; i < 12; i++)
