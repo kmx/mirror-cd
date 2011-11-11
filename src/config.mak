@@ -37,7 +37,8 @@ SRCINTCGM  := $(addprefix intcgm/, $(SRCINTCGM))
 SRCSIM := cdfontex.c sim.c cd_truetype.c sim_primitives.c sim_text.c sim_linepolyfill.c
 SRCSIM  := $(addprefix sim/, $(SRCSIM))
 
-SRCWIN32 = cdwclp.c cdwemf.c cdwimg.c cdwin.c cdwnative.c cdwprn.c cdwwmf.c wmf_emf.c cdwdbuf.c cdwdib.c
+SRCWIN32 = cdwclp.c cdwemf.c cdwimg.c cdwin.c cdwnative.c cdwprn.c \
+           cdwwmf.c wmf_emf.c cdwdbuf.c cdwdib.c
 SRCWIN32  := $(addprefix win32/, $(SRCWIN32))
 
 SRCX11 = cdx11.c cdxclp.c cdximg.c cdxnative.c cdxdbuf.c xvertex.c
@@ -46,7 +47,8 @@ SRCX11  := $(addprefix x11/, $(SRCX11))
 SRCGDK = cdgdk.c cdgdkclp.c cdgdkdbuf.c cdgdkimg.c cdgdknative.c
 SRCGDK  := $(addprefix gdk/, $(SRCGDK))
 
-SRCCAIRO = cdcairodbuf.c cdcairopdf.c cdcairosvg.c cdcairo.c cdcairoimg.c cdcairoplus.c cdcairoirgb.c cdcairops.c cdcaironative_gdk.c
+SRCCAIRO = cdcairodbuf.c cdcairopdf.c cdcairosvg.c cdcairo.c \
+           cdcairoimg.c cdcairoplus.c cdcairoirgb.c cdcairops.c cdcaironative_gdk.c
 SRCCAIRO := $(addprefix cairo/, $(SRCCAIRO))
 
 SRCDRV = cddgn.c cdcgm.c cgm.c cddxf.c cdirgb.c cdmf.c cdps.c cdpicture.c cddebug.c
@@ -65,7 +67,7 @@ ifdef USE_GDK
   SRC += $(SRCGDK) $(SRCNULL) 
   USE_GTK = Yes
   CHECK_GTK = Yes
-  # Temporarily to build inside Tecgraf
+  # Temporarily to build inside Tecgraf  (????)
   ADD_CAIRO = Yes
   ifdef ADD_CAIRO
     LIBS = pangocairo-1.0 cairo
@@ -77,7 +79,7 @@ ifdef USE_GDK
     endif
     LIBS += freetype6
   else
-#    ifeq ($(findstring MacOS, $(TEC_UNAME)), )
+#    ifeq ($(findstring MacOS, $(TEC_UNAME)), )     (????)
       ifdef ADD_CAIRO
         SRC += cairo/cdcairoprn_unix.c
       endif
