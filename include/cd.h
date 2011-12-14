@@ -19,9 +19,9 @@ extern "C" {
 #define CD_NAME "CD - Canvas Draw"
 #define CD_DESCRIPTION "A 2D Graphics Library"
 #define CD_COPYRIGHT    "Copyright (C) 1994-2011 Tecgraf, PUC-Rio."
-#define CD_VERSION "5.4"              /* bug fixes are reported only by cdVersion functions */
-#define CD_VERSION_NUMBER 504000
-#define CD_VERSION_DATE "2010/06/24"  /* does not include bug fix releases */
+#define CD_VERSION "5.5"              /* bug fixes are reported only by cdVersion functions */
+#define CD_VERSION_NUMBER 505000
+#define CD_VERSION_DATE "2011/12/XX"  /* does not include bug fix releases */
 
 typedef struct _cdContext cdContext;
 typedef struct _cdCanvas cdCanvas;
@@ -78,7 +78,6 @@ int  cdCanvasPlay(cdCanvas* canvas, cdContext *context, int xmin, int xmax, int 
 void cdCanvasGetSize(cdCanvas* canvas, int *width, int *height, double *width_mm, double *height_mm);
 int cdCanvasUpdateYAxis(cdCanvas* canvas, int* y);
 double cdfCanvasUpdateYAxis(cdCanvas* canvas, double* y);
-int cdCanvasYAxisMode(cdCanvas* canvas, int invert);
 int cdCanvasInvertYAxis(cdCanvas* canvas, int y);
 double cdfCanvasInvertYAxis(cdCanvas* canvas, double y);
 void cdCanvasMM2Pixel(cdCanvas* canvas, double mm_dx, double mm_dy, int *dx, int *dy);

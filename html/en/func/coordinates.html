@@ -18,36 +18,21 @@ canvas:GetSize() -&gt; (width, height, mm_width, mm_height: number) [in Lua]</pr
   <p>Returns the canvas size in pixels and in millimeters. You can provide only 
   the desired values and <font>NULL</font> for the others.</p>
 
-</div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;<a name="cdYAxisMode">cdCanvasYAxisMode</a>(cdCanvas* canvas, int invert); [in C]</span>
-
-canvas:YAxisMode(invert: number) -&gt; (old_invert: number) [in Lua]</pre>
-
-  <p>Returns the orientation of the Y axis. Internally in some drivers the 
-	native axis orientation is top-bottom, so the CD primitives must invert the 
-	Y axis since the CD orientation is bottom-top. Using CD_QUERY will return 
-	the current Y axis mode, if needs to be inverted internally or not.</p>
-	<p>Using 1 or 0 you can 
-	control if the Y axis will be inverted or not. But this is <strong>not</strong> 
-	recommended, because it has several limitations. Only drivers that the 
-	native axis orientation is inverted can be controlled, drivers that has the 
-	same orientation of the CD library can not be controlled. If changed Vector 
-	Text will always displays the text upside down.</p>
-
 </div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;<a name="cdUpdateYAxis">cdCanvasUpdateYAxis</a>(cdCanvas* canvas, int *y); [in C]</span>
 double&nbsp;cdfCanvasUpdateYAxis(cdCanvas* canvas, double&nbsp;*y); [in C]
-int&nbsp;cdCanvasInvertYAxis(cdCanvas* canvas, int y); [in C]
+
+canvas:UpdateYAxis(yc: number) -&gt; (yr: number) [in Lua]  <p>Invert the given 
+	Y coordinate if the current Y axis orientation is different from the driver 
+	axis native orientation. It also returns the changed value.</p>
+
+</div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;<a name="cdCanvasInvertYAxis">cdCanvasInvertYAxis</a>(cdCanvas* canvas, int y); [in C]</span>
 double&nbsp;cdfCanvasInvertYAxis(cdCanvas* canvas, double&nbsp;y); [in C]
 
-canvas:UpdateYAxis(yc: number) -&gt; (yr: number) [in Lua]
 canvas:InvertYAxis(yc: number) -&gt; (yr: number) [in Lua]</pre>
 
-  <p>Converts the coordinate system of the CD library into the internal 
-  system of the active canvas' driver, and the other way round, if they are 
-	invert, or else do nothing. This is just <font>&quot;y = height-1 - 
-  y&quot;</font>. It returns the changed value. The &quot;Invert&quot; will always invert 
-  the given value, the &quot;Update&quot; function will invert only if the canvas has the 
-  Y axis inverted.</p>
-
+  <p>Invert the given Y coordinate independent of the current/native Y axis orientation. 
+  It returns the changed value.</p>
+  
 </div><div class="function"><pre class="function"><span class="mainFunction">void&nbsp;cdCanvasMM2Pixel(cdCanvas* canvas, double mm_dx, double mm_dy, int *dx, int *dy); [in C]</span>
 void&nbsp;cdfCanvasMM2Pixel(cdCanvas* canvas, double mm_dx, double mm_dy, double *dx, double *dy); [in C]
 

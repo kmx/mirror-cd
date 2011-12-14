@@ -160,7 +160,7 @@ struct _cdCanvas
   double w_mm, h_mm;  /* size in mm */                  /****   mm   =  pixel / res  ****/
   double xres, yres;  /* resolution in pixels/mm */     /****   res  =  pixel / mm   ****/
   int bpp;            /* number of bits per pixel */
-  int invert_yaxis;   /* the driver has the y axis from top to bottom */
+  int invert_yaxis;   /* invert Y coordinates before calling the driver, used only when the native Y axis orientation is top-bottom !(cap&CD_CAP_YAXIS) */
   double matrix[6];
   int use_matrix;
 
@@ -224,7 +224,7 @@ struct _cdCanvas
   int sim_mode;
 
   /* WC */
-  double s, sx, tx, sy, ty;   /* Transformacao Window -> Viewport (scale+translation)*/
+  double s, sx, tx, sy, ty;   /* Transform Window -> Viewport (scale+translation)*/
   cdfRect window;             /* Window in WC */
   cdRect viewport;            /* Viewport in pixels */
 
@@ -292,11 +292,12 @@ void cdCanvasGetArcStartEnd(int xc, int yc, int w, int h, double a1, double a2, 
 void cdfCanvasGetArcStartEnd(double xc, double yc, double w, double h, double a1, double a2, double *x1, double *y1, double *x2, double *y2);
 
 #define _cdCheckCanvas(_canvas) (_canvas!=NULL && ((unsigned char*)_canvas)[0] == 'C' && ((unsigned char*)_canvas)[1] == 'D')
-#define _cdInvertYAxis(_canvas, _y) (_canvas->h - (_y) - 1)
 #define _cdSwapInt(_a,_b) {int _c=_a;_a=_b;_b=_c;}
 #define _cdSwapDouble(_a,_b) {double _c=_a;_a=_b;_b=_c;}
 #define _cdRound(_x) ((int)(_x < 0? (_x-0.5): (_x+0.5)))
 #define _cdRotateHatch(_x)  ((_x) = ((_x)<< 1) | ((_x)>>7))
+#define _cdInvertYAxis(_canvas, _y) (_canvas->h - (_y) - 1)
+
 
 /******************/
 /* Transformation */

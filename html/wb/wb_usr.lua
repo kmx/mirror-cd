@@ -271,10 +271,6 @@ wb_usr.tree =
               link= "func/coordinates.html#cdGetCanvasSize"
             },
             {
-              name= {nl= "YAxisMode"},
-              link= "func/coordinates.html#cdYAxisMode"
-            },
-            {
               name= {nl= "UpdateYAxis"},
               link= "func/coordinates.html#cdUpdateYAxis"
             },

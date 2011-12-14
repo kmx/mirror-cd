@@ -27,10 +27,15 @@
 <body>
 
 <h2>History of Changes</h2>
-<h3>CVS (30/Sep/2011)</h3>
+<h3>Version 5.5 @ CVS (14/Dec/2011)</h3>
 <ul>
-	<li><span class="hist_new">New:</span> functions <strong>cdContextIsPlus</strong> 
-	and <strong>cdContextType</strong>.</li>
+	<li><span class="hist_new">New:</span> functions <strong>cdContextIsPlus</strong>, 
+	and <strong>cdContextType</strong> that returns CD_CTX_WINDOW, 
+	CD_CTX_DEVICE, CD_CTX_IMAGE or CD_CTX_FILE.</li>
+	<li><span class="hist_new">
+		<strong>
+		<span class="hist_changed">Changed:</span></strong></span> removed function <strong>
+	cdCanvasYAxisMode</strong>.</li>
 	<li><span class="hist_fixed">Fixed:</span> defines in Cairo so it can be 
 	compiled using older Cairo and Pango versions.</li>
 	<li><span class="hist_fixed">Fixed:</span> <strong>cdCanvasKillCanvas</strong> 
@@ -44,9 +49,6 @@ mso-fareast-language:PT-BR;mso-bidi-language:AR-SA">CD_RGBA.</span></li>
 		<span class="hist_fixed">Fixed:</span> <strong>Arc</strong>, <strong>Sector</strong> and
 		<strong>Chord</strong> angles in 
 		GDI+ base driver.</li>
-	<li>
-		<span class="hist_fixed">Fixed:</span> documentation of <strong>
-		YAxisMode</strong>.</li>
 	<li>
 		<span class="hist_fixed">Fixed:</span> 
 		<strong>PutImageRGBA</strong> and <strong>Pattern</strong> when using the Cairo context plus base 
