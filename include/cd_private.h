@@ -160,7 +160,9 @@ struct _cdCanvas
   double w_mm, h_mm;  /* size in mm */                  /****   mm   =  pixel / res  ****/
   double xres, yres;  /* resolution in pixels/mm */     /****   res  =  pixel / mm   ****/
   int bpp;            /* number of bits per pixel */
-  int invert_yaxis;   /* invert Y coordinates before calling the driver, used only when the native Y axis orientation is top-bottom !(cap&CD_CAP_YAXIS) */
+  int invert_yaxis;   /* invert Y coordinates before calling the driver, 
+                         used only when the native Y axis orientation is top-bottom "!(cap&CD_CAP_YAXIS)".
+                         It is turned off by the driver if native transformation matrix is used. */
   double matrix[6];
   int use_matrix;
 
