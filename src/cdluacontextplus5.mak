@@ -22,6 +22,7 @@ endif
 
 ifdef USE_LUA52
   LIBNAME := $(LIBNAME)52
+  DEFINES += LUA_COMPAT_MODULE
 else
   USE_LUA51 = Yes
   LIBNAME := $(LIBNAME)51
