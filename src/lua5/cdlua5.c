@@ -69,26 +69,20 @@ void cdlua_setplaystate(lua_State* L)
 
 static cdluaPalette* cdlua_rawcheckpalette(lua_State *L, int param)
 {
+  /* check also for IM palette, but don't handle error */
   void *p = lua_touserdata(L, param);
   if (p != NULL) {  /* value is a userdata? */
     if (lua_getmetatable(L, param)) {  /* does it have a metatable? */
-      lua_getfield(L, LUA_REGISTRYINDEX, "cdPalette");  /* get correct metatable */
+      luaL_getmetatable(L, "imPalette");  /* get correct metatable */
       if (lua_rawequal(L, -1, -2)) {  /* does it have the correct mt? */
         lua_pop(L, 2);  /* remove both metatables */
         return (cdluaPalette*)p;
       }
       lua_pop(L, 1);  /* remove previous metatable */
-
-      /* check also for IM palette */
-      lua_getfield(L, LUA_REGISTRYINDEX, "imPalette");  /* get correct metatable */
-      if (lua_rawequal(L, -1, -2)) {  /* does it have the correct mt? */
-        lua_pop(L, 2);  /* remove both metatables */
-        return (cdluaPalette*)p;
-      }
     }
   }
-  luaL_typeerror(L, param, "cdPalette");  /* else error */
-  return NULL;  /* to avoid warnings */
+
+  return (cdluaPalette*)luaL_checkudata (L, param, "cdPalette");
 }
 
 cdluaPalette * cdlua_checkpalette(lua_State * L, int param)
@@ -975,13 +969,13 @@ static int cdlua5_registercallback(lua_State *L)
     luaL_argerror(L, 3, "invalid function parameter");
   else
     lua_pushvalue(L, 3);
-  func_lock = lua_ref(L, 1);
+  func_lock = luaL_ref(L, LUA_REGISTRYINDEX);
 
   cdCB = &cdlua_ctx->cb_list[cb_i];
 
   if (cdCB->lock != -1)
   {
-    lua_unref(L,cdCB->lock);
+    luaL_unref(L, LUA_REGISTRYINDEX, cdCB->lock);
     cdCB->lock = func_lock;
     if (func_lock == -1)
     {
@@ -1325,7 +1319,7 @@ static int cdlua5_usecontextplus(lua_State *L)
 /********************************************************************************\
 * CDLua Exported functions                                                       *
 \********************************************************************************/
-static const struct luaL_reg cdlib[] = {
+static const struct luaL_Reg cdlib[] = {
 
   /* Initialization */
   {"ContextCaps"   , cdlua5_contextcaps},

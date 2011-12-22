@@ -108,7 +108,7 @@ static int cgm_countercb(cdCanvas *canvas, double percent)
   /* little Wrapper */
   lua_State * L = cdlua_getplaystate();
   
-  lua_getref(L, cdluacgmcb[CD_CGMCOUNTERCB].lock);
+  lua_rawgeti(L, LUA_REGISTRYINDEX, cdluacgmcb[CD_CGMCOUNTERCB].lock);
 
   cdlua_pushcanvas(L, canvas);
   lua_pushnumber(L, percent);
@@ -129,7 +129,7 @@ static int cgm_begpictcb(cdCanvas *canvas, char *pict)
   /* little Wrapper */
   lua_State * L = cdlua_getplaystate();
   
-  lua_getref(L, cdluacgmcb[CD_CGMBEGPICTCB].lock);
+  lua_rawgeti(L, LUA_REGISTRYINDEX, cdluacgmcb[CD_CGMBEGPICTCB].lock);
 
   cdlua_pushcanvas(L, canvas);
   lua_pushstring(L, pict);
@@ -148,7 +148,7 @@ static int cgm_begmtfcb(cdCanvas *canvas, int *xmn, int *ymn, int *xmx, int *ymx
   /* little Wrapper */
   lua_State * L = cdlua_getplaystate();
 
-  lua_getref(L, cdluacgmcb[CD_CGMBEGMTFCB].lock);
+  lua_rawgeti(L, LUA_REGISTRYINDEX, cdluacgmcb[CD_CGMBEGMTFCB].lock);
 
   cdlua_pushcanvas(L, canvas);
   if(lua_pcall(L, 1, 5, 0) != 0)
@@ -188,7 +188,7 @@ static int cgm_begpictbcb(cdCanvas *canvas)
   /* little Wrapper */
   lua_State * L = cdlua_getplaystate();
 
-  lua_getref(L, cdluacgmcb[CD_CGMBEGPICTBCB].lock);
+  lua_rawgeti(L, LUA_REGISTRYINDEX, cdluacgmcb[CD_CGMBEGPICTBCB].lock);
 
   cdlua_pushcanvas(L, canvas);
   if(lua_pcall(L, 1, 1, 0) != 0)
@@ -208,7 +208,7 @@ static int cgm_sizecb(cdCanvas *canvas, int w, int h, double mm_w, double mm_h)
   /* little Wrapper */
   lua_State * L = cdlua_getplaystate();
 
-  lua_getref(L,cdluacgmcb[CD_SIZECB].lock);
+  lua_rawgeti(L, LUA_REGISTRYINDEX, cdluacgmcb[CD_SIZECB].lock);
   
   cdlua_pushcanvas(L, canvas);
   lua_pushnumber(L, w );
@@ -233,7 +233,7 @@ static int cgm_sclmdecb(cdCanvas *canvas, short scl_mde, short *draw_mode_i, dou
   /* little Wrapper */
   lua_State * L = cdlua_getplaystate();
 
-  lua_getref(L,cdluacgmcb[CD_CGMSCLMDECB].lock);
+  lua_rawgeti(L, LUA_REGISTRYINDEX, cdluacgmcb[CD_CGMSCLMDECB].lock);
 
   cdlua_pushcanvas(L, canvas);
   lua_pushnumber(L, scl_mde);
@@ -269,7 +269,7 @@ static int cgm_vdcextcb(cdCanvas *canvas, short type, void *xmn, void *ymn, void
   /* little Wrapper */
   lua_State * L = cdlua_getplaystate();
 
-  lua_getref(L, cdluacgmcb[CD_CGMVDCEXTCB].lock);
+  lua_rawgeti(L, LUA_REGISTRYINDEX, cdluacgmcb[CD_CGMVDCEXTCB].lock);
 
   cdlua_pushcanvas(L, canvas);
   if(lua_pcall(L, 1, 5, 0) != 0)
@@ -364,7 +364,7 @@ static int cdlua_rawchecktype(lua_State *L, int param, const char* type)
   {
     if (lua_getmetatable(L, param))   /* does it have a metatable? */
     {
-      lua_getfield(L, LUA_REGISTRYINDEX, type);  /* get correct metatable */
+      luaL_getmetatable(L, type);  /* get correct metatable */
       if (lua_rawequal(L, -1, -2))   /* does it have the correct mt? */
       {
         lua_pop(L, 2);  /* remove both metatables */
@@ -395,9 +395,8 @@ static void *cdimagergb_checkdata(lua_State* L, int param)
   else
   {
     int ret = cdlua_rawchecktype(L, param, "cdBitmap");
-
     if (ret == 0)
-      luaL_typeerror(L, param, "cdBitmap");  /* not a user data and not a metatable */
+      luaL_argerror(L, param, "must be string, cdBitmap, cdImageRGB or cdImageRGBA");  /* not a user data and not a metatable */
 
     if (ret == 1)
     {
@@ -487,7 +486,7 @@ static void *cdimagergb_checkdata(lua_State* L, int param)
       return data_s;
     }
 
-    luaL_typeerror(L, param, "cdBitmap");  /* is a metatable but it is not one of the accepted */
+    luaL_argerror(L, param, "must be string, cdBitmap, cdImageRGB or cdImageRGBA");  /* is a metatable but it is not one of the accepted */
   }
 
   return data_s;
@@ -572,7 +571,7 @@ static int wmf_sizecb(cdCanvas *canvas, int w, int h, double mm_w, double mm_h)
   /* little Wrapper */
   lua_State * L = cdlua_getplaystate();
 
-  lua_getref(L,cdluawmfcb[CD_SIZECB].lock);
+  lua_rawgeti(L, LUA_REGISTRYINDEX, cdluawmfcb[CD_SIZECB].lock);
 
   cdlua_pushcanvas(L, canvas);
   lua_pushnumber(L, w);
@@ -623,7 +622,7 @@ static int emf_sizecb(cdCanvas *canvas, int w, int h, double mm_w, double mm_h)
   /* little Wrapper */
   lua_State * L = cdlua_getplaystate();
 
-  lua_getref(L,cdluaemfcb[CD_SIZECB].lock);
+  lua_rawgeti(L, LUA_REGISTRYINDEX, cdluaemfcb[CD_SIZECB].lock);
 
   cdlua_pushcanvas(L, canvas);
   lua_pushnumber(L, w);
@@ -710,7 +709,7 @@ static int metafile_sizecb(cdCanvas *canvas, int w, int h, double mm_w, double m
   /* little Wrapper */
   lua_State * L = cdlua_getplaystate();
 
-  lua_getref(L, cdluamfcb[CD_SIZECB].lock);
+  lua_rawgeti(L, LUA_REGISTRYINDEX, cdluamfcb[CD_SIZECB].lock);
 
   cdlua_pushcanvas(L, canvas);
   lua_pushnumber(L, w);
@@ -814,7 +813,7 @@ static int clipboard_sizecb(cdCanvas *canvas, int w, int h, double mm_w, double 
 {
   /* little Wrapper */
   lua_State * L = cdlua_getplaystate();
-  lua_getref(L, cdluaclipboardcb[CD_SIZECB].lock);
+  lua_rawgeti(L, LUA_REGISTRYINDEX, cdluaclipboardcb[CD_SIZECB].lock);
 
   cdlua_pushcanvas(L, canvas);
   lua_pushnumber(L, w);

@@ -20,7 +20,7 @@ static int cdlua5_initcontextplus(lua_State *L)
   return 0;
 }
 
-static const struct luaL_reg cdlib[] = {
+static const struct luaL_Reg cdlib[] = {
   {"InitContextPlus", cdlua5_initcontextplus},
   {NULL, NULL},
 };

@@ -273,6 +273,9 @@ static int cdlua5_updateyaxis(lua_State *L)
   return 1;
 }
 
+/* Hidden function */
+int cdCanvasYAxisMode(cdCanvas* canvas, int invert);
+
 static int cdlua5_yaxismode(lua_State *L)
 {
   lua_pushnumber(L, cdCanvasYAxisMode(cdlua_checkcanvas(L, 1), luaL_checkint(L, 2)));
@@ -2238,7 +2241,7 @@ static int cdlua5_end(lua_State *L)
 * Lua Exported functions                                                       *
 \********************************************************************************/
 
-static const struct luaL_reg cdlib_canvas_meta[] = {
+static const struct luaL_Reg cdlib_canvas_meta[] = {
 
   /* Initialization */
   {"GetContext"    , cdlua5_getcontext},
@@ -2451,7 +2454,7 @@ static const struct luaL_reg cdlib_canvas_meta[] = {
   {NULL, NULL},
 };
 
-static const struct luaL_reg cdlib_canvas[] = {
+static const struct luaL_Reg cdlib_canvas[] = {
   /* Initialization */
   {"CreateCanvas"  , cdlua5_createcanvas},
   {"KillCanvas"    , cdlua5_killcanvas},

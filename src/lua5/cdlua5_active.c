@@ -1943,7 +1943,7 @@ static int cdlua5_end(lua_State *L)
 /********************************************************************************\
 * CDLua Exported functions                                                       *
 \********************************************************************************/
-static const struct luaL_reg cdlib_active[] = {
+static const struct luaL_Reg cdlib_active[] = {
 
   /* Initialization */
   {"Activate"      , cdlua5_activate},

@@ -246,12 +246,12 @@ static int imlua_cdCreateCanvas(lua_State * L)
   return 1;
 }
 
-static const luaL_reg cdim_metalib[] = {
+static const luaL_Reg cdim_metalib[] = {
   {"imImageCreate", cdlua_imImageCreate},
   {NULL, NULL}
 };
 
-static const luaL_reg imcd_metalib[] = {
+static const luaL_Reg imcd_metalib[] = {
   {"cdCreateBitmap", imlua_cdCreateBitmap},
   {"cdInitBitmap", imlua_cdInitBitmap},
   {"cdCreateCanvas", imlua_cdCreateCanvas},
