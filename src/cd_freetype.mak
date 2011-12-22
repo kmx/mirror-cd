@@ -18,22 +18,24 @@ SRC := $(addprefix freetype2/, $(SRC))
 
 DEFINES += FT2_BUILD_LIBRARY
 INCLUDES = freetype2
-DEF_FILE = cd_freetype.def
 
 ifneq ($(findstring dll, $(TEC_UNAME)), )
   SRC += cd_freetype.rc
+  DEF_FILE = cd_freetype.def
 endif
 
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )
-  # To be compatible with the existing DLLs
+  # To be compatible with the existing DLLs of gnuwin32
   LIBNAME = freetype6
 endif
 
 ifneq ($(findstring gcc, $(TEC_UNAME)), )
+  # To be compatible with the existing static libs of gnuwin32 and cygwin
   LIBNAME = freetype
 endif
 
 ifneq ($(findstring cygw, $(TEC_UNAME)), )
+  # To be compatible with the existing DLLs of cygwin
   LIBNAME = freetype-6
 endif
 
