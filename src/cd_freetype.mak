@@ -33,6 +33,9 @@ ifneq ($(findstring gcc, $(TEC_UNAME)), )
   # To be compatible with the existing static libs of gnuwin32 and cygwin
   LIBNAME = freetype
 endif
+ifneq ($(findstring mingw, $(TEC_UNAME)), )
+  LIBNAME = freetype
+endif
 
 ifneq ($(findstring cygw, $(TEC_UNAME)), )
   # To be compatible with the existing DLLs of cygwin
