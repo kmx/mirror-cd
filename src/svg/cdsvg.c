@@ -183,7 +183,7 @@ static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
     fprintf(ctxcanvas->file, "<g transform=\"matrix(%g %g %g %g %g %g)\">\n", xmatrix[0], xmatrix[1], xmatrix[2], xmatrix[3], xmatrix[4], xmatrix[5]);
     ctxcanvas->transform_control = 1;
 
-    ctxcanvas->canvas->invert_yaxis = 0;
+    ctxcanvas->canvas->invert_yaxis = 0;  /* let the transformation do the axis invertion */
   }
   else
     ctxcanvas->canvas->invert_yaxis = 1;
@@ -229,7 +229,7 @@ static void sCalcArc(cdCanvas* canvas, double xc, double yc, double w, double h,
 
   cdfCanvasGetArcStartEnd(xc, yc, w, h, a1, a2, arcStartX, arcStartY, arcEndX, arcEndY);
 
-  if (canvas->invert_yaxis)
+  if (canvas->invert_yaxis)  
   {
     /* fix axis orientation */
     *arcStartY = 2*yc - *arcStartY;
@@ -237,6 +237,7 @@ static void sCalcArc(cdCanvas* canvas, double xc, double yc, double w, double h,
   }
   else
   {
+    /* a transformation is active */
     /* it is clock-wise when axis NOT inverted */
     if (swap)
     {
@@ -371,7 +372,7 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *text
   /* <text> string </text> no print special characters, like cedilla and acutes */
   /* Future solution: use glyphs in embedded fonts (TO DO)*/
 
-  if (ctxcanvas->canvas->text_orientation != 0)
+  if (ctxcanvas->canvas->text_orientation)
   {
     double text_cos = cos(ctxcanvas->canvas->text_orientation*CD_DEG2RAD);
     double text_sin = sin(ctxcanvas->canvas->text_orientation*CD_DEG2RAD);

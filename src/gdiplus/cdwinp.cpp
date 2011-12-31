@@ -1328,9 +1328,9 @@ static void sGetTransformTextHeight(cdCanvas* canvas, int x, int y, int w, int h
   xmax = xmin + w-1;
   ymax = ymin + h-1;
 
-  if (canvas->text_orientation != 0)
+  if (canvas->text_orientation)
   {
-    double angle = ((canvas->invert_yaxis)? canvas->text_orientation: -canvas->text_orientation)*CD_DEG2RAD;
+    double angle = canvas->text_orientation*CD_DEG2RAD;
     double cos_theta = cos(angle);
     double sin_theta = sin(angle);
     int rectY[4];
@@ -1377,9 +1377,9 @@ static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s, int len)
   int use_transform = 0, w, h;
   WCHAR* ws = cdwpString2Unicode(s, len);
 
-  if (ctxcanvas->canvas->text_orientation != 0)
+  if (ctxcanvas->canvas->text_orientation)
   {
-    double angle = (ctxcanvas->canvas->invert_yaxis)? ctxcanvas->canvas->text_orientation: -ctxcanvas->canvas->text_orientation;
+    double angle = ctxcanvas->canvas->text_orientation; // in degrees
     transformMatrix.Translate((REAL)x, (REAL)y);
     transformMatrix.Rotate((REAL)-angle);
     transformMatrix.Translate((REAL)-x, (REAL)-y);
@@ -1618,7 +1618,7 @@ static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
   ctxcanvas->graphics->ResetTransform(); // reset to the identity.
 
   if (matrix)
-    ctxcanvas->canvas->invert_yaxis = 0;
+    ctxcanvas->canvas->invert_yaxis = 0;  /* let the transformation do the axis invertion */
   else
     ctxcanvas->canvas->invert_yaxis = 1;
 
@@ -1835,10 +1835,11 @@ static void cdgetimagergb(cdCtxCanvas* ctxcanvas, unsigned char *red, unsigned c
   if (!transformMatrix.IsIdentity())
     ctxcanvas->graphics->ResetTransform(); // reset to the identity.
 
-  if (!ctxcanvas->canvas->invert_yaxis) // if 0, invert because the transform was reset here
+  /* if 0, invert because the transform was reset */
+  if (!ctxcanvas->canvas->invert_yaxis)
     y = _cdInvertYAxis(ctxcanvas->canvas, y);
 
-  int yr = y - (h - 1);  /* y starts at the bottom of the image */
+  y -= (h - 1);  /* y starts at the bottom of the image */
   Bitmap image(w, h, PixelFormat24bppRGB);
   image.SetResolution(ctxcanvas->graphics->GetDpiX(), ctxcanvas->graphics->GetDpiX());
 
@@ -1848,7 +1849,7 @@ static void cdgetimagergb(cdCtxCanvas* ctxcanvas, unsigned char *red, unsigned c
   {
     imggraphics->DrawImage(ctxcanvas->bitmap, 
                            Rect(0, 0, w, h), 
-                           x, yr, w, h, UnitPixel,
+                           x, y, w, h, UnitPixel,
                            NULL, NULL, NULL);
   }
   else
@@ -1856,7 +1857,7 @@ static void cdgetimagergb(cdCtxCanvas* ctxcanvas, unsigned char *red, unsigned c
     HDC hdc = ctxcanvas->graphics->GetHDC();
     HDC img_hdc = imggraphics->GetHDC();
 
-    BitBlt(img_hdc,0,0,w,h,hdc,x,yr,SRCCOPY);
+    BitBlt(img_hdc,0,0,w,h,hdc,x,y,SRCCOPY);
 
     imggraphics->ReleaseHDC(img_hdc);
     ctxcanvas->graphics->ReleaseHDC(hdc);
@@ -2147,7 +2148,8 @@ static void cdgetimage(cdCtxCanvas* ctxcanvas, cdCtxImage *ctximage, int x, int 
   if (!transformMatrix.IsIdentity())
     ctxcanvas->graphics->ResetTransform(); // reset to the identity.
 
-  if (!ctxcanvas->canvas->invert_yaxis)  // if 0, invert because the transform was reset here
+  /* if 0, invert because the transform was reset */
+  if (!ctxcanvas->canvas->invert_yaxis)
     y = _cdInvertYAxis(ctxcanvas->canvas, y);
 
   /* y is the bottom-left of the image in CD, must be at upper-left */
@@ -2179,15 +2181,15 @@ static void cdgetimage(cdCtxCanvas* ctxcanvas, cdCtxImage *ctximage, int x, int 
     ctxcanvas->graphics->SetTransform(&transformMatrix);
 }
 
-static void cdputimagerect(cdCtxCanvas* ctxcanvas, cdCtxImage *ctximage, int x0, int y0, int xmin, int xmax, int ymin, int ymax)
+static void cdputimagerect(cdCtxCanvas* ctxcanvas, cdCtxImage *ctximage, int x, int y, int xmin, int xmax, int ymin, int ymax)
 {
-  int yr = y0 - (ymax-ymin+1)+1;    /* y0 starts at the bottom of the image */
+  y -= (ymax-ymin+1)-1;    /* y starts at the bottom of the image */
 
   INT srcx = xmin;
   INT srcy = (ctximage->h-1)-ymax;
   INT srcwidth = xmax-xmin+1;
   INT srcheight = ymax-ymin+1;
-  Rect destRect(x0, yr, srcwidth, srcheight);
+  Rect destRect(x, y, srcwidth, srcheight);
 
   ImageAttributes imageAttributes;
 
@@ -2239,7 +2241,8 @@ static void cdscrollarea(cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, i
   if (!transformMatrix.IsIdentity())
     ctxcanvas->graphics->ResetTransform(); // reset to the identity.
 
-  if (!ctxcanvas->canvas->invert_yaxis)  // if 0, invert because the transform was reset here
+  // if 0, invert because the transform was reset
+  if (!ctxcanvas->canvas->invert_yaxis)  
   {
     dy = -dy;
     ymin = _cdInvertYAxis(ctxcanvas->canvas, ymin);

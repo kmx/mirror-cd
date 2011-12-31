@@ -18,10 +18,10 @@ extern "C" {
 
 #define CD_NAME "CD - Canvas Draw"
 #define CD_DESCRIPTION "A 2D Graphics Library"
-#define CD_COPYRIGHT    "Copyright (C) 1994-2011 Tecgraf, PUC-Rio."
-#define CD_VERSION "5.4"              /* bug fixes are reported only by cdVersion functions */
-#define CD_VERSION_NUMBER 504000
-#define CD_VERSION_DATE "2010/06/24"  /* does not include bug fix releases */
+#define CD_COPYRIGHT    "Copyright (C) 1994-2012 Tecgraf, PUC-Rio."
+#define CD_VERSION "5.5"              /* bug fixes are reported only by cdVersion functions */
+#define CD_VERSION_NUMBER 505000
+#define CD_VERSION_DATE "2012/01/02"  /* does not include bug fix releases */
 
 typedef struct _cdContext cdContext;
 typedef struct _cdCanvas cdCanvas;
@@ -511,7 +511,7 @@ enum {
 
 
 /******************************************************************************
-Copyright (C) 1994-2011 Tecgraf, PUC-Rio.
+Copyright (C) 1994-2012 Tecgraf, PUC-Rio.
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the

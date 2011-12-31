@@ -735,6 +735,7 @@ static void sCalcArc(cdCanvas* canvas, int xc, int yc, int w, int h, double a1, 
   }
   else
   {
+    /* a transformation is active */
     /* it is clock-wise when axis NOT inverted */
     if (swap)
     {
@@ -1057,7 +1058,7 @@ static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
     xForm.eDy  = (FLOAT)(ctxcanvas->canvas->h-1); 
     ModifyWorldTransform(ctxcanvas->hDC, &xForm, MWT_LEFTMULTIPLY);
 
-    ctxcanvas->canvas->invert_yaxis = 0;
+    ctxcanvas->canvas->invert_yaxis = 0;  /* let the transformation do the axis invertion */
 
     xForm.eM11 = (FLOAT)matrix[0]; 
     xForm.eM12 = (FLOAT)matrix[1];
@@ -1110,7 +1111,7 @@ static void sTextOutBlt(cdCtxCanvas* ctxcanvas, int px, int py, const char* s, i
   HBITMAP hBitmap, hOldBitmap;
   HFONT hOldFont;
   int w, h, wt, ht, x, y, off, px_off = 0, py_off = 0;
-  double angle = ((ctxcanvas->canvas->invert_yaxis)? ctxcanvas->canvas->text_orientation: -ctxcanvas->canvas->text_orientation)*CD_DEG2RAD;
+  double angle = ctxcanvas->canvas->text_orientation*CD_DEG2RAD;
   double cos_teta = cos(angle);
   double sin_teta = sin(angle);
   
@@ -1118,7 +1119,7 @@ static void sTextOutBlt(cdCtxCanvas* ctxcanvas, int px, int py, const char* s, i
   wt = w;
   ht = h;
 
-  if (ctxcanvas->canvas->text_orientation != 0)
+  if (ctxcanvas->canvas->text_orientation)
   {
     /* novo tamanho da imagem */
     w = (int)(w * cos_teta + h * sin_teta);
@@ -1131,7 +1132,7 @@ static void sTextOutBlt(cdCtxCanvas* ctxcanvas, int px, int py, const char* s, i
 
   /* corrige alinhamento do centro */
   off = ht/2 - ctxcanvas->font.descent;
-  if (ctxcanvas->canvas->text_orientation != 0)
+  if (ctxcanvas->canvas->text_orientation)
   {
     y += (int)(off * cos_teta);
     x += (int)(off * sin_teta);
@@ -1140,7 +1141,7 @@ static void sTextOutBlt(cdCtxCanvas* ctxcanvas, int px, int py, const char* s, i
     y += off;
 
   /* calcula o alinhamento da imagem no canvas */
-  if (ctxcanvas->canvas->text_orientation != 0)
+  if (ctxcanvas->canvas->text_orientation)
   {
     switch (ctxcanvas->canvas->text_alignment)
     {
@@ -1320,9 +1321,9 @@ static void cdwCanvasGetTextHeight(cdCanvas* canvas, int x, int y, const char *s
   xmax = xmin + w-1;
   ymax = ymin + h-1;
 
-  if (canvas->text_orientation != 0)
+  if (canvas->text_orientation)
   {
-    double angle = ((canvas->invert_yaxis)? canvas->text_orientation: -canvas->text_orientation)*CD_DEG2RAD;
+    double angle = canvas->text_orientation*CD_DEG2RAD;
     double cos_theta = cos(angle);
     double sin_theta = sin(angle);
     int rectY[4];
@@ -1394,9 +1395,9 @@ static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s, int len)
       cdgettextsize(ctxcanvas, s, len, NULL, &h);
       off = h/2 - ctxcanvas->font.descent;
 
-      if (ctxcanvas->canvas->text_orientation != 0)
+      if (ctxcanvas->canvas->text_orientation)
       {
-        double angle = ((ctxcanvas->canvas->invert_yaxis)? ctxcanvas->canvas->text_orientation: -ctxcanvas->canvas->text_orientation)*CD_DEG2RAD;
+        double angle = ctxcanvas->canvas->text_orientation*CD_DEG2RAD;
         y += (int)(off * cos(angle));
         x += (int)(off * sin(angle));
       }
@@ -1651,9 +1652,6 @@ static int cdnativefont (cdCtxCanvas* ctxcanvas, const char* nativefont)
 static double cdtextorientation(cdCtxCanvas* ctxcanvas, double angle)
 {
   int font_angle = (int)(angle * 10);
-  if (!ctxcanvas->canvas->invert_yaxis)
-    font_angle *= -1;
-
   if (ctxcanvas->font_angle == font_angle) /* first time angle=0, do not create font twice */
     return angle;
 
@@ -1712,7 +1710,6 @@ static void cdgetimagergb(cdCtxCanvas* ctxcanvas, unsigned char *red, unsigned c
   cdwDIB dib;
   HDC     hDCMem;
   HBITMAP hOldBitmap,hBitmap;
-  int yr;
   
   hBitmap = CreateCompatibleBitmap(ctxcanvas->hDC, w, h);
   if (hBitmap == NULL)
@@ -1729,11 +1726,12 @@ static void cdgetimagergb(cdCtxCanvas* ctxcanvas, unsigned char *red, unsigned c
     ModifyWorldTransform(ctxcanvas->hDC, NULL, MWT_IDENTITY);
   }
 
+  /* if 0, invert because the transform was reset */
   if (!ctxcanvas->canvas->invert_yaxis) 
     y = _cdInvertYAxis(ctxcanvas->canvas, y);
   
-  yr = y - (h - 1);  /* y starts at the bottom of the image */
-  BitBlt(hDCMem,0,0,w,h,ctxcanvas->hDC, x, yr, SRCCOPY);
+  y -= (h - 1);  /* y starts at the bottom of the image */
+  BitBlt(hDCMem,0,0,w,h,ctxcanvas->hDC, x, y, SRCCOPY);
 
   if (GetGraphicsMode(ctxcanvas->hDC) == GM_ADVANCED)
     ModifyWorldTransform(ctxcanvas->hDC, &xForm, MWT_LEFTMULTIPLY);
@@ -2036,6 +2034,7 @@ static void cdgetimage(cdCtxCanvas* ctxcanvas, cdCtxImage *ctximage, int x, int 
     ModifyWorldTransform(ctxcanvas->hDC, NULL, MWT_IDENTITY);
   }
 
+  /* if 0, invert because the transform was reset */
   if (!ctxcanvas->canvas->invert_yaxis)  
     y = _cdInvertYAxis(ctxcanvas->canvas, y);
 
@@ -2047,9 +2046,9 @@ static void cdgetimage(cdCtxCanvas* ctxcanvas, cdCtxImage *ctximage, int x, int 
     ModifyWorldTransform(ctxcanvas->hDC, &xForm, MWT_LEFTMULTIPLY);
 }
 
-static void cdputimagerect(cdCtxCanvas* ctxcanvas, cdCtxImage *ctximage, int x0, int y0, int xmin, int xmax, int ymin, int ymax)
+static void cdputimagerect(cdCtxCanvas* ctxcanvas, cdCtxImage *ctximage, int x, int y, int xmin, int xmax, int ymin, int ymax)
 {
-  int yr = y0 - (ymax-ymin+1)+1; /* y0 starts at the bottom of the image */
+  y -= (ymax-ymin+1)-1; /* y starts at the bottom of the image */
 
   if (ctximage->alpha && ctximage->bpp == 32 && cdwAlphaBlend)
   {
@@ -2069,7 +2068,7 @@ static void cdputimagerect(cdCtxCanvas* ctxcanvas, cdCtxImage *ctximage, int x0,
 
     GdiFlush();
     cdwAlphaBlend(ctxcanvas->hDC,
-                x0, yr, xmax-xmin+1, ymax-ymin+1, 
+                x, y, xmax-xmin+1, ymax-ymin+1, 
                 ctximage->hDC,
                 xmin, ctximage->h-ymax-1, xmax-xmin+1, ymax-ymin+1, 
                 blendfunc);
@@ -2091,9 +2090,9 @@ static void cdputimagerect(cdCtxCanvas* ctxcanvas, cdCtxImage *ctximage, int x0,
     PlgBlt(ctxcanvas->hDC, pts, ctximage->hDC, xmin, ctximage->h-ymax-1, xmax-xmin+1, ymax-ymin+1, ctxcanvas->img_mask, 0, 0);
   }
   else if (ctxcanvas->img_mask)
-    MaskBlt(ctxcanvas->hDC,x0,yr, xmax-xmin+1, ymax-ymin+1, ctximage->hDC, xmin, ctximage->h-ymax-1, ctxcanvas->img_mask, 0, 0, MAKEROP4(ctxcanvas->RopBlt, 0xAA0000));
+    MaskBlt(ctxcanvas->hDC, x, y, xmax-xmin+1, ymax-ymin+1, ctximage->hDC, xmin, ctximage->h-ymax-1, ctxcanvas->img_mask, 0, 0, MAKEROP4(ctxcanvas->RopBlt, 0xAA0000));
   else
-    BitBlt(ctxcanvas->hDC,x0,yr, xmax-xmin+1, ymax-ymin+1, ctximage->hDC, xmin, ctximage->h-ymax-1, ctxcanvas->RopBlt);
+    BitBlt(ctxcanvas->hDC, x, y, xmax-xmin+1, ymax-ymin+1, ctximage->hDC, xmin, ctximage->h-ymax-1, ctxcanvas->RopBlt);
 }
 
 static void  cdkillimage(cdCtxImage *ctximage)
@@ -2116,6 +2115,7 @@ static void cdscrollarea(cdCtxCanvas* ctxcanvas, int xmin, int xmax, int ymin, i
     ModifyWorldTransform(ctxcanvas->hDC, NULL, MWT_IDENTITY);
   }
 
+  /* if 0, invert because the transform was reset */
   if (!ctxcanvas->canvas->invert_yaxis)  
   {
     dy = -dy;

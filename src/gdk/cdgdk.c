@@ -697,13 +697,6 @@ static void cdarc(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a
     return;
   }
 
-  if (!ctxcanvas->canvas->invert_yaxis)
-  {
-    /* change orientation */
-    a1 *= -1;
-    a2 *= -1;
-  }
-
   /* angles in 1/64ths of degrees counterclockwise, similar to CD */
 
   cdgdkCheckSolidStyle(ctxcanvas, 1);
@@ -720,13 +713,6 @@ static void cdsector(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, doubl
   }
   else
   {
-    if (!ctxcanvas->canvas->invert_yaxis)
-    {
-      /* change orientation */
-      a1 *= -1;
-      a2 *= -1;
-    }
-
     /* "filled parameter = TRUE" produces a 'pie slice' */
     gdk_draw_arc(ctxcanvas->wnd, ctxcanvas->gc, TRUE, xc-w/2, yc-h/2, w, h, cdRound(a1*64), cdRound((a2 - a1)*64));
   }
@@ -836,12 +822,12 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
     ctxcanvas->fontmatrix.x0 = 0;     ctxcanvas->fontmatrix.y0 = 0;
   }
 
-  if (ctxcanvas->canvas->use_matrix || ctxcanvas->canvas->text_orientation != 0)
+  if (ctxcanvas->canvas->use_matrix || ctxcanvas->canvas->text_orientation)
   {
     PangoRectangle rect;
-    double angle = (ctxcanvas->canvas->invert_yaxis)? ctxcanvas->canvas->text_orientation: -ctxcanvas->canvas->text_orientation;
+    double angle = ctxcanvas->canvas->text_orientation;
 
-    if (ctxcanvas->canvas->text_orientation != 0)
+    if (ctxcanvas->canvas->text_orientation)
       pango_matrix_rotate(&ctxcanvas->fontmatrix, angle);
 
     pango_context_set_matrix (ctxcanvas->fontcontext, &ctxcanvas->fontmatrix);
@@ -852,7 +838,7 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
     pango_matrix_transform_pixel_rectangle(&ctxcanvas->fontmatrix, &rect);
 #endif
 
-    if (ctxcanvas->canvas->text_orientation != 0)
+    if (ctxcanvas->canvas->text_orientation)
     {
       double cos_angle = cos(angle*CD_DEG2RAD);
       double sin_angle = sin(angle*CD_DEG2RAD);
@@ -989,7 +975,7 @@ static void cdgdkGetPixbufData(GdkPixbuf* pixbuf, unsigned char *r, unsigned cha
   }
 }
 
-static GdkPixbuf* cdgdkCreatePixbufRGBA(int width, int height, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, int ix, int iy, int image_width, int topdown)
+static GdkPixbuf* cdgdkCreatePixbufRGBA(int width, int height, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, int ix, int iy, int image_width)
 {
   GdkPixbuf* pixbuf;
   guchar *pixdata, *pixline_data;
@@ -1012,10 +998,7 @@ static GdkPixbuf* cdgdkCreatePixbufRGBA(int width, int height, const unsigned ch
   {
     int lineoffset = (height-1 - y + iy)*image_width;  /* imgdata is bottom-top */
 
-    if (topdown)
-      pixline_data = pixdata + (height-1 - y) * rowstride;
-    else
-      pixline_data = pixdata + y * rowstride;
+    pixline_data = pixdata + y * rowstride;
 
     for(x=0;x<width;x++)
     {
@@ -1032,7 +1015,7 @@ static GdkPixbuf* cdgdkCreatePixbufRGBA(int width, int height, const unsigned ch
   return pixbuf;
 }
 
-static GdkPixbuf* cdgdkCreatePixbufMap(int width, int height, const long* colors, const unsigned char *map, int ix, int iy, int image_width, int topdown)
+static GdkPixbuf* cdgdkCreatePixbufMap(int width, int height, const long* colors, const unsigned char *map, int ix, int iy, int image_width)
 {
   GdkPixbuf* pixbuf;
   guchar *pixdata, *pixline_data;
@@ -1055,10 +1038,7 @@ static GdkPixbuf* cdgdkCreatePixbufMap(int width, int height, const long* colors
   {
     line_data = map + (height-1 - y + iy) * image_width;  /* map is bottom-top */
 
-    if (topdown)
-      pixline_data = pixdata + (height-1 - y) * rowstride;
-    else
-      pixline_data = pixdata + y * rowstride;
+    pixline_data = pixdata + y * rowstride;
 
     for (x=0; x<width; x++)
     {
@@ -1079,14 +1059,9 @@ static GdkPixbuf* cdgdkCreatePixbufMap(int width, int height, const long* colors
 
 static void cdgetimagergb(cdCtxCanvas *ctxcanvas, unsigned char *r, unsigned char *g, unsigned char *b, int x, int y, int w, int h)
 {
-  GdkPixbuf* pixbuf;
-
-  if (!ctxcanvas->canvas->invert_yaxis) 
-    y = _cdInvertYAxis(ctxcanvas->canvas, y);
-
-  pixbuf = gdk_pixbuf_get_from_drawable(NULL, ctxcanvas->wnd, ctxcanvas->colormap, 
-                                        x, y-h+1, 
-                                        0, 0, w, h);
+  GdkPixbuf* pixbuf = gdk_pixbuf_get_from_drawable(NULL, ctxcanvas->wnd, ctxcanvas->colormap, 
+                                                   x, y-h+1, 
+                                                   0, 0, w, h);
   if (!pixbuf)
     return;
 
@@ -1143,37 +1118,22 @@ static void cdputimagerectrgba_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, co
   }
 
   {
-    int topdown;
     int ex = t_xmin, 
         ey = t_ymin + eh-1;  /* GdkPixbuf origin is at top-left */
     GdkPixbuf *pixbuf;
     GdkRegion *clip_polygon;
     GdkPoint* pnt = g_malloc(64);
 
-    if(ctxcanvas->canvas->invert_yaxis)
-    {
-      topdown = 0;
+    /* Since the transformation used was the original transformation, */
+    /* must invert the Y axis here. */
+    ey = _cdInvertYAxis(ctxcanvas->canvas, ey);
 
-      /* Since the transformation used was the original transformation, */
-      /* must invert the Y axis here. */
-      ey = _cdInvertYAxis(ctxcanvas->canvas, ey);
+    /* use clipping to select only the transformed rectangle */
+    pnt[0].x = (short)rect[0]; pnt[0].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[1]);
+    pnt[1].x = (short)rect[2]; pnt[1].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[3]);
+    pnt[2].x = (short)rect[4]; pnt[2].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[5]);
+    pnt[3].x = (short)rect[6]; pnt[3].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[7]);
 
-      /* use clipping to select only the transformed rectangle */
-      pnt[0].x = (short)rect[0]; pnt[0].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[1]);
-      pnt[1].x = (short)rect[2]; pnt[1].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[3]);
-      pnt[2].x = (short)rect[4]; pnt[2].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[5]);
-      pnt[3].x = (short)rect[6]; pnt[3].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[7]);
-    }
-    else
-    {
-      topdown = 1;
-
-      /* use clipping to select only the transformed rectangle */
-      pnt[0].x = (short)rect[0]; pnt[0].y = (short)rect[1];
-      pnt[1].x = (short)rect[2]; pnt[1].y = (short)rect[3];
-      pnt[2].x = (short)rect[4]; pnt[2].y = (short)rect[5];
-      pnt[3].x = (short)rect[6]; pnt[3].y = (short)rect[7];
-    }
     clip_polygon = gdk_region_polygon(pnt, 4, ctxcanvas->canvas->fill_mode == CD_EVENODD ? GDK_EVEN_ODD_RULE : GDK_WINDING_RULE);
 
     /* combine with the existing clipping */
@@ -1182,7 +1142,7 @@ static void cdputimagerectrgba_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, co
 
     cdwritemode(ctxcanvas, ctxcanvas->canvas->write_mode);  /* reset gdk_gc_set_function */
 
-    pixbuf = cdgdkCreatePixbufRGBA(ew, eh, dst_r, dst_g, dst_b, dst_a, 0, 0, ew, topdown);
+    pixbuf = cdgdkCreatePixbufRGBA(ew, eh, dst_r, dst_g, dst_b, dst_a, 0, 0, ew);
     if (!pixbuf)
       return;
 
@@ -1241,7 +1201,6 @@ static void cdputimagerectmap_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, con
   }
 
   {
-    int topdown;
     int ex = t_xmin, 
         ey = t_ymin + eh-1;  /* GdkPixbuf* origin is at top-left */
     
@@ -1249,30 +1208,16 @@ static void cdputimagerectmap_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, con
     GdkRegion *clip_polygon;
     GdkPoint pnt[4];
 
-    if(ctxcanvas->canvas->invert_yaxis)
-    {
-      topdown = 0;
+    /* Since the transformation used was the original transformation, */
+    /* must invert the Y axis here. */
+    ey = _cdInvertYAxis(ctxcanvas->canvas, ey);
 
-      /* Since the transformation used was the original transformation, */
-      /* must invert the Y axis here. */
-      ey = _cdInvertYAxis(ctxcanvas->canvas, ey);
+    /* use clipping to select only the transformed rectangle */
+    pnt[0].x = (short)rect[0]; pnt[0].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[1]);
+    pnt[1].x = (short)rect[2]; pnt[1].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[3]);
+    pnt[2].x = (short)rect[4]; pnt[2].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[5]);
+    pnt[3].x = (short)rect[6]; pnt[3].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[7]);
 
-      /* use clipping to select only the transformed rectangle */
-      pnt[0].x = (short)rect[0]; pnt[0].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[1]);
-      pnt[1].x = (short)rect[2]; pnt[1].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[3]);
-      pnt[2].x = (short)rect[4]; pnt[2].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[5]);
-      pnt[3].x = (short)rect[6]; pnt[3].y = (short)_cdInvertYAxis(ctxcanvas->canvas, rect[7]);
-    }
-    else
-    {
-      topdown = 1;
-
-      /* use clipping to select only the transformed rectangle */
-      pnt[0].x = (short)rect[0]; pnt[0].y = (short)rect[1];
-      pnt[1].x = (short)rect[2]; pnt[1].y = (short)rect[3];
-      pnt[2].x = (short)rect[4]; pnt[2].y = (short)rect[5];
-      pnt[3].x = (short)rect[6]; pnt[3].y = (short)rect[7];
-    }
     clip_polygon = gdk_region_polygon(pnt, 4, ctxcanvas->canvas->fill_mode == CD_EVENODD ? GDK_EVEN_ODD_RULE : GDK_WINDING_RULE);
 
     /* combine with the existing clipping */
@@ -1281,7 +1226,7 @@ static void cdputimagerectmap_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, con
 
     cdwritemode(ctxcanvas, ctxcanvas->canvas->write_mode);  /* reset gdk_gc_set_function */
 
-    pixbuf = cdgdkCreatePixbufMap(ew, eh, colors, dst_index, 0, 0, ew, topdown);
+    pixbuf = cdgdkCreatePixbufMap(ew, eh, colors, dst_index, 0, 0, ew);
     if (!pixbuf)
       return;
 
@@ -1297,22 +1242,18 @@ static void cdputimagerectmap_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, con
   free(dst_index);
 }
 
-static void sFixImageY(cdCanvas* canvas, int *topdown, int *y, int h)
+static void sFixImageY(int *y, int h)
 {
-  if (canvas->invert_yaxis)
-    *topdown = 0;
-  else
-    *topdown = 1;
-
-  if (!(*topdown))
-    *y -= (h - 1);  /* move Y to top-left corner, since it was at the bottom of the image */
+  /* y is the bottom-left of the image in CD, 
+     move to top-left for GDK */
+  *y -= (h - 1);
 }
 
 static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
 {
   int ew = w, eh = h, ex = x, ey = y;
   int bw = iw, bh = ih, bx = 0, by = 0;
-  int rw, rh, topdown;
+  int rw, rh;
   GdkPixbuf* pixbuf;
 
   if (ctxcanvas->canvas->use_matrix)
@@ -1323,7 +1264,7 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 
   rw = xmax-xmin+1;
   rh = ymax-ymin+1;
-  sFixImageY(ctxcanvas->canvas, &topdown, &y, h);
+  sFixImageY(&y, h);
 
   if (!cdCalcZoom(ctxcanvas->canvas->w, x, w, &ex, &ew, xmin, rw, &bx, &bw, 1))
     return;
@@ -1331,7 +1272,7 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   if (!cdCalcZoom(ctxcanvas->canvas->h, y, h, &ey, &eh, ymin, rh, &by, &bh, 0))
     return;
 
-  pixbuf = cdgdkCreatePixbufRGBA(bw, bh, r, g, b, NULL, bx, by, iw, topdown);
+  pixbuf = cdgdkCreatePixbufRGBA(bw, bh, r, g, b, NULL, bx, by, iw);
   if (!pixbuf)
     return;
 
@@ -1352,7 +1293,7 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
   GdkPixbuf *pixbuf;
   int ew = w, eh = h, ex = x, ey = y;
   int bw = iw, bh = ih, bx = 0, by = 0;
-  int rw, rh, topdown;
+  int rw, rh;
 
   if (ctxcanvas->canvas->use_matrix)
   {
@@ -1362,7 +1303,7 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
 
   rw = xmax-xmin+1;
   rh = ymax-ymin+1;
-  sFixImageY(ctxcanvas->canvas, &topdown, &y, h);
+  sFixImageY(&y, h);
 
   if (!cdCalcZoom(ctxcanvas->canvas->w, x, w, &ex, &ew, xmin, rw, &bx, &bw, 1))
     return;
@@ -1370,7 +1311,7 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
   if (!cdCalcZoom(ctxcanvas->canvas->h, y, h, &ey, &eh, ymin, rh, &by, &bh, 0))
     return;
 
-  pixbuf = cdgdkCreatePixbufRGBA(bw, bh, r, g, b, a, bx, by, iw, topdown);
+  pixbuf = cdgdkCreatePixbufRGBA(bw, bh, r, g, b, a, bx, by, iw);
   if (!pixbuf)
     return;
 
@@ -1390,7 +1331,7 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 {
   int ew = w, eh = h, ex = x, ey = y;
   int bw = iw, bh = ih, bx = 0, by = 0;
-  int rw, rh, topdown;
+  int rw, rh;
   GdkPixbuf* pixbuf;
 
   if (ctxcanvas->canvas->use_matrix)
@@ -1401,7 +1342,7 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 
   rw = xmax-xmin+1;
   rh = ymax-ymin+1;
-  sFixImageY(ctxcanvas->canvas, &topdown, &y, h);
+  sFixImageY(&y, h);
 
   if (!cdCalcZoom(ctxcanvas->canvas->w, x, w, &ex, &ew, xmin, rw, &bx, &bw, 1))
     return;
@@ -1409,7 +1350,7 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   if (!cdCalcZoom(ctxcanvas->canvas->h, y, h, &ey, &eh, ymin, rh, &by, &bh, 0))
     return;
 
-  pixbuf = cdgdkCreatePixbufMap(bw, bh, colors, index, bx, by, iw, topdown);
+  pixbuf = cdgdkCreatePixbufMap(bw, bh, colors, index, bx, by, iw);
   if (!pixbuf)
     return;
 
@@ -1477,11 +1418,7 @@ static cdCtxImage *cdcreateimage (cdCtxCanvas *ctxcanvas, int w, int h)
 
 static void cdgetimage (cdCtxCanvas *ctxcanvas, cdCtxImage *ctximage, int x, int y)
 {
-  if (!ctxcanvas->canvas->invert_yaxis)  // if 0, invert because the transform was reset here
-    y = _cdInvertYAxis(ctxcanvas->canvas, y);
-
-  /* y is the bottom-left of the image in CD, must be at upper-left */
-  y -= ctximage->h-1;
+  sFixImageY(&y, ctximage->h);
 
   gdk_draw_drawable(ctximage->img, ctxcanvas->gc,
                     ctxcanvas->wnd, x, y, 0, 0,
@@ -1490,8 +1427,11 @@ static void cdgetimage (cdCtxCanvas *ctxcanvas, cdCtxImage *ctximage, int x, int
 
 static void cdputimagerect (cdCtxCanvas *ctxcanvas, cdCtxImage *ctximage, int x, int y, int xmin, int xmax, int ymin, int ymax)
 {
+  /* y is the bottom-left of the image region in CD */
+  y -= (ymax-ymin+1)-1;
+
   gdk_draw_drawable(ctxcanvas->wnd, ctxcanvas->gc,
-                    ctximage->img, xmin, ctximage->h-ymax-1, x, y-(ymax-ymin+1)+1,
+                    ctximage->img, xmin, ctximage->h-ymax-1, x, y,
                     xmax-xmin+1, ymax-ymin+1);
 }
 
@@ -1503,14 +1443,6 @@ static void cdkillimage (cdCtxImage *ctximage)
 
 static void cdscrollarea (cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax, int dx, int dy)
 {
-  if (!ctxcanvas->canvas->invert_yaxis)  
-  {
-    dy = -dy;
-    ymin = _cdInvertYAxis(ctxcanvas->canvas, ymin);
-    ymax = _cdInvertYAxis(ctxcanvas->canvas, ymax);
-    _cdSwapInt(ymin, ymax);
-  }
-
   gdk_draw_drawable(ctxcanvas->wnd, ctxcanvas->gc,
                     ctxcanvas->wnd, xmin, ymin, xmin+dx, ymin+dy,
                     xmax-xmin+1, ymax-ymin+1);
@@ -1539,7 +1471,9 @@ static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
     ctxcanvas->fontmatrix.x0 = 0;
     ctxcanvas->fontmatrix.y0 = 0;
 
-    ctxcanvas->canvas->invert_yaxis = 0;
+    ctxcanvas->canvas->invert_yaxis = 0;  /* let the transformation do the axis invertion */
+    /* but this is different than a native transformation support,
+       because does not affect native functions */
   }
   else
   {

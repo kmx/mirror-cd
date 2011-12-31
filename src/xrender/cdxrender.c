@@ -133,13 +133,11 @@ static void cdfline(cdCtxCanvas *ctxcanvas, double x1, double y1, double x2, dou
 {
   int ix1, ix2, iy1, iy2;
 
-#ifndef CD_XRENDER_MATRIX
   if (ctxcanvas->canvas->use_matrix)
   {
     cdfMatrixTransformPoint(ctxcanvas->xmatrix, x1, y1, &x1, &y1);
     cdfMatrixTransformPoint(ctxcanvas->xmatrix, x2, y2, &x2, &y2);
   }
-#endif
 
   ix1 = _cdRound(x1);
   ix2 = _cdRound(x2);
@@ -244,10 +242,8 @@ static void cdfpoly(cdCtxCanvas* ctxcanvas, int mode, cdfPoint* fpoly, int n)
           poly[i].x = fpoly[i].x;
           poly[i].y = fpoly[i].y;
 
-#ifndef CD_XRENDER_MATRIX
           if (ctxcanvas->canvas->use_matrix)
             cdfMatrixTransformPoint(ctxcanvas->xmatrix, poly[i].x, poly[i].y, &poly[i].x, &poly[i].y);
-#endif
         }
 
         xrPolyFill(ctxcanvas, poly, n);
@@ -313,10 +309,8 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
           fpoly[i].x = (double)poly[i].x;
           fpoly[i].y = (double)poly[i].y;
 
-#ifndef CD_XRENDER_MATRIX
           if (ctxcanvas->canvas->use_matrix)
             cdfMatrixTransformPoint(ctxcanvas->xmatrix, fpoly[i].x, fpoly[i].y, &fpoly[i].x, &fpoly[i].y);
-#endif
         }
 
         xrPolyFill(ctxcanvas, fpoly, n);
@@ -334,7 +328,6 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
 
 static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
 {
-#ifndef CD_XRENDER_MATRIX
   if (matrix)
   {
     /* configure a bottom-up coordinate system */
@@ -346,13 +339,19 @@ static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
     ctxcanvas->xmatrix[5] = (ctxcanvas->canvas->h-1); 
     cdMatrixMultiply(matrix, ctxcanvas->xmatrix);
 
-    ctxcanvas->canvas->invert_yaxis = 0;
+    ctxcanvas->canvas->invert_yaxis = 0;  /* let the transformation do the axis invertion */
+    /* but this is different than a native transformation support,
+       because does not affect native functions */
   }
   else
   {
     ctxcanvas->canvas->invert_yaxis = 1;
   }
-#else
+
+#if 0
+  /* TODO: This function did not work. It returned a BadPicture error.
+           So we ignore it and use manual transformation. */
+
   XTransform transform;
   double identity[6] = {1, 0, 0, 1, 0, 0};
 
@@ -369,7 +368,6 @@ static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
   transform.matrix[2][1] = XDoubleToFixed(0);
   transform.matrix[2][2] = XDoubleToFixed(1);
 
-  /* TODO: This is not working. It gives a BadPicture error */
   XRenderSetPictureTransform(ctxcanvas->dpy, ctxcanvas->ctxplus->dst_picture, &transform);
 #endif
 }
@@ -574,9 +572,9 @@ static int cdfont(cdCtxCanvas *ctxcanvas, const char *type_face, int style, int 
   else if (cdStrEqualNoCase(type_face, "Helvetica") || cdStrEqualNoCase(type_face, "Arial"))
     type_face = "sans";
 
-  if (ctxcanvas->canvas->text_orientation != 0)
+  if (ctxcanvas->canvas->text_orientation)
   {
-    double angle = ((ctxcanvas->canvas->invert_yaxis)? ctxcanvas->canvas->text_orientation: -ctxcanvas->canvas->text_orientation)*CD_DEG2RAD;
+    double angle = ctxcanvas->canvas->text_orientation*CD_DEG2RAD;
     double cos_angle = cos(angle);
     double sin_angle = sin(angle);
 
@@ -593,7 +591,7 @@ static int cdfont(cdCtxCanvas *ctxcanvas, const char *type_face, int style, int 
   if (ctxcanvas->ctxplus->font)
     XftFontClose(ctxcanvas->dpy, ctxcanvas->ctxplus->font);
 
-  if (ctxcanvas->canvas->text_orientation != 0)
+  if (ctxcanvas->canvas->text_orientation)
   {
     /* XftTextExtents8 will return the size of the rotated text, but we want the size without orientation.
        So create a font without orientation just to return the correct text size. */
@@ -676,7 +674,7 @@ static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *text, int len, int
   if (!ctxcanvas->ctxplus->font) 
     return;
 
-  if (ctxcanvas->canvas->text_orientation != 0)
+  if (ctxcanvas->canvas->text_orientation)
     XftTextExtents8(ctxcanvas->dpy, ctxcanvas->ctxplus->flat_font, (XftChar8*)text, len, &extents);
   else
     XftTextExtents8(ctxcanvas->dpy, ctxcanvas->ctxplus->font, (XftChar8*)text, len, &extents);
@@ -693,7 +691,7 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *text, int l
   if (!ctxcanvas->ctxplus->font)
     return;
 
-  if (ctxcanvas->canvas->text_orientation != 0)
+  if (ctxcanvas->canvas->text_orientation)
     XftTextExtents8(ctxcanvas->dpy, ctxcanvas->ctxplus->flat_font, (XftChar8*)text, len, &extents);
   else
     XftTextExtents8(ctxcanvas->dpy, ctxcanvas->ctxplus->font, (XftChar8*)text, len, &extents);
@@ -754,9 +752,9 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *text, int l
     break;
   }
 
-  if (ctxcanvas->canvas->text_orientation != 0)
+  if (ctxcanvas->canvas->text_orientation)
   {
-    double angle = ((ctxcanvas->canvas->invert_yaxis)? ctxcanvas->canvas->text_orientation: -ctxcanvas->canvas->text_orientation)*CD_DEG2RAD;
+    double angle = ctxcanvas->canvas->text_orientation*CD_DEG2RAD;
     double cos_angle = cos(angle);
     double sin_angle = sin(angle);
 
@@ -764,10 +762,8 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *text, int l
     cdRotatePoint(ctxcanvas->canvas, x, y, ox, oy, &x, &y, sin_angle, cos_angle);
   }
 
-#ifndef CD_XRENDER_MATRIX
   if (ctxcanvas->canvas->use_matrix)
     cdMatrixTransformPoint(ctxcanvas->xmatrix, x, y, &x, &y);
-#endif
 
   if (!ctxcanvas->canvas->new_region)
   {
