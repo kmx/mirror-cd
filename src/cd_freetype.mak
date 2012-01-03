@@ -2,7 +2,8 @@ PROJNAME = cd
 LIBNAME = freetype
 OPT = YES   
 
-# Changes to freetype-2.3.11: search for CDLIB (2).
+# Changes to freetype-2.4.8: search for CDLIB (2).
+
 SRC  := \
   autofit/autofit.c bdf/bdf.c cff/cff.c \
   base/ftbase.c base/ftcid.c base/ftfstype.c cache/ftcache.c \
