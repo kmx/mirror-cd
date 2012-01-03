@@ -21,8 +21,8 @@ DEFINES += FT2_BUILD_LIBRARY
 INCLUDES = freetype2
 
 ifneq ($(findstring dll, $(TEC_UNAME)), )
-  SRC += cd_freetype.rc
-  DEF_FILE = cd_freetype.def
+  SRC += freetype2/freetype.rc
+  DEF_FILE = freetype2/freetype.def
 endif
 
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )

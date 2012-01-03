@@ -2,7 +2,7 @@ PROJNAME = cd
 LIBNAME = ftgl
 OPT = YES
 
-DEF_FILE = cd_ftgl.def
+DEF_FILE = freetype2/ftgl.def
 
 ftglyph_sources = \
     FTGlyph/FTGlyph.cpp \
@@ -47,22 +47,23 @@ libftgl_la_SOURCES = \
 SRC := $(addprefix ftgl/, $(libftgl_la_SOURCES))
     
 INCLUDES := ftgl freetype2
-DEFINES = FTGL_LIBRARY_STATIC
-USE_OPENGL = Yes
-LIBS = freetype
 LDIR = ../lib/$(TEC_UNAME)
 
+DEFINES = FTGL_LIBRARY_STATIC
 ifneq ($(findstring dll, $(TEC_UNAME)), )
   DEFINES = FTGL_LIBRARY
 endif
 
+LIBS = freetype
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )
   LIBS = freetype6
 endif
-
 ifneq ($(findstring cygw, $(TEC_UNAME)), )
   LIBS = freetype-6
 endif
+
+USE_OPENGL = Yes
+USE_MACOS_OPENGL = Yes
 
 ifneq ($(findstring MacOS, $(TEC_UNAME)), )
   ifdef USE_MACOS_OPENGL

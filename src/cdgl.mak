@@ -8,7 +8,8 @@ SRC = drv/cdgl.c
 INCLUDES = . sim ftgl freetype2
 LIBS = ftgl
 
-USE_OPENGL = YES
+USE_OPENGL = Yes
+USE_MACOS_OPENGL = Yes
 USE_CD = YES
 CD = ..
 
@@ -23,11 +24,9 @@ endif
 ifneq ($(findstring AIX, $(TEC_UNAME)), )
   DEFINES += NO_FONTCONFIG
 endif
-
 ifneq ($(findstring IRIX, $(TEC_UNAME)), )
   DEFINES += NO_FONTCONFIG
 endif
-
 ifneq ($(findstring SunOS, $(TEC_UNAME)), )
   DEFINES += NO_FONTCONFIG
 endif

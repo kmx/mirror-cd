@@ -2,7 +2,7 @@ PROJNAME = cd
 LIBNAME = pdflib
 OPT = YES
 
-DEF_FILE = cd_pdflib.def
+DEF_FILE = pdflib/pdflib.def
 
 ifeq ($(TEC_UNAME), ppc)
   DEFINES = WORDS_BIGENDIAN
@@ -126,7 +126,7 @@ SRCPDFLIB := \
 SRC := pdflib/pdflib/pdflib.c $(SRCPDFLIB) $(SRCPDCORE) $(SRCFLATE) $(SRCFONT)
 
 ifneq ($(findstring dll, $(TEC_UNAME)), )
-  SRC += cd_pdflib.rc
+  SRC += pdflib/cd_pdflib.rc
 endif
 
 ifneq ($(findstring MacOS, $(TEC_UNAME)), )
