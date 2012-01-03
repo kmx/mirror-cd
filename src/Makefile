@@ -11,37 +11,48 @@ cd_freetype:
 	@$(TECMAKE_CMD) MF=cd_freetype
 cd_ftgl:
 	@$(TECMAKE_CMD) MF=cd_ftgl
+cd_pdflib:
+	@$(TECMAKE_CMD) MF=cd_pdflib
+  
 cd:
 	@$(TECMAKE_CMD)
 cdx11:
 	@$(TECMAKE_CMD) USE_X11=Yes
 cdgdk:
 	@$(TECMAKE_CMD) USE_GDK=Yes
-cd_pdflib:
-	@$(TECMAKE_CMD) MF=cd_pdflib
+  
 cdpdf:
 	@$(TECMAKE_CMD) MF=cdpdf
 cdgl:
 	@$(TECMAKE_CMD) MF=cdgl
+  
 cdcontextplus:
 	@$(TECMAKE_CMD) MF=cdcontextplus
 cdcairo:
 	@$(TECMAKE_CMD) MF=cdcairo
+  
 cdlua3:
 	@$(TECMAKE_CMD) MF=cdlua3
 cdluapdf3:
 	@$(TECMAKE_CMD) MF=cdluapdf3
 cdluagl3:
 	@$(TECMAKE_CMD) MF=cdluagl3
+  
 cdlua5:
-	@$(TECMAKE_CMD) MF=cdlua5
+	@$(TECMAKE_CMD) MF=cdlua5 USE_LUA51=Yes
+	@$(TECMAKE_CMD) MF=cdlua5 USE_LUA52=Yes
 cdluapdf5:
-	@$(TECMAKE_CMD) MF=cdluapdf5
+	@$(TECMAKE_CMD) MF=cdluapdf5 USE_LUA51=Yes
+	@$(TECMAKE_CMD) MF=cdluapdf5 USE_LUA52=Yes
 cdluagl5:
-	@$(TECMAKE_CMD) MF=cdluagl5
+	@$(TECMAKE_CMD) MF=cdluagl5 USE_LUA51=Yes
+	@$(TECMAKE_CMD) MF=cdluagl5 USE_LUA52=Yes
 cdluacontextplus5:
-	@$(TECMAKE_CMD) MF=cdluacontextplus5
+	@$(TECMAKE_CMD) MF=cdluacontextplus5 USE_LUA51=Yes
+	@$(TECMAKE_CMD) MF=cdluacontextplus5 USE_LUA52=Yes
 cdluacairo5:
-	@$(TECMAKE_CMD) MF=cdluacairo5
+	@$(TECMAKE_CMD) MF=cdluacairo5 USE_LUA51=Yes
+	@$(TECMAKE_CMD) MF=cdluacairo5 USE_LUA52=Yes
 cdluaim5:
-	@$(TECMAKE_CMD) MF=cdluaim5
+	@$(TECMAKE_CMD) MF=cdluaim5 USE_LUA51=Yes
+	@$(TECMAKE_CMD) MF=cdluaim5 USE_LUA52=Yes
