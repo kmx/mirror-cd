@@ -173,11 +173,6 @@ EXPORTS
   FT_Stream_ExtractFrame
   FT_Stream_Free
   FT_Stream_GetChar
-  FT_Stream_GetLong
-  FT_Stream_GetLongLE
-  FT_Stream_GetOffset
-  FT_Stream_GetShort
-  FT_Stream_GetShortLE
   FT_Stream_New
   FT_Stream_Open
   FT_Stream_OpenGzip
@@ -188,11 +183,6 @@ EXPORTS
   FT_Stream_ReadAt
   FT_Stream_ReadChar
   FT_Stream_ReadFields
-  FT_Stream_ReadLong
-  FT_Stream_ReadLongLE
-  FT_Stream_ReadOffset
-  FT_Stream_ReadShort
-  FT_Stream_ReadShortLE
   FT_Stream_ReleaseFrame
   FT_Stream_Seek
   FT_Stream_Skip

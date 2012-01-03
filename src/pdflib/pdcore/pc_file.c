@@ -53,7 +53,12 @@
 #include <ssdef.h>
 #endif
 
-#if defined(WIN32) && !defined(__BORLANDC__)
+/* CDLIB */
+#if defined(WIN32) && !defined(__BORLANDC__) && !defined(__CYGWIN__)
+
+#ifndef _IOB_ENTRIES
+#define _IOB_ENTRIES 20
+#endif
 
 #define PDC_MAXFILEHANDLES 2048
 
