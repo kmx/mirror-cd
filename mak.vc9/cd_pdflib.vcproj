@@ -99,106 +99,6 @@
 				>
 			</File>
 			<Filter
-				Name="flate"
-				>
-				<File
-					RelativePath="..\src\pdflib\flate\adler32.c"
-					>
-				</File>
-				<File
-					RelativePath="..\src\pdflib\flate\compress.c"
-					>
-				</File>
-				<File
-					RelativePath="..\src\pdflib\flate\crc32.c"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						>
-						<Tool
-							Name="VCCLCompilerTool"
-							DebugInformationFormat="1"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\src\pdflib\flate\deflate.c"
-					>
-				</File>
-				<File
-					RelativePath="..\src\pdflib\flate\inffast.c"
-					>
-				</File>
-				<File
-					RelativePath="..\src\pdflib\flate\inflate.c"
-					>
-				</File>
-				<File
-					RelativePath="..\src\pdflib\flate\inftrees.c"
-					>
-				</File>
-				<File
-					RelativePath="..\src\pdflib\flate\trees.c"
-					>
-				</File>
-				<File
-					RelativePath="..\src\pdflib\flate\uncompr.c"
-					>
-				</File>
-				<File
-					RelativePath="..\src\pdflib\flate\zutil.c"
-					>
-				</File>
-				<Filter
-					Name="inc"
-					>
-					<File
-						RelativePath="..\src\pdflib\flate\crc32.h"
-						>
-					</File>
-					<File
-						RelativePath="..\src\pdflib\flate\deflate.h"
-						>
-					</File>
-					<File
-						RelativePath="..\src\pdflib\flate\inffast.h"
-						>
-					</File>
-					<File
-						RelativePath="..\src\pdflib\flate\inffixed.h"
-						>
-					</File>
-					<File
-						RelativePath="..\src\pdflib\flate\inflate.h"
-						>
-					</File>
-					<File
-						RelativePath="..\src\pdflib\flate\inftrees.h"
-						>
-					</File>
-					<File
-						RelativePath="..\src\pdflib\flate\trees.h"
-						>
-					</File>
-					<File
-						RelativePath="..\src\pdflib\flate\zconf.h"
-						>
-					</File>
-					<File
-						RelativePath="..\src\pdflib\flate\zlib.h"
-						>
-					</File>
-					<File
-						RelativePath="..\src\pdflib\flate\zprefix.h"
-						>
-					</File>
-					<File
-						RelativePath="..\src\pdflib\flate\zutil.h"
-						>
-					</File>
-				</Filter>
-			</Filter>
-			<Filter
 				Name="font"
 				>
 				<File
@@ -723,10 +623,6 @@
 				</Filter>
 			</Filter>
 		</Filter>
-		<File
-			RelativePath="..\src\cd_pdflib.def"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

@@ -42,7 +42,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\src\freetype2"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;FT2_BUILD_LIBRARY;_CRT_SECURE_NO_DEPRECATE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;FT2_BUILD_LIBRARY;FT_CONFIG_OPTION_SYSTEM_ZLIB;_CRT_SECURE_NO_DEPRECATE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				PrecompiledHeaderFile=".\..\obj\freetype/freetype.pch"
@@ -1177,10 +1177,6 @@
 				</File>
 			</Filter>
 		</Filter>
-		<File
-			RelativePath="..\src\cd_freetype.def"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>
