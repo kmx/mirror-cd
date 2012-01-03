@@ -375,7 +375,6 @@ pdc_new_core(
     pdc->uniqueno = 0;
 
 
-
 #ifdef PDC_DEBUG
     pdc->pr->hexdump = pdc_true;
 #endif
@@ -441,6 +440,7 @@ pdc_new_core(
     /* enable error messages
     */
     pdc->pr->in_error = pdc_false;
+
 
     return pdc;
 }

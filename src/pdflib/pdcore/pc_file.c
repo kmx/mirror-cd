@@ -53,11 +53,7 @@
 #include <ssdef.h>
 #endif
 
-#if defined(WIN32) && !defined(__BORLANDC__) && !defined(__CYGWIN__)
-
-#ifndef _IOB_ENTRIES
-#define _IOB_ENTRIES 20
-#endif
+#if defined(WIN32) && !defined(__BORLANDC__)
 
 #define PDC_MAXFILEHANDLES 2048
 
@@ -1205,49 +1201,62 @@ pdc_file_fullname(pdc_core *pdc, const char *dirname, const char *basename,
 {
     const char *pathsep = PDC_PATHSEP;
     const char *stemp = NULL;
+    pdc_bool dirhasbom = (dirname != NULL && pdc_is_utf8_bytecode(dirname));
+    pdc_bool basehasbom = (basename != NULL && pdc_is_utf8_bytecode(basename));
+    const char *sdirname = dirname;
+    const char *sbasename = basename;
     size_t len = 0;
+
+    fullname[0] = 0;
+    if (dirhasbom || basehasbom)
+    {
+        len = 3;
+        strcat(fullname, PDC_UTF8_STRING);
+        if (dirhasbom)
+            sdirname = &dirname[3];
+        if (basehasbom)
+            sbasename = &basename[3];
+    }
 
 #ifdef MVS
     pdc_bool lastterm = pdc_false;
 #endif
 
-    if (!dirname || !dirname[0])
+    if (sdirname == NULL || !sdirname[0])
     {
-        len += strlen(basename);
+        len += strlen(sbasename);
         if (len >= PDC_FILENAMELEN)
             goto PDC_FILE_ERROR;
 
-        strcpy(fullname, basename);
+        strcat(fullname, sbasename);
     }
     else
     {
-        fullname[0] = 0;
-
 #ifdef MVS
-        if (strncmp(dirname, PDC_FILEQUOT, 1))
+        if (strncmp(sdirname, PDC_FILEQUOT, 1))
             strcat(fullname, PDC_FILEQUOT);
 #endif
 
-        len += strlen(dirname);
+        len += strlen(sdirname);
         if (len >= PDC_FILENAMELEN)
             goto PDC_FILE_ERROR;
 
-        strcat(fullname, dirname);
+        strcat(fullname, sdirname);
 
 #ifdef VMS
         /* look for logical name or whose result */
-        if(getenv(dirname))
+        if(getenv(sdirname))
             pathsep = PDC_PATHSEP_LOG;
         else if (fullname[strlen(fullname)-1] == ']')
             pathsep = "";
 #endif
 
-        len += strlen(pathsep) + strlen(basename);
+        len += strlen(pathsep) + strlen(sbasename);
         if (len >= PDC_FILENAMELEN)
             goto PDC_FILE_ERROR;
 
         strcat(fullname, pathsep);
-        strcat(fullname, basename);
+        strcat(fullname, sbasename);
 
 #ifdef MVS
         lastterm = pdc_true;
@@ -1286,7 +1295,7 @@ pdc_file_fullname(pdc_core *pdc, const char *dirname, const char *basename,
 
     PDC_FILE_ERROR:
 
-    if (!dirname || !dirname[0])
+    if (sdirname == NULL || !sdirname[0])
         stemp = pdc_errprintf(pdc, "%s", basename);
     else
         stemp = pdc_errprintf(pdc, "%s%s%s", dirname, pathsep, basename);

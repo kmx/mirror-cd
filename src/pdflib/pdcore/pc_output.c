@@ -101,6 +101,9 @@ struct pdc_output_s {
     MD5_CTX	md5;			/* MD5 digest context for file ID */
     unsigned char id[2][MD5_DIGEST_LENGTH];
     void	*opaque;		/* this will be used to store PDF *p */
+
+
+    /* ------------- extended output control ------------- */
 };
 
 /* ----------- service function to get PDF version string  -------------- */
@@ -571,6 +574,8 @@ pdc_init_outctl(pdc_outctl *oc)
     oc->fopenparams     = 0;
     oc->recordsize      = 0;
 #endif
+
+
 } /* pdc_init_outctl */
 
 /*
@@ -594,6 +599,7 @@ pdc_init_output(
     pdc_cleanup_output(out, pdc_false);
 
     out->opaque		= opaque;
+
     out->lastobj	= 0;
 #if defined(MVS) || defined(MVS_TEST)
     out->fopenparams    = oc->fopenparams;
@@ -619,6 +625,8 @@ pdc_init_output(
 
     if (!pdc_init_stream(pdc, out, oc->filename, oc->fp, oc->writeproc))
 	return pdc_false;
+
+
     {
 	/* Write the document header */
 	pdc_printf(out, "%%PDF-%s\n", pdc_get_pdfversion(pdc, compatibility));
@@ -720,12 +728,14 @@ pdc_begin_obj(pdc_output *out, pdc_id obj_id)
     out->file_offset[obj_id] = pdc_tell_out(out);
     pdc_printf(out, "%ld 0 obj\n", obj_id);
 
+
     return obj_id;
 }
 
 pdc_id
 pdc_alloc_id(pdc_output *out)
 {
+
 
     out->lastobj++;
 
@@ -976,6 +986,8 @@ pdc_write_xref(pdc_output *out)
     pdc_id	i;
     pdc_id	free_id;
     pdc_core *	pdc = out->pdc;
+
+
 
     /* Don't write any object after this check! */
 

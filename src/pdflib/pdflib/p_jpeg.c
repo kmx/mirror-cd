@@ -918,7 +918,7 @@ pdf_process_JPEG_data(
                 }
 
                 /* we must create a new virtual file */
-                if (image->info.jpeg.virtfile == 0)
+                if (image->info.jpeg.virtfile == NULL)
                 {
                     /* read whole file */
                     filebase = (void *) pdc_freadall(image->fp,
@@ -929,15 +929,13 @@ pdf_process_JPEG_data(
                         goto PDF_JPEG_ERROR;
                     }
 
-                    /* temporary memory */
-                    pdc_insert_mem_tmp(p->pdc, filebase, 0, 0);
-
                     filename = "__jpeg__image__data__";
                 }
                 else
                 {
                     /* delete virtual file */
                     pdc__delete_pvf(p->pdc, image->info.jpeg.virtfile);
+                    image->info.jpeg.virtfile = NULL;
                 }
 
                 /* [re]create virtual file */

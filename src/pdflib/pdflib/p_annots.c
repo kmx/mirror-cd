@@ -695,10 +695,10 @@ static pdc_vtr_parms pdf_annot_parms =
 };
 
 static pdf_annot *
-pdf_new_annot(PDF *p)
+pdf_new_annot(PDF *p, pdf_annottype atype)
 {
     pdc_vtr *annots = pdf_get_annots_list(p);
-    pdf_annot *result;
+    pdf_annot *ann;
 
     if (annots == NULL)
     {
@@ -706,14 +706,16 @@ pdf_new_annot(PDF *p)
         pdf_set_annots_list(p, annots);
     }
 
-    result = pdc_vtr_incr(annots, pdf_annot);
-    result->usercoordinates = p->usercoordinates;
-    result->hypertextencoding = p->hypertextencoding;
-    result->hypertextcodepage = p->hypertextcodepage;
-    pdf_init_coloropt(p, &result->fillcolor);
+    ann = pdc_vtr_incr(annots, pdf_annot);
+    ann->atype = atype;
 
 
-    return result;
+    ann->usercoordinates = p->usercoordinates;
+    ann->hypertextencoding = p->hypertextencoding;
+    ann->hypertextcodepage = p->hypertextcodepage;
+    pdf_init_coloropt(p, &ann->fillcolor);
+
+    return ann;
 }
 
 static void
@@ -967,8 +969,7 @@ pdf__create_annotation(PDF *p,
                                    &cdata, pdc_true);
 
     /* Initializing */
-    ann = pdf_new_annot(p);
-    ann->atype = atype;
+    ann = pdf_new_annot(p, atype);
 
     keyword = "usercoordinates";
     pdc_get_optvalues(keyword, resopts, &ann->usercoordinates, NULL);
@@ -1167,7 +1168,8 @@ pdf__create_annotation(PDF *p,
                           ann->hypertextencoding, ann->hypertextcodepage);
 
         pdf_get_opt_textlist(p, keyword, resopts, ann->hypertextencoding,
-                             ann->hypertextcodepage, pdc_true,
+                             ann->hypertextcodepage,
+             /* bug #2344 */ atype == ann_fileattachment ? pdc_undef : pdc_true,
                              NULL, &ann->filename, NULL);
         pdc_save_lastopt(resopts, PDC_OPT_SAVE1ELEM);
 
@@ -1432,8 +1434,7 @@ pdf__create_annotation(PDF *p,
                     if (ir > irect)
                     {
                         /* create copy */
-                        ann = pdf_new_annot(p);
-                        ann->atype = atype;
+                        ann = pdf_new_annot(p, atype);
                         memcpy(ann, ann_first, sizeof(pdf_annot));
                         ann->obj_id = PDC_BAD_ID;
                         ann->iscopy = pdc_true;
@@ -2166,8 +2167,9 @@ pdf__attach_file(
     pdc_fclose(attfile);
 
     /* fill up annotation struct */
-    ann = pdf_new_annot(p);
-    ann->atype = ann_fileattachment;
+    ann = pdf_new_annot(p, ann_fileattachment);
+    ann->zoom = pdc_false;
+    ann->rotate = pdc_false;
     pdf_init_rectangle(p, ann, llx, lly, urx, ury, NULL);
     pdf_insert_annot_params(p, ann);
     ann->filename = pdc_strdup(p->pdc, filename);
@@ -2180,8 +2182,6 @@ pdf__attach_file(
     if (icontype != icon_attach_pushpin)
         ann->iconname =
             pdc_get_keyword(icontype, pdf_attach_iconnames_pdfkeylist);
-    ann->zoom = pdc_false;
-    ann->rotate = pdc_false;
 }
 
 void
@@ -2210,8 +2210,7 @@ pdf__add_note(
     }
 
     /* fill up annotation struct */
-    ann = pdf_new_annot(p);
-    ann->atype = ann_text;
+    ann = pdf_new_annot(p, ann_text);
     pdf_init_rectangle(p, ann, llx, lly, urx, ury, NULL);
     pdf_insert_annot_params(p, ann);
     ann->contents = pdf_convert_hypertext_depr(p, contents, len_cont);
@@ -2259,8 +2258,7 @@ pdf__add_pdflink(
     /* fill up annotation struct */
     if (acthdl > -1)
     {
-        ann = pdf_new_annot(p);
-        ann->atype = ann_link;
+        ann = pdf_new_annot(p, ann_link);
         pdf_init_rectangle(p, ann, llx, lly, urx, ury, NULL);
         pdf_insert_annot_params(p, ann);
         if (p->pdc->hastobepos) acthdl++;
@@ -2328,8 +2326,7 @@ pdf__add_launchlink(
     /* fill up annotation struct */
     if (acthdl > -1)
     {
-        ann = pdf_new_annot(p);
-        ann->atype = ann_link;
+        ann = pdf_new_annot(p, ann_link);
         pdf_init_rectangle(p, ann, llx, lly, urx, ury, NULL);
         pdf_insert_annot_params(p, ann);
         if (p->pdc->hastobepos) acthdl++;
@@ -2354,8 +2351,7 @@ pdf__add_locallink(
     pdf_annot *ann;
 
     /* fill up annotation struct */
-    ann = pdf_new_annot(p);
-    ann->atype = ann_link;
+    ann = pdf_new_annot(p, ann_link);
     pdf_init_rectangle(p, ann, llx, lly, urx, ury, NULL);
     pdf_insert_annot_params(p, ann);
     ann->dest = pdf_parse_destination_optlist(p, optlist, page, pdf_locallink);
@@ -2387,8 +2383,7 @@ pdf__add_weblink(
     /* fill up annotation struct */
     if (acthdl > -1)
     {
-        ann = pdf_new_annot(p);
-        ann->atype = ann_link;
+        ann = pdf_new_annot(p, ann_link);
         pdf_init_rectangle(p, ann, llx, lly, urx, ury, NULL);
         pdf_insert_annot_params(p, ann);
         if (p->pdc->hastobepos) acthdl++;

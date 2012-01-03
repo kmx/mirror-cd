@@ -237,6 +237,7 @@ enum
 void fnt_register_errtab(pdc_core *pdc);
 void fnt_init_font(fnt_font *font);
 void fnt_cleanup_font(pdc_core *pdc, fnt_font *font);
+void fnt_cleanup_font_alien(pdc_core *pdc, fnt_font *font);
 void fnt_cleanup_fontimg(pdc_core *pdc, fnt_font *font);
 int fnt_get_glyphid(int code, fnt_font *font);
 int fnt_get_code(int gid, fnt_font *font);

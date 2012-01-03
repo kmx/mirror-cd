@@ -139,6 +139,10 @@ typedef struct
     size_t    (*writeproc)(pdc_output *out, void *data, size_t size);
 
     pdc_flush_state flush;
+
+
+
+
 #if defined(MVS) || defined(MVS_TEST)
     const char *fopenparams;            /* additional fopen() parameters */
     int		recordsize;		/* file record size */

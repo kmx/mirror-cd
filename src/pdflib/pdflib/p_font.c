@@ -1760,7 +1760,9 @@ pdf_write_fontdescriptor(
     pdc_printf(p->out, "/Ascent %d\n", font->ft.m.ascender);
     pdc_printf(p->out, "/CapHeight %d\n", font->ft.m.capHeight);
     pdc_printf(p->out, "/Descent %d\n", font->ft.m.descender);
-    pdc_printf(p->out, "/FontBBox[%d %d %d %d]\n",
+
+    if (font->ft.m.type != fnt_Type3)
+        pdc_printf(p->out, "/FontBBox[%d %d %d %d]\n",
                         (int) font->ft.m.llx, (int) font->ft.m.lly,
                         (int) font->ft.m.urx, (int) font->ft.m.ury);
 
@@ -1769,7 +1771,9 @@ pdf_write_fontdescriptor(
     pdc_puts(p->out, "\n");
 
     pdc_printf(p->out, "/ItalicAngle %d\n", (int) (font->ft.m.italicAngle));
-    pdc_printf(p->out, "/StemV %d\n", font->ft.m.StdVW);
+
+    if (font->ft.m.type != fnt_Type3)
+        pdc_printf(p->out, "/StemV %d\n", font->ft.m.StdVW);
 
     if (font->ft.m.StdHW > 0)
         pdc_printf(p->out, "/StemH %d\n", font->ft.m.StdHW);

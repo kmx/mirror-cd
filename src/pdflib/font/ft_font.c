@@ -154,6 +154,7 @@ fnt_cleanup_fontimg(pdc_core *pdc, fnt_font *font)
     }
 }
 
+
 void
 fnt_cleanup_font(pdc_core *pdc, fnt_font *font)
 {

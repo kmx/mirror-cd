@@ -1,6 +1,6 @@
 1 VERSIONINFO
- FILEVERSION 7,0,2,0
- PRODUCTVERSION 7,0,2,0
+ FILEVERSION 7,0,5,0102
+ PRODUCTVERSION 7,0,5,0102
 BEGIN
     BLOCK "StringFileInfo"
     BEGIN
@@ -9,11 +9,11 @@ BEGIN
             VALUE "Comments", "www.pdflib.com\0"
             VALUE "CompanyName", "PDFlib GmbH\0"
             VALUE "FileDescription", "PDFlib - a library for generating PDF on the fly\0"
-            VALUE "FileVersion", "7.0.2\0"
-            VALUE "LegalCopyright", "Copyright © 1997-2007 PDFlib GmbH\0"
+            VALUE "FileVersion", "7.0.5\0"
+            VALUE "LegalCopyright", "Copyright © 1997-2010 PDFlib GmbH\0"
             VALUE "OriginalFilename", "pdflib.dll\0"
             VALUE "ProductName", "PDFlib Lite for Windows\0"
-            VALUE "ProductVersion", "7.0.2\0"
+            VALUE "ProductVersion", "7.0.5\0"
             VALUE "PrivateBuild", "Build by Tecgraf/PUC-Rio for CD (removed support for image formats)\0"
         END
     END

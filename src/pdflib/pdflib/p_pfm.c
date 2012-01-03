@@ -78,6 +78,7 @@
 #define PFM_RUSSIAN_CHARSET     204
 #define PFM_THAI_CHARSET        222
 #define PFM_EASTEUROPE_CHARSET  238
+#define PFM_OEM_CHARSET         255
 
 static const pdc_keyconn pdf_charset_keylist[] =
 {
@@ -92,6 +93,7 @@ static const pdc_keyconn pdf_charset_keylist[] =
     {"cp1251",  PFM_RUSSIAN_CHARSET   },
     {"cp874",   PFM_THAI_CHARSET      },
     {"cp1250",  PFM_EASTEUROPE_CHARSET},
+    {"",        PFM_OEM_CHARSET       },
     {NULL, 0},
 };
 

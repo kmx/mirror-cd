@@ -943,7 +943,7 @@ pdc_hvtr_reclaim_item(pdc_hvtr *v)
 	    pdc_bvtr_resize(v->free_mask, v->size);
 	}
 
-	new_chunk->data = pdc_malloc(v->pdc, cs * es, fn);
+	new_chunk->data = (char *)pdc_malloc(v->pdc, cs * es, fn);
 	base = cs * (new_chunk - &v->ctab[0]);
 
 	for (idx = 1; idx < cs; ++idx)

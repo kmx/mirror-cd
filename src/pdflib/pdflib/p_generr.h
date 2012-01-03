@@ -492,6 +492,9 @@ gen(0, 2520, FONT_NOGLYPHID, "Font doesn't contain any glyph IDs")
 
 gen(0, 2522, FONT_FORCEEMBED2, "Metadata requires embedding")
 
+gen(0, 2523, FONT_CORRUPT_PFA,
+    "Corrupt PFA font data (invalid hex code after 'currentfile eexec')")
+
 gen(0, 2530, CJK_UNSUPP_REGISTRY,
     "Font not supported (contains non-Adobe registry in CMap)")
 

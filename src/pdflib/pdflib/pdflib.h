@@ -37,8 +37,8 @@ extern "C" {
 
 #define PDFLIB_MAJORVERSION	7		/* major version number */
 #define PDFLIB_MINORVERSION	0       	/* minor version number */
-#define PDFLIB_REVISION		4       	/* revision number */
-#define PDFLIB_VERSIONSTRING	"7.0.4p4"       /* The whole bunch */
+#define PDFLIB_REVISION		5       	/* revision number */
+#define PDFLIB_VERSIONSTRING	"7.0.5"       /* The whole bunch */
 
 
 /*

@@ -206,23 +206,24 @@ pdc_uint32 pdc_get_be_ulong(const pdc_byte *data);
 
 size_t  pdc_wstrlen(const char *str);
 size_t  pdc_strlen(const char *str);
-char	*pdc_getenv(const char *name);
-char    *pdc_strdup_ext(pdc_core *pdc, const char *text, int flags,
+char *pdc_getenv(pdc_core *pdc, const char *envname);
+char *pdc_getenv_filename(pdc_core *pdc, const char *envname);
+char   *pdc_strdup_ext(pdc_core *pdc, const char *text, int flags,
                 const char *fn);
-char    *pdc_strdup(pdc_core *pdc, const char *text);
-char	*pdc_strdup2(pdc_core *pdc, const char *text, size_t len);
-char    *pdc_strdup_tmp(pdc_core *pdc, const char *text);
+char   *pdc_strdup(pdc_core *pdc, const char *text);
+char   *pdc_strdup2(pdc_core *pdc, const char *text, size_t len);
+char   *pdc_strdup_tmp(pdc_core *pdc, const char *text);
 int     pdc_convert_pascal_str(const char *pstr, char *cstr);
 pdc_bool pdc_logg_isprint(int c);
-char    *pdc_strprint(pdc_core *pdc, const char *str, int leni,
+char   *pdc_strprint(pdc_core *pdc, const char *str, int leni,
                 int maxchar, pdc_strform_kind strform);
-char    *pdc_strdup_convert(pdc_core *pdc, pdc_encoding encto,
+char   *pdc_strdup_convert(pdc_core *pdc, pdc_encoding encto,
                 pdc_encoding encfrom, const char *text, int flags,
                 const char *fn);
 const char *pdc_utf8strprint(pdc_core *pdc, const char *str);
 int	pdc_split_stringlist(pdc_core *pdc, const char *text,
                     const char *i_separstr, int flags, char ***stringlist);
-char *  pdc_substitute_variables(pdc_core *pdc, const char *string, char vchar,
+char   *pdc_substitute_variables(pdc_core *pdc, const char *string, char vchar,
            const char *delimiters, const char **varslist,
            const char **valslist, int nvars, int *errind);
 void    pdc_cleanup_stringlist(pdc_core *pdc, char **stringlist);

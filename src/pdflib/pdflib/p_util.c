@@ -497,7 +497,7 @@ pdf_convert_filename(PDF *p, const char *filename, int len,
                             &newfilename, &newlen, &htenc, &htcp);
 
     flags |= PDC_CONV_EBCDIC;
-    if (pdc_logg_is_enabled(p->pdc, 3, trc_text))
+    if (pdc_logg_is_enabled(p->pdc, 3, trc_filesearch))
         flags |= PDC_CONV_LOGGING;
 
     resfilename = pdc_convert_filename_ext(p->pdc, newfilename, len,
@@ -573,10 +573,20 @@ pdf_get_opt_textlist(PDF *p, const char *keyword, pdc_resopt *resopts,
                     inev = pdc_get_encoding_vector(p->pdc, enc);
             }
 
-            outev = pdc_get_encoding_vector(p->pdc, pdc_pdfdoc);
+            /* ugly solution of bug #2344 */
+            if (ishypertext == pdc_true)
+            {
+                outev = pdc_get_encoding_vector(p->pdc, pdc_pdfdoc);
 
-            /* conversion to PDFDocEncoding if possible */
-            convflags |= PDC_CONV_TRYBYTES;
+                /* conversion to PDFDocEncoding if possible */
+                convflags |= PDC_CONV_TRYBYTES;
+            }
+            else if (ishypertext == pdc_undef)
+            {
+                /* filename as hypertext */
+                outtextformat = PDC_UTF8;
+                convflags |= PDC_CONV_TRY7BYTES;
+            }
         }
         else
         {

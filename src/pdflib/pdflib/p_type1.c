@@ -16,23 +16,42 @@
  *
  */
 
-#include "pc_ctype.h"
 
 #include "p_intern.h"
 #include "p_font.h"
 
+#include "pc_ctype.h"
+#include "pc_strconst.h"
+#include "pc_string.h"
+
 
 /* Type 1 font portions: ASCII, encrypted, zeros */
-typedef enum { t1_ascii, t1_encrypted, t1_zeros } pdf_t1portion;
+typedef enum
+{
+    t1_ascii,
+    t1_encrypted,
+    t1_zeros,
+    t1_eof
+}
+pdf_t1portion;
 
-typedef struct {
+static const pdc_keyconn pdf_t1portion_keylist[] =
+{
+    {"ascii",      t1_ascii},
+    {"encrypted",  t1_encrypted},
+    {"zeros",      t1_zeros}
+};
+
+typedef struct
+{
     pdf_t1portion  portion;
     size_t         length[4];
     pdc_file      *fontfile;
     pdc_byte      *img;            /* in-core Type1 font file image   */
     pdc_byte      *end;            /* first byte above image buf   */
     pdc_byte      *pos;            /* current "file" position      */
-} t1_private_data;
+}
+t1_private_data;
 
 #define PFA_TESTBYTE    4
 
@@ -41,7 +60,6 @@ typedef struct {
 
 /* ---------------------------- General platforms --------------------------- */
 
-#define LINEBUFLEN      256
 
 /*
  * PFA files are assumed to be encoded in host format. Therefore
@@ -53,6 +71,7 @@ static int
 PFA_data_fill(PDF *p, PDF_data_source *src)
 {
     static const char *fn = "PFA_data_fill";
+    pdc_bool logg6 = pdc_logg_is_enabled(p->pdc, 6, trc_font);
 #ifndef PDFLIB_EBCDIC
     static const char HexToBin['F' - '0' + 1] = {
         0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0, 0,
@@ -63,19 +82,26 @@ PFA_data_fill(PDF *p, PDF_data_source *src)
     char *s, *c;
     int i;
     int len;
-    t1_private_data *t1_private;
+    t1_private_data *t1;
     pdf_t1portion t1portion;
 
-    t1_private = (t1_private_data *) src->private_data;
+    t1 = (t1_private_data *) src->private_data;
+
+    if (t1->portion == t1_eof)
+        return pdc_false;
 
     if (src->buffer_start == NULL)
     {
-        src->buffer_start = (pdc_byte *) pdc_malloc(p->pdc, LINEBUFLEN + 1, fn);
-        src->buffer_length = LINEBUFLEN;
+        src->buffer_start = (pdc_byte *)
+                                pdc_malloc(p->pdc, PDC_BUFSIZE + 1, fn);
+        src->buffer_length = PDC_BUFSIZE;
     }
 
-    s = pdc_fgetline((char *) src->buffer_start, LINEBUFLEN,
-                     t1_private->fontfile);
+    if (logg6)
+        pdc_logg(p->pdc, "\t\t\tdata fill: portion=%s\n",
+                 pdc_get_keyword(t1->portion, pdf_t1portion_keylist));
+
+    s = pdc_fgetline((char *) src->buffer_start, PDC_BUFSIZE, t1->fontfile);
     if (s == NULL)
         return pdc_false;
 
@@ -93,22 +119,34 @@ PFA_data_fill(PDF *p, PDF_data_source *src)
             /* */ ;
         }
         if (s[i] == '\n')
-            t1_private->portion = t1_zeros;
+        {
+            t1->portion = t1_zeros;
+
+            if (logg6)
+                pdc_logg(p->pdc, "\t\t\tlinefeed detected: set portion %s\n",
+                         pdc_get_keyword(t1->portion,
+                                         pdf_t1portion_keylist));
+        }
     }
 
     /* check whether font data portion follows: set t1_encrypted flag later */
-    t1portion = t1_private->portion;
-    if (t1_private->portion != t1_encrypted &&
+    t1portion = t1->portion;
+    if (t1->portion != t1_encrypted &&
         !strncmp((const char *)s, PDF_CURRENTFILE, strlen(PDF_CURRENTFILE)))
+    {
         t1portion = t1_encrypted;
+
+        if (logg6)
+            pdc_logg(p->pdc, "\t\t\t\"%s\" detected\n", PDF_CURRENTFILE);
+    }
 
     src->next_byte = src->buffer_start;
 
-    switch (t1_private->portion)
+    switch (t1->portion)
     {
         case t1_ascii:
         {
-            t1_private->length[1] += (size_t) len;
+            t1->length[1] += (size_t) len;
             src->bytes_available = (size_t) len;
         }
         break;
@@ -129,27 +167,33 @@ PFA_data_fill(PDF *p, PDF_data_source *src)
                 if ((!pdc_isxdigit(s[i]) && !pdc_isspace(s[i])) ||
                     (!pdc_isxdigit(s[i+1]) && !pdc_isspace(s[i+1])))
                 {
-                    pdc_fclose(t1_private->fontfile);
-                    pdc_error(p->pdc, PDF_E_FONT_CORRUPT, "PFA", "", 0, 0);
+                    pdc_fclose(t1->fontfile);
+                    pdc_error(p->pdc, PDF_E_FONT_CORRUPT_PFA, 0, 0, 0, 0);
                 }
                 s[i/2] = (char) (16*HexToBin[s[i]-'0'] + HexToBin[s[i+1]-'0']);
 
                 src->bytes_available++;
             }
-            t1_private->length[2] += src->bytes_available;
+            t1->length[2] += src->bytes_available;
         }
         break;
 
         case t1_zeros:
         {
-            t1_private->length[3] += (size_t) len;
+            t1->length[3] += (size_t) len;
             src->bytes_available = (size_t) len;
         }
         break;
+
+        default:
+        break;
     }
 
-    t1_private->portion = t1portion;
+    t1->portion = t1portion;
 
+    if (logg6)
+        pdc_logg(p->pdc, "\t\t\tset portion %s\n",
+                 pdc_get_keyword(t1->portion, pdf_t1portion_keylist));
     return pdc_true;
 }
 
@@ -274,16 +318,16 @@ t1data_terminate(PDF *p, PDF_data_source *src)
 static void
 t1data_init(PDF *p, PDF_data_source *src)
 {
-    t1_private_data *t1_private;
+    t1_private_data *t1;
 
     (void) p;
 
-    t1_private = (t1_private_data *) src->private_data;
+    t1 = (t1_private_data *) src->private_data;
 
-    t1_private->portion = t1_ascii;
-    t1_private->length[1] = (size_t) 0;
-    t1_private->length[2] = (size_t) 0;
-    t1_private->length[3] = (size_t) 0;
+    t1->portion = t1_ascii;
+    t1->length[1] = (size_t) 0;
+    t1->length[2] = (size_t) 0;
+    t1->length[3] = (size_t) 0;
 
     src->buffer_start = NULL;
 }
@@ -294,7 +338,7 @@ pdf_t1open_fontfile(PDF *p, pdf_font *font, const char *filename,
                     PDF_data_source *t1src, pdc_bool requested)
 {
     static const char *fn = "pdf_t1open_fontfile";
-    t1_private_data  *t1_private = NULL;
+    t1_private_data  *t1 = NULL;
     pdc_file *fp = NULL;
     const char *stemp = NULL;
     pdc_byte magic[PFA_TESTBYTE];
@@ -364,32 +408,33 @@ pdf_t1open_fontfile(PDF *p, pdf_font *font, const char *filename,
     {
         t1src->private_data = (unsigned char *)
                 pdc_malloc(p->pdc, sizeof(t1_private_data), fn);
-        t1_private = (t1_private_data *) t1src->private_data;
+        t1 = (t1_private_data *) t1src->private_data;
 
         if (filename)
         {
             pdc_fclose(fp);
             if (ispfb)
             {
-                t1_private->fontfile =
+                t1->fontfile =
                     pdc_fsearch_fopen(p->pdc, fullname, NULL, "PFB ", fflags);
             }
             else
             {
-                t1_private->fontfile =
+                t1->fontfile =
                     pdc_fsearch_fopen(p->pdc, fullname, NULL, "PFA ",
                                       PDC_FILE_TEXT);
             }
 
-            if (t1_private->fontfile == NULL)
+            if (t1->fontfile == NULL)
                 PDC_RETHROW(p->pdc);
         }
         else if (font->ft.img)
         {
-            t1_private->fontfile = NULL;
-            t1_private->img = font->ft.img;
-            t1_private->pos = font->ft.img;
-            t1_private->end = font->ft.img + font->ft.filelen;
+            /* only for virtual PFB files */
+            t1->fontfile = NULL;
+            t1->img = font->ft.img;
+            t1->pos = font->ft.img;
+            t1->end = font->ft.img + font->ft.filelen;
         }
 
         t1src->init = t1data_init;

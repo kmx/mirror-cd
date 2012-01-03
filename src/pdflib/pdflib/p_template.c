@@ -138,7 +138,9 @@ pdf__begin_template(PDF *p, pdc_scalar width, pdc_scalar height,
         pdc_get_optvalues(keyword, resopts, &topdown, NULL);
 
 	if (pdc_get_optvalues("transparencygroup", resopts, NULL, &slist))
-	    pdf_set_transgroup(p, slist[0], &image->tgroup);
+        {
+            pdf_set_transgroup(p, slist[0], &image->tgroup);
+        }
 
         keyword = "iconname";
         if (pdc_get_optvalues(keyword, resopts, NULL, NULL))
@@ -154,11 +156,11 @@ pdf__begin_template(PDF *p, pdc_scalar width, pdc_scalar height,
 
 
 
-
-
     p->ydirection = topdown ? -1 : 1;
     pdf_pg_suspend(p);
     PDF_SET_STATE(p, pdf_state_template);
+
+
 
     /* form xobject */
     image->no = pdf_new_xobject(p, form_xobject, PDC_NEW_ID);

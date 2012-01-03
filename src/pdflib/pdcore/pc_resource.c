@@ -227,7 +227,7 @@ pdc_read_resourcefile(pdc_core *pdc, const char *filename)
     char **linelist;
     char *line;
     char *category = NULL;
-    char *uprfilename = NULL;
+    const char *uprfilename = NULL;
     char tmpname[PDC_FILENAMELEN];
     char prodname[32];
     char prodversion[32];
@@ -333,7 +333,7 @@ pdc_read_resourcefile(pdc_core *pdc, const char *filename)
 
     for (il = 0; rootdirectories[il] != NULL; il++)
     {
-        const char *home = pdc_getenv("HOME");
+        const char *home = pdc_getenv_filename(pdc, "HOME");
 
         if (home != NULL)
              sprintf(tmpname, rootdirectories[il], home);
@@ -354,13 +354,13 @@ pdc_read_resourcefile(pdc_core *pdc, const char *filename)
 #endif /* !WIN32 && !AS400 && !MVS */
 
     /* searching for name of upr file */
-    uprfilename = (char *)filename;
+    uprfilename = filename;
     if (uprfilename == NULL || *uprfilename == '\0')
     {
         /* upr file name via environment variable */
         sprintf(tmpname, RESOURCEFILEENVNAME, pdc->prodname);
         pdc_strtoupper(tmpname);
-        uprfilename = pdc_getenv(tmpname);
+        uprfilename = pdc_getenv(pdc, tmpname);
 
 #ifdef WIN32
         /* registry upr file name */
@@ -1178,8 +1178,8 @@ static pdc_loggdef *
 pdc_new_logg(pdc_core *pdc)
 {
     static const char fn[] = "pdc_new_logg";
+    const char *filename;
     char envname[32];
-    const char *envval = NULL;
 
     pdc_loggdef *logg = (pdc_loggdef *)
                               pdc_malloc(pdc, sizeof(pdc_loggdef), fn);
@@ -1203,11 +1203,11 @@ pdc_new_logg(pdc_core *pdc)
     /* logging file name defined by environment variable */
     sprintf(envname, LOGFILEENVNAME, pdc->prodname);
     pdc_strtoupper(envname);
-    envval = pdc_getenv(envname);
-    if (envval != NULL)
+    filename = pdc_getenv(pdc, envname);
+    if (filename != NULL)
     {
-        logg->filename = pdc_strdup(pdc, envval);
-        logg->fromenviron = pdc_true;
+        logg->filename = pdc_strdup(pdc, filename);
+        logg->fromenviron = pdc_undef; /* not yet initialized */
     }
 
     return logg;
@@ -1380,7 +1380,7 @@ pdc_set_logg_options(pdc_core *pdc, const char *optlist)
 
         pdc_get_optvalues("remove", resopts, &remfile, NULL);
 
-        if (!logg->fromenviron)
+        if (logg->fromenviron == pdc_false)
         {
             const char *fname = pdc_get_opt_filename(pdc, "filename", resopts);
 
@@ -1462,16 +1462,22 @@ pdc_set_logg_options(pdc_core *pdc, const char *optlist)
         else
         {
             strcpy(filename, logg->filename);
+            if (logg->fromenviron == pdc_undef)
+            {
+                logg->fromenviron = pdc_true;
+                pdc_free(pdc, logg->filename);
+                logg->filename = NULL;
+            }
         }
     }
 
     /* new logging file */
-    if (logg->filename == NULL || strcmp(logg->filename, filename))
+    if (pdc_strcmp(logg->filename, filename))
     {
         pdc_time ltime;
 
         /* close file */
-        if (logg->fp != stdout && logg->fp != stderr && logg->filename)
+        if (logg->fp != stdout && logg->fp != stderr && logg->filename != NULL)
         {
             pdc_localtime(&ltime);
             pdc_logg(pdc, "[%04d-%02d-%02d %02d:%02d:%02d]\n",
@@ -1556,7 +1562,7 @@ pdc_set_logg_options(pdc_core *pdc, const char *optlist)
 
             if (logg->classapi)
             {
-                strcpy(buf, "[ Use  %%s/\\[[^]]*\\]//g  and  %%s/)$/);"
+                strcpy(buf, "[ Use  %s/\\[[^]]*\\]//g  and  %s/)$/);"
                              "/  in vi to compile it");
                 i = MAX(PDC_SEPARSTR_LEN - (int) strlen(buf) - 1, 1);
                 pdc_logg(pdc, "%s%*s]\n", buf, i, " ");
@@ -1653,7 +1659,7 @@ pdc_enter_api_logg(pdc_core *pdc, const char *funame, pdc_bool enter_api,
             pdc->loggenv = pdc_true;
             sprintf(envname, LOGGINGENVNAME, pdc->prodname);
             pdc_strtoupper(envname);
-            envval = pdc_getenv(envname);
+            envval = pdc_getenv(pdc, envname);
             if (envval != NULL)
             {
                 pdc_set_logg_options(pdc, envval);
@@ -1747,8 +1753,10 @@ pdc_logg_exit_api(pdc_core *pdc, pdc_bool cleanup, const char *fmt, ...)
 void
 pdc_logg_enable(pdc_core *pdc, pdc_bool enable)
 {
-    if (pdc != NULL && pdc->logg != NULL)
+    if (pdc != NULL && pdc->logg != NULL && pdc->logg->filename != NULL)
+    {
         pdc->logg->enabled = enable;
+    }
 }
 
 /*

@@ -34,11 +34,15 @@
 #define PDC_ISFINITE isfinite
 #else /* isfinite */
 
-#ifdef _WIN32
+#if defined(WIN32)
+#if !defined(_UNICODE)
+#define UNICODE
+#endif
 #include <windows.h>
 #include <float.h>
+#include <wchar.h>
 #define PDC_ISFINITE _finite
-#else /* _WIN32 */
+#else /* WIN32 */
 
 #ifdef OS_ZOS_SASC
 #define PDC_ISFINITE isfinite
@@ -315,16 +319,72 @@ pdc_get_timestr(char *str, pdc_bool ktoascii)
 /* -------------------------- Environment ------------------------------ */
 
 char *
-pdc_getenv(const char *name)
+pdc_getenv(pdc_core *pdc, const char *envname)
 {
-#ifdef HAVE_ENVVARS
-    return getenv(name);
-#else
-    (void) name;
+    char *envvalue = NULL;
 
-    return (char *) 0;
-#endif
+    (void) pdc;
+    (void) envname;
+
+#ifdef HAVE_ENVVARS
+    envvalue = getenv(envname);
+    if (envvalue != NULL)
+    {
+        pdc_logg_cond(pdc, 1, trc_filesearch,
+            "\tEnvironment variable \"%s=%s\"\n", envname, envvalue);
+    }
+#endif /* HAVE_ENVVARS */
+
+    return envvalue;
 }
+
+char *
+pdc_getenv_filename(pdc_core *pdc, const char *envname)
+{
+    static const char fn[] = "pdc_getenv_filename";
+    char *envvalue = NULL;
+    int flags = PDC_CONV_TMPALLOC;
+
+#if defined(WIN32)
+
+    size_t len = strlen(envname), wlen;
+    const wchar_t *wenvvalue;
+    wchar_t *wenvname;
+
+    DWORD nSize = PDC_FILENAMELEN;
+
+    wlen = 2 * (len + 1);
+    wenvname = (wchar_t *) pdc_calloc(pdc, wlen, fn);
+    pdc_inflate_ascii(envname, (int) len, (char *) wenvname, pdc_utf16);
+
+    wenvvalue = _wgetenv(wenvname);
+    pdc_free(pdc, wenvname);
+
+    if (wenvvalue != NULL && pdc_wstrlen((char *) wenvvalue))
+    {
+        wlen = 2 * wcslen(wenvvalue);
+        pdc_logg_cond(pdc, 1, trc_filesearch,
+            "\tEnvironment variable \"%s=%T\"\n", envname, wenvvalue, wlen);
+
+        if (pdc_logg_is_enabled(pdc, 3, trc_filesearch))
+            flags |= PDC_CONV_LOGGING;
+
+        envvalue = pdc_convert_name(pdc, (char *) wenvvalue, wlen, flags);
+    }
+
+#else /* WIN32 */
+
+    envvalue = pdc_getenv(pdc, envname);
+    if (envvalue != NULL && strlen(envvalue))
+    {
+        envvalue = pdc_strdup_ext(pdc, envvalue, flags, fn);
+    }
+
+#endif /* !WIN32 */
+
+    return envvalue;
+}
+
 
 
 /* ------------------------ Language Code ------------------------------ */
@@ -2571,7 +2631,7 @@ pdc_vxprintf(
 
 		len = strlen(cstr);
 
-                if (prec != -1 && prec < len)
+                if (prec != -1 && prec < (int) len)
 		{
 		    len = prec;
 		}

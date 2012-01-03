@@ -3,7 +3,7 @@
  * ICClib Header file icc.h for PDFlib
  *
  * $Log$
- * Revision 1.2  2009/10/20 18:14:16  scuri
+ * Revision 1.3  2012/01/03 17:42:56  scuri
  * *** empty log message ***
  *
  * Revision 1.12.8.1  2007/03/28 12:47:10  kurt

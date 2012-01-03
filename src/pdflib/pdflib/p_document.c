@@ -518,6 +518,12 @@ pdf_fix_openmode(PDF *p)
 
 
 
+pdc_bool
+pdf_get_plainmetadata(PDF *p)
+{
+    (void) p;
+    return pdc_false;
+}
 
 
 /* ------------------------- viewerpreferences ----------------------- */
@@ -889,7 +895,7 @@ pdf_parse_attachments_optlist(PDF *p, char **optlists, int ns,
                             pdf_attachments_options, &cdata, pdc_true);
 
         if (pdf_get_opt_textlist(p, "filename", resopts, htenc, htcp,
-                                 pdc_true, NULL, &fat->filename, NULL))
+                 /* bug #2344 */ pdc_undef, NULL, &fat->filename, NULL))
             pdc_save_lastopt(resopts, PDC_OPT_SAVE1ELEM);
 
         if (pdf_get_opt_textlist(p, "description", resopts, htenc, htcp,
@@ -1155,9 +1161,7 @@ pdf_get_document_common_options(PDF *p, pdc_resopt *resopts, int fcode)
 
     pdc_get_optvalues("moddate", resopts, &doc->moddate, NULL);
 
-
-
-    ns = pdc_get_optvalues("attachments", resopts, NULL, &strlist);
+    ns = pdc_get_opt_utf8strings(p->pdc, "attachments", resopts, 0, &strlist);
     if (ns)
         pdf_parse_attachments_optlist(p, strlist, ns, htenc, htcp);
 }

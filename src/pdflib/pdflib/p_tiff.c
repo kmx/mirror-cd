@@ -550,6 +550,18 @@ pdf_process_TIFF_data(
 	image->use_raw = pdc_false;
     }
 
+    /* Can't pass through grayscale or RGB with additional alpha channel.
+     * Some TIFF images do not count the alpha channel as extra channel.
+     */
+    if (extra == 0 && 
+	((photometric == PHOTOMETRIC_RGB && components == 4) ||
+	 ((photometric == PHOTOMETRIC_MINISBLACK || 
+	   photometric == PHOTOMETRIC_MINISWHITE) && components == 2)))
+    {
+	image->components -= 1;	/* ignore the alpha channel */
+	image->use_raw = pdc_false;
+    }
+
     /* PDF doesn't support other values of the color depth */
     if (bpc != 1 && bpc != 2 && bpc != 4 && bpc != 8 && bpc != 16)
 	image->use_raw = pdc_false;
@@ -915,7 +927,6 @@ pdf_process_TIFF_data(
                     /* if it's not separated it must be RGB with alpha */
                     image->components = 3;
                     image->colorspace = DeviceRGB;
-                    image->compression = pdf_comp_none;
                 }
                 break;
 

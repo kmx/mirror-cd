@@ -1650,7 +1650,9 @@ get_page_options3(PDF *p, pdc_resopt *resopts, pdc_bool end_page)
     }
 
     if (pdc_get_optvalues("transparencygroup", resopts, NULL, &slist))
+    {
         pdf_set_transgroup(p, slist[0], &po->tgroup);
+    }
 
     /* the "width" and "height" options must be processed BEFORE the
     ** "mediabox" option, since the latter dominates over the formers.

@@ -1405,7 +1405,8 @@ pdf_write_info(PDF *p, pdc_bool moddate)
 
 
 
-    const char  *product = "PDFlib Lite";
+    const char *product = "PDFlib Lite";
+    const char *security = "";
 
     (void) logg3;
 
@@ -1462,11 +1463,11 @@ pdf_write_info(PDF *p, pdc_bool moddate)
      */
 
     if (p->pdc->binding)
-        pdc_sprintf(p->pdc, pdc_false, producer, "%s %s (%s/%s)", product,
-            PDFLIB_VERSIONSTRING, p->pdc->binding, PDF_PLATFORM);
+        pdc_sprintf(p->pdc, pdc_false, producer, "%s %s%s (%s/%s)", product,
+            PDFLIB_VERSIONSTRING, security, p->pdc->binding, PDF_PLATFORM);
     else
-        pdc_sprintf(p->pdc, pdc_false, producer, "%s %s (%s)", product,
-            PDFLIB_VERSIONSTRING, PDF_PLATFORM);
+        pdc_sprintf(p->pdc, pdc_false, producer, "%s %s%s (%s)", product,
+            PDFLIB_VERSIONSTRING, security, PDF_PLATFORM);
 
     pdc_puts(p->out, "/Producer ");
     pdf_put_hypertext(p, producer);

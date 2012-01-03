@@ -539,6 +539,7 @@ void pdf__end_document(PDF *p, const char *optlist);
 
 void pdf_cleanup_document(PDF *p);
 void pdf_fix_openmode(PDF *p);
+pdc_bool pdf_get_plainmetadata(PDF *p);
 void pdf_insert_name(PDF *p, const char *name, pdf_nametree_type type,
         pdc_id obj_id);
 pdc_id pdf_get_id_from_nametree(PDF *p, pdf_nametree_type type,

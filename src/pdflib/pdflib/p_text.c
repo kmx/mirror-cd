@@ -25,7 +25,6 @@
 #include "p_layer.h"
 #include "p_tagged.h"
 
-
 /* --------------------- Text state and options functions ------------------- */
 
 struct pdf_tstate_s
@@ -1442,11 +1441,13 @@ pdf_check_textstring(PDF *p, const char *text, int len, int flags,
                     }
                 }
 
-                if (newcharlen == 1)
-                    outtext[icp] = (pdc_byte) code;
-                else
-                    usouttext[icp] = (pdc_ushort) code;
-                icp++;
+                {
+                    if (newcharlen == 1)
+                        outtext[icp] = (pdc_byte) code;
+                    else
+                        usouttext[icp] = (pdc_ushort) code;
+                    icp++;
+                }
             }
 
             break;
@@ -1579,25 +1580,27 @@ pdf_check_textstring(PDF *p, const char *text, int len, int flags,
                     }
                 }
 
-                if (newcharlen == 1)
-                {
-                    outtext[icp] = (pdc_byte) code;
-                }
-                else
-                {
-                    usouttext[icp] = (pdc_ushort) usv;
-                }
-                if (nv > 1)
                 {
                     if (newcharlen == 1)
-                        ligatlist = pdf_register_ligat(p, ligatlist, icp, nv,
-                                                       cglist, newcharlen);
+                    {
+                        outtext[icp] = (pdc_byte) code;
+                    }
                     else
-                        ligatlist = pdf_register_ligat(p, ligatlist,
-                                              icp, nv, uvlist, newcharlen);
-                    nv = 1;
+                    {
+                        usouttext[icp] = (pdc_ushort) usv;
+                    }
+                    if (nv > 1)
+                    {
+                        if (newcharlen == 1)
+                            ligatlist = pdf_register_ligat(p, ligatlist,
+                                                  icp, nv, cglist, newcharlen);
+                        else
+                            ligatlist = pdf_register_ligat(p, ligatlist,
+                                                  icp, nv, uvlist, newcharlen);
+                        nv = 1;
+                    }
+                    icp++;
                 }
-                icp++;
             }
 
             break;
@@ -1657,6 +1660,10 @@ pdf_check_textstring(PDF *p, const char *text, int len, int flags,
 
                 pdf_cleanup_ligat(p, ligatlist);
             }
+        }
+        else if (enc != pdc_cid)
+        {
+            *outlen = 0;
         }
     }
 
@@ -2051,37 +2058,12 @@ pdf_place_singletext(PDF *p, pdc_byte *text, int len, int charlen,
     pdc_bool hasdeco = to->underline || to->overline || to->strikeout;
     pdc_bool takeTJ = pdc_false;
 
-    /* default linewidth for underlinewidth and strokewidth */
-    if (hasdeco || (to->mask & (1 << to_strokewidth)))
-    {
-        if (currfont->ft.m.underlineThickness == 0)
-            currfont->ft.m.underlineThickness = 50;
-        deflinewidth = fabs(to->horizscaling * font2user *
-                            currfont->ft.m.underlineThickness);
-    }
-
     /* fill and stroke color */
     if (to->mask & (1 << to_fillcolor))
         pdf_set_coloropt(p, (int) pdf_fill, &to->fillcolor);
     if (to->mask & (1 << to_strokecolor))
         pdf_set_coloropt(p, (int) pdf_stroke, &to->strokecolor);
 
-
-    /* stroke width and dasharray for stroked text */
-    if (to->mask & (1 << to_strokewidth))
-    {
-        if (to->strokewidth == PDF_UNDERLINEWIDTH_AUTO)
-        {
-            linewidth = deflinewidth;
-        }
-        else
-        {
-            linewidth = to->strokewidth;
-            if ((to->pcmask & (1 << to_strokewidth)))
-                linewidth *= fabs(to->fontsize);
-        }
-        pdf__setlinewidth(p, linewidth);
-    }
     if (to->mask & (1 << to_dasharray))
         pdf__setdash(p, to->dasharray[0], to->dasharray[1]);
 
@@ -2099,6 +2081,11 @@ pdf_place_singletext(PDF *p, pdc_byte *text, int len, int charlen,
         delta = scale * (fs * currfont->ft.m.underlinePosition + trise);
 
         pdf__save(p);
+
+        if (currfont->ft.m.underlineThickness == 0)
+            currfont->ft.m.underlineThickness = 50;
+        deflinewidth = fabs(to->horizscaling * font2user *
+                            currfont->ft.m.underlineThickness);
 
         if (to->underlinewidth == PDF_UNDERLINEWIDTH_AUTO)
         {
@@ -2188,6 +2175,22 @@ pdf_place_singletext(PDF *p, pdc_byte *text, int len, int charlen,
         }
 
         pdf__restore(p);
+    }
+
+    /* stroke width and dasharray for stroked text */
+    if (to->mask & (1 << to_strokewidth) || to->textrendering)
+    {
+        if (to->strokewidth == PDF_UNDERLINEWIDTH_AUTO)
+        {
+            linewidth = PDC_ABS(to->horizscaling * font2user * 30);
+        }
+        else
+        {
+            linewidth = to->strokewidth;
+            if ((to->pcmask & (1 << to_strokewidth)))
+                linewidth *= fabs(to->fontsize);
+        }
+        pdf__setlinewidth(p, linewidth);
     }
 
 

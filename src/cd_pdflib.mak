@@ -14,7 +14,7 @@ ifeq ($(TEC_UNAME), sparc)
   DEFINES = WORDS_BIGENDIAN
 endif
 
-# Changes to PDFlib-Lite-7.0.4p4 (search for CDPDF): 
+# Changes to PDFlib-Lite-7.0.5 (search for CDPDF): 
 #     pdflib/pdcore/pc_config.h - added default PDF_PLATFORM  
 #     pdflib/pdflib/p_intern.h - removed support for other image formats, leave this to IM */
   
