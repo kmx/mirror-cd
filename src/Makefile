@@ -4,9 +4,11 @@ else
   TECMAKE_CMD = $(MAKE) --no-print-directory -f ../tecmake.mak
 endif
 
-.PHONY: do_all cd_freetype cd_ftgl cd cdx11 cdgdk cd_pdflib cdpdf cdgl cdcontextplus cdcairo cdlua3 cdluapdf3 cdluagl3 cdlua5 cdluapdf5 cdluagl5 cdluacontextplus5 cdluacairo5 cdluaim5
-do_all: cd_freetype cd_ftgl cd cd_pdflib cdpdf cdgl cdlua5 cdluapdf5 cdluagl5 cdluaim5
+.PHONY: do_all cd_zlib cd_freetype cd_ftgl cd cdx11 cdgdk cd_pdflib cdpdf cdgl cdcontextplus cdcairo cdlua3 cdluapdf3 cdluagl3 cdlua5 cdluapdf5 cdluagl5 cdluacontextplus5 cdluacairo5 cdluaim5
+do_all: cd_zlib cd_freetype cd_ftgl cd cd_pdflib cdpdf cdgl cdlua5 cdluapdf5 cdluagl5 cdluaim5
 
+cd_zlib:
+	@$(TECMAKE_CMD) MF=cd_zlib
 cd_freetype:
 	@$(TECMAKE_CMD) MF=cd_freetype
 cd_ftgl:

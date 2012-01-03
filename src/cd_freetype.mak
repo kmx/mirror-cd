@@ -17,8 +17,10 @@ SRC  := \
   base/ftsynth.c base/ftsystem.c base/fttype1.c base/ftwinfnt.c base/ftxf86.c
 SRC := $(addprefix freetype2/, $(SRC))
 
-DEFINES += FT2_BUILD_LIBRARY
-INCLUDES = freetype2
+DEFINES += FT2_BUILD_LIBRARY FT_CONFIG_OPTION_SYSTEM_ZLIB
+INCLUDES = freetype2 zlib
+LDIR = ../lib/$(TEC_UNAME)
+LIBS = $(ZLIB)
 
 ifneq ($(findstring dll, $(TEC_UNAME)), )
   SRC += freetype2/freetype.rc

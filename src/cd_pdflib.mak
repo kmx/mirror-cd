@@ -3,6 +3,9 @@ LIBNAME = pdflib
 OPT = YES
 
 DEF_FILE = pdflib/pdflib.def
+INCLUDES = zlib
+LDIR = ../lib/$(TEC_UNAME)
+LIBS = $(ZLIB)
 
 ifeq ($(TEC_UNAME), ppc)
   DEFINES = WORDS_BIGENDIAN
@@ -19,7 +22,7 @@ endif
 #     pdflib/pdflib/p_intern.h - removed support for other image formats, leave this to IM */
   
 srcdir := pdflib/font
-INCLUDES := $(INCLUDES) $(srcdir)
+INCLUDES += pdflib/font
 SRCFONT := \
 	$(srcdir)/ft_cid.c	\
 	$(srcdir)/ft_corefont.c	\
@@ -29,22 +32,8 @@ SRCFONT := \
 	$(srcdir)/ft_truetype.c \
 	$(srcdir)/ft_type1.c
 	
-srcdir := pdflib/flate
-INCLUDES := $(INCLUDES) $(srcdir)
-SRCFLATE := \
-	$(srcdir)/adler32.c 	\
-	$(srcdir)/compress.c	\
-	$(srcdir)/crc32.c	\
-	$(srcdir)/deflate.c	\
-	$(srcdir)/inffast.c	\
-	$(srcdir)/inflate.c	\
-	$(srcdir)/inftrees.c 	\
-	$(srcdir)/trees.c	\
-	$(srcdir)/uncompr.c	\
-	$(srcdir)/zutil.c
-	
 srcdir := pdflib/pdcore
-INCLUDES := $(INCLUDES) $(srcdir)
+INCLUDES += pdflib/pdcore
 SRCPDCORE := \
 	$(srcdir)/pc_aes.c     	\
 	$(srcdir)/pc_aescbc.c 	\
@@ -71,7 +60,7 @@ SRCPDCORE := \
 	$(srcdir)/pc_xmp.c
 	
 srcdir := pdflib/pdflib
-INCLUDES := $(INCLUDES) $(srcdir)
+INCLUDES += pdflib/pdflib
 SRCPDFLIB := \
 	$(srcdir)/p_3d.c      \
 	$(srcdir)/p_actions.c   \
@@ -123,10 +112,10 @@ SRCPDFLIB := \
 	$(srcdir)/p_xgstate.c	\
 	$(srcdir)/p_xmp.c
 	
-SRC := pdflib/pdflib/pdflib.c $(SRCPDFLIB) $(SRCPDCORE) $(SRCFLATE) $(SRCFONT)
+SRC := pdflib/pdflib/pdflib.c $(SRCPDFLIB) $(SRCPDCORE) $(SRCFONT)
 
 ifneq ($(findstring dll, $(TEC_UNAME)), )
-  SRC += pdflib/cd_pdflib.rc
+  SRC += pdflib/pdflib.rc
 endif
 
 ifneq ($(findstring MacOS, $(TEC_UNAME)), )

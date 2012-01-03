@@ -70,7 +70,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="freetype6.lib cd.lib iupcd.lib iup.lib comctl32.lib cdcontextplus.lib gdiplus.lib cdpdf.lib pdflib.lib iupcontrols.lib iupgl.lib glu32.lib opengl32.lib cdgl.lib ftgl.lib"
+				AdditionalDependencies="freetype6.lib cd.lib iupcd.lib iup.lib comctl32.lib cdcontextplus.lib gdiplus.lib cdpdf.lib pdflib.lib iupcontrols.lib iupgl.lib glu32.lib opengl32.lib cdgl.lib ftgl.lib zlib1.lib"
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"

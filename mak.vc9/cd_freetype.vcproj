@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\src\freetype2"
+				AdditionalIncludeDirectories="..\src\freetype2;..\src\zlib"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;FT2_BUILD_LIBRARY;FT_CONFIG_OPTION_SYSTEM_ZLIB;_CRT_SECURE_NO_DEPRECATE"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"

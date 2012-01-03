@@ -41,7 +41,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\src\pdflib\font;..\src\pdflib\flate;..\src\pdflib\pdcore;..\src\pdflib\pdflib"
+				AdditionalIncludeDirectories="..\src\pdflib\font;..\src\pdflib\pdcore;..\src\pdflib\pdflib;..\src\zlib"
 				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;NO_vsnprintf;_CRT_SECURE_NO_WARNINGS"
 				ExceptionHandling="0"
 				BasicRuntimeChecks="3"
