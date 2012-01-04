@@ -45,7 +45,8 @@
   implement the primitives. Sometimes this implies in a in small different behavior of some functions. Also some 
   primitives do not make sense in some drivers, like server images in file-based drivers.</p>
   <p>The set of available functions is such that it can be implemented in most drivers. Some drivers have sophisticated 
-  resources, which cannot be implemented in other drivers but can be made available using a generic attribute mecanism.
+  resources, which cannot be implemented in other drivers but can be made available using a generic attribute 
+  mechanism.
   </p>
 
 <h3><a name="buildapp">Building Applications</a></h3>
@@ -57,7 +58,8 @@
 	freetype6.lib/libfreetype.a/libfreetype.so </b> libraries to the linker options. If you use 
   an IUP Canvas then you must also link with the <b>iupcd.lib/libiupcd.a/libiupcd.so</b> library 
 	available in the IUP distribution.</p>
-  <p>In UNIX, CD uses the Xlib (X11) libraries. To link an application in UNIX, add also the &quot;-lX11&quot; option in the linker call.</p>
+  <p>In UNIX, CD uses GDK or the Xlib (X11) libraries. To statically link an application in UNIX 
+  with CD, add also the GDK or the X11 libraries.</p>
   <p>The download files list includes the <a href="download_tips.html">Tecgraf/PUC-Rio Library 
   Download Tips</a> document, with a description of all the available binaries.</p>
 
