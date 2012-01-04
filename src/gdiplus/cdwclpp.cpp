@@ -82,7 +82,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 {
   char* strsize = (char*)data;
   int w = 0, h = 0, wtype = CDW_EMF; /* default clipboard type */
-  double res = 0; /* used only for BMP */
+  float res = 0; /* used only for BMP */
   Metafile* metafile = NULL;
   Bitmap* bitmap = NULL;
   Graphics* graphics;
@@ -131,8 +131,8 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
     }
     else
     {
-      canvas->xres = res;
-      canvas->yres = res;
+      canvas->xres = (double)res;
+      canvas->yres = (double)res;
     }
     
     bitmap = new Bitmap(w, h, PixelFormat24bppRGB);

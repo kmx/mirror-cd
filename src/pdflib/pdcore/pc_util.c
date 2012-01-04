@@ -345,7 +345,7 @@ pdc_getenv_filename(pdc_core *pdc, const char *envname)
     char *envvalue = NULL;
     int flags = PDC_CONV_TMPALLOC;
 
-#if defined(WIN32)
+#if defined(WIN32) && !defined(__BORLANDC__) && !defined(__CYGWIN__)  /* CDLIB */
 
     size_t len = strlen(envname), wlen;
     const wchar_t *wenvvalue;

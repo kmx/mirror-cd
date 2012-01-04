@@ -2762,7 +2762,7 @@ cdCtxCanvas *cdwpCreateCanvas(cdCanvas* canvas, Graphics* graphics, int wtype)
   return ctxcanvas;
 }
 
-static ULONG_PTR cd_gdiplusToken = NULL;
+static ULONG_PTR cd_gdiplusToken = (ULONG_PTR)0;
                                     
 static void __stdcall cd_DebugEvent(int level, char* msg)
 {
@@ -2772,7 +2772,7 @@ static void __stdcall cd_DebugEvent(int level, char* msg)
 
 void cdwpGdiPlusStartup(int debug)
 {
-  if (cd_gdiplusToken == NULL)
+  if (!cd_gdiplusToken)
   {
     GdiplusStartupInput input;
     if (debug)

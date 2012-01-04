@@ -91,6 +91,7 @@ struct _cdCtxCanvas
 
 enum{CDW_WIN, CDW_BMP, CDW_EMF};
 
+extern "C" {
 cdCtxCanvas *cdwpCreateCanvas(cdCanvas* canvas, Graphics* graphics, int wtype);
 void cdwpKillCanvas(cdCtxCanvas* ctxcanvas);
 
@@ -100,7 +101,6 @@ void cdwpUpdateCanvas(cdCtxCanvas* canvas);
 WCHAR* cdwpString2Unicode(const char* s, int len);
 void cdwpShowStatus(const char* title, Status status);
 
-extern "C" {
 void cdwpGdiPlusStartup(int debug);
 void cdwpGdiPlusShutdown(void);
 }

@@ -2,7 +2,7 @@ PROJNAME = cd
 LIBNAME = ftgl
 OPT = YES
 
-DEF_FILE = freetype2/ftgl.def
+DEF_FILE = ftgl/ftgl.def
 
 ftglyph_sources = \
     FTGlyph/FTGlyph.cpp \
