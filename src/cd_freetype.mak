@@ -20,7 +20,7 @@ SRC := $(addprefix freetype2/, $(SRC))
 DEFINES += FT2_BUILD_LIBRARY FT_CONFIG_OPTION_SYSTEM_ZLIB
 INCLUDES = freetype2 zlib
 LDIR = ../lib/$(TEC_UNAME)
-LIBS = $(ZLIB)
+LINK_ZLIB = Yes
 
 ifneq ($(findstring dll, $(TEC_UNAME)), )
   SRC += freetype2/freetype.rc

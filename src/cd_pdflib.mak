@@ -5,7 +5,7 @@ OPT = YES
 DEF_FILE = pdflib/pdflib.def
 INCLUDES = zlib
 LDIR = ../lib/$(TEC_UNAME)
-LIBS = $(ZLIB)
+LINK_ZLIB = Yes
 
 ifeq ($(TEC_UNAME), ppc)
   DEFINES = WORDS_BIGENDIAN
