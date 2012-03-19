@@ -101,6 +101,10 @@
 			</File>
 		</Filter>
 		<File
+			RelativePath="..\src\cd.def"
+			>
+		</File>
+		<File
 			RelativePath="..\src\win32\cdwclp.c"
 			>
 		</File>

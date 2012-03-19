@@ -1,5 +1,6 @@
 EXPORTS
   cdInitContextPlus
+  cdFinishContextPlus
   cdInitGdiPlus
   cdwpCreateCanvas
   cdwpGdiPlusStartup

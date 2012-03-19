@@ -13,6 +13,10 @@ cdContext* cdContextNativeWindowPlus(void);
 cdContext* cdContextImagePlus(void);
 cdContext* cdContextDBufferPlus(void);
 
+void cdFinishContextPlus(void)
+{
+}
+
 void cdInitContextPlus(void)
 {
   cdContext* ctx_list[CD_CTXPLUS_COUNT];

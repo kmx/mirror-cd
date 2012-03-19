@@ -151,6 +151,10 @@ int main(int argc, char** argv)
 
   SimpleKillCanvas();
 
+#ifdef USE_CONTEXTPLUS
+  cdFinishContextPlus();
+#endif
+
   IupClose();
 
   return EXIT_SUCCESS;

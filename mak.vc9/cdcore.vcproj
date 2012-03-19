@@ -465,10 +465,6 @@
 			</FileConfiguration>
 		</File>
 		<File
-			RelativePath="..\src\cd.def"
-			>
-		</File>
-		<File
 			RelativePath="..\src\cd_active.c"
 			>
 			<FileConfiguration

@@ -12,6 +12,12 @@
 #include <lua.h>
 #include <lauxlib.h>
 
+static int cdlua5_finishcontextplus(lua_State *L)
+{
+  (void)L;
+  cdFinishContextPlus();
+  return 0;
+}
 
 static int cdlua5_initcontextplus(lua_State *L)
 {
@@ -22,6 +28,7 @@ static int cdlua5_initcontextplus(lua_State *L)
 
 static const struct luaL_Reg cdlib[] = {
   {"InitContextPlus", cdlua5_initcontextplus},
+  {"FinishContextPlus", cdlua5_finishcontextplus},
   {NULL, NULL},
 };
 

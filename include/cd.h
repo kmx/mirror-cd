@@ -52,6 +52,7 @@ int         cdCanvasActivate(cdCanvas* canvas);
 void        cdCanvasDeactivate(cdCanvas* canvas);
 int         cdUseContextPlus(int use);
 void        cdInitContextPlus(void);   /* need an external library */
+void        cdFinishContextPlus(void);   /* need an external library */
 
 /* context */
 typedef int (*cdCallback)(cdCanvas* canvas, ...);

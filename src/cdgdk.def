@@ -418,4 +418,5 @@ EXPORTS
   cdContextCairoSVG
   cdContextCairoPDF
   cdInitContextPlus
+  cdFinishContextPlus
   

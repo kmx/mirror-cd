@@ -223,6 +223,7 @@ void cdKillCanvas(cdCanvas *canvas)
   if (canvas->fpoly) free(canvas->fpoly);
   if (canvas->clip_fpoly) free(canvas->clip_fpoly);
   if (canvas->line_dashes) free(canvas->line_dashes);
+  if (canvas->path) free(canvas->path);
 
   cdKillVectorFont(canvas->vector_font);
   cdKillSimulation(canvas->simulation);

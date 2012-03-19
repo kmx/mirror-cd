@@ -102,6 +102,10 @@
 			</File>
 		</Filter>
 		<File
+			RelativePath="..\src\gdiplus\cdcontextplus.def"
+			>
+		</File>
+		<File
 			RelativePath="..\src\gdiplus\cdwclpp.cpp"
 			>
 		</File>

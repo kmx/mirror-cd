@@ -17,6 +17,7 @@ cdContext* cdContextPrinterPlus(void);
 cdContext* cdContextEMFPlus(void);
 cdContext* cdContextClipboardPlus(void);
 void cdwpGdiPlusStartup(int debug);
+void cdwpGdiPlusShutdown(void);
 
 void cdInitGdiPlus(void)
 {
@@ -40,3 +41,7 @@ void cdInitContextPlus(void)
   cdwpGdiPlusStartup(0);
 }
 
+void cdFinishContextPlus(void)
+{
+  cdwpGdiPlusShutdown();
+}

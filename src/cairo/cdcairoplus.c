@@ -11,6 +11,10 @@
 #include <memory.h>
 
 
+void cdFinishContextPlus(void)
+{
+}
+
 void cdInitContextPlus(void)
 {
   cdContext* ctx_list[CD_CTXPLUS_COUNT];

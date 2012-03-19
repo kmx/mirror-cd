@@ -406,6 +406,13 @@ static void CDTestClose(void)
   IupDestroy(IupGetHandle("dlgPICCanvas"));
 
   IupDestroy(IupGetHandle("dlgMain"));
+
+  if (use_contextplus) 
+  {
+#ifdef USE_CONTEXTPLUS
+    cdFinishContextPlus();
+#endif
+  }
 }
 
 static int iscurvisible(void)

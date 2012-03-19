@@ -1527,7 +1527,8 @@ static int cdfont(cdCtxCanvas* ctxcanvas, const char *type_face, int style, int 
   if (!hFont) return 0;
 
   if (ctxcanvas->hOldFont) SelectObject(ctxcanvas->hDC, ctxcanvas->hOldFont);
-  if (ctxcanvas->hFont) DeleteObject(ctxcanvas->hFont);
+  if (ctxcanvas->hFont) 
+    DeleteObject(ctxcanvas->hFont);
   ctxcanvas->hFont = hFont;
   ctxcanvas->hOldFont = SelectObject(ctxcanvas->hDC, ctxcanvas->hFont);
   
