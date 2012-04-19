@@ -614,8 +614,10 @@ static int cdfont(cdCtxCanvas *ctxcanvas, const char *typeface, int style, int s
   if (size < 0)
     size = cdGetFontSizePoints(ctxcanvas->canvas, size);
 
-  /* One point in pixel space maps to 1 unit in opengl space, 
+  /* FTGL: One point in pixel space maps to 1 unit in opengl space, 
      so a glyph that is 18 points high should be 18.0 units high. */
+  /* CD: that means 1 point is actually being mapped to 1 pixel */
+  size = cdGetFontSizePixels(ctxcanvas->canvas, size);
   ftglSetFontFaceSize(ctxcanvas->font, size, (int)(ctxcanvas->canvas->xres*25.4));
   ftglSetFontCharMap(ctxcanvas->font, ft_encoding_unicode);
 

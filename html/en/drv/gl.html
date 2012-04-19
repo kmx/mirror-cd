@@ -29,7 +29,7 @@
   <a href="http://www.freetype.org/">Free Type</a> library.</p>
 <p>The driver is not dependent of system functions. It uses only the OpenGL 
 portable functions. So if the window canvas changes its size the attribute &quot;SIZE&quot; 
-must be set with the new size or cdCanvasGetSize will return an incorrect value.</p>
+must be set with the new size or <strong>cdCanvasGetSize</strong> will return an incorrect value.</p>
 
 <h3>Use</h3>
 
@@ -48,7 +48,8 @@ must be set with the new size or cdCanvasGetSize will return an incorrect value.
   <p>To use this driver, the application must be linked with the &quot;<strong>cdgl</strong>&quot;, 
 	the ftgl library 
 	and the OpenGL library. The FTGL library is dependent also on the GLU 
-	library. In UNIX <strong>cdgl</strong> is also dependent on <strong>iconv</strong>.</p>
+	library. In UNIX <strong>cdgl</strong> is also dependent on <strong>iconv</strong> 
+  and <strong>fontconfig</strong>.</p>
   <p>In Lua, it is necessary to call function <font face="Courier"> <strong>cdluagl_open() </strong> </font>after a call 
   to function <strong><font face="Courier">cdlua_open()</font></strong>, apart from linking with the &quot;<strong><font face="Courier">cdluagl</font></strong>&quot; 
   library. This is not necessary if you do require&quot;cdluagl&quot;.&nbsp;</p>
