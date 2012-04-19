@@ -52,8 +52,8 @@ static char hatches[NUM_HATCHES][8] = {
 
 struct _cdCtxImage
 {
-  unsigned int w, h, depth;
-  GLubyte* img;
+  unsigned int w, h;
+  GLubyte* img;     /* always RGBA 32bpp */
 };
 
 struct _cdCtxCanvas
@@ -444,7 +444,7 @@ static int sGetFontFileName(const char *font_name, int bold, int italic, char* f
   {
     if (cdStrEqualNoCasePartial(szName, localFontName))
     {
-      sprintf(fileName, "%s\\%s", sGetFontDir(), szData);  // szData already includes file extension
+      sprintf(fileName, "%s\\%s", sGetFontDir(), szData);  /* szData already includes file extension */
       bResult = 1;
       break;
     }
@@ -607,14 +607,16 @@ static int cdfont(cdCtxCanvas *ctxcanvas, const char *typeface, int style, int s
     }
   }
 
-  ctxcanvas->font = ftglCreateBufferFont(strFontFileName);
+  ctxcanvas->font = ftglCreateTextureFont(strFontFileName);
   if (!ctxcanvas->font)
     return 0;
 
   if (size < 0)
     size = cdGetFontSizePoints(ctxcanvas->canvas, size);
 
-  ftglSetFontFaceSize(ctxcanvas->font, size, 72);
+  /* One point in pixel space maps to 1 unit in opengl space, 
+     so a glyph that is 18 points high should be 18.0 units high. */
+  ftglSetFontFaceSize(ctxcanvas->font, size, (int)(ctxcanvas->canvas->xres*25.4));
   ftglSetFontCharMap(ctxcanvas->font, ft_encoding_unicode);
 
   return 1;
@@ -633,22 +635,32 @@ static void cdgetfontdim(cdCtxCanvas *ctxcanvas, int *max_width, int *height, in
 
 static long int cdforeground(cdCtxCanvas *ctxcanvas, long int color)
 {
-  unsigned char r, g, b;
   (void)ctxcanvas;
 
-  cdDecodeColor(color, &r, &g, &b);
-  glColor4ub(r, g, b, cdDecodeAlpha(color));
+  glColor4ub(cdRed(color), 
+             cdGreen(color), 
+             cdBlue(color), 
+             cdAlpha(color));
 
   return color;
 }
 
 static void cdclear(cdCtxCanvas* ctxcanvas)
 {
-  unsigned char r, g, b, a;
-  cdDecodeColor(ctxcanvas->canvas->background, &r, &g, &b);
-  a = cdDecodeAlpha(ctxcanvas->canvas->background);
-  glClearColor((GLclampf)r/255.0f, (GLclampf)g/255.0f, (GLclampf)b/255.0f, (GLclampf)a/255.0f);
+  GLclampf r = (GLclampf)cdRed(ctxcanvas->canvas->background)/255.0f; 
+  GLclampf g = (GLclampf)cdGreen(ctxcanvas->canvas->background)/255.0f;
+  GLclampf b = (GLclampf)cdBlue(ctxcanvas->canvas->background)/255.0f;
+  GLclampf a = (GLclampf)cdAlpha(ctxcanvas->canvas->background)/255.0f;
+
+  glClearColor(r, g, b, a);
+
   glClear(GL_COLOR_BUFFER_BIT);
+
+  /* restore the foreground color */
+  glColor4ub(cdRed(ctxcanvas->canvas->foreground), 
+             cdGreen(ctxcanvas->canvas->foreground), 
+             cdBlue(ctxcanvas->canvas->foreground), 
+             cdAlpha(ctxcanvas->canvas->foreground));
 }
 
 static void cdfline(cdCtxCanvas *ctxcanvas, double x1, double y1, double x2, double y2)
@@ -689,7 +701,10 @@ static void cdfbox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin
   {
     /* draw twice, one with background color only, and one with foreground color */
     glDisable(GL_POLYGON_STIPPLE);
-    glColor4ub(cdRed(ctxcanvas->canvas->background), cdGreen(ctxcanvas->canvas->background), cdBlue(ctxcanvas->canvas->background), cdAlpha(ctxcanvas->canvas->background));
+    glColor4ub(cdRed(ctxcanvas->canvas->background), 
+               cdGreen(ctxcanvas->canvas->background), 
+               cdBlue(ctxcanvas->canvas->background), 
+               cdAlpha(ctxcanvas->canvas->background));
 
     glBegin(GL_QUADS);
       glVertex2d(xmin, ymin);
@@ -698,7 +713,11 @@ static void cdfbox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin
       glVertex2d(xmin, ymax);
     glEnd();
 
-    glColor4ub(cdRed(ctxcanvas->canvas->foreground), cdGreen(ctxcanvas->canvas->foreground), cdBlue(ctxcanvas->canvas->foreground), cdAlpha(ctxcanvas->canvas->foreground));
+    /* restore the foreground color */
+    glColor4ub(cdRed(ctxcanvas->canvas->foreground), 
+               cdGreen(ctxcanvas->canvas->foreground), 
+               cdBlue(ctxcanvas->canvas->foreground), 
+               cdAlpha(ctxcanvas->canvas->foreground));
     glEnable(GL_POLYGON_STIPPLE);
   }
 
@@ -873,14 +892,21 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
     {
       /* draw twice, one with background color only, and one with foreground color */
       glDisable(GL_POLYGON_STIPPLE);
-      glColor4ub(cdRed(ctxcanvas->canvas->background), cdGreen(ctxcanvas->canvas->background), cdBlue(ctxcanvas->canvas->background), cdAlpha(ctxcanvas->canvas->background));
+      glColor4ub(cdRed(ctxcanvas->canvas->background), 
+                 cdGreen(ctxcanvas->canvas->background), 
+                 cdBlue(ctxcanvas->canvas->background), 
+                 cdAlpha(ctxcanvas->canvas->background));
 
       glBegin(GL_POLYGON);
       for(i = 0; i < n; i++)
         glVertex2i(poly[i].x, poly[i].y);
       glEnd();
 
-      glColor4ub(cdRed(ctxcanvas->canvas->foreground), cdGreen(ctxcanvas->canvas->foreground), cdBlue(ctxcanvas->canvas->foreground), cdAlpha(ctxcanvas->canvas->foreground));
+      /* restore the foreground color */
+      glColor4ub(cdRed(ctxcanvas->canvas->foreground), 
+                 cdGreen(ctxcanvas->canvas->foreground), 
+                 cdBlue(ctxcanvas->canvas->foreground), 
+                 cdAlpha(ctxcanvas->canvas->foreground));
       glEnable(GL_POLYGON_STIPPLE);
     }
 
@@ -942,14 +968,21 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
     if(ctxcanvas->canvas->back_opacity == CD_OPAQUE && glIsEnabled(GL_POLYGON_STIPPLE))
     {
       glDisable(GL_POLYGON_STIPPLE);
-      glColor4ub(cdRed(ctxcanvas->canvas->background), cdGreen(ctxcanvas->canvas->background), cdBlue(ctxcanvas->canvas->background), cdAlpha(ctxcanvas->canvas->background));
+      glColor4ub(cdRed(ctxcanvas->canvas->background), 
+                 cdGreen(ctxcanvas->canvas->background), 
+                 cdBlue(ctxcanvas->canvas->background), 
+                 cdAlpha(ctxcanvas->canvas->background));
 
       glBegin(GL_POLYGON);
       for(i = 0; i < n; i++)
         glVertex2d(poly[i].x, poly[i].y);
       glEnd();
 
-      glColor4ub(cdRed(ctxcanvas->canvas->foreground), cdGreen(ctxcanvas->canvas->foreground), cdBlue(ctxcanvas->canvas->foreground), cdAlpha(ctxcanvas->canvas->foreground));
+      /* restore the foreground color */
+      glColor4ub(cdRed(ctxcanvas->canvas->foreground), 
+                 cdGreen(ctxcanvas->canvas->foreground), 
+                 cdBlue(ctxcanvas->canvas->foreground), 
+                 cdAlpha(ctxcanvas->canvas->foreground));
       glEnable(GL_POLYGON_STIPPLE);
     }
 
@@ -1196,7 +1229,10 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 
 static void cdpixel(cdCtxCanvas *ctxcanvas, int x, int y, long int color)
 {
-  glColor4ub(cdRed(color), cdGreen(color), cdBlue(color), cdAlpha(color));
+  glColor4ub(cdRed(color), 
+             cdGreen(color), 
+             cdBlue(color), 
+             cdAlpha(color));
 
   /* Draw pixel */
   glPointSize(1);
@@ -1205,7 +1241,10 @@ static void cdpixel(cdCtxCanvas *ctxcanvas, int x, int y, long int color)
   glEnd();
 
   /* restore the foreground color */
-  glColor4ub(cdRed(ctxcanvas->canvas->foreground), cdGreen(ctxcanvas->canvas->foreground), cdBlue(ctxcanvas->canvas->foreground), cdAlpha(ctxcanvas->canvas->foreground));
+  glColor4ub(cdRed(ctxcanvas->canvas->foreground), 
+             cdGreen(ctxcanvas->canvas->foreground), 
+             cdBlue(ctxcanvas->canvas->foreground), 
+             cdAlpha(ctxcanvas->canvas->foreground));
 
   (void)ctxcanvas;
 }
@@ -1216,7 +1255,6 @@ static cdCtxImage *cdcreateimage (cdCtxCanvas *ctxcanvas, int w, int h)
 
   ctximage->w = w;
   ctximage->h = h;
-  ctximage->depth = ctxcanvas->canvas->bpp;
 
   ctximage->img = (GLubyte*)malloc(w*h*4);  /* each pixel uses 4 bytes (RGBA) */
 
@@ -1226,6 +1264,7 @@ static cdCtxImage *cdcreateimage (cdCtxCanvas *ctxcanvas, int w, int h)
     return (void*)0;
   }
 
+  (void)ctxcanvas;
   return (void*)ctximage;
 }
 
@@ -1472,6 +1511,8 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   ctxcanvas = (cdCtxCanvas *)malloc(sizeof(cdCtxCanvas));
   memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
 
+  canvas->w = w;
+  canvas->h = h;
   canvas->xres = res;
   canvas->yres = res;
 
