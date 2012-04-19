@@ -77,7 +77,10 @@ struct _cdCtxCanvas
 static char* cdglStrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, int len)
 {
   if (ctxcanvas->glLastConvertUTF8)
+  {
     free(ctxcanvas->glLastConvertUTF8);
+    ctxcanvas->glLastConvertUTF8 = NULL;
+  }
 
 #ifdef WIN32
   {

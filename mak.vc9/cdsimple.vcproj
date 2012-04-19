@@ -44,7 +44,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories="..\include,..\..\iup\include"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;__CD__;simple;_CRT_SECURE_NO_DEPRECATE;USE_CONTEXTPLUS;CD_NO_OLD_INTERFACE"
+				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;__CD__;simple;_CRT_SECURE_NO_DEPRECATE;USE_CONTEXTPLUS;CD_NO_OLD_INTERFACE;USE_OPENGL"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
 				PrecompiledHeaderFile=".\..\obj\cdsimple/cdsimple.pch"
