@@ -105,14 +105,14 @@ void cdSetAttribute(const char* name, char *data)
 
 void cdSetfAttribute(const char* name, const char* format, ...)
 {
-  char data[1024];
+  char data[10240];
   va_list arglist;
 
   assert(active_canvas);
   if (!active_canvas) return;
 
   va_start(arglist, format);
-  vsprintf(data, format, arglist);
+  vsnprintf(data, 10240, format, arglist);
 
   cdCanvasSetAttribute(active_canvas, name, data);
 }

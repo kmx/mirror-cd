@@ -130,10 +130,10 @@ void cdUpdateAttributes(cdCanvas* canvas)
 
 cdCanvas* cdCreateCanvasf(cdContext *context, const char* format, ...)
 {
-  char data[1024];
+  char data[10240];
   va_list arglist;
   va_start(arglist, format);
-  vsprintf(data, format, arglist);
+  vsnprintf(data, 10240, format, arglist);
 
   return cdCreateCanvas(context, data);
 }
@@ -571,10 +571,10 @@ void cdCanvasSetAttribute(cdCanvas* canvas, const char* name, char *data)
 
 void cdCanvasSetfAttribute(cdCanvas* canvas, const char* name, const char* format, ...)
 {
-  char data[1024];
+  char data[10240];
   va_list arglist;
   va_start(arglist, format);
-  vsprintf(data, format, arglist);
+  vsnprintf(data, 10240, format, arglist);
 
   cdCanvasSetAttribute(canvas, name, data);
 }
