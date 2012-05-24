@@ -108,14 +108,8 @@ must be set with the new size or <strong>cdCanvasGetSize</strong> will return an
     <font face="Courier"><strong>NativeFont</strong></font></a>: also accepts the 
   X-Windows font string format.</li>
     <li><a href="../func/text.html#cdFont">
-  <font face="Courier"><strong>Font</strong></font></a>: In Windows, &quot;Courier&quot; is mapped to 
-	&quot;Courier New&quot;, &quot;Helvetica&quot; is mapped to &quot;Arial&quot;, and &quot;Times&quot; is mapped to 
-	&quot;Times New Roman&quot;. In UNIX, &quot;Courier&quot; is mapped to 
-	&quot;freemono&quot;, &quot;Helvetica&quot; is mapped to &quot;freesans&quot;, and &quot;Times&quot; is mapped to 
-	&quot;freeserif&quot;. Underline and Strikeout are NOT supported. If not found 
-	then the font file is searched using the same logic of the <a href="sim.html">Simulation</a> 
-	driver, but <strong>ADDFONTMAP</strong> is not supported. If still is not 
-	found then the typeface is used as file name for the font. </li>
+  <font face="Courier"><strong>Font</strong></font></a>: Uses the same logic of the <a href="sim.html">Simulation</a> 
+	driver to find a Truetype font file, but <strong>ADDFONTMAP</strong> is not supported. </li>
 </ul>
 <h4>Colors </h4>
 <ul>

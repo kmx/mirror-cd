@@ -39,19 +39,30 @@
   LineStyle</a></strong></font>: If line width is greater than 1, the style is 
 	always continuous.</li>
   <li><a href="../func/text.html#cdFont"><font face="Courier"><strong>Font</strong></font></a>: 
-  Selects a True Type font file for the
+  Selects a Truetype font file for the
   <a target="_blank" href="http://www.freetype.org/">FreeType</a> library to 
-  render the text. Notice that TTF fonts have different files for different font styles, like bold and italic. Font files can be in the 
-  current directory, in the directory pointed by the CDDIR environment variable, in Windows in the system defined Font 
-  directory, or using the full path of the file. <br>
-  Old name &quot;System&quot; is mapped to &quot;Courier&quot;. For the know font names &quot;Courier&quot; (<font face="Courier">cour</font>), 
-  &quot;Times&quot; (<font face="Courier">times</font>) and &quot;Helvetica&quot; (<font face="Courier">arial</font>), 
-  the styles are added to the font file name as a suffix: &quot;bd&quot;, &quot;i&quot; and &quot;bi&quot; are 
-  used for bold, italic and bold-italic. For other fonts, it will first check 
-  for a font map added using the attribute <strong>ADDFONTMAP</strong>, if 
-  failed it will try to load the type_face name without any change, if fail it 
-  will add the style suffix to the type_face and try to load again. The &quot;.ttf&quot; 
-  file extension is always automatically added to the end of the file name.</li>
+  render the text. </li>
+	The typeface parameter is used to find the appropriate file.<p>The typeface 
+  parameter can be the name of a font or the name of a font file (not including 
+  path, nor the extension &quot;.ttf&quot;). If a name is specified some pre-defined 
+  correspondents are tried, for instance the know font names &quot;Courier&quot;, 
+  &quot;Times&quot; and &quot;Helvetica&quot; are mapped to &quot;cour&quot;, &quot;times&quot;, and 
+  &quot;arial&quot;, 
+  their styles are added to the font file name as a suffix: &quot;bd&quot;, &quot;i&quot; and 
+  &quot;bi&quot;, to match bold, italic and bold-italic. Those files are also available in 
+  the &quot;cd/etc&quot; folder of the CD distribution packages. If the pre-defined names 
+  are not used, the typeface parameter is used as the file name. It can also use a 
+  manual font map added using the attribute <strong>ADDFONTMAP</strong> (see 
+  bellow).<br>Font files can be located in the 
+  current directory, in the directory pointed by the CDDIR environment variable, in the 
+  native system font 
+  directory, or by using the full path of the file in the typeface parameter. 
+  The &quot;.ttf&quot; 
+  file extension is always automatically added to the end of the file name. In 
+  Linux font files are searched using
+	<a href="http://www.freedesktop.org/wiki/Software/fontconfig">FontConfig</a>.<br>
+  The search order is: ADDFONTMAP, pre-defined names, native system, and full 
+  path.</p>
 </ul>
 <h4><strong>Primitives</strong> </h4>
 <ul>

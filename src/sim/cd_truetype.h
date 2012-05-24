@@ -36,7 +36,7 @@ typedef struct _cdTT_Text
 
 cdTT_Text* cdTT_create(void);
 void cdTT_free(cdTT_Text * tt_text);
-int cdTT_load(cdTT_Text * tt_text, const char *font,int size, double xres, double yres);
+int cdTT_load(cdTT_Text * tt_text, const char *filename, int size, double xres, double yres);
 
 #ifdef __cplusplus
 }

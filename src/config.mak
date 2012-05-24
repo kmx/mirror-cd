@@ -90,19 +90,29 @@ ifdef USE_GDK
 else
   ifdef USE_X11
     SRC += $(SRCX11) $(SRCNULL)
-    LIBS = freetype
+    LIBS += freetype
   else
     SRC += $(SRCWIN32)
     ifneq ($(findstring cygw, $(TEC_UNAME)), )
-      LIBS = freetype-6
+      LIBS += freetype-6 fontconfig
     else
-      LIBS = freetype6
+      LIBS += freetype6
     endif
   endif
 endif
 
 ifneq ($(findstring dll, $(TEC_UNAME)), )
   SRC += cd.rc
+endif
+
+ifneq ($(findstring AIX, $(TEC_UNAME)), )
+  DEFINES += NO_FONTCONFIG
+endif
+ifneq ($(findstring IRIX, $(TEC_UNAME)), )
+  DEFINES += NO_FONTCONFIG
+endif
+ifneq ($(findstring SunOS, $(TEC_UNAME)), )
+  DEFINES += NO_FONTCONFIG
 endif
 
 ifneq ($(findstring MacOS, $(TEC_UNAME)), )

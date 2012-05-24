@@ -17,14 +17,10 @@
         Inicializa o Rasterizador
 ********************************************/
 
-int cdTT_load(cdTT_Text * tt_text, const char *font, int size, double xres, double yres)
+int cdTT_load(cdTT_Text * tt_text, const char *filename, int size, double xres, double yres)
 {
-  char filename[10240];
   FT_Error error;
   FT_Face face;          
-
-  if (!cdGetFontFileName(font, filename))
-    return 0;
 
   error = FT_New_Face(tt_text->library, filename, 0, &face );
   if (error) 

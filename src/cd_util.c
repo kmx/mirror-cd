@@ -416,48 +416,286 @@ void cdSetPaperSize(int size, double *w_pt, double *h_pt)
 
 #ifdef WIN32
 #include <windows.h>
-static int sReadStringKey(HKEY base_key, char* key_name, char* value_name, char* value)
+static char* winRegReadStringKey(HKEY hBaseKey, const char* key_name, const char* value_name)
 {
-	HKEY key;
-	DWORD max_size = 512;
+	HKEY hKey;
+	DWORD size;
+  char* str;
 
-	if (RegOpenKeyEx(base_key, key_name, 0, KEY_READ, &key) != ERROR_SUCCESS)
-		return 0;
+	if (RegOpenKeyEx(hBaseKey, key_name, 0, KEY_READ, &hKey) != ERROR_SUCCESS)
+		return NULL;
 
-  if (RegQueryValueEx(key, value_name, NULL, NULL, (LPBYTE)value, &max_size) != ERROR_SUCCESS)
+  if (RegQueryValueEx(hKey, value_name, NULL, NULL, NULL, &size) != ERROR_SUCCESS)
   {
-    RegCloseKey(key);
-		return 0;
+    RegCloseKey(hKey);
+		return NULL;
   }
 
-	RegCloseKey(key);
-	return 1;
+  str = malloc(size);
+  RegQueryValueEx(hKey, value_name, NULL, NULL, (LPBYTE)str, &size);
+
+	RegCloseKey(hKey);
+	return str;
 }
 
-static char* sGetFontDir(void)
+static int winRegGetValueCount(HKEY hKey, int *count, int *max_name_size, int *max_value_size)
 {
-  static char font_dir[512];
-  if (!sReadStringKey(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "Fonts", font_dir))
-    return "";
+  DWORD cValues;
+  DWORD cMaxValueNameLen;
+  DWORD cMaxValueLen;
+
+  if (RegQueryInfoKey(hKey, NULL, NULL, NULL, NULL, NULL, NULL,
+      &cValues,             // number of values for this hKey 
+      &cMaxValueNameLen,    // longest value name 
+      &cMaxValueLen,        // longest value data 
+      NULL, NULL) == ERROR_SUCCESS)
+  {
+    if (!cValues)
+      return 0;
+
+    *count = (int)cValues;
+    *max_name_size = (int)cMaxValueNameLen;
+    *max_value_size = (int)cMaxValueLen;
+    return 1;
+  }
+  else
+    return 0;
+}
+
+static char* winRegFindValue(HKEY hBaseKey, const char* key_name, const char* value_name)
+{
+	HKEY hKey;
+  int i, count, max_name_size, max_value_size;
+  char *ValueName, *lpData; 
+  DWORD cchValueName, cbData;
+
+	if (RegOpenKeyEx(hBaseKey, key_name, 0, KEY_READ, &hKey) != ERROR_SUCCESS)
+		return NULL;
+
+  if (!winRegGetValueCount(hKey, &count, &max_name_size, &max_value_size))
+    return NULL;
+
+  ValueName = malloc(max_name_size);
+  lpData = malloc(max_value_size);
+
+  for (i=0; i<count; i++)
+  {
+    ValueName[0] = '\0';
+    cchValueName = max_name_size; 
+    cbData = max_value_size;
+
+    if (RegEnumValue(hKey, i, 
+        ValueName, &cchValueName, 
+        NULL, NULL, (LPBYTE)lpData, &cbData) == ERROR_SUCCESS)
+    {
+      if (cdStrEqualNoCasePartial(ValueName, value_name))
+      {
+        free(ValueName);
+	      RegCloseKey(hKey);
+        return lpData;
+      }
+
+    }
+  }
+
+  free(ValueName);
+  free(lpData);
+	RegCloseKey(hKey);
+	return NULL;
+}
+
+int cdGetFontFileNameSystem(const char *type_face, int style, char* filename)
+{
+  char win_font_name[1024];
+  char *font_dir, *font_title;
+
+  font_dir = winRegReadStringKey(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "Fonts");
+  if (!font_dir)
+    return 0;
+
+  /* Filter some pre-defined names */
+  if (cdStrEqualNoCase(type_face, "Courier") || 
+      cdStrEqualNoCase(type_face, "Monospace") ||
+      cdStrEqualNoCase(type_face, "System"))
+    type_face = "Courier New";
+  else if (cdStrEqualNoCase(type_face, "Times") || 
+           cdStrEqualNoCase(type_face, "Serif"))
+    type_face = "Times New Roman";
+  else if (cdStrEqualNoCase(type_face, "Helvetica") || 
+           cdStrEqualNoCase(type_face, "Sans"))
+    type_face = "Arial";
+
+  strcpy(win_font_name, type_face);
+
+  /* add style */
+  if (style & CD_BOLD)
+    strcat(win_font_name, " Bold");
+  if (style & CD_ITALIC)
+    strcat(win_font_name, " Italic");
+
+  font_title = winRegFindValue(HKEY_LOCAL_MACHINE, "Software\\Microsoft\\Windows NT\\CurrentVersion\\Fonts", win_font_name);
+  if (font_title)
+  {
+    sprintf(filename, "%s\\%s", font_dir, font_title);  /* font_title already includes file extension */
+    free(font_title);
+    free(font_dir);
+    return 1;
+  }
+
+  free(font_dir);
+  return 0;
+}
+#else
+#ifndef NO_FONTCONFIG
+#include <fontconfig/fontconfig.h>
+
+int cdGetFontFileNameSystem(const char *type_face, int style, char* filename)
+{
+  char styles[4][20];
+  int style_size;
+  FcObjectSet *os;
+  FcFontSet *fs;
+  FcPattern *pat;
+  int j, s, found = 0;
+
+  /* Filter some pre-defined names */
+  if (cdStrEqualNoCase(type_face, "Courier") || 
+      cdStrEqualNoCase(type_face, "Courier New") || 
+      cdStrEqualNoCase(type_face, "Monospace") ||
+      cdStrEqualNoCase(type_face, "System"))
+    type_face = "freemono";
+  else if (cdStrEqualNoCase(type_face, "Times") || 
+           cdStrEqualNoCase(type_face, "Times New Roman")|| 
+           cdStrEqualNoCase(type_face, "Serif"))
+    type_face = "freeserif";
+  else if (cdStrEqualNoCase(type_face, "Helvetica") || 
+           cdStrEqualNoCase(type_face, "Arial") || 
+           cdStrEqualNoCase(type_face, "Sans"))
+    type_face = "freesans";
+
+  /* add style */
+  if( style&CD_BOLD && style&CD_ITALIC )
+  {
+    strcpy(styles[0], "BoldItalic");
+    strcpy(styles[1], "Bold Italic");
+    strcpy(styles[2], "Bold Oblique");
+    strcpy(styles[3], "BoldOblique");
+    style_size = 4;
+  }
+  else if( style & CD_BOLD )
+  {
+    strcpy(styles[0], "Bold");
+    style_size = 1;
+  }
+  else if( style & CD_ITALIC )
+  {
+    strcpy(styles[0], "Italic");
+    strcpy(styles[1], "Oblique");
+    style_size = 2;
+  }
   else
   {
-    int i, size = (int)strlen(font_dir);
-    for(i = 0; i < size; i++)
-    {
-      if (font_dir[i] == '\\')
-        font_dir[i] = '/';
-    }
-    return font_dir;
+    strcpy(styles[0], "Regular");
+    strcpy(styles[1], "Normal");
+    strcpy(styles[2], "Medium");
+    style_size = 3;
   }
+
+  pat = FcPatternCreate();
+  os = FcObjectSetBuild(FC_FAMILY, FC_FILE, FC_STYLE, NULL);
+  fs = FcFontList(NULL, pat, os);
+  if (pat) FcPatternDestroy(pat);
+  if (os) FcObjectSetDestroy(os);
+
+  if(!fs)
+    return 0;
+
+  /* for all installed fonts */
+  for (j = 0; j < fs->nfont; j++)
+  {
+    FcChar8 *family;
+    FcPatternGetString(fs->fonts[j], FC_FAMILY, 0, &family );
+
+    if (cdStrEqualNoCasePartial((char*)family, type_face))
+    {
+      FcChar8 *file;
+      FcChar8 *style;
+      FcPatternGetString(fs->fonts[j], FC_FILE, 0, &file); 
+      FcPatternGetString(fs->fonts[j], FC_STYLE, 0, &style );
+
+      /* for all styles of that family */
+      for(s = 0; s < style_size; s++ )
+      {
+        if (cdStrEqualNoCase(styles[s], (char*)style))
+        {
+          strcpy(filename, (char*)file);
+          FcFontSetDestroy (fs);
+          return 1;
+        }
+      }
+
+      strcpy(filename, (char*)file);
+      found = 1;  /* ignore styles */
+    }
+  }
+
+  FcFontSetDestroy (fs);
+  return found;
+}
+#else
+int cdGetFontFileNameSystem(const char *type_face, int style, char* filename)
+{
+  (void)type_face;
+  (void)style;
+  (void)filename;
+  return 0;
 }
 #endif
+#endif
 
-int cdGetFontFileName(const char* font, char* filename)
+int cdGetFontFileNameDefault(const char *type_face, int style, char* filename)
+{
+  char font[10240];
+  static char * cd_ttf_font_style[4] = {
+    "",
+    "bd",
+    "i",
+    "bi"};
+  const char* face;
+
+  /* check for the pre-defined names */
+  if (cdStrEqualNoCase(type_face, "Courier") ||
+      cdStrEqualNoCase(type_face, "System"))
+    face = "cour";
+  else if (cdStrEqualNoCase(type_face, "Times"))
+    face = "times";
+  else if (cdStrEqualNoCase(type_face, "Helvetica"))
+    face = "arial";
+  else
+    face = type_face;
+
+  sprintf(font, "%s%s", face, cd_ttf_font_style[style&3]);
+  if (!cdGetFontFileName(font, filename))
+  {
+    /* try the type_face as a file title, but with no style */
+    if (face == type_face && style != CD_PLAIN)
+      return cdGetFontFileName(type_face, filename);
+    else
+      return 0;
+  }
+  else 
+    return 1;
+}
+
+int cdGetFontFileName(const char* type_face, char* filename)
 {
   FILE *file;
 
+  if (!type_face)
+    return 0;
+
   /* current directory */
-  sprintf(filename, "%s.ttf", font);
+  sprintf(filename, "%s.ttf", type_face);
   file = fopen(filename, "r");
 
   if (file)
@@ -468,7 +706,11 @@ int cdGetFontFileName(const char* font, char* filename)
     char* env = getenv("CDDIR");
     if (env)
     {
-      sprintf(filename, "%s/%s.ttf", env, font);
+#ifdef WIN32
+      sprintf(filename, "%s\\%s.ttf", env, type_face);
+#else
+      sprintf(filename, "%s/%s.ttf", env, type_face);
+#endif
       file = fopen(filename, "r");
     }
 
@@ -478,8 +720,10 @@ int cdGetFontFileName(const char* font, char* filename)
     {
 #ifdef WIN32
       /* Windows Font folder */
-      sprintf(filename, "%s/%s.ttf", sGetFontDir(), font);
+      char* font_dir = winRegReadStringKey(HKEY_CURRENT_USER, "Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Shell Folders", "Fonts");
+      sprintf(filename, "%s\\%s.ttf", font_dir, type_face);
       file = fopen(filename, "r");
+      free(font_dir);
 
       if (file)
         fclose(file);

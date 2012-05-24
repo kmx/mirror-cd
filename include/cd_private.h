@@ -282,7 +282,9 @@ int cdStrLineCount(const char* str);
 char* cdStrDup(const char* str);
 char* cdStrDupN(const char* str, int len);
 void cdSetPaperSize(int size, double *w_pt, double *h_pt);
-int cdGetFontFileName(const char* font, char* filename);
+int cdGetFontFileName(const char* type_face, char* filename);
+int cdGetFontFileNameDefault(const char *type_face, int style, char* filename);
+int cdGetFontFileNameSystem(const char *type_face, int style, char* filename);
 int cdStrTmpFileName(char* filename);
 
 void cdCanvasPoly(cdCanvas* canvas, int mode, cdPoint* points, int n);

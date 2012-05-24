@@ -226,6 +226,8 @@ EXPORTS
   cdfCanvasGetArcStartEnd
   cdStrEqualNoCasePartial
   cdGetFontFileName
+  cdGetFontFileNameDefault
+  cdGetFontFileNameSystem
   
   wdCanvasLineWidth
   wdCanvasMarkSize

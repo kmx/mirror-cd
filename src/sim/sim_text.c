@@ -95,7 +95,7 @@ void cdSimInitText(cdSimulation* simulation)
   cdRegisterAttribute(simulation->canvas, &version_attrib);
 }
 
-static const char* find_font_filename(cdSimulation* simulation, const char* name)
+static const char* sFindFontMap(cdSimulation* simulation, const char* name)
 {
   int i;
   for (i = 0; i < simulation->font_map_n; i++)
@@ -108,41 +108,27 @@ static const char* find_font_filename(cdSimulation* simulation, const char* name
 
 int cdSimFontFT(cdCtxCanvas* ctxcanvas, const char *type_face, int style, int size)
 {
+  char filename[10240];
   cdCanvas* canvas = ((cdCtxCanvasBase*)ctxcanvas)->canvas;
 
-  /* check for the pre-defined names */
-  if (cdStrEqualNoCase(type_face, "System"))
-    type_face = "cour";
-  else if (cdStrEqualNoCase(type_face, "Courier"))
-    type_face = "cour";
-  else if (cdStrEqualNoCase(type_face, "Times"))
-    type_face = "times";
-  else if (cdStrEqualNoCase(type_face, "Helvetica"))
-    type_face = "arial";
-  else
+  /* try the font map */
+  const char* fontmap = sFindFontMap(canvas->simulation, type_face);
+  if (!cdGetFontFileName(fontmap, filename))
   {
-    /* use the font map */
-    const char* filename = find_font_filename(canvas->simulation, type_face);
-    if (filename)
-      return cdTT_load(canvas->simulation->tt_text, filename, cdGetFontSizePoints(canvas, size), canvas->xres, canvas->yres);
-    else 
+    /* try the pre-defined names and pre-defined style suffix */
+    if (!cdGetFontFileNameDefault(type_face, style, filename))
     {
-      /* try the type_face name without change */
-      if (cdTT_load(canvas->simulation->tt_text, type_face, cdGetFontSizePoints(canvas, size), canvas->xres, canvas->yres))
-        return 1;
+      /* try to find the file in the native system */
+      if (!cdGetFontFileNameSystem(type_face, style, filename))
+      {
+        /* try the type_face as file name,
+           here assume type_face is a full path */
+        strcpy(filename, type_face);
+      }
     }
   }
 
-  {
-    static char * cd_ttf_font_style[4] = {
-      "",
-      "bd",
-      "i",
-      "bi"};
-    char font[10240]; /* can have a path */
-    sprintf(font, "%s%s", type_face, cd_ttf_font_style[style&3]);
-    return cdTT_load(canvas->simulation->tt_text, font, cdGetFontSizePoints(canvas, size), canvas->xres, canvas->yres);
-  }
+  return cdTT_load(canvas->simulation->tt_text, filename, cdGetFontSizePoints(canvas, size), canvas->xres, canvas->yres);
 }
             
 void cdSimGetFontDimFT(cdCtxCanvas* ctxcanvas, int *max_width, int *height, int *ascent, int *descent)
