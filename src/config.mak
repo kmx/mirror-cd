@@ -86,6 +86,9 @@ ifdef USE_GDK
       INCLUDES += $(GTK)/include/gtk-unix-print-2.0
 #    endif
     LIBS += freetype
+    ifneq ($(findstring cygw, $(TEC_UNAME)), )
+      LIBS += fontconfig
+    endif
   endif
 else
   ifdef USE_X11
