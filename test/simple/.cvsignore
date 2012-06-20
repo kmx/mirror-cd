@@ -13,7 +13,6 @@ so_locations
 .plan
 .project
 *.err
-Makefile
 *.make
 *.suo
 *.ncb
