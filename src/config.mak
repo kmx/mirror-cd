@@ -117,6 +117,12 @@ endif
 ifneq ($(findstring SunOS, $(TEC_UNAME)), )
   DEFINES += NO_FONTCONFIG
 endif
+ifeq ($(TEC_UNAME), Linux26)
+  DEFINES += NO_FONTCONFIG
+endif
+ifeq ($(TEC_UNAME), Linux26_64)
+  DEFINES += NO_FONTCONFIG
+endif
 
 ifneq ($(findstring MacOS, $(TEC_UNAME)), )
   ifneq ($(TEC_SYSMINOR), 4)
