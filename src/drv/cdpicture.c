@@ -14,6 +14,7 @@
 #include "cd_private.h"
 #include "cdpicture.h"
 
+#define sMin1(_v) (_v <= 1? 1: _v)
 
 /* codes for the primitives.
 */
@@ -345,7 +346,7 @@ static void primUpdateAttrib_Line(tPrimNode *prim, cdCanvas *canvas)
   cdCanvasSetForeground(canvas, prim->attrib.line.foreground);
   cdCanvasBackOpacity(canvas, prim->attrib.line.back_opacity);
   cdCanvasLineStyle(canvas, prim->attrib.line.line_style); 
-  cdCanvasLineWidth(canvas, prim->attrib.line.line_width);
+  cdCanvasLineWidth(canvas, sMin1(prim->attrib.line.line_width));
   cdCanvasLineCap(canvas, prim->attrib.line.line_cap);
   cdCanvasLineJoin(canvas, prim->attrib.line.line_join);
 
@@ -837,6 +838,8 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 
   picUpdateBBox(ctxcanvas, x, y, 0);
   picUpdateBBox(ctxcanvas, x+prim->param.imagergba.iw-1, y+prim->param.imagergba.ih-1, 0);
+
+  (void)ih;
 }
 
 static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *r, const unsigned char *g, const unsigned char *b, const unsigned char *a, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
@@ -890,6 +893,8 @@ static void cdputimagerectrgba(cdCtxCanvas *ctxcanvas, int iw, int ih, const uns
 
   picUpdateBBox(ctxcanvas, x, y, 0);
   picUpdateBBox(ctxcanvas, x+prim->param.imagergba.iw-1, y+prim->param.imagergba.ih-1, 0);
+
+  (void)ih;
 }
 
 static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *index, const long int *colors, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
@@ -938,6 +943,8 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
 
   picUpdateBBox(ctxcanvas, x, y, 0);
   picUpdateBBox(ctxcanvas, x+prim->param.imagemap.iw-1, y+prim->param.imagemap.ih-1, 0);
+
+  (void)ih;
 }
 
 
@@ -960,17 +967,16 @@ static int cdregistercallback(int cb, cdCallback func)
   return CD_ERROR;
 }
 
-#define sMin1(_v) (_v == 0? 1: _v)
+#define sScaleX(_x) (scale? cdRound(((_x) - pic_xmin) * factorX + xmin): (_x))
+#define sScaleY(_y) (scale? cdRound(((_y) - pic_ymin) * factorY + ymin): (_y))
+#define sScaleW(_w) sMin1(scale? cdRound((_w) * factorX): (_w))
+#define sScaleH(_h) sMin1(scale? cdRound((_h) * factorY): (_h))
 
-#define sScaleX(_x) cdRound((_x - pic_xmin) * factorX + xmin)
-#define sScaleY(_y) cdRound((_y - pic_ymin) * factorY + ymin)
-#define sScaleW(_w) sMin1(cdRound(_w * factorX))
-#define sScaleH(_h) sMin1(cdRound(_h * factorY))
+#define sfScaleX(_x) (scale? ((_x) - pic_xmin) * factorX + xmin: (_x))
+#define sfScaleY(_y) (scale? ((_y) - pic_ymin) * factorY + ymin: (_y))
+#define sfScaleW(_w) (scale? (_w) * factorX: (_w))
+#define sfScaleH(_h) (scale? (_h) * factorY: (_h))
 
-#define sfScaleX(_x) ((_x - pic_xmin) * factorX + xmin)
-#define sfScaleY(_y) ((_y - pic_ymin) * factorY + ymin)
-#define sfScaleW(_w) (_w * factorX)
-#define sfScaleH(_h) (_h * factorY)
 
 static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *data)
 {
@@ -982,14 +988,14 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
       pic_ymin = ctxcanvas->ymin;
   double factorX = 1, factorY = 1;
   
-  if ((ctxcanvas->xmax-ctxcanvas->xmin)!=0 && 
-      (ctxcanvas->ymax-ctxcanvas->ymin)!=0 && 
-      (xmax-xmin)!=0 && 
-      (ymax-ymin)!=0)
+  if ((ctxcanvas->xmax-ctxcanvas->xmin+1)>1 && 
+      (ctxcanvas->ymax-ctxcanvas->ymin+1)>1 && 
+      (xmax-xmin+1)>1 && 
+      (ymax-ymin+1)>1)
   {
     scale = 1;
-    factorX = ((double)(xmax-xmin)) / (ctxcanvas->xmax-ctxcanvas->xmin);
-    factorY = ((double)(ymax-ymin)) / (ctxcanvas->ymax-ctxcanvas->ymin);
+    factorX = ((double)(xmax-xmin+1)) / ((double)(ctxcanvas->xmax-ctxcanvas->xmin+1));
+    factorY = ((double)(ymax-ymin+1)) / ((double)(ctxcanvas->ymax-ctxcanvas->ymin+1));
   }
 
   if (cdsizecb)
@@ -1003,325 +1009,162 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
   prim = ctxcanvas->prim_first;
   for (i = 0; i < ctxcanvas->prim_n; i++)
   { 
-    if (scale)
+    switch (prim->type)
     {
-      switch (prim->type)
+    case CDPIC_LINE:
+      primUpdateAttrib_Line(prim, canvas);
+      cdCanvasLine(canvas, sScaleX(prim->param.lineboxrect.x1), sScaleY(prim->param.lineboxrect.y1), sScaleX(prim->param.lineboxrect.x2), sScaleY(prim->param.lineboxrect.y2));
+      break;
+    case CDPIC_FLINE:
+      primUpdateAttrib_Line(prim, canvas);
+      cdfCanvasLine(canvas, sfScaleX(prim->param.lineboxrectf.x1), sfScaleY(prim->param.lineboxrectf.y1), sfScaleX(prim->param.lineboxrectf.x2), sfScaleY(prim->param.lineboxrectf.y2));
+      break;
+    case CDPIC_RECT:
+      primUpdateAttrib_Line(prim, canvas);
+      cdCanvasRect(canvas, sScaleX(prim->param.lineboxrect.x1), sScaleX(prim->param.lineboxrect.x2), sScaleY(prim->param.lineboxrect.y1), sScaleY(prim->param.lineboxrect.y2));
+      break;
+    case CDPIC_FRECT:
+      primUpdateAttrib_Line(prim, canvas);
+      cdfCanvasRect(canvas, sfScaleX(prim->param.lineboxrectf.x1), sfScaleX(prim->param.lineboxrectf.x2), sfScaleY(prim->param.lineboxrectf.y1), sfScaleY(prim->param.lineboxrectf.y2));
+      break;
+    case CDPIC_BOX:
+      primUpdateAttrib_Fill(prim, canvas);
+      cdCanvasBox(canvas, sScaleX(prim->param.lineboxrect.x1), sScaleX(prim->param.lineboxrect.x2), sScaleY(prim->param.lineboxrect.y1), sScaleY(prim->param.lineboxrect.y2));
+      break;
+    case CDPIC_FBOX:
+      primUpdateAttrib_Fill(prim, canvas);
+      cdfCanvasBox(canvas, sfScaleX(prim->param.lineboxrectf.x1), sfScaleX(prim->param.lineboxrectf.x2), sfScaleY(prim->param.lineboxrectf.y1), sfScaleY(prim->param.lineboxrectf.y2));
+      break;
+    case CDPIC_ARC:
+      primUpdateAttrib_Line(prim, canvas);
+      cdCanvasArc(canvas, sScaleX(prim->param.arcsectorchord.xc), sScaleY(prim->param.arcsectorchord.yc), sScaleW(prim->param.arcsectorchord.w), sScaleH(prim->param.arcsectorchord.h), prim->param.arcsectorchord.angle1, prim->param.arcsectorchord.angle2);
+      break;
+    case CDPIC_FARC:
+      primUpdateAttrib_Line(prim, canvas);
+      cdfCanvasArc(canvas, sfScaleX(prim->param.arcsectorchordf.xc), sfScaleY(prim->param.arcsectorchordf.yc), sfScaleW(prim->param.arcsectorchordf.w), sfScaleH(prim->param.arcsectorchordf.h), prim->param.arcsectorchord.angle1, prim->param.arcsectorchord.angle2);
+      break;
+    case CDPIC_SECTOR:
+      primUpdateAttrib_Fill(prim, canvas);
+      cdCanvasSector(canvas, sScaleX(prim->param.arcsectorchord.xc), sScaleY(prim->param.arcsectorchord.yc), sScaleW(prim->param.arcsectorchord.w), sScaleH(prim->param.arcsectorchord.h), prim->param.arcsectorchord.angle1, prim->param.arcsectorchord.angle2);
+      break;
+    case CDPIC_FSECTOR:
+      primUpdateAttrib_Fill(prim, canvas);
+      cdfCanvasSector(canvas, sfScaleX(prim->param.arcsectorchordf.xc), sfScaleY(prim->param.arcsectorchordf.yc), sfScaleW(prim->param.arcsectorchordf.w), sfScaleH(prim->param.arcsectorchordf.h), prim->param.arcsectorchord.angle1, prim->param.arcsectorchord.angle2);
+      break;
+    case CDPIC_CHORD:
+      primUpdateAttrib_Fill(prim, canvas);
+      cdCanvasChord(canvas, sScaleX(prim->param.arcsectorchord.xc), sScaleY(prim->param.arcsectorchord.yc), sScaleW(prim->param.arcsectorchord.w), sScaleH(prim->param.arcsectorchord.h), prim->param.arcsectorchord.angle1, prim->param.arcsectorchord.angle2);
+      break;
+    case CDPIC_FCHORD:
+      primUpdateAttrib_Fill(prim, canvas);
+      cdfCanvasChord(canvas, sfScaleX(prim->param.arcsectorchordf.xc), sfScaleY(prim->param.arcsectorchordf.yc), sfScaleW(prim->param.arcsectorchordf.w), sfScaleH(prim->param.arcsectorchordf.h), prim->param.arcsectorchord.angle1, prim->param.arcsectorchord.angle2);
+      break;
+    case CDPIC_TEXT:
+      primUpdateAttrib_Text(prim, canvas);
+      cdCanvasText(canvas, sScaleX(prim->param.text.x), sScaleY(prim->param.text.y), prim->param.text.s);
+      break;
+    case CDPIC_FTEXT:
+      primUpdateAttrib_Text(prim, canvas);
+      cdfCanvasText(canvas, sfScaleX(prim->param.textf.x), sfScaleY(prim->param.textf.y), prim->param.text.s);
+      break;
+    case CDPIC_POLY:
+      if (prim->param.poly.mode == CD_FILL)
+        primUpdateAttrib_Fill(prim, canvas);
+      else
+        primUpdateAttrib_Line(prim, canvas);
+      cdCanvasBegin(canvas, prim->param.poly.mode);
+      for (p = 0; p < prim->param.poly.n; p++)
+        cdCanvasVertex(canvas, sScaleX(prim->param.poly.points[p].x), sScaleY(prim->param.poly.points[p].y));
+      cdCanvasEnd(canvas);
+      break;
+    case CDPIC_FPOLY:
+      if (prim->param.poly.mode == CD_FILL)
+        primUpdateAttrib_Fill(prim, canvas);
+      else
+        primUpdateAttrib_Line(prim, canvas);
+      cdCanvasBegin(canvas, prim->param.polyf.mode);
+      for (p = 0; p < prim->param.polyf.n; p++)
+        cdfCanvasVertex(canvas, sfScaleX(prim->param.polyf.points[p].x), sfScaleY(prim->param.polyf.points[p].y));
+      cdCanvasEnd(canvas);
+      break;
+    case CDPIC_PATH:
+      if (prim->param.path.fill)
+        primUpdateAttrib_Fill(prim, canvas);
+      else
+        primUpdateAttrib_Line(prim, canvas);
+      cdCanvasBegin(canvas, CD_PATH);
+      n = 0;
+      for (p=0; p<prim->param.path.path_n; p++)
       {
-      case CDPIC_LINE:
-        primUpdateAttrib_Line(prim, canvas);
-        cdCanvasLine(canvas, sScaleX(prim->param.lineboxrect.x1), sScaleY(prim->param.lineboxrect.y1), sScaleX(prim->param.lineboxrect.x2), sScaleY(prim->param.lineboxrect.y2));
-        break;
-      case CDPIC_FLINE:
-        primUpdateAttrib_Line(prim, canvas);
-        cdfCanvasLine(canvas, sfScaleX(prim->param.lineboxrectf.x1), sfScaleY(prim->param.lineboxrectf.y1), sfScaleX(prim->param.lineboxrectf.x2), sfScaleY(prim->param.lineboxrectf.y2));
-        break;
-      case CDPIC_RECT:
-        primUpdateAttrib_Line(prim, canvas);
-        cdCanvasRect(canvas, sScaleX(prim->param.lineboxrect.x1), sScaleX(prim->param.lineboxrect.x2), sScaleY(prim->param.lineboxrect.y1), sScaleY(prim->param.lineboxrect.y2));
-        break;
-      case CDPIC_FRECT:
-        primUpdateAttrib_Line(prim, canvas);
-        cdfCanvasRect(canvas, sfScaleX(prim->param.lineboxrectf.x1), sfScaleX(prim->param.lineboxrectf.x2), sfScaleY(prim->param.lineboxrectf.y1), sfScaleY(prim->param.lineboxrectf.y2));
-        break;
-      case CDPIC_BOX:
-        primUpdateAttrib_Fill(prim, canvas);
-        cdCanvasBox(canvas, sScaleX(prim->param.lineboxrect.x1), sScaleX(prim->param.lineboxrect.x2), sScaleY(prim->param.lineboxrect.y1), sScaleY(prim->param.lineboxrect.y2));
-        break;
-      case CDPIC_FBOX:
-        primUpdateAttrib_Fill(prim, canvas);
-        cdfCanvasBox(canvas, sfScaleX(prim->param.lineboxrectf.x1), sfScaleX(prim->param.lineboxrectf.x2), sfScaleY(prim->param.lineboxrectf.y1), sfScaleY(prim->param.lineboxrectf.y2));
-        break;
-      case CDPIC_ARC:
-        primUpdateAttrib_Line(prim, canvas);
-        cdCanvasArc(canvas, sScaleX(prim->param.arcsectorchord.xc), sScaleY(prim->param.arcsectorchord.yc), sScaleW(prim->param.arcsectorchord.w), sScaleH(prim->param.arcsectorchord.h), prim->param.arcsectorchord.angle1, prim->param.arcsectorchord.angle2);
-        break;
-      case CDPIC_FARC:
-        primUpdateAttrib_Line(prim, canvas);
-        cdfCanvasArc(canvas, sfScaleX(prim->param.arcsectorchordf.xc), sfScaleY(prim->param.arcsectorchordf.yc), sfScaleW(prim->param.arcsectorchordf.w), sfScaleH(prim->param.arcsectorchordf.h), prim->param.arcsectorchord.angle1, prim->param.arcsectorchord.angle2);
-        break;
-      case CDPIC_SECTOR:
-        primUpdateAttrib_Fill(prim, canvas);
-        cdCanvasSector(canvas, sScaleX(prim->param.arcsectorchord.xc), sScaleY(prim->param.arcsectorchord.yc), sScaleW(prim->param.arcsectorchord.w), sScaleH(prim->param.arcsectorchord.h), prim->param.arcsectorchord.angle1, prim->param.arcsectorchord.angle2);
-        break;
-      case CDPIC_FSECTOR:
-        primUpdateAttrib_Fill(prim, canvas);
-        cdfCanvasSector(canvas, sfScaleX(prim->param.arcsectorchordf.xc), sfScaleY(prim->param.arcsectorchordf.yc), sfScaleW(prim->param.arcsectorchordf.w), sfScaleH(prim->param.arcsectorchordf.h), prim->param.arcsectorchord.angle1, prim->param.arcsectorchord.angle2);
-        break;
-      case CDPIC_CHORD:
-        primUpdateAttrib_Fill(prim, canvas);
-        cdCanvasChord(canvas, sScaleX(prim->param.arcsectorchord.xc), sScaleY(prim->param.arcsectorchord.yc), sScaleW(prim->param.arcsectorchord.w), sScaleH(prim->param.arcsectorchord.h), prim->param.arcsectorchord.angle1, prim->param.arcsectorchord.angle2);
-        break;
-      case CDPIC_FCHORD:
-        primUpdateAttrib_Fill(prim, canvas);
-        cdfCanvasChord(canvas, sfScaleX(prim->param.arcsectorchordf.xc), sfScaleY(prim->param.arcsectorchordf.yc), sfScaleW(prim->param.arcsectorchordf.w), sfScaleH(prim->param.arcsectorchordf.h), prim->param.arcsectorchord.angle1, prim->param.arcsectorchord.angle2);
-        break;
-      case CDPIC_TEXT:
-        primUpdateAttrib_Text(prim, canvas);
-        cdCanvasText(canvas, sScaleX(prim->param.text.x), sScaleY(prim->param.text.y), prim->param.text.s);
-        break;
-      case CDPIC_FTEXT:
-        primUpdateAttrib_Text(prim, canvas);
-        cdfCanvasText(canvas, sfScaleX(prim->param.textf.x), sfScaleY(prim->param.textf.y), prim->param.text.s);
-        break;
-      case CDPIC_POLY:
-        if (prim->param.poly.mode == CD_FILL)
-          primUpdateAttrib_Fill(prim, canvas);
-        else
-          primUpdateAttrib_Line(prim, canvas);
-        cdCanvasBegin(canvas, prim->param.poly.mode);
-        for (p = 0; p < prim->param.poly.n; p++)
-          cdCanvasVertex(canvas, sScaleX(prim->param.poly.points[p].x), sScaleY(prim->param.poly.points[p].y));
-        cdCanvasEnd(canvas);
-        break;
-      case CDPIC_FPOLY:
-        if (prim->param.poly.mode == CD_FILL)
-          primUpdateAttrib_Fill(prim, canvas);
-        else
-          primUpdateAttrib_Line(prim, canvas);
-        cdCanvasBegin(canvas, prim->param.polyf.mode);
-        for (p = 0; p < prim->param.polyf.n; p++)
-          cdfCanvasVertex(canvas, sfScaleX(prim->param.polyf.points[p].x), sfScaleY(prim->param.polyf.points[p].y));
-        cdCanvasEnd(canvas);
-        break;
-      case CDPIC_PATH:
-        if (prim->param.path.fill)
-          primUpdateAttrib_Fill(prim, canvas);
-        else
-          primUpdateAttrib_Line(prim, canvas);
-        cdCanvasBegin(canvas, CD_PATH);
-        n = 0;
-        for (p=0; p<prim->param.path.path_n; p++)
-        {
-          cdCanvasPathSet(canvas, prim->param.path.path[p]);
+        cdCanvasPathSet(canvas, prim->param.path.path[p]);
 
-          switch(prim->param.path.path[p])
+        switch(prim->param.path.path[p])
+        {
+        case CD_PATH_MOVETO:
+        case CD_PATH_LINETO:
+          if (n+1 > n) break;
+          cdCanvasVertex(canvas, sScaleX(prim->param.path.points[n].x), sScaleY(prim->param.path.points[n].y));
+          n++;
+          break;
+        case CD_PATH_CURVETO:
+        case CD_PATH_ARC:
           {
-          case CD_PATH_MOVETO:
-          case CD_PATH_LINETO:
-            if (n+1 > n) break;
+            if (n+3 > n) break;
             cdCanvasVertex(canvas, sScaleX(prim->param.path.points[n].x), sScaleY(prim->param.path.points[n].y));
-            n++;
-            break;
-          case CD_PATH_CURVETO:
-          case CD_PATH_ARC:
-            {
-              if (n+3 > n) break;
-              cdCanvasVertex(canvas, sScaleX(prim->param.path.points[n].x), sScaleY(prim->param.path.points[n].y));
-              cdCanvasVertex(canvas, sScaleX(prim->param.path.points[n+1].x), sScaleY(prim->param.path.points[n+1].y));
-              cdCanvasVertex(canvas, sScaleX(prim->param.path.points[n+2].x), sScaleY(prim->param.path.points[n+2].y));
-              n += 3;
-            }
-            break;
+            cdCanvasVertex(canvas, sScaleX(prim->param.path.points[n+1].x), sScaleY(prim->param.path.points[n+1].y));
+            cdCanvasVertex(canvas, sScaleX(prim->param.path.points[n+2].x), sScaleY(prim->param.path.points[n+2].y));
+            n += 3;
           }
+          break;
         }
-        cdCanvasEnd(canvas);
-        break;
-      case CDPIC_FPATH:
-        if (prim->param.path.fill)
-          primUpdateAttrib_Fill(prim, canvas);
-        else
-          primUpdateAttrib_Line(prim, canvas);
-        cdCanvasBegin(canvas, CD_PATH);
-        n = 0;
-        for (p=0; p<prim->param.pathf.path_n; p++)
-        {
-          cdCanvasPathSet(canvas, prim->param.pathf.path[p]);
-
-          switch(prim->param.pathf.path[p])
-          {
-          case CD_PATH_MOVETO:
-          case CD_PATH_LINETO:
-            if (n+1 > n) break;
-            cdfCanvasVertex(canvas, sfScaleX(prim->param.pathf.points[n].x), sfScaleY(prim->param.pathf.points[n].y));
-            n++;
-            break;
-          case CD_PATH_CURVETO:
-          case CD_PATH_ARC:
-            {
-              if (n+3 > n) break;
-              cdfCanvasVertex(canvas, sfScaleX(prim->param.pathf.points[n].x), sfScaleY(prim->param.pathf.points[n].y));
-              cdfCanvasVertex(canvas, sfScaleX(prim->param.pathf.points[n+1].x), sfScaleY(prim->param.pathf.points[n+1].y));
-              cdfCanvasVertex(canvas, sfScaleX(prim->param.pathf.points[n+2].x), sfScaleY(prim->param.pathf.points[n+2].y));
-              n += 3;
-            }
-            break;
-          }
-        }
-        cdCanvasEnd(canvas);
-        break;
-      case CDPIC_IMAGERGB:
-        cdCanvasPutImageRectRGB(canvas, prim->param.imagergba.iw, prim->param.imagergba.ih, prim->param.imagergba.r, prim->param.imagergba.g, prim->param.imagergba.b, sScaleX(prim->param.imagergba.x), sScaleY(prim->param.imagergba.y), sScaleW(prim->param.imagergba.w), sScaleH(prim->param.imagergba.h), 0, 0, 0, 0);
-        break;
-      case CDPIC_IMAGERGBA:
-        cdCanvasPutImageRectRGBA(canvas, prim->param.imagergba.iw, prim->param.imagergba.ih, prim->param.imagergba.r, prim->param.imagergba.g, prim->param.imagergba.b, prim->param.imagergba.a, sScaleX(prim->param.imagergba.x), sScaleY(prim->param.imagergba.y), sScaleW(prim->param.imagergba.w), sScaleH(prim->param.imagergba.h), 0, 0, 0, 0);
-        break;
-      case CDPIC_IMAGEMAP:
-        cdCanvasPutImageRectMap(canvas, prim->param.imagemap.iw, prim->param.imagemap.ih, prim->param.imagemap.index, prim->param.imagemap.colors, sScaleX(prim->param.imagemap.x), sScaleY(prim->param.imagemap.y), sScaleW(prim->param.imagemap.w), sScaleH(prim->param.imagemap.h), 0, 0, 0, 0);
-        break;
-      case CDPIC_PIXEL:
-        cdCanvasPixel(canvas, sScaleX(prim->param.pixel.x), sScaleY(prim->param.pixel.y), prim->param.pixel.color);
-        break;
       }
-    }
-    else
-    {
-      switch (prim->type)
+      cdCanvasEnd(canvas);
+      break;
+    case CDPIC_FPATH:
+      if (prim->param.path.fill)
+        primUpdateAttrib_Fill(prim, canvas);
+      else
+        primUpdateAttrib_Line(prim, canvas);
+      cdCanvasBegin(canvas, CD_PATH);
+      n = 0;
+      for (p=0; p<prim->param.pathf.path_n; p++)
       {
-      case CDPIC_LINE:
-        primUpdateAttrib_Line(prim, canvas);
-        cdCanvasLine(canvas, prim->param.lineboxrect.x1, prim->param.lineboxrect.y1, prim->param.lineboxrect.x2, prim->param.lineboxrect.y2);
-        break;
-      case CDPIC_FLINE:
-        primUpdateAttrib_Line(prim, canvas);
-        cdfCanvasLine(canvas, prim->param.lineboxrectf.x1, prim->param.lineboxrectf.y1, prim->param.lineboxrectf.x2, prim->param.lineboxrectf.y2);
-        break;
-      case CDPIC_RECT:
-        primUpdateAttrib_Line(prim, canvas);
-        cdCanvasRect(canvas, prim->param.lineboxrect.x1, prim->param.lineboxrect.x2, prim->param.lineboxrect.y1, prim->param.lineboxrect.y2);
-        break;
-      case CDPIC_FRECT:
-        primUpdateAttrib_Line(prim, canvas);
-        cdfCanvasRect(canvas, prim->param.lineboxrectf.x1, prim->param.lineboxrectf.x2, prim->param.lineboxrectf.y1, prim->param.lineboxrectf.y2);
-        break;
-      case CDPIC_BOX:
-        primUpdateAttrib_Fill(prim, canvas);
-        cdCanvasBox(canvas, prim->param.lineboxrect.x1, prim->param.lineboxrect.x2, prim->param.lineboxrect.y1, prim->param.lineboxrect.y2);
-        break;
-      case CDPIC_FBOX:
-        primUpdateAttrib_Fill(prim, canvas);
-        cdfCanvasBox(canvas, prim->param.lineboxrectf.x1, prim->param.lineboxrectf.x2, prim->param.lineboxrectf.y1, prim->param.lineboxrectf.y2);
-        break;
-      case CDPIC_ARC:
-        primUpdateAttrib_Line(prim, canvas);
-        cdCanvasArc(canvas, prim->param.arcsectorchord.xc, prim->param.arcsectorchord.yc, prim->param.arcsectorchord.w, prim->param.arcsectorchord.h, prim->param.arcsectorchord.angle1, prim->param.arcsectorchord.angle2);
-        break;
-      case CDPIC_FARC:
-        primUpdateAttrib_Line(prim, canvas);
-        cdfCanvasArc(canvas, prim->param.arcsectorchordf.xc, prim->param.arcsectorchordf.yc, prim->param.arcsectorchordf.w, prim->param.arcsectorchordf.h, prim->param.arcsectorchord.angle1, prim->param.arcsectorchord.angle2);
-        break;
-      case CDPIC_SECTOR:
-        primUpdateAttrib_Fill(prim, canvas);
-        cdCanvasSector(canvas, prim->param.arcsectorchord.xc, prim->param.arcsectorchord.yc, prim->param.arcsectorchord.w, prim->param.arcsectorchord.h, prim->param.arcsectorchord.angle1, prim->param.arcsectorchord.angle2);
-        break;
-      case CDPIC_FSECTOR:
-        primUpdateAttrib_Fill(prim, canvas);
-        cdfCanvasSector(canvas, prim->param.arcsectorchordf.xc, prim->param.arcsectorchordf.yc, prim->param.arcsectorchordf.w, prim->param.arcsectorchordf.h, prim->param.arcsectorchord.angle1, prim->param.arcsectorchord.angle2);
-        break;
-      case CDPIC_CHORD:
-        primUpdateAttrib_Fill(prim, canvas);
-        cdCanvasChord(canvas, prim->param.arcsectorchord.xc, prim->param.arcsectorchord.yc, prim->param.arcsectorchord.w, prim->param.arcsectorchord.h, prim->param.arcsectorchord.angle1, prim->param.arcsectorchord.angle2);
-        break;
-      case CDPIC_FCHORD:
-        primUpdateAttrib_Fill(prim, canvas);
-        cdfCanvasChord(canvas, prim->param.arcsectorchordf.xc, prim->param.arcsectorchordf.yc, prim->param.arcsectorchordf.w, prim->param.arcsectorchordf.h, prim->param.arcsectorchord.angle1, prim->param.arcsectorchord.angle2);
-        break;
-      case CDPIC_TEXT:
-        primUpdateAttrib_Text(prim, canvas);
-        cdCanvasText(canvas, prim->param.text.x, prim->param.text.y, prim->param.text.s);
-        break;
-      case CDPIC_FTEXT:
-        primUpdateAttrib_Text(prim, canvas);
-        cdfCanvasText(canvas, prim->param.textf.x, prim->param.textf.y, prim->param.text.s);
-        break;
-      case CDPIC_POLY:
-        if (prim->param.poly.mode == CD_FILL)
-          primUpdateAttrib_Fill(prim, canvas);
-        else
-          primUpdateAttrib_Line(prim, canvas);
-        cdCanvasBegin(canvas, prim->param.poly.mode);
-        for (p = 0; p < prim->param.poly.n; p++)
-          cdCanvasVertex(canvas, prim->param.poly.points[p].x, prim->param.poly.points[p].y);
-        cdCanvasEnd(canvas);
-        break;
-      case CDPIC_FPOLY:
-        if (prim->param.poly.mode == CD_FILL)
-          primUpdateAttrib_Fill(prim, canvas);
-        else
-          primUpdateAttrib_Line(prim, canvas);
-        cdCanvasBegin(canvas, prim->param.polyf.mode);
-        for (p = 0; p < prim->param.polyf.n; p++)
-          cdfCanvasVertex(canvas, prim->param.polyf.points[p].x, prim->param.polyf.points[p].y);
-        cdCanvasEnd(canvas);
-        break;
-      case CDPIC_PATH:
-        if (prim->param.path.fill)
-          primUpdateAttrib_Fill(prim, canvas);
-        else
-          primUpdateAttrib_Line(prim, canvas);
-        cdCanvasBegin(canvas, CD_PATH);
-        n = 0;
-        for (p=0; p<prim->param.path.path_n; p++)
-        {
-          cdCanvasPathSet(canvas, prim->param.path.path[p]);
+        cdCanvasPathSet(canvas, prim->param.pathf.path[p]);
 
-          switch(prim->param.path.path[p])
-          {
-          case CD_PATH_MOVETO:
-          case CD_PATH_LINETO:
-            if (n+1 > n) break;
-            cdCanvasVertex(canvas, prim->param.path.points[n].x, prim->param.path.points[n].y);
-            n++;
-            break;
-          case CD_PATH_CURVETO:
-          case CD_PATH_ARC:
-            {
-              if (n+3 > n) break;
-              cdCanvasVertex(canvas, prim->param.path.points[n].x,   prim->param.path.points[n].y);
-              cdCanvasVertex(canvas, prim->param.path.points[n+1].x, prim->param.path.points[n+1].y);
-              cdCanvasVertex(canvas, prim->param.path.points[n+2].x, prim->param.path.points[n+2].y);
-              n += 3;
-            }
-            break;
-          }
-        }
-        cdCanvasEnd(canvas);
-        break;
-      case CDPIC_FPATH:
-        if (prim->param.path.fill)
-          primUpdateAttrib_Fill(prim, canvas);
-        else
-          primUpdateAttrib_Line(prim, canvas);
-        cdCanvasBegin(canvas, CD_PATH);
-        n = 0;
-        for (p=0; p<prim->param.pathf.path_n; p++)
+        switch(prim->param.pathf.path[p])
         {
-          cdCanvasPathSet(canvas, prim->param.pathf.path[p]);
-
-          switch(prim->param.pathf.path[p])
+        case CD_PATH_MOVETO:
+        case CD_PATH_LINETO:
+          if (n+1 > n) break;
+          cdfCanvasVertex(canvas, sfScaleX(prim->param.pathf.points[n].x), sfScaleY(prim->param.pathf.points[n].y));
+          n++;
+          break;
+        case CD_PATH_CURVETO:
+        case CD_PATH_ARC:
           {
-          case CD_PATH_MOVETO:
-          case CD_PATH_LINETO:
-            if (n+1 > n) break;
-            cdfCanvasVertex(canvas, prim->param.pathf.points[n].x, prim->param.pathf.points[n].y);
-            n++;
-            break;
-          case CD_PATH_CURVETO:
-          case CD_PATH_ARC:
-            {
-              if (n+3 > n) break;
-              cdfCanvasVertex(canvas, prim->param.pathf.points[n].x,   prim->param.pathf.points[n].y);
-              cdfCanvasVertex(canvas, prim->param.pathf.points[n+1].x, prim->param.pathf.points[n+1].y);
-              cdfCanvasVertex(canvas, prim->param.pathf.points[n+2].x, prim->param.pathf.points[n+2].y);
-              n += 3;
-            }
-            break;
+            if (n+3 > n) break;
+            cdfCanvasVertex(canvas, sfScaleX(prim->param.pathf.points[n].x), sfScaleY(prim->param.pathf.points[n].y));
+            cdfCanvasVertex(canvas, sfScaleX(prim->param.pathf.points[n+1].x), sfScaleY(prim->param.pathf.points[n+1].y));
+            cdfCanvasVertex(canvas, sfScaleX(prim->param.pathf.points[n+2].x), sfScaleY(prim->param.pathf.points[n+2].y));
+            n += 3;
           }
+          break;
         }
-        cdCanvasEnd(canvas);
-        break;
-      case CDPIC_IMAGERGB:
-        cdCanvasPutImageRectRGB(canvas, prim->param.imagergba.iw, prim->param.imagergba.ih, prim->param.imagergba.r, prim->param.imagergba.g, prim->param.imagergba.b, prim->param.imagergba.x, prim->param.imagergba.y, prim->param.imagergba.w, prim->param.imagergba.h, 0, 0, 0, 0);
-        break;
-      case CDPIC_IMAGERGBA:
-        cdCanvasPutImageRectRGBA(canvas, prim->param.imagergba.iw, prim->param.imagergba.ih, prim->param.imagergba.r, prim->param.imagergba.g, prim->param.imagergba.b, prim->param.imagergba.a, prim->param.imagergba.x, prim->param.imagergba.y, prim->param.imagergba.w, prim->param.imagergba.h, 0, 0, 0, 0);
-        break;
-      case CDPIC_IMAGEMAP:
-        cdCanvasPutImageRectMap(canvas, prim->param.imagemap.iw, prim->param.imagemap.ih, prim->param.imagemap.index, prim->param.imagemap.colors, prim->param.imagemap.x, prim->param.imagemap.y, prim->param.imagemap.w, prim->param.imagemap.h, 0, 0, 0, 0);
-        break;
-      case CDPIC_PIXEL:
-        cdCanvasPixel(canvas, prim->param.pixel.x, prim->param.pixel.y, prim->param.pixel.color);
-        break;
       }
+      cdCanvasEnd(canvas);
+      break;
+    case CDPIC_IMAGERGB:
+      cdCanvasPutImageRectRGB(canvas, prim->param.imagergba.iw, prim->param.imagergba.ih, prim->param.imagergba.r, prim->param.imagergba.g, prim->param.imagergba.b, sScaleX(prim->param.imagergba.x), sScaleY(prim->param.imagergba.y), sScaleW(prim->param.imagergba.w), sScaleH(prim->param.imagergba.h), 0, 0, 0, 0);
+      break;
+    case CDPIC_IMAGERGBA:
+      cdCanvasPutImageRectRGBA(canvas, prim->param.imagergba.iw, prim->param.imagergba.ih, prim->param.imagergba.r, prim->param.imagergba.g, prim->param.imagergba.b, prim->param.imagergba.a, sScaleX(prim->param.imagergba.x), sScaleY(prim->param.imagergba.y), sScaleW(prim->param.imagergba.w), sScaleH(prim->param.imagergba.h), 0, 0, 0, 0);
+      break;
+    case CDPIC_IMAGEMAP:
+      cdCanvasPutImageRectMap(canvas, prim->param.imagemap.iw, prim->param.imagemap.ih, prim->param.imagemap.index, prim->param.imagemap.colors, sScaleX(prim->param.imagemap.x), sScaleY(prim->param.imagemap.y), sScaleW(prim->param.imagemap.w), sScaleH(prim->param.imagemap.h), 0, 0, 0, 0);
+      break;
+    case CDPIC_PIXEL:
+      cdCanvasPixel(canvas, sScaleX(prim->param.pixel.x), sScaleY(prim->param.pixel.y), prim->param.pixel.color);
+      break;
     }
 
     prim = prim->next;

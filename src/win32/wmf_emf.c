@@ -21,9 +21,7 @@
 #define PS_JOIN_MASK        0x0000F000
 #endif
 
-/*
-%F Definicao do header do APM. Ver comentario no final deste arquivo.
-*/
+/* Definicao do header do APM. Ver comentario no final deste arquivo. */
 typedef struct _APMFILEHEADER
 {
   WORD  key1,
@@ -39,69 +37,52 @@ typedef struct _APMFILEHEADER
 
 /* coordinates convertion */
 
-static double wmf_xfactor = 1;
-static double wmf_yfactor = -1;   /* negative because top-down orientation */
-static int wmf_xmin = 0;
-static int wmf_ymin = 0;
-static int wmf_left = 0;
-static int wmf_bottom = 0;  /* bottom and right are not included */
-static int wmf_top = 0;
-static int wmf_right = 0;
+typedef struct {
+  double factorX;
+  double factorY;   /* negative because top-down orientation */
+  int xmin;
+  int ymin;
+  int scale;
 
-static int sScaleX(int x)
-{
-  return cdRound((x - wmf_left) * wmf_xfactor + wmf_xmin);
+  int left;
+  int bottom;  /* bottom and right are not included (different from Windows definition) */
+  int top;
+  int right;
+
+  cdCanvas* canvas;
+} cdDataEMF;
+
+#define sMin1(_v) (_v <= 1? 1: _v)
+
+#define sScaleX(_x) (data_emf->scale? cdRound(((_x) - data_emf->left) * data_emf->factorX + data_emf->xmin): (_x))
+#define sScaleY(_y) (data_emf->scale? cdRound(((_y) - (data_emf->bottom-1)) * data_emf->factorY + data_emf->ymin): (data_emf->bottom-1 - (_y)))  /* negative because of top-down orientation */
+#define sScaleW(_w) sMin1(data_emf->scale? cdRound((_w) * data_emf->factorX): (_w))
+#define sScaleH(_h) sMin1(data_emf->scale? cdRound((_h) * fabs(data_emf->factorY)): (_h))
+
+
+#define sCalcSizeX(_x)          \
+{                               \
+  if ((_x) < data_emf->left)          \
+    data_emf->left = (_x);            \
+  else if ((_x)+1 > data_emf->right)  \
+    data_emf->right = (_x)+1;         \
 }
 
-static int sScaleY(int y)
-{
-  return cdRound((y - (wmf_bottom-1)) * wmf_yfactor + wmf_ymin);
-}
-
-static int sScaleW(int w)
-{
-  int s = (int)(w * fabs(wmf_xfactor) + 0.5);
-  return s > 0? s: 1;
-}
-
-static int sScaleH(int h)
-{
-  int s = (int)(h * fabs(wmf_yfactor) + 0.5);
-  return s > 0? s: 1;
-}
-
-static void sCalcSizeX(int x)
-{
-  if (x < wmf_left)
-  {
-    wmf_left = x;
-    return;
-  }
-
-  if (x+1 > wmf_right)
-  {
-    wmf_right = x+1;
-    return;
-  }
-}
-
-static void sCalcSizeY(int y)
-{
-  if (y < wmf_top)
-  {
-    wmf_top = y;
-    return;
-  }
-
-  if (y+1 > wmf_bottom)
-  {
-    wmf_bottom = y+1;
-    return;
-  }
+#define sCalcSizeY(_y)          \
+{                               \
+  if ((_y) < data_emf->top)           \
+    data_emf->top = (_y);             \
+  else if ((_y)+1 > data_emf->bottom) \
+    data_emf->bottom = (_y)+1;        \
 }
 
 static int CALLBACK CalcSizeEMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETARECORD *lpEMFR, int nObj, LPARAM  lpData)
 {
+  cdDataEMF* data_emf = (cdDataEMF*)lpData;
+  (void)hDC;
+  (void)lpHTable;
+  (void)nObj;
+
   switch (lpEMFR->iType)
   {
   case EMR_POLYGON:
@@ -505,7 +486,12 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
 {
   static int curx = 0, cury = 0;
   static int upd_xy = 0;
-  cdCanvas* canvas = (cdCanvas*)lpData;
+  cdDataEMF* data_emf = (cdDataEMF*)lpData;
+  cdCanvas* canvas = data_emf->canvas;
+
+  (void)hDC;
+  (void)lpHTable;
+  (void)nObj;
   
   switch (lpEMFR->iType)
   {
@@ -759,7 +745,7 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       if (style != -1)
       {
         cdCanvasLineStyle(canvas, style);
-        cdCanvasLineWidth(canvas, sScaleW(data->lopn.lopnWidth.x == 0? 1: data->lopn.lopnWidth.x));
+        cdCanvasLineWidth(canvas, sMin1(data->lopn.lopnWidth.x));
         cdCanvasSetForeground(canvas, cdEncodeColor(GetRValue(data->lopn.lopnColor),GetGValue(data->lopn.lopnColor),GetBValue(data->lopn.lopnColor)));
       }
       break;
@@ -827,7 +813,7 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
         }
 
         cdCanvasLineStyle(canvas, style);
-        cdCanvasLineWidth(canvas, sScaleW(data->elp.elpWidth == 0? 1: data->elp.elpWidth));
+        cdCanvasLineWidth(canvas, sMin1(data->elp.elpWidth));
         cdCanvasSetForeground(canvas, cdEncodeColor(GetRValue(data->elp.elpColor),GetGValue(data->elp.elpColor),GetBValue(data->elp.elpColor)));
       }
       break;
@@ -1732,58 +1718,55 @@ Read the metafile bits, metafile header and placeable
 metafile header of a placeable metafile.
 ************************************************************************/
 
-static HANDLE GetPlaceableMetaFile(int fh)
+static HANDLE GetPlaceableMetaFile(FILE* file)
 {
   HANDLE hMF;
   HANDLE   hMem;
-  LPSTR    lpMem;
+  BYTE*    lpMem;
   int	   wBytesRead;
   APMFILEHEADER aldusMFHeader;
   METAHEADER mfHeader;
   
   /* seek to beginning of file and read aldus header */
-  lseek(fh, 0, 0);
+  fseek(file, 0, SEEK_SET);
   
   /* read the placeable header */
-  wBytesRead = read(fh, (LPSTR)&aldusMFHeader, sizeof(APMFILEHEADER));
-  
-  /* if there is an error, return */
-  if(wBytesRead == -1 || wBytesRead < sizeof(APMFILEHEADER))	
+  wBytesRead = fread((void*)&aldusMFHeader, sizeof(APMFILEHEADER), 1, file);
+  if(wBytesRead == 0)	
     return NULL;
   
   /* read the metafile header */
-  wBytesRead = read(fh, (LPSTR)&mfHeader, sizeof(METAHEADER));
-  
-  /* if there is an error return */
-  if( wBytesRead == -1 || wBytesRead < sizeof(METAHEADER) )  
+  wBytesRead = fread((void*)&mfHeader, sizeof(METAHEADER), 1, file);
+  if( wBytesRead == 0)  
     return NULL;
   
   /* allocate memory for the metafile bits */
-  if (!(hMem = GlobalAlloc(GHND, mfHeader.mtSize * 2L)))  
+  hMem = GlobalAlloc(GHND, mfHeader.mtSize * 2L);
+  if (!hMem)  
     return NULL;
   
   /* lock the memory */
-  if (!(lpMem = GlobalLock(hMem)))
+  lpMem = GlobalLock(hMem);
+  if (!lpMem)
   {
     GlobalFree(hMem);
     return NULL;
   }
   
   /* seek to the metafile bits */
-  lseek(fh, sizeof(APMFILEHEADER), 0);
+  fseek(file, sizeof(APMFILEHEADER), SEEK_SET);
   
   /* read metafile bits */
-  wBytesRead = read(fh, lpMem, (WORD)(mfHeader.mtSize * 2L));
-  
-  /* if there was an error */
-  if( wBytesRead == -1 )  
+  wBytesRead = fread((void*)lpMem, (WORD)(mfHeader.mtSize * 2L), 1, file);
+  if (wBytesRead == 0)  
   {
     GlobalUnlock(hMem);
     GlobalFree(hMem);
     return NULL;
   }
   
-  if (!(hMF = SetMetaFileBitsEx(mfHeader.mtSize * 2L, lpMem)))
+  hMF = SetMetaFileBitsEx(mfHeader.mtSize * 2L, lpMem);
+  if (!hMF)
     return NULL;
   
   GlobalUnlock(hMem);
@@ -1800,27 +1783,26 @@ Interpreta os dados do WMF.
 int cdplayWMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *data)
 {
   char* filename = (char*)data;
-  int		 fh;
+  FILE* file;
   int		 wBytesRead;
   DWORD  dwIsAldus;
   HANDLE hMF;
   HENHMETAFILE hEMF;
   ENHMETAHEADER emh;
   BYTE* buffer;
-  int size;
+  int size, w, h;
+  cdDataEMF data_emf;
+  double xres, yres;
   
-  /* try to open the file. */
-  fh = open(filename, O_BINARY | O_RDONLY);
-  
-  /* if opened failed */
-  if (fh == -1)  
+  file = fopen(filename, "rb");
+  if (!file)  
     return CD_ERROR;
   
   /* read the first dword of the file to see if it is a placeable wmf */
-  wBytesRead = read(fh,(LPSTR)&dwIsAldus, sizeof(dwIsAldus));
-  if (wBytesRead == -1 || wBytesRead < sizeof(dwIsAldus))  
+  wBytesRead = fread((void*)&dwIsAldus, sizeof(dwIsAldus), 1, file);
+  if (wBytesRead == 0)  
   {
-    close(fh);
+    fclose(file);
     return CD_ERROR;
   }
   
@@ -1830,16 +1812,16 @@ int cdplayWMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
     METAHEADER mfHeader;
     
     /* seek to the beginning of the file */
-    lseek(fh, 0, 0);
+    fseek(file, 0, SEEK_SET);
     
     /* read the wmf header */
-    wBytesRead = read(fh, (LPSTR)&mfHeader, sizeof(METAHEADER));
+    wBytesRead = fread((void*)&mfHeader, sizeof(METAHEADER), 1, file);
     
     /* done with file so close it */
-    close(fh);
+    fclose(file);
     
     /* if read failed */
-    if (wBytesRead == -1 || wBytesRead < sizeof(METAHEADER))  
+    if (wBytesRead == 0)  
       return CD_ERROR;
     
     hMF = GetMetaFile(filename);
@@ -1848,10 +1830,10 @@ int cdplayWMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
   {
   /* convert the placeable format into something that can
     be used with GDI metafile functions */
-    hMF = GetPlaceableMetaFile(fh);
+    hMF = GetPlaceableMetaFile(file);
     
     /* close the file */
-    close(fh);
+    fclose(file);
   }
   
   if (!hMF) 
@@ -1862,57 +1844,63 @@ int cdplayWMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
   buffer = malloc(size);
   
   GetMetaFileBitsEx(hMF, size, buffer);
+  DeleteMetaFile (hMF); hMF = NULL;
   
   hEMF = SetWinMetaFileBits(size, buffer, NULL, NULL);
+  free(buffer); buffer = NULL;
+
+  if (!hEMF)
+    return CD_ERROR;
   
   GetEnhMetaFileHeader(hEMF, sizeof(ENHMETAHEADER), &emh);
+
+  xres = ((double)emh.szlDevice.cx) / emh.szlMillimeters.cx;
+  yres = ((double)emh.szlDevice.cy) / emh.szlMillimeters.cy;
+  if (xres<=0) xres=1;
+  if (yres<=0) yres=1;
   
   /* when converted from WMF, only rclBounds is available */
-  wmf_bottom = emh.rclBounds.bottom;
-  wmf_left   = emh.rclBounds.left;
-  wmf_top    = emh.rclBounds.top;
-  wmf_right  = emh.rclBounds.right;
-  
-  if ((xmax-xmin+1)>1 && (ymax-ymin+1)>1) /* always update wmf_rect when scaling */
-    EnumEnhMetaFile(NULL, hEMF, CalcSizeEMFEnumProc, NULL, NULL);
+  data_emf.bottom = emh.rclBounds.bottom;
+  data_emf.left   = emh.rclBounds.left;
+  data_emf.top    = emh.rclBounds.top;
+  data_emf.right  = emh.rclBounds.right;
 
-  if ((wmf_bottom-wmf_top)>1 && 
-      (wmf_right-wmf_left)>1 && 
+  data_emf.canvas = canvas;
+  
+  if ((xmax-xmin+1)>1 && (ymax-ymin+1)>1) /* always update data_emf.rect when scaling */
+    EnumEnhMetaFile(NULL, hEMF, CalcSizeEMFEnumProc, &data_emf, NULL);
+
+  w = data_emf.right-data_emf.left;
+  h = data_emf.bottom-data_emf.top;
+
+  if (w>1 && 
+      h>1 && 
       (xmax-xmin+1)>1 && 
       (ymax-ymin+1)>1)
   {
-    wmf_yfactor = ((double)(ymax-ymin+1)) / (double)(wmf_top-wmf_bottom);   /* negative because top-down orientation */
-    wmf_xfactor = ((double)(xmax-xmin+1)) / (double)(wmf_right-wmf_left);
-    wmf_xmin = xmin;
-    wmf_ymin = ymin;
+    data_emf.factorY = ((double)(ymax-ymin+1)) / (double)(h);   /* negative because top-down orientation */
+    data_emf.factorX = ((double)(xmax-xmin+1)) / (double)(w);
+    data_emf.xmin = xmin;
+    data_emf.ymin = ymin;
+    data_emf.scale = 1;
   }
   else
-  {
-    wmf_yfactor = -1;   /* negative because top-down orientation */
-    wmf_xfactor = 1;
-    wmf_xmin = 0;
-    wmf_ymin = 0;
-  }
-  
-  free(buffer);
+    data_emf.scale = 0;
   
   if (cdsizecbWMF && dwIsAldus == ALDUSKEY)
   {
     int err;
-    err = cdsizecbWMF(canvas, wmf_right-wmf_left, wmf_bottom-wmf_top, 0, 0);
+    err = cdsizecbWMF(canvas, w, h, 0, 0);
     if (err)
     {
-      DeleteEnhMetaFile (hEMF);
+      DeleteEnhMetaFile(hEMF);
       return CD_ERROR;
     }
   }
   
-  EnumEnhMetaFile(NULL, hEMF, EMFEnumProc, canvas, NULL);
+  EnumEnhMetaFile(NULL, hEMF, EMFEnumProc, &data_emf, NULL);
   
-  DeleteEnhMetaFile (hEMF);
-  
-  DeleteMetaFile (hMF);
-  
+  DeleteEnhMetaFile(hEMF);
   return CD_OK;
 }
 
@@ -1938,46 +1926,53 @@ int cdplayEMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
   HENHMETAFILE hEMF;
   ENHMETAHEADER emh;
   double xres, yres;
+  cdDataEMF data_emf;
+  int w, h;
   
   hEMF = GetEnhMetaFile(filename);
+  if (!hEMF)
+    return CD_ERROR;
   
   GetEnhMetaFileHeader(hEMF, sizeof(ENHMETAHEADER), &emh);
 
   /* this is obtained from the hdcRef of CreateEnhMetaFile */
   xres = ((double)emh.szlDevice.cx) / emh.szlMillimeters.cx;
   yres = ((double)emh.szlDevice.cy) / emh.szlMillimeters.cy;
+  if (xres<=0) xres=1;
+  if (yres<=0) yres=1;
   
   /* this is the same as used in RECT of CreateEnhMetaFile */
-  wmf_bottom = (int)((emh.rclFrame.bottom * yres) / 100);
-  wmf_left   = (int)((emh.rclFrame.left * xres) / 100);
-  wmf_top    = (int)((emh.rclFrame.top * yres) / 100);
-  wmf_right  = (int)((emh.rclFrame.right * xres) / 100);
+  data_emf.bottom = (int)((emh.rclFrame.bottom * yres) / 100);
+  data_emf.left   = (int)((emh.rclFrame.left * xres) / 100);
+  data_emf.top    = (int)((emh.rclFrame.top * yres) / 100);
+  data_emf.right  = (int)((emh.rclFrame.right * xres) / 100);
 
-  if ((xmax-xmin+1)>1 && (ymax-ymin+1)>1) /* always update wmf_rect when scaling */
-    EnumEnhMetaFile(NULL, hEMF, CalcSizeEMFEnumProc, NULL, NULL);
+  data_emf.canvas = canvas;
 
-  if ((wmf_bottom-wmf_top)>1 && 
-      (wmf_right-wmf_left)>1 && 
+  if ((xmax-xmin+1)>1 && (ymax-ymin+1)>1) /* always update data_emf.rect when scaling */
+    EnumEnhMetaFile(NULL, hEMF, CalcSizeEMFEnumProc, &data_emf, NULL);
+
+  w = data_emf.right-data_emf.left;
+  h = data_emf.bottom-data_emf.top;
+
+  if (w>1 && 
+      h>1 && 
       (xmax-xmin+1)>1 && 
       (ymax-ymin+1)>1)
   {
-    wmf_yfactor = ((double)(ymax-ymin+1)) / (double)(wmf_top-wmf_bottom);   /* negative because top-down orientation */
-    wmf_xfactor = ((double)(xmax-xmin+1)) / (double)(wmf_right-wmf_left);
-    wmf_xmin = xmin;
-    wmf_ymin = ymin;
+    data_emf.factorY = ((double)(ymax-ymin+1)) / (double)(h);   /* negative because top-down orientation */
+    data_emf.factorX = ((double)(xmax-xmin+1)) / (double)(w);
+    data_emf.xmin = xmin;
+    data_emf.ymin = ymin;
+    data_emf.scale = 1;
   }
   else
-  {
-    wmf_yfactor = -1;   /* negative because top-down orientation */
-    wmf_xfactor = 1;
-    wmf_xmin = 0;
-    wmf_ymin = 0;
-  }
+    data_emf.scale = 0;
   
   if (cdsizecbEMF)
   {
     int err;
-    err = cdsizecbEMF(canvas, wmf_right-wmf_left, wmf_bottom-wmf_top, 0, 0);
+    err = cdsizecbEMF(canvas, w, h, w/xres, h/yres);
     if (err)
     {
       DeleteEnhMetaFile (hEMF);
@@ -1985,7 +1980,7 @@ int cdplayEMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
     }
   }
   
-  EnumEnhMetaFile(NULL, hEMF, EMFEnumProc, canvas, NULL);
+  EnumEnhMetaFile(NULL, hEMF, EMFEnumProc, &data_emf, NULL);
   
   DeleteEnhMetaFile (hEMF);
   
@@ -2060,11 +2055,14 @@ Aldus placeable metafile format
 */
 void wmfMakePlaceableMetafile(HMETAFILE hmf, const char* filename, int w, int h)
 {
-  int fh, nSize;
+  FILE* file;
+  int nSize;
   LPSTR lpData;
   APMFILEHEADER APMHeader;
-  
-  fh = open(filename, O_CREAT | O_BINARY | O_WRONLY);
+
+  file = fopen(filename, "wb");
+  if (!file)
+    return;
   
   APMHeader.key1 = 0xCDD7;
   APMHeader.key2 = 0x9AC6;
@@ -2078,16 +2076,16 @@ void wmfMakePlaceableMetafile(HMETAFILE hmf, const char* filename, int w, int h)
   APMHeader.reserved2 = 0;
   APMHeader.checksum = sAPMChecksum(&APMHeader);
   
-  write(fh, (LPSTR)&APMHeader, sizeof(APMFILEHEADER));
+  fwrite((void*)&APMHeader, sizeof(APMFILEHEADER), 1, file);
   
   nSize = GetMetaFileBitsEx(hmf, 0, NULL);
   lpData = malloc(nSize);
   GetMetaFileBitsEx(hmf, nSize, lpData);
   
-  write(fh, lpData, nSize);
+  fwrite(lpData, nSize, 1, file);
   free(lpData);
   
-  close(fh);
+  fclose(file);
 }
 
 void wmfWritePlacebleFile(HANDLE hFile, unsigned char* buffer, DWORD dwSize, LONG mm, LONG xExt, LONG yExt)

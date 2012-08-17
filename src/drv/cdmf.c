@@ -605,62 +605,18 @@ static void cdscrollarea(cdCtxCanvas *ctxcanvas, int xmin,int xmax, int ymin,int
 /* cdPlay */
 /**********/
 
+#define sMin1(_v) (_v <= 1? 1: _v)
 
-static double factorX = 1;
-static double factorY = 1;
-static int offsetX = 0;
-static int offsetY = 0;
-static double factorS = 1;
+#define sScaleX(_x) (scale? cdRound((_x) * factorX + xmin): (_x))
+#define sScaleY(_y) (scale? cdRound((_y) * factorY + ymin): (_y))
+#define sScaleW(_w) sMin1(scale? cdRound((_w) * factorX): (_w))
+#define sScaleH(_h) sMin1(scale? cdRound((_h) * factorY): (_h))
 
-static int sScaleX(int x)
-{
-  return cdRound(x * factorX + offsetX);
-}
+#define sfScaleX(_x) (scale? (_x) * factorX + xmin: (_x))
+#define sfScaleY(_y) (scale? (_y) * factorY + ymin: (_y))
+#define sfScaleW(_w) (scale? (_w) * factorX: (_w))
+#define sfScaleH(_h) (scale? (_h) * factorY: (_h))
 
-static int sScaleY(int y)
-{
-  return cdRound(y * factorY + offsetY);
-}
-
-static double sfScaleX(double x)
-{
-  return x * factorX + offsetX;
-}
-
-static double sfScaleY(double y)
-{
-  return y * factorY + offsetY;
-}
-
-static int sScaleW(int w)
-{
-  w = (int)(w * factorX + 0.5);  /* always positive */
-  return w == 0? 1: w;
-}
-
-static double sfScaleH(double h)
-{
-  h = h * factorY;
-  return h == 0? 1: h;
-}
-
-static double sfScaleW(double w)
-{
-  w = w * factorX;  /* always positive */
-  return w == 0? 1: w;
-}
-
-static int sScaleH(int h)
-{
-  h = (int)(h * factorY + 0.5);
-  return h == 0? 1: h;
-}
-
-static int sScaleS(int s)
-{
-  s = (int)(s * factorS + 0.5);
-  return s == 0? 1: s;
-}
 
 typedef int(*_cdsizecb)(cdCanvas* canvas, int w, int h, double w_mm, double h_mm);
 static _cdsizecb cdsizecb = NULL;
@@ -683,12 +639,12 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
   FILE* file;
   char TextBuffer[512];
   int iparam1, iparam2, iparam3, iparam4, iparam5, iparam6, iparam7, iparam8, iparam9, iparam10;
-  int c, t, n, w, h, func;
+  int c, t, n, w, h, func, scale = 0;
   double dparam1, dparam2, dparam3, dparam4, dparam5, dparam6;
   unsigned char* stipple, * _stipple, *red, *green, *blue, *_red, *_green, *_blue, *index, *_index, *_alpha, *alpha;
   long int *pattern, *palette, *_pattern, *_palette, *colors, *_colors;
   int* dashes;
-  double matrix[6];
+  double matrix[6], factorX, factorY;
   const char * font_family[] = 
   {
     "System",       /* CD_SYSTEM */
@@ -707,9 +663,6 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
 
   factorX = 1;
   factorY = 1;
-  offsetX = 0;
-  offsetY = 0;
-  factorS = 1;
 
   fscanf(file, "%s %d %d", TextBuffer, &w, &h);
 
@@ -719,17 +672,14 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
     return CD_ERROR;
   }
 
-  if (w>1 && h>1 && xmax!=0 && ymax!=0)
+  if (w>1 && 
+      h>1 && 
+      (xmax-xmin+1)>1 && 
+      (ymax-ymin+1)>1)
   {
-    offsetX = xmin;
-    offsetY = ymin;
-    factorX = ((double)(xmax-xmin)) / (w-1);
-    factorY = ((double)(ymax-ymin)) / (h-1);
-
-    if (factorX < factorY)
-      factorS = factorX;
-    else
-      factorS = factorY;
+    scale = 1;
+    factorX = ((double)(xmax-xmin+1)) / ((double)w);
+    factorY = ((double)(ymax-ymin+1)) / ((double)h);
   }
 
   if (cdsizecb)
@@ -902,7 +852,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
       break;
     case CDMF_LINEWIDTH:
       fscanf(file, "%d", &iparam1);
-      cdCanvasLineWidth(canvas, sScaleS(iparam1));
+      cdCanvasLineWidth(canvas, sMin1(iparam1));
       break;
     case CDMF_LINECAP:
       fscanf(file, "%d", &iparam1);
@@ -1005,7 +955,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
       break;
     case CDMF_MARKSIZE:
       fscanf(file, "%d", &iparam1);
-      cdCanvasMarkSize(canvas, sScaleS(iparam1));
+      cdCanvasMarkSize(canvas, sScaleW(iparam1));
       break;
     case CDMF_PALETTE:
       fscanf(file, "%d %d", &iparam1, &iparam2);

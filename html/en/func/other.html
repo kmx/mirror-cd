@@ -62,6 +62,7 @@ canvas:Play(ctx, xmin, xmax, ymin, ymax: number, data: string) -&gt; (status: nu
   limits. If <font>limits are 0 (xmin</font>, <font>xmax</font>,
   <font>ymin</font> and <font>ymax)</font> the primitives will be drawn with their coordinates having the original 
   values in the file. </p>
+	<p>Returns CD_OK or CD_ERROR.</p>
 
   <p>Only some drivers implement this function:</p>
 
@@ -110,8 +111,9 @@ cd.ContextRegisterCallback(ctx, cb: number, func: function) -&gt; (status: numbe
 <p>It returns the size of the image in the 
   file before any function in the CD library is called, so that you can call the&nbsp;
   <font>cdPlay</font> function without an active canvas and 
-  create the canvas inside the callback. It works as a&nbsp; <b>
-  <font>cdCanvasGetSize</font></b> function.</p>
+  create the canvas inside the callback. Ita values are the same as returned by 
+the&nbsp; <b>
+  <font><a href="coordinates.html#cdGetCanvasSize">cdCanvasGetSize</a></font></b> function.</p>
 
 </div>
 </body>
