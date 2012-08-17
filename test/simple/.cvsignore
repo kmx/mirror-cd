@@ -5,7 +5,7 @@
 *.ps
 *.wmf
 *.pdf
-simple_debug.txt
+*.txt
 so_locations
 *.dep
 *.wdep
@@ -18,5 +18,5 @@ so_locations
 *.ncb
 *.opt
 *.user
-svg
-simple.svg
+*.ttf
+*.svg

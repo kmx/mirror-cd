@@ -1799,7 +1799,7 @@ int cdplayWMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
     return CD_ERROR;
   
   /* read the first dword of the file to see if it is a placeable wmf */
-  wBytesRead = fread((void*)&dwIsAldus, sizeof(dwIsAldus), 1, file);
+  wBytesRead = fread((void*)&dwIsAldus, 4, 1, file);
   if (wBytesRead == 0)  
   {
     fclose(file);
@@ -1878,7 +1878,7 @@ int cdplayWMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
       (xmax-xmin+1)>1 && 
       (ymax-ymin+1)>1)
   {
-    data_emf.factorY = ((double)(ymax-ymin+1)) / (double)(h);   /* negative because top-down orientation */
+    data_emf.factorY = ((double)(ymax-ymin+1)) / (double)(-h);   /* negative because top-down orientation */
     data_emf.factorX = ((double)(xmax-xmin+1)) / (double)(w);
     data_emf.xmin = xmin;
     data_emf.ymin = ymin;
@@ -1960,7 +1960,7 @@ int cdplayEMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
       (xmax-xmin+1)>1 && 
       (ymax-ymin+1)>1)
   {
-    data_emf.factorY = ((double)(ymax-ymin+1)) / (double)(h);   /* negative because top-down orientation */
+    data_emf.factorY = ((double)(ymax-ymin+1)) / (double)(-h);   /* negative because top-down orientation */
     data_emf.factorX = ((double)(xmax-xmin+1)) / (double)(w);
     data_emf.xmin = xmin;
     data_emf.ymin = ymin;

@@ -963,19 +963,13 @@ void SimpleDrawAll(cdCanvas* canvas)
     }
   }
 
-  //cdSetAttribute("ANTIALIAS", "0");
-//  cdGetImageRGB(red, green, blue, w/2 - 50, h/2-50, 100, 100);
-//  cdPutImageRectRGB(14, 13, red, green, blue, -20, -15, 649, 603, 0, 13, 0, 12);
-//  cdPutImageRectRGB(16, 16, red, green, blue, 10, 10, 608, 608, 5, 10, 5, 10);
-//  cdPutImageRectRGB(16, 16, red, green, blue, 10, 10, 64, 64, 5, 10, 5, 10);
-
-//  cdCanvasPutImageRectRGB(canvas, IMAGE_SIZE, IMAGE_SIZE, red, green, blue, 100, h - 200, IMAGE_SIZE, IMAGE_SIZE, 0, 0, 0, 0);
-//  cdCanvasPutImageRectRGBA(canvas, IMAGE_SIZE, IMAGE_SIZE, red, green, blue, alpha, 100, h - 200, IMAGE_SIZE, IMAGE_SIZE, 0, 0, 0, 0);
+  cdCanvasPutImageRectRGB(canvas, IMAGE_SIZE, IMAGE_SIZE, red, green, blue, w - 400, h - 310, IMAGE_SIZE, IMAGE_SIZE, 0, 0, 0, 0);
+//  cdCanvasPutImageRectRGBA(canvas, IMAGE_SIZE, IMAGE_SIZE, red, green, blue, alpha, w - 400, h - 310, IMAGE_SIZE, IMAGE_SIZE, 0, 0, 0, 0);
 //  cdCanvasPutImageRectRGB(canvas, IMAGE_SIZE, IMAGE_SIZE, red, green, blue, w - 400, h - 310, 3*IMAGE_SIZE, 3*IMAGE_SIZE, 0, 0, 0, 0);
-  /* Draw the image on the top-right corner but increasing its actual size, and uses its full area */
-  cdCanvasPutImageRectRGBA(canvas, IMAGE_SIZE, IMAGE_SIZE, red, green, blue, alpha, w - 400, h - 310, 3*IMAGE_SIZE, 3*IMAGE_SIZE, 0, 0, 0, 0);
+//  cdCanvasPutImageRectRGBA(canvas, IMAGE_SIZE, IMAGE_SIZE, red, green, blue, alpha, w - 400, h - 310, 3*IMAGE_SIZE, 3*IMAGE_SIZE, 0, 0, 0, 0);
 
   cdCanvasSetAttribute(canvas, "ROTATE", NULL);
+  //cdCanvasSetAttribute(canvas, "ANTIALIAS", "0");
   if (use_transform)
     cdCanvasTransform(canvas, NULL);
   cdCanvasClip(canvas, CD_CLIPOFF);
