@@ -58,13 +58,14 @@
   <tt><font face="Courier"><strong>CD_COUNTERCB</strong></font> - int(*cdcgmcountercb)(cdContext *driver, double 
   percent) - </tt>Executed for each header of CGM commands; returns the percentage (0-100%) of headers read.<br>
   <font face="Times New Roman"><code><strong><span style="font-family: Courier">CD_SCLMDECB</span></strong></code></font><tt> - int(*cdcgmsclmdecb)(cdContext 
-  *driver, short scl_mde, short *drw_mode, double *factor)</tt> <font face="Courier">-</font> Executed for the command 
-  CGM SCALE MODE. Returns the current CGM scale mode and allows the callback to modify the scale mode used by the
-  <font face="Courier">cdPlay</font> function <font face="Courier">(ABSTRACT=0, METRIC=1)</font>. Should you choose the 
-  METRIC or ABSTRACT scale mode but the original scale mode is METRIC, you must provide the conversion factor in mm per 
+  *driver, short scl_mde, short *drw_mode, double *factor)</tt> <font face="Courier">-</font> 
+  Executed for the command CGM SCALE MODE. Returns the current CGM scale mode 
+  and allows the callback to modify the scale mode used internally <font face="Courier">(ABSTRACT=0, METRIC=1)</font>. 
+  You can choose the 
+  METRIC or ABSTRACT scale mode, but if the original scale mode is METRIC, then you must provide the conversion factor in mm per 
   pixel.<br>
   <font face="Times New Roman"><code><strong><span style="font-family: Courier">CD_VDCEXTCB</span></strong></code></font><tt> - int(*cdcgmvdcextcb)(cdContext 
-  *driver, short type, void *xmn, void *ymn, void *xmx, void *ymx)</tt> <font face="Courier">-</font> Executed for the 
+  *driver, short type, void *first_x, void *first_y, void *second_x, void *second_y)</tt> <font face="Courier">-</font> Executed for the 
   CGM command CGM VDC EXTENT, returns the VDC SPACE. <br>
   <font face="Times New Roman"><code><strong><span style="font-family: Courier">CD_BEGPICTCB</span></strong></code></font><tt> - int(*cdcgmbegpictcb)(cdContext 
   *driver, char *pict)</tt> <font face="Courier">-</font> Executed for the command BEGIN PICTURE, returns the string 
@@ -73,7 +74,8 @@
   *driver)</tt> <font face="Courier">-</font> Executed for the command BEGIN PICTURE BODY.<br>
   <font face="Times New Roman"><code><strong><span style="font-family: Courier">CD_CGMBEGMTFCB</span></strong></code></font> - <font face="Times New Roman"><code>
   int (*cdcgmbegmtfcb)(cdContext *driver, int *xmin, int *ymin, int *xmax, int *ymax)</code></font> - Executed for the 
-  command BEGIN METAFILE, provides the drawing limits of the image in the file.</li>
+  command BEGIN METAFILE, provides the drawing limits of the image in the file. 
+  These are the same parameters passed to <strong>cdCanvasPlay</strong>.</li>
 </ul>
 <h4>Coordinate System and Clipping</h4>
 <ul>

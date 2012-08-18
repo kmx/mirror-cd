@@ -1890,7 +1890,7 @@ int cdplayWMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
   if (cdsizecbWMF && dwIsAldus == ALDUSKEY)
   {
     int err;
-    err = cdsizecbWMF(canvas, w, h, 0, 0);
+    err = cdsizecbWMF(canvas, w, h, (double)w/xres, (double)h/yres);
     if (err)
     {
       DeleteEnhMetaFile(hEMF);
@@ -1972,7 +1972,7 @@ int cdplayEMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
   if (cdsizecbEMF)
   {
     int err;
-    err = cdsizecbEMF(canvas, w, h, w/xres, h/yres);
+    err = cdsizecbEMF(canvas, w, h, (double)w/xres, (double)h/yres);
     if (err)
     {
       DeleteEnhMetaFile (hEMF);
