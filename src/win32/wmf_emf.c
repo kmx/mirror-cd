@@ -1309,16 +1309,11 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       char type_face[256];
       
       style = CD_PLAIN;
-      
       if (data->elfw.elfLogFont.lfWeight >= FW_BOLD)
-        style = CD_BOLD;
-      
+        style |= CD_BOLD;
       if (data->elfw.elfLogFont.lfItalic == 1)
-        style = CD_ITALIC;
+        style |= CD_ITALIC;
       
-      if (data->elfw.elfLogFont.lfWeight >= FW_BOLD && data->elfw.elfLogFont.lfItalic == 1)
-        style = CD_BOLD_ITALIC;
-
       if (data->elfw.elfLogFont.lfUnderline)
         style |= CD_UNDERLINE;
       
