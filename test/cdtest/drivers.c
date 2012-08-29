@@ -40,6 +40,7 @@ static int LoadCanvas(char* ctx_name, cdContext* ctx, char *filename)
   if (IupGetFile(filename) == 0) 
   { 
     newmetafile(filename, ctx);
+
     cdActivate(ctgc.iup_canvas);
     cdWriteMode(CD_REPLACE);
     cdLineStyle(CD_CONTINUOUS);
@@ -48,6 +49,7 @@ static int LoadCanvas(char* ctx_name, cdContext* ctx, char *filename)
     cdBackOpacity(CD_TRANSPARENT);
     cdForeground(CD_BLACK);
     cdInteriorStyle(CD_SOLID);
+
     if (ctgc.stretch_play)
     {
       cdPlay(ctx, 0, ctgc.w-1, 0, ctgc.h-1, filename);
@@ -58,6 +60,7 @@ static int LoadCanvas(char* ctx_name, cdContext* ctx, char *filename)
       cdPlay(ctx, 0, 0, 0, 0, filename);
       sprintf(ctgc.status_line, "cdPlay(%s, 0, 0, 0, 0, %s)", ctx_name, filename);
     }
+
     set_status();
   }
 
@@ -271,7 +274,7 @@ static int fCGMt(void)
   return IUP_DEFAULT;
 }
 
-static int fPlayCGM(void)
+int fPlayCGM(void)
 {
   char filename[1024]="*.cgm";
   return LoadCanvas("CD_CGM", CD_CGM, filename);

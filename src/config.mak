@@ -29,9 +29,8 @@ DEFINES = CD_NO_OLD_INTERFACE
 SRCSVG = base64.c lodepng.c cdsvg.c
 SRCSVG := $(addprefix svg/, $(SRCSVG))
 
-SRCINTCGM = circle.c ellipse.c intcgm1.c \
-  intcgm2.c intcgm4.c intcgm6.c list.c \
-  sism.c tparse.c bparse.c 
+SRCINTCGM = cd_intcgm.c cgm_bin_get.c cgm_bin_parse.c cgm_list.c \
+            cgm_play.c cgm_sism.c cgm_txt_get.c cgm_txt_parse.c
 SRCINTCGM  := $(addprefix intcgm/, $(SRCINTCGM))
 
 SRCSIM := cdfontex.c sim.c cd_truetype.c sim_primitives.c sim_text.c sim_linepolyfill.c

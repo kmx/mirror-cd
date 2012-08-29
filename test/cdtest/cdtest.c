@@ -77,6 +77,7 @@ void setcallbacks(void)
   IupSetFunction("cmdMark", (Icallback) fMark);
   IupSetFunction("cmdText", (Icallback) fText);
   IupSetFunction("cmdPoly", (Icallback) fPoly);
+  IupSetFunction("cmdCustom", (Icallback) fCustom);
 
   IupSetFunction("cmdOptions", (Icallback) fOptions);
   IupSetFunction("cmdOptionsHide", (Icallback) fOptionsHide);
@@ -283,7 +284,7 @@ void CDTestInit(void)
   ctgc.head = NULL;
   ctgc.test_image = NULL;
   ctgc.sim = 0;
-  ctgc.stretch_play = 0;
+  ctgc.stretch_play = 1;
   ctgc.dlg_x = IUP_CENTER;
   ctgc.dlg_y = IUP_CENTER;
   ctgc.visible = 0;
@@ -2002,6 +2003,15 @@ int fText(Ihandle* self)
   set_status();
   if (ctgc.visible || IupGetAttribute(self, "ISMENU"))
     IupShowXY(ctgc.dlg_cur_prim, ctgc.dlg_x, ctgc.dlg_y);
+  return IUP_DEFAULT;
+}
+
+int fPlayCGM(void);
+
+int fCustom(Ihandle* self)
+{
+  dellist();         
+  fPlayCGM();
   return IUP_DEFAULT;
 }
 

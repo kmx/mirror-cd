@@ -345,6 +345,7 @@ int fPixel(Ihandle *);
 int fMark(Ihandle *);
 int fText(Ihandle *);
 int fPoly(Ihandle *);
+int fCustom(Ihandle* self);
 
 int fShowDialog(void);
 

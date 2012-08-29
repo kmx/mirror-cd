@@ -912,17 +912,19 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       xc = (data->rclBox.left + data->rclBox.right - 1) / 2;
       yc = (data->rclBox.top + data->rclBox.bottom - 1) / 2;
       
-      w = sScaleW(data->rclBox.right - data->rclBox.left - 1);
-      h = sScaleH(data->rclBox.bottom - data->rclBox.top - 1);
+      w = data->rclBox.right - data->rclBox.left - 1;
+      h = data->rclBox.bottom - data->rclBox.top - 1;
       
-      angle1 = atan2((yc - data->ptlStart.y)*(data->rclBox.right - data->rclBox.left - 1), (data->ptlStart.x - xc)*(data->rclBox.bottom - data->rclBox.top - 1)) / CD_DEG2RAD;
-      angle2 = atan2((yc - data->ptlEnd.y)*(data->rclBox.right - data->rclBox.left - 1), (data->ptlEnd.x - xc)*(data->rclBox.bottom - data->rclBox.top - 1)) / CD_DEG2RAD;
+      angle1 = atan2((yc - data->ptlStart.y)*w, (data->ptlStart.x - xc)*h) * CD_RAD2DEG;
+      angle2 = atan2((yc - data->ptlEnd.y)*w, (data->ptlEnd.x - xc)*h) * CD_RAD2DEG;
 
       if (angle1 == angle2)
         angle2+=360;
       
       xc = sScaleX(xc);
       yc = sScaleY(yc);
+      w = sScaleW(w);
+      h = sScaleH(h);
       
       cdCanvasArc(canvas, xc, yc, w, h, angle1, angle2);
       break;
@@ -936,17 +938,19 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       xc = (data->rclBox.left + data->rclBox.right - 1) / 2;
       yc = (data->rclBox.top + data->rclBox.bottom - 1) / 2;
       
-      w = sScaleW(data->rclBox.right - data->rclBox.left - 1);
-      h = sScaleH(data->rclBox.bottom - data->rclBox.top - 1);
+      w = data->rclBox.right - data->rclBox.left - 1;
+      h = data->rclBox.bottom - data->rclBox.top - 1;
       
-      angle1 = atan2((yc - data->ptlStart.y)*(data->rclBox.right - data->rclBox.left - 1), (data->ptlStart.x - xc)*(data->rclBox.bottom - data->rclBox.top - 1)) / CD_DEG2RAD;
-      angle2 = atan2((yc - data->ptlEnd.y)*(data->rclBox.right - data->rclBox.left - 1), (data->ptlEnd.x - xc)*(data->rclBox.bottom - data->rclBox.top - 1)) / CD_DEG2RAD;
+      angle1 = atan2((yc - data->ptlStart.y)*w, (data->ptlStart.x - xc)*h) * CD_RAD2DEG;
+      angle2 = atan2((yc - data->ptlEnd.y)*w, (data->ptlEnd.x - xc)*h) * CD_RAD2DEG;
 
       if (angle1 == angle2)
         angle2+=360;
       
       xc = sScaleX(xc);
       yc = sScaleY(yc);
+      w = sScaleW(w);
+      h = sScaleH(h);
       
       cdCanvasChord(canvas, xc, yc, w, h, angle1, angle2);
       break;
@@ -960,17 +964,19 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       xc = (data->rclBox.left + data->rclBox.right - 1) / 2;
       yc = (data->rclBox.top + data->rclBox.bottom - 1) / 2;
       
-      w = sScaleW(data->rclBox.right - data->rclBox.left - 1);
-      h = sScaleH(data->rclBox.bottom - data->rclBox.top - 1);
+      w = data->rclBox.right - data->rclBox.left - 1;
+      h = data->rclBox.bottom - data->rclBox.top - 1;
       
-      angle1 = atan2((yc - data->ptlStart.y)*(data->rclBox.right - data->rclBox.left - 1), (data->ptlStart.x - xc)*(data->rclBox.bottom - data->rclBox.top - 1)) / CD_DEG2RAD;
-      angle2 = atan2((yc - data->ptlEnd.y)*(data->rclBox.right - data->rclBox.left - 1), (data->ptlEnd.x - xc)*(data->rclBox.bottom - data->rclBox.top - 1)) / CD_DEG2RAD;
+      angle1 = atan2((yc - data->ptlStart.y)*w, (data->ptlStart.x - xc)*h) * CD_RAD2DEG;
+      angle2 = atan2((yc - data->ptlEnd.y)*w, (data->ptlEnd.x - xc)*h) * CD_RAD2DEG;
 
       if (angle1 == angle2)
         angle2+=360;
       
       xc = sScaleX(xc);
       yc = sScaleY(yc);
+      w = sScaleW(w);
+      h = sScaleH(h);
       
       cdCanvasSector(canvas, xc, yc, w, h, angle1, angle2);
       break;
@@ -1004,17 +1010,19 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       xc = (data->rclBox.left + data->rclBox.right - 1) / 2;
       yc = (data->rclBox.top + data->rclBox.bottom - 1) / 2;
       
-      w = sScaleW(data->rclBox.right - data->rclBox.left - 1);
-      h = sScaleH(data->rclBox.bottom - data->rclBox.top - 1);
+      w = data->rclBox.right - data->rclBox.left - 1;
+      h = data->rclBox.bottom - data->rclBox.top - 1;
       
-      angle1 = atan2((yc - data->ptlStart.y)*(data->rclBox.right - data->rclBox.left - 1), (data->ptlStart.x - xc)*(data->rclBox.bottom - data->rclBox.top - 1)) / CD_DEG2RAD;
-      angle2 = atan2((yc - data->ptlEnd.y)*(data->rclBox.right - data->rclBox.left - 1), (data->ptlEnd.x - xc)*(data->rclBox.bottom - data->rclBox.top - 1)) / CD_DEG2RAD;
+      angle1 = atan2((yc - data->ptlStart.y)*w, (data->ptlStart.x - xc)*h) * CD_RAD2DEG;
+      angle2 = atan2((yc - data->ptlEnd.y)*w, (data->ptlEnd.x - xc)*h) * CD_RAD2DEG;
 
       if (angle1 == angle2)
         angle2+=360;
       
       xc = sScaleX(xc);
       yc = sScaleY(yc);
+      w = sScaleW(w);
+      h = sScaleH(h);
       
       cdCanvasArc(canvas, xc, yc, w, h, angle1, angle2);
       

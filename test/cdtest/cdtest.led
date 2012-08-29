@@ -478,8 +478,8 @@ btImage      = BUTTON[IMAGE=imgImage, TIP="Server Image"]("", cmdImage)
 btClip       = BUTTON[IMAGE=imgClip, TIP="Clipping Area"]("", cmdClip)
 
 btCurPrim    = BUTTON[IMAGE=imgLine, TIP="Show primitive dialog"]("", cmdShowDialog)
-
-lbMousePos = LABEL[SIZE=90]("(    ,    )")
+lbMousePos   = LABEL[SIZE=90]("(    ,    )")
+btCustom     = BUTTON[TITLE="Custom"]("",cmdCustom)
 
 PrimBar = VBOX[GAP=2]
 (
@@ -500,7 +500,8 @@ PrimBar = VBOX[GAP=2]
  btImageRGB,
  FILL[SIZE=5](),
  btClip,
- FILL[SIZE=30]()
+ FILL[SIZE=30](),
+ btCustom
 )
 
 #---------------------------------------------------------------------------#
@@ -608,7 +609,7 @@ dlgPICCanvas = DIALOG
 btOptionsHide = BUTTON[SIZE=30]("Hide", cmdOptionsHide)
 
 tgSimulate = TOGGLE[VALUE=OFF, SIZE=55]("Simulate", cmdSimulate)
-tgStretchPlay = TOGGLE[VALUE=OFF, SIZE=70]("Stretch Play", cmdStretchPlay)
+tgStretchPlay = TOGGLE[VALUE=ON, SIZE=70]("Stretch Play", cmdStretchPlay)
 
 tgNoBuffering = TOGGLE[VALUE=ON]("No buffering", cmdNoBuffering)
 tgImageBuffer = TOGGLE("CD_DBUFFER", cmdImageBuffer)

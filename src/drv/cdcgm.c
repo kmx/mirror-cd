@@ -1065,7 +1065,13 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   canvas->w = (int)(canvas->w_mm * canvas->xres);
   canvas->h = (int)(canvas->h_mm * canvas->yres);
   
-  ctxcanvas->cgm = cgm_begin_metafile ( ctxcanvas->filename, ctxcanvas->codificacao, "CD - CanvasDraw, Tecgraf/PUC-RIO" );
+  ctxcanvas->cgm = cgm_begin_metafile ( ctxcanvas->filename, ctxcanvas->codificacao, "CD - CanvasDraw, Tecgraf/PUC-Rio" );
+  if (!ctxcanvas->cgm)
+  {
+    free(ctxcanvas);
+    canvas->ctxcanvas = NULL;
+    return; 
+  }
   
   metafile_descriptor(ctxcanvas);
   

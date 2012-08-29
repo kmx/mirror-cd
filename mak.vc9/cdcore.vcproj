@@ -271,90 +271,58 @@
 				Name="INTCGM"
 				>
 				<File
-					RelativePath="..\src\intcgm\bparse.c"
+					RelativePath="..\src\intcgm\cd_intcgm.c"
 					>
 				</File>
 				<File
-					RelativePath="..\src\intcgm\circle.c"
+					RelativePath="..\src\intcgm\cgm_bin_get.c"
 					>
 				</File>
 				<File
-					RelativePath="..\src\intcgm\ellipse.c"
+					RelativePath="..\src\intcgm\cgm_bin_parse.c"
 					>
 				</File>
 				<File
-					RelativePath="..\src\intcgm\intcgm1.c"
+					RelativePath="..\src\intcgm\cgm_list.c"
 					>
 				</File>
 				<File
-					RelativePath="..\src\intcgm\intcgm2.c"
+					RelativePath="..\src\intcgm\cgm_play.c"
 					>
 				</File>
 				<File
-					RelativePath="..\src\intcgm\intcgm4.c"
+					RelativePath="..\src\intcgm\cgm_sism.c"
 					>
 				</File>
 				<File
-					RelativePath="..\src\intcgm\intcgm6.c"
+					RelativePath="..\src\intcgm\cgm_txt_get.c"
 					>
 				</File>
 				<File
-					RelativePath="..\src\intcgm\list.c"
-					>
-				</File>
-				<File
-					RelativePath="..\src\intcgm\sism.c"
-					>
-				</File>
-				<File
-					RelativePath="..\src\intcgm\tparse.c"
+					RelativePath="..\src\intcgm\cgm_txt_parse.c"
 					>
 				</File>
 				<Filter
 					Name="INC"
 					>
 					<File
-						RelativePath="..\src\intcgm\bparse.h"
+						RelativePath="..\src\intcgm\cgm_bin_get.h"
 						>
 					</File>
 					<File
-						RelativePath="..\src\intcgm\circle.h"
+						RelativePath="..\src\intcgm\cgm_list.h"
 						>
 					</File>
 					<File
-						RelativePath="..\src\intcgm\ellipse.h"
+						RelativePath="..\src\intcgm\cgm_play.h"
 						>
 					</File>
 					<File
-						RelativePath="..\src\intcgm\intcgm.h"
+						RelativePath="..\src\intcgm\cgm_txt_get.h"
 						>
 					</File>
 					<File
-						RelativePath="..\src\intcgm\intcgm2.h"
-						>
-					</File>
-					<File
-						RelativePath="..\src\intcgm\intcgm4.h"
-						>
-					</File>
-					<File
-						RelativePath="..\src\intcgm\intcgm6.h"
-						>
-					</File>
-					<File
-						RelativePath="..\src\intcgm\list.h"
-						>
-					</File>
-					<File
-						RelativePath="..\src\intcgm\sism.h"
-						>
-					</File>
-					<File
-						RelativePath="..\src\intcgm\tparse.h"
-						>
-					</File>
-					<File
-						RelativePath="..\src\intcgm\types.h"
+						RelativePath="..\src\intcgm\cgm_types.h"
 						>
 					</File>
 				</Filter>
