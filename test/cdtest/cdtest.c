@@ -435,9 +435,10 @@ void putlist(cdCanvas *target)
   /* ativa o canvas destino */
   cdActivate(target);
 
+  cdGetCanvasSize(&wdc_w, &wdc_h, NULL, NULL);
+
   if (target == ctgc.wd_canvas)
   {
-    cdGetCanvasSize(&wdc_w, &wdc_h, NULL, NULL);
     wdWindow(0, ctgc.w, 0, ctgc.h);
     wdViewport(0, wdc_w, 0, wdc_h);
     wd = 1;
@@ -2010,6 +2011,10 @@ int fPlayCGM(void);
 
 int fCustom(Ihandle* self)
 {
+  (void)self;
+  cdActivate(ctgc.iup_canvas);
+  cdBackground(CD_WHITE);
+  cdClear();
   dellist();         
   fPlayCGM();
   return IUP_DEFAULT;
