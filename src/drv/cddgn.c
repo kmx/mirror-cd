@@ -19,8 +19,8 @@
 #define MAX_NUM_VERTEX 101
 #define MAX_NUM_VERTEX_PER_POLYLINE 15000
 
-#ifndef PI
-#define PI 3.14159265358979323846
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
 #endif
 
 #define END_OF_DGN_FILE 0xffff
@@ -302,8 +302,10 @@ static void put_word(cdCtxCanvas* ctxcanvas, unsigned short w)
 
   c = (char) (w & 0xff);
   fputc (c, ctxcanvas->file);
+
   c = (char) ((w >> 8) & 0xff);
   fputc (c, ctxcanvas->file);
+
   ctxcanvas->bytes += 2;
 }
 
@@ -327,8 +329,6 @@ static void put_as_double(cdCtxCanvas* ctxcanvas, long i)
  
   put_long(ctxcanvas, *((long *) &dfloat)); 
   put_long(ctxcanvas, 0);
-
-  ctxcanvas->bytes+=sizeof(float);
 }
 
 /****************************
@@ -405,7 +405,6 @@ static void putElementHeader(cdCtxCanvas* ctxcanvas, Elm_hdr *ehdr)
   
   put_word(ctxcanvas, (short)(ehdr->type.flags.type << 8 |
     ehdr->type.flags.complex << 7 | ehdr->type.flags.level));
-  
 
   put_word(ctxcanvas, ehdr->words);  
   put_bound(ctxcanvas, ehdr->xmin, ehdr->xmax, ehdr->ymin, ehdr->ymax);
@@ -419,7 +418,7 @@ static void putDisplayHeader(cdCtxCanvas* ctxcanvas, Disp_hdr *dhdr)
 {
   put_word(ctxcanvas, 0);                      /* graphics group */
   put_word(ctxcanvas, dhdr->attindx);          /* index to attributes */
-  put_word(ctxcanvas, dhdr->props.flags.attributes << 11); /* properties */
+  put_word(ctxcanvas, (short)(dhdr->props.flags.attributes << 11)); /* properties */
   put_word(ctxcanvas, dhdr->symb.s);           /* display symbology */
 }
 
@@ -439,7 +438,8 @@ static void complete_file(cdCtxCanvas* ctxcanvas)
   resto = DGN_FILE_BLOCK - ctxcanvas->bytes % DGN_FILE_BLOCK;
 
   /* checa validade do tamanho do arquivo */
-  if (resto%2 != 0) return;
+  if (resto%2 != 0) 
+    return;
 
   for (i = 0; i < resto; i+=2)
     put_word(ctxcanvas, 0);
@@ -610,6 +610,25 @@ static void saveColorTable(cdCtxCanvas* ctxcanvas)
 
 static short file_get_word(FILE *fp)
 {
+  short word = 0, w;
+
+  w = (short)fgetc(fp);
+  if (w == EOF && (ferror(fp) || feof(fp)))
+    return END_OF_DGN_FILE;
+
+  word |= w;
+
+  w = (short)fgetc(fp);
+  if (w == EOF && (ferror(fp) || feof(fp)))
+    return END_OF_DGN_FILE;
+
+  word |= (w << 8) & 0xff00;    
+
+  return word;
+}
+
+static short file_get_word2(FILE *fp)
+{
   short word=0;
 
   word = (short)fgetc(fp);
@@ -618,40 +637,37 @@ static short file_get_word(FILE *fp)
   return word;
 }
 
-/********************************
- * Salva uma word em um arquivo *
- ********************************/
-
-static void file_put_word (short word, FILE *fp)
-{
-  fputc ((char) (word & 0xff), fp);
-  fputc ((char) ((word >> 8) & 0xff), fp);
-}
-
 /*******************************************
  * Le elementos de um arquivo DGN e os     *
  * coloca no inicio do arquivo aberto pelo *
  * driver                                  *
  *******************************************/
-
 static void dgn_copy (FILE *file, cdCtxCanvas *ctxcanvas)
 {
-  short word=0;
+  short word;
+  int count = 0;
+  long size;
 
-  while ((word = file_get_word(file)) != END_OF_DGN_FILE) 
+  fseek(file, 0, SEEK_END);
+  size = ftell(file);
+  fseek(file, 0, SEEK_SET);
+
+  while ((word = file_get_word(file)) != END_OF_DGN_FILE && count < size) 
   {
-    file_put_word(word, ctxcanvas->file); /* type e level do elemento */
-    ctxcanvas->bytes+=2;
+    count += 2;
+    put_word(ctxcanvas, word); /* type e level do elemento */
 
-    word = file_get_word(file); /* words to follow */
-    file_put_word(word, ctxcanvas->file);
-    ctxcanvas->bytes+=2;
+    word = file_get_word(file); /* number of words to follow */
+    if (word == END_OF_DGN_FILE)
+      return;
+    count += 2;
+    put_word(ctxcanvas, word);
 
-    while (word)       /* copia resto do elemento */
+    while (word > 0 && count < size)       /* copia resto do elemento */
     {
-      file_put_word(file_get_word(file), ctxcanvas->file);
+      put_word(ctxcanvas, file_get_word(file));
+      count += 2;
       word--;
-      ctxcanvas->bytes+=2;
     }
   }
 }
@@ -1140,7 +1156,7 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
   if(n > MAX_NUM_VERTEX)  /* tem que usar complex shape ou chain */
   {
     short count=0;
-    short num_whole_elements = n / MAX_NUM_VERTEX;
+    short num_whole_elements = (short)(n / MAX_NUM_VERTEX);
     short num_whole_vertex = num_whole_elements * MAX_NUM_VERTEX;
     short rest = n % MAX_NUM_VERTEX;
     short is_there_rest = (rest > 0) ? 1 : 0;
@@ -1149,7 +1165,7 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
          SIZE_LINE_STRING(MAX_NUM_VERTEX)*num_whole_elements+ 
          SIZE_LINE_STRING(rest)*is_there_rest;
 
-    line_string_bound(poly, n, &xmin, &ymin, &xmax, &ymax);
+    line_string_bound(poly, (short)n, &xmin, &ymin, &xmax, &ymax);
 
     if(mode == CD_OPEN_LINES)
       startComplexChain(ctxcanvas, (unsigned short) (num_whole_elements+((rest > 0) ? 1 : 0)),
@@ -1162,16 +1178,16 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
       putLineString(ctxcanvas, &poly[count], MAX_NUM_VERTEX);
 
     if(rest)
-      putLineString(ctxcanvas, &poly[num_whole_vertex],n);
+      putLineString(ctxcanvas, &poly[num_whole_vertex], (short)n);
 
     endComplexElement(ctxcanvas);
   }
   else
   {
     if(is_fill)
-      putShape(ctxcanvas, poly, n);
+      putShape(ctxcanvas, poly, (short)n);
     else
-      putLineString(ctxcanvas, poly, n);
+      putLineString(ctxcanvas, poly, (short)n);
   }
 }
 
@@ -1340,7 +1356,7 @@ static void cdpalette (cdCtxCanvas* ctxcanvas, int n, const long int *palette, i
   for(c=0; c < n; c++)
     ctxcanvas->colortable[c] = *palette++;
 
-  ctxcanvas->num_colors = n;
+  ctxcanvas->num_colors = (short)n;
 }
 
 static long int cdforeground (cdCtxCanvas* ctxcanvas, long int color)
@@ -1385,8 +1401,8 @@ static void cdputimagerectmap(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsi
   put_word(ctxcanvas, 0x0714);         /* raster flags */
   put_word(ctxcanvas, 0x0100);         /* background e foreground colors
                                (nao usados) */
-  put_word(ctxcanvas, w);             /* largura da imagem em pixels */
-  put_word(ctxcanvas, h);             /* altura da imagem em pixel */ 
+  put_word(ctxcanvas, (short)w);             /* largura da imagem em pixels */
+  put_word(ctxcanvas, (short)h);             /* altura da imagem em pixel */ 
   put_long(ctxcanvas, 0);              /* resevado */
   put_as_double(ctxcanvas, 0);            /* resolution (nao usado) */
 
@@ -1430,14 +1446,14 @@ static void cdputimagerectmap(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsi
   {
       /* raster header element */
     ehdr.type.flags.level=ctxcanvas->level;
-    ehdr.type.flags.type=88;
-    ehdr.words=21+w/2+remainder;
+    ehdr.type.flags.type = 88;
+    ehdr.words = (short)(21+w/2+remainder);
 
     putElementHeader(ctxcanvas, &ehdr);
 
       /* Display Header */
-    dhdr.attindx=7+w/2+remainder;
-    dhdr.symb.s=0;
+    dhdr.attindx = (short)(7+w/2+remainder);
+    dhdr.symb.s = 0;
     putDisplayHeader(ctxcanvas, &dhdr);
 
     put_word(ctxcanvas, 0x0714);   /* raster flags */
@@ -1445,8 +1461,8 @@ static void cdputimagerectmap(cdCtxCanvas* ctxcanvas, int iw, int ih, const unsi
                            colors (nao usados) */
 
     put_word(ctxcanvas, 0);    /* x offset da origem */
-    put_word(ctxcanvas, i);    /* y offset */
-    put_word(ctxcanvas, w);    /* numero de pixels neste elemento */
+    put_word(ctxcanvas, (short)i);    /* y offset */
+    put_word(ctxcanvas, (short)w);    /* numero de pixels neste elemento */
     
     for(j=0; j < w; j++)   
       put_byte(ctxcanvas, map_colors[index[(iy[i])*iw + ix[j]]]);
@@ -1477,33 +1493,45 @@ static void cdpixel (cdCtxCanvas* ctxcanvas, int x, int y, long int color)
   cdlinewidth(ctxcanvas, old_linewidth);
 }
 
+static void concat_seed(cdCtxCanvas *ctxcanvas, const char* seedfile)
+{
+  FILE *seed;
+  char *cd_dir = getenv("CDDIR");
+  char newfilename[10240];
+
+  if(cd_dir == NULL)
+    cd_dir = ".";
+
+  /* testa concatenando com variavel de ambiente */
+  sprintf(newfilename, "%s/%s", cd_dir, seedfile);
+
+  seed = fopen (newfilename, "rb");
+  if(seed==NULL)
+    seed = fopen (seedfile, "rb");
+
+  if(seed)
+  { 
+    dgn_copy(seed, ctxcanvas);
+    fclose(seed);
+  }
+}
+
 static void cdcreatecanvas(cdCanvas* canvas, void *data)
 {
   cdCtxCanvas *ctxcanvas;
   char* strdata = (char*)data;
-  char words[4][256];
   char filename[10240] = "";
-  char seedfile[10240] = "";
-  int count  = 0;
-  double res = 0;
-
-  if (!data) return;
-    
-  /* separa palavras da expressao, que e' na forma
-     "filename [mm_wxmm_h] [res] [-f] [-sseedfile]" */
+  char* seedfile;
+  double res = 3.78;
+  double w_mm = INT_MAX*res, 
+         h_mm = INT_MAX*res;
 
   strdata += cdGetFileName(strdata, filename);
   if (filename[0] == 0)
     return;
 
-  sscanf(strdata, "%s %s %s %s", words[0], words[1], words[2], words[3]);
-  
-  if(!strlen(filename)) /* se nao pegou filename */
-    return;
-   
   ctxcanvas = (cdCtxCanvas *) malloc(sizeof(cdCtxCanvas));
-
-  /* tenta criar arquivo DGN */
+  memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
 
   if((ctxcanvas->file = fopen (filename, "wb"))==NULL)
   {
@@ -1511,142 +1539,53 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
     return;
   }
 
-  /* verifica se foi passado tamanho do canvas em mm. Se foi,
-     extrai-o da string */
+  /* store the base canvas */
+  ctxcanvas->canvas = canvas;
+  canvas->ctxcanvas = ctxcanvas;
 
-  if(sscanf(words[0], "%lgx%lg",
-     &canvas->w_mm, &canvas->h_mm) == 2)
-  {
-    count++; /* incrementa contador de palavras */
-
-    if(canvas->w_mm == 0 || canvas->h_mm == 0)
-    { 
-      fclose(ctxcanvas->file);
-      free(ctxcanvas);
-      return;
-    }
-  }
-  else
-    canvas->w_mm = canvas->h_mm = 0;
-  
-  /* Verifica se foi passada resolucao */
-
-  if(sscanf(words[count], "%lg", &res) == 1)
-  {
-    count++; /* incrementa contador de palavras */
-
-    if(res <= 0)  /* verifica validade da resolucao */
-    { 
-      fclose(ctxcanvas->file);
-      free(ctxcanvas);
-      return;
-    }
-  }
-  else
-    res = 3.78;
-
-  /* se tamanho em milimetros nao tiver sido inicializado,
-     usa como default o tamanho maximo em pixels para fazer as
-     contas
-   */
-
-  if (canvas->w_mm == 0 || canvas->h_mm == 0)
-  {
-    canvas->w = INT_MAX;
-    canvas->h = INT_MAX;
-
-    canvas->w_mm = canvas->w / res;
-    canvas->h_mm = canvas->h / res;
-  }
-  else
-  {
-    canvas->w = (long) (canvas->w_mm * res);
-    canvas->h = (long) (canvas->h_mm * res);
-  }
-
+  /* get size */
+  sscanf(strdata, "%lgx%lg %lg", &w_mm, &h_mm, &res);
+  canvas->w = (int)(w_mm * res);
+  canvas->h = (int)(h_mm * res);
+  canvas->w_mm = w_mm;
+  canvas->h_mm = h_mm;
   canvas->xres = res;
   canvas->yres = res;
-  canvas->bpp = 8;
-  
-  /* verifica se usuario que alterar metodo de fill */
 
-  if (strcmp(words[count], "-f")==0)
-  {
+  canvas->bpp = 8;      /* DGN has indexed colors */
+ 
+  /* verifica se usuario que alterar metodo de fill */
+  if (strstr(strdata, "-f")!=NULL)
     ctxcanvas->fill_type = CONVEX;
-    count++;
-  }
   else
     ctxcanvas->fill_type = NORMAL;
   
   /* se tiver passado seedfile como argumento */
-  if(sscanf(words[count], "-s%s", seedfile) == 1)
+  seedfile = strstr(strdata, "-s");
+  if (seedfile)
   {
-    FILE *seed=NULL;
-    char *cd_dir = getenv("CDDIR");
-    static char newfilename[10240];
-
-    if(cd_dir == NULL)
-      cd_dir = ".";
-
-    sprintf(newfilename, "%s/%s", cd_dir, seedfile);
-        
-    count++;
-
-    /* testa concatenando com variavel de ambiente */
-
-    if((seed = fopen (newfilename, "rb"))==NULL)
-    { 
-      /* tenta abrir usando string passada pelo usuario
-         diretamente */
-
-      if((seed = fopen (seedfile, "rb"))==NULL)
-      { 
-        fclose(ctxcanvas->file);
-        free(ctxcanvas);
-        return;
-      }
-    }
-
-    /* concatena seed */  
-
-    fseek(seed, 0, SEEK_SET);
-    fseek(ctxcanvas->file, 0, SEEK_SET);
-
-    ctxcanvas->bytes=0;
-    dgn_copy(seed, ctxcanvas);
-    fclose(seed);
+    seedfile += 2; /* skip "-s" */
+    concat_seed(ctxcanvas, seedfile);
   }
   
-  ctxcanvas->canvas = canvas;
-  canvas->ctxcanvas = ctxcanvas;
-
-  /* config */
-
+  /* internal defaults */
   ctxcanvas->level = 1;
-
-  /** valores default do contexto sao setados **/
+  ctxcanvas->is_complex=0;
 
   /* texto */
-
   ctxcanvas->alignment = 12; 
   ctxcanvas->is_base = 1;
   ctxcanvas->typeface_index = 0;
   ctxcanvas->tl=12;
 
   /* cores */
-
   memset(ctxcanvas->colortable, 0, 1024); 
   ctxcanvas->colortable[0] = CD_BLACK;
   ctxcanvas->num_colors = 1;
 
   /* atributos */
-
   ctxcanvas->color = 1;
   ctxcanvas->style = 0;
-
-  /* DGN */
-
-  ctxcanvas->is_complex=0;
 }
 
 static void cdinittable(cdCanvas* canvas)

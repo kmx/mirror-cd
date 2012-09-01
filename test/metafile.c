@@ -1,109 +1,107 @@
 #include <cd.h>
 #include <cdmf.h>
-void draw();
-int marktype;
+#include <cdcgm.h>
 
+void draw1(cdCanvas *canvas)
+{
+	cdCanvasMarkSize(canvas, 5);
+	cdCanvasMarkType(canvas, CD_PLUS);
+	cdCanvasMark(canvas, 10,90);
+	cdCanvasMarkType(canvas, CD_STAR);
+	cdCanvasMark(canvas, 20,90);
+	cdCanvasMarkType(canvas, CD_CIRCLE);
+	cdCanvasMark(canvas, 30,90);
+	cdCanvasMarkType(canvas, CD_X);
+	cdCanvasMark(canvas, 40,90);
+	cdCanvasMarkType(canvas, CD_BOX);
+	cdCanvasMark(canvas, 50,90);
+	cdCanvasMarkType(canvas, CD_DIAMOND);
+	cdCanvasMark(canvas, 60,90);
+	cdCanvasMarkType(canvas, CD_HOLLOW_CIRCLE);
+	cdCanvasMark(canvas, 70,90);
+	cdCanvasMarkType(canvas, CD_HOLLOW_BOX);
+	cdCanvasMark(canvas, 80,90);
+	cdCanvasMarkType(canvas, CD_HOLLOW_DIAMOND);
+	cdCanvasMark(canvas, 90,90);
+
+	cdCanvasLineStyle(canvas, CD_CONTINUOUS);
+	cdCanvasLine(canvas, 10,80,80,80);
+	cdCanvasLineStyle(canvas, CD_DASHED);
+	cdCanvasLine(canvas, 10,75,80,75);
+	cdCanvasLineStyle(canvas, CD_DOTTED);
+	cdCanvasLine(canvas, 10,70,80,70);
+	cdCanvasLineStyle(canvas, CD_DASH_DOT);
+	cdCanvasLine(canvas, 10,65,80,65);
+	cdCanvasLineStyle(canvas, CD_DASH_DOT_DOT);
+	cdCanvasLine(canvas, 10,60,80,60);
+
+	cdCanvasLineStyle(canvas, CD_CONTINUOUS);
+
+	cdCanvasHatch(canvas, CD_HORIZONTAL);
+
+	cdCanvasBegin(canvas, CD_FILL);
+	cdCanvasVertex(canvas, 10,50);
+	cdCanvasVertex(canvas, 50,50);
+	cdCanvasVertex(canvas, 50,10);
+	cdCanvasVertex(canvas, 10,10);
+	cdCanvasEnd(canvas);
+
+	cdCanvasHatch(canvas, CD_VERTICAL);
+	cdCanvasBegin(canvas, CD_FILL);
+	cdCanvasVertex(canvas, 60,50);
+	cdCanvasVertex(canvas, 100,50);
+	cdCanvasVertex(canvas, 100,10);
+	cdCanvasVertex(canvas, 60,10);
+	cdCanvasEnd(canvas);	
+
+	cdCanvasHatch(canvas, CD_FDIAGONAL);
+	cdCanvasBegin(canvas, CD_FILL);
+	cdCanvasVertex(canvas, 110,50);
+	cdCanvasVertex(canvas, 150,50);
+	cdCanvasVertex(canvas, 150,10);
+	cdCanvasVertex(canvas, 110,10);
+	cdCanvasEnd(canvas);	
+
+	cdCanvasHatch(canvas, CD_BDIAGONAL);
+	cdCanvasBegin(canvas, CD_FILL);
+	cdCanvasVertex(canvas, 160,50);
+	cdCanvasVertex(canvas, 200,50);
+	cdCanvasVertex(canvas, 200,10);
+	cdCanvasVertex(canvas, 160,10);
+	cdCanvasEnd(canvas);	
+
+	cdCanvasHatch(canvas, CD_CROSS);
+	cdCanvasBegin(canvas, CD_FILL);
+	cdCanvasVertex(canvas, 210,50);
+	cdCanvasVertex(canvas, 250,50);
+	cdCanvasVertex(canvas, 250,10);
+	cdCanvasVertex(canvas, 210,10);
+	cdCanvasEnd(canvas);	
+
+	cdCanvasHatch(canvas, CD_DIAGCROSS);
+	cdCanvasBegin(canvas, CD_FILL);
+	cdCanvasVertex(canvas, 260,50);
+	cdCanvasVertex(canvas, 300,50);
+	cdCanvasVertex(canvas, 300,10);
+	cdCanvasVertex(canvas, 260,10);
+	cdCanvasEnd(canvas);	
+	
+	cdCanvasFont(canvas, "System",CD_BOLD,CD_STANDARD);
+	cdCanvasText(canvas, 10,100,"Text");
+	cdCanvasFont(canvas, "Courier",CD_BOLD,CD_STANDARD);
+	cdCanvasText(canvas, 60,100,"Text");
+	cdCanvasFont(canvas, "Times",CD_BOLD,CD_STANDARD);
+	cdCanvasText(canvas, 110,100,"Text");
+	cdCanvasFont(canvas, "Helvetica",CD_BOLD,CD_STANDARD);
+	cdCanvasText(canvas, 160,100,"Text");
+}
 
 void main(void)
 {
-	cdCanvas *canvas;
-	canvas = cdCreateCanvas(CD_METAFILE,"TESTE.MF 100x100");
-	cdActivate(canvas);
-	draw();
+//	cdCanvas *canvas = cdCreateCanvas(CD_METAFILE,"TESTE.MF 100x100");
+	cdCanvas *canvas = cdCreateCanvas(CD_CGM,"simple1.cgm 100x100 5 -t");  /* 500x500 pixels */
+	draw1(canvas);
 	cdKillCanvas(canvas);
 }
 
 
-void draw(void)
-{
-	cdMarkSize(5)
-	cdMarkType(CD_PLUS);
-	cdMark(10,90);
-	cdMarkType(CD_STAR);
-	cdMark(20,90);
-	cdMarkType(CD_CIRCLE);
-	cdMark(30,90);
-	cdMarkType(CD_X);
-	cdMark(40,90);
-	cdMarkType(CD_BOX);
-	cdMark(50,90);
-	cdMarkType(CD_DIAMOND);
-	cdMark(60,90);
-	cdMarkType(CD_HOLLOW_CIRCLE);
-	cdMark(70,90);
-	cdMarkType(CD_HOLLOW_BOX);
-	cdMark(80,90);
-	cdMarkType(CD_HOLLOW_DIAMOND);
-	cdMark(90,90);
-
-	cdLineStyle(CD_CONTINUOUS);
-	cdLine(10,80,80,80);
-	cdLineStyle(CD_DASHED);
-	cdLine(10,75,80,75);
-	cdLineStyle(CD_DOTTED);
-	cdLine(10,70,80,70);
-	cdLineStyle(CD_DASH_DOT);
-	cdLine(10,65,80,65);
-	cdLineStyle(CD_DASH_DOT_DOT);
-	cdLine(10,60,80,60);
-
-	cdLineStyle(CD_CONTINUOUS);
-
-	cdHatch(CD_HORIZONTAL);
-
-	cdBegin(CD_FILL);
-	cdVertex(10,50);
-	cdVertex(50,50);
-	cdVertex(50,10);
-	cdVertex(10,10);
-	cdEnd();
-
-	cdHatch(CD_VERTICAL);
-	cdBegin(CD_FILL);
-	cdVertex(60,50);
-	cdVertex(100,50);
-	cdVertex(100,10);
-	cdVertex(60,10);
-	cdEnd();	
-
-	cdHatch(CD_FDIAGONAL);
-	cdBegin(CD_FILL);
-	cdVertex(110,50);
-	cdVertex(150,50);
-	cdVertex(150,10);
-	cdVertex(110,10);
-	cdEnd();	
-
-	cdHatch(CD_BDIAGONAL);
-	cdBegin(CD_FILL);
-	cdVertex(160,50);
-	cdVertex(200,50);
-	cdVertex(200,10);
-	cdVertex(160,10);
-	cdEnd();	
-
-	cdHatch(CD_CROSS);
-	cdBegin(CD_FILL);
-	cdVertex(210,50);
-	cdVertex(250,50);
-	cdVertex(250,10);
-	cdVertex(210,10);
-	cdEnd();	
-
-	cdHatch(CD_DIAGCROSS);
-	cdBegin(CD_FILL);
-	cdVertex(260,50);
-	cdVertex(300,50);
-	cdVertex(300,10);
-	cdVertex(260,10);
-	cdEnd();	
-	
-	cdFont(CD_SYSTEM,CD_BOLD,CD_STANDARD);
-	cdText(10,100,'Teste');
-	cdFont(CD_COURIER,CD_BOLD,CD_STANDARD);
-	cdText(60,100,'Teste');
-	cdFont(CD_TIMES_ROMAN,CD_BOLD,CD_STANDARD);
-	cdText(110,100,'Teste');
-	cdFont(CD_HELVETICA,CD_BOLD,CD_STANDARD);
-	cdText(160,100,'Teste');
-}

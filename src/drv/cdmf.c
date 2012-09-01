@@ -1116,15 +1116,15 @@ void cdcreatecanvasMF(cdCanvas *canvas, void *data)
 {
   char filename[10240] = "";
   char* strdata = (char*)data;
-  double w_mm = INT_MAX*3.78, h_mm = INT_MAX*3.78, res = 3.78;
+  double res = 3.78;
+  double w_mm = INT_MAX*res, 
+         h_mm = INT_MAX*res;
   cdCtxCanvas* ctxcanvas;
   int size;
 
   strdata += cdGetFileName(strdata, filename);
   if (filename[0] == 0)
     return;
-
-  sscanf(strdata, "%lgx%lg %lg", &w_mm, &h_mm, &res);
 
   ctxcanvas = (cdCtxCanvas *)malloc(sizeof(cdCtxCanvas));
   memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
@@ -1136,25 +1136,30 @@ void cdcreatecanvasMF(cdCanvas *canvas, void *data)
     return;
   }
 
+  /* store the base canvas */
+  ctxcanvas->canvas = canvas;
+  canvas->ctxcanvas = ctxcanvas;
+
   size = strlen(filename);
   ctxcanvas->filename = malloc(size+1);
   memcpy(ctxcanvas->filename, filename, size+1);
 
-  ctxcanvas->canvas = canvas;
-
-  /* update canvas context */
+  /* get size */
+  sscanf(strdata, "%lgx%lg %lg", &w_mm, &h_mm, &res);
   canvas->w = (int)(w_mm * res);
   canvas->h = (int)(h_mm * res);
   canvas->w_mm = w_mm;
   canvas->h_mm = h_mm;
-  canvas->bpp = 24;
   canvas->xres = res;
   canvas->yres = res;
-  canvas->ctxcanvas = ctxcanvas;
 
+  canvas->bpp = 24;
+
+  /* internal defaults */
   ctxcanvas->last_line_style = -1;
   ctxcanvas->last_fill_mode = -1;
 
+  /* header */
   fprintf(ctxcanvas->file, "CDMF %d %d\n", canvas->w, canvas->h);
 }
 

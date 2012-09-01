@@ -31,11 +31,20 @@
 <body>
 
 <h2>History of Changes</h2>
-<h3>CVS (29/Aug/2012)</h3>
+<h3>CVS (31/Aug/2012)</h3>
 <ul>
 	<li><span class="hist_changed">Changed:</span> 
     rewitten <strong>cdCanvasPlay</strong> 
 	for the CGM driver.</li>
+	<li><span class="hist_changed">Changed:</span> 
+    removed automatic VDC Extension computation when size is not specified in 
+	CD_CGM driver. Now 
+	the default value is used just like the other drivers. Extended creation 
+	parameter &quot;-p&quot; to include float and double options.</li>
+	<li><span class="hist_changed">Changed:</span> 
+    improvements in size parsing for CD_CGM, CD_DNG, CD_DXF and CD_SVG at
+	<strong>cdCreateCanvas</strong>.<br><span class="hist_fixed">Fixed:</span> 
+	some CGM inconsistency when generating a new file.</li>
 	<li><span class="hist_fixed">Fixed:</span> improved <strong>cdCanvasPlay</strong> 
 	resize behavior in all drivers that support it.</li>
 </ul>

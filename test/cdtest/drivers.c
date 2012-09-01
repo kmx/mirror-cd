@@ -80,9 +80,9 @@ static int SaveCanvas(char* ctx_name, cdContext* ctx, char *data)
 
   cdActivate(canvas);
 
-  cdPattern(10, 10, ctgc.pattern);
-  cdStipple(10, 10, ctgc.stipple);
-  cdInteriorStyle(CD_SOLID);
+//  cdPattern(10, 10, ctgc.pattern);
+//  cdStipple(10, 10, ctgc.stipple);
+//  cdInteriorStyle(CD_SOLID);
 
   if (ctgc.sim == 1)
     cdSimulate(CD_SIM_ALL);

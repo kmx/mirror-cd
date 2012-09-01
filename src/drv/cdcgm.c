@@ -26,22 +26,11 @@ struct _cdCtxCanvas
   cdCanvas* canvas;
   CGM  *cgm;
   
-  char filename[10240];   /* Arquivo CGM */
-
-  int  codificacao;     /* Codificacao */
-  int  vdc_int_prec;
-  int first;               /* Primeira primitiva a ser desenhada */
-  long point;
-  int hassize;
+  int  codificacao; /* 1=binary, 2=text */
+  int  vdc_type;    /* 0=integer, 1=real */
+  int  real_prec;   /* 0=float, 1=double */
+  int  int_prec;    /* 16, 32 */
   int patindex;
-  
-  struct 
-  {
-    cdfRect bbox;
-    int first;
-  } clip;
-  
-  cdfRect b_box;
 };
 
 static double cve_black[] = { 0.0, 0.0, 0.0 };
@@ -51,31 +40,7 @@ static double cve_white[] = { 1.0, 1.0, 1.0 };
 int cdplayCGM(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *data);
 int cdRegisterCallbackCGM(int cb, cdCallback func);
 
-
-/*
-%F Atualiza os valores do bounding box
-*/
-static void setbbox (cdCtxCanvas *ctxcanvas, double x, double y )
-{
-  if ( ctxcanvas->first )
-  {
-    ctxcanvas->b_box.xmin = x;
-    ctxcanvas->b_box.xmax = x;
-    ctxcanvas->b_box.ymin = y;
-    ctxcanvas->b_box.ymax = y;
-    ctxcanvas->first = 0;
-  }
-  
-  if ( x<ctxcanvas->b_box.xmin ) ctxcanvas->b_box.xmin = x;
-  if ( x>ctxcanvas->b_box.xmax ) ctxcanvas->b_box.xmax = x;
-  if ( y<ctxcanvas->b_box.ymin ) ctxcanvas->b_box.ymin = y;
-  if ( y>ctxcanvas->b_box.ymax ) ctxcanvas->b_box.ymax = y;
-}
-
-
-/*
-%F metafile descriptor elements
-*/
+/* metafile descriptor elements */
 static void metafile_descriptor (cdCtxCanvas *ctxcanvas)
 {
   const char *font_list[] = { "SYSTEM", "COURIER", "TIMES_ROMAN", "HELVETICA", 
@@ -86,9 +51,18 @@ static void metafile_descriptor (cdCtxCanvas *ctxcanvas)
   
   cgm_metafile_version        ( ctxcanvas->cgm, 1);
   cgm_metafile_description    ( ctxcanvas->cgm, "CD generated" );
-  cgm_vdc_type                ( ctxcanvas->cgm, 0 /* integer */ );
-  cgm_integer_precision       ( ctxcanvas->cgm, 16 );
-  cgm_real_precision          ( ctxcanvas->cgm, 3 /* fixed 32 */ );
+  if (ctxcanvas->vdc_type==0) 
+  {
+    cgm_vdc_type                ( ctxcanvas->cgm, 0  );  /* integer */
+    cgm_integer_precision       ( ctxcanvas->cgm, ctxcanvas->int_prec);
+    cgm_real_precision          ( ctxcanvas->cgm, 2 /* fixed*32 */ );
+  }
+  else
+  {
+    cgm_vdc_type                ( ctxcanvas->cgm, 1  );  /* real */
+    cgm_integer_precision       ( ctxcanvas->cgm, 32 );
+    cgm_real_precision          ( ctxcanvas->cgm, ctxcanvas->real_prec);
+  }
   cgm_index_precision         ( ctxcanvas->cgm, 16 );
   cgm_colour_precision        ( ctxcanvas->cgm, 8 );
   cgm_colour_index_precision  ( ctxcanvas->cgm, 8 );
@@ -96,75 +70,47 @@ static void metafile_descriptor (cdCtxCanvas *ctxcanvas)
   cgm_colour_value_extent     ( ctxcanvas->cgm, cve_black, cve_white );
   
   {
-    static int classes[] = { -1 /* drawing set */ };
-    static int ids    [] = {  1 /* plus control set */ };
+    int classes[1] = { -1 /* drawing set */ };
+    int ids    [1] = {  1 /* plus control set */ };
     cgm_metafile_element_list   ( ctxcanvas->cgm, 1, classes, ids );
   }
   
-  cgm_begin_metafile_defaults ( ctxcanvas->cgm );
+  cgm_font_list(ctxcanvas->cgm, font_list);
   
-  cgm_vdc_integer_precision ( ctxcanvas->cgm, ctxcanvas->vdc_int_prec );
-  cgm_interior_style  ( ctxcanvas->cgm, 1 );  /* SOLID */
-  cgm_edge_visibility  ( ctxcanvas->cgm, 0 );  /* OFF */
-  
-  cgm_end_metafile_defaults   ( ctxcanvas->cgm );
-  
-  cgm_font_list ( ctxcanvas->cgm, font_list );
+  cgm_begin_metafile_defaults(ctxcanvas->cgm);
+    if (ctxcanvas->vdc_type==0)
+    {
+      cgm_vdc_integer_precision(ctxcanvas->cgm, ctxcanvas->int_prec);
+      cgm_vdc_real_precision(ctxcanvas->cgm, 2 /* fixed*32 */);
+    }
+    else
+    {
+      cgm_vdc_integer_precision(ctxcanvas->cgm, 32);
+      cgm_vdc_real_precision(ctxcanvas->cgm, ctxcanvas->real_prec);
+    }
+    /* CD default attributes that are different from CGM defaults */
+    cgm_interior_style(ctxcanvas->cgm, 1);  /* SOLID */
+    cgm_edge_visibility(ctxcanvas->cgm, 0);  /* OFF */
+    cgm_clip_rectangle ( ctxcanvas->cgm, 0, 0, (double)ctxcanvas->canvas->w, (double)ctxcanvas->canvas->h);
+    cgm_clip_indicator (ctxcanvas->cgm, 0);
+    cgm_marker_type( ctxcanvas->cgm, MARKER_DOT);
+    cgm_marker_size( ctxcanvas->cgm, 1.0);
+  cgm_end_metafile_defaults(ctxcanvas->cgm);
 }
 
-/*
-%F Pictire descriptor elements
-*/
+/* Pictire descriptor elements */
 static void picture_descriptor (cdCtxCanvas *ctxcanvas)
 {
-  cgm_scaling_mode             ( ctxcanvas->cgm, 1 /* metric */, 1.0f );
+  cgm_scaling_mode             ( ctxcanvas->cgm, 0 /* abstract=0, metric=1 */, 1.0f );
   cgm_colour_selection_mode    ( ctxcanvas->cgm, 1 /* direct */ );
   cgm_line_width_specify_mode  ( ctxcanvas->cgm, 0 /* absolute=0, scaled=1 */ );
   cgm_marker_size_specify_mode ( ctxcanvas->cgm, 0 /* absolute=0, scaled=1 */ );
-  
-  ctxcanvas->point = ftell ( ctxcanvas->cgm->file );
-  if ( ctxcanvas->codificacao == CD_CLEAR_TEXT )
-  {
-    fprintf ( ctxcanvas->cgm->file, "%80s\n", "" );
-    fprintf ( ctxcanvas->cgm->file, "%80s\n", "" );
-  }
-  else
-  {
-    cgm_vdc_extent( ctxcanvas->cgm, 0, 0, (double)ctxcanvas->canvas->w, (double)ctxcanvas->canvas->h);
-  }
-}
-
-/*
-%F Control descriptor elements
-*/
-static void control_elements (cdCtxCanvas *ctxcanvas)
-{
-  double c[3] = {1.0,1.0,1.0};
-  
-  cgm_vdc_integer_precision ( ctxcanvas->cgm, ctxcanvas->vdc_int_prec );
-  cgm_vdc_real_precision    ( ctxcanvas->cgm, 2 /* fixed 32 */ );
-  cgm_auxiliary_colour      ( ctxcanvas->cgm, c );
+  cgm_vdc_extent( ctxcanvas->cgm, 0, 0, (double)ctxcanvas->canvas->w, (double)ctxcanvas->canvas->h);
+  cgm_backgound_colour ( ctxcanvas->cgm, cve_white);  /* not the same definition as in CD */
 }
 
 static void cdkillcanvas(cdCtxCanvas *ctxcanvas)
 {
-  long pt;
-  
-  pt = ftell ( ctxcanvas->cgm->file );
-  fseek ( ctxcanvas->cgm->file, ctxcanvas->point, SEEK_SET );
-
-  if (ctxcanvas->hassize)
-   cgm_vdc_extent  ( ctxcanvas->cgm, 0, 0, (double)ctxcanvas->canvas->w, (double)ctxcanvas->canvas->h);
-  else
-  {
-   if ( ctxcanvas->clip.first )
-    cgm_vdc_extent ( ctxcanvas->cgm, ctxcanvas->b_box.xmin, ctxcanvas->b_box.ymin, ctxcanvas->b_box.xmax, ctxcanvas->b_box.ymax );
-   else
-    cgm_vdc_extent ( ctxcanvas->cgm, ctxcanvas->clip.bbox.xmin, ctxcanvas->clip.bbox.ymin, ctxcanvas->clip.bbox.xmax, ctxcanvas->clip.bbox.ymax );
-  }
-
-  fseek ( ctxcanvas->cgm->file, pt, SEEK_SET );
-  
   cgm_end_picture ( ctxcanvas->cgm );
   cgm_end_metafile ( ctxcanvas->cgm );
   
@@ -182,31 +128,12 @@ static void cddeactivate(cdCtxCanvas *ctxcanvas)
 */
 static void cdflush(cdCtxCanvas *ctxcanvas)
 {
-  long pt;
-
   fflush(ctxcanvas->cgm->file);
-  
-  pt = ftell ( ctxcanvas->cgm->file );
-  fseek ( ctxcanvas->cgm->file, ctxcanvas->point, SEEK_SET );
-  
-  if (ctxcanvas->hassize)
-   cgm_vdc_extent     ( ctxcanvas->cgm, 0, 0, (double)ctxcanvas->canvas->w, (double)ctxcanvas->canvas->h);
-  else
-  {
-   if ( ctxcanvas->clip.first )
-    cgm_vdc_extent ( ctxcanvas->cgm, ctxcanvas->b_box.xmin, ctxcanvas->b_box.ymin,
-                     ctxcanvas->b_box.xmax, ctxcanvas->b_box.ymax );
-   else
-     cgm_vdc_extent ( ctxcanvas->cgm, ctxcanvas->clip.bbox.xmin, ctxcanvas->clip.bbox.ymin,
-                      ctxcanvas->clip.bbox.xmax, ctxcanvas->clip.bbox.ymax );
-  }
- 
-  fseek ( ctxcanvas->cgm->file, pt, SEEK_SET );
   
   cgm_end_picture        ( ctxcanvas->cgm );
 
   cgm_begin_picture      ( ctxcanvas->cgm, "Picture x" );
-  picture_descriptor ( ctxcanvas);
+    picture_descriptor ( ctxcanvas);
   cgm_begin_picture_body ( ctxcanvas->cgm );
 }
 
@@ -224,26 +151,9 @@ static int cdclip(cdCtxCanvas *ctxcanvas, int mode)
 
   if (mode == CD_CLIPAREA)
     cgm_clip_rectangle ( ctxcanvas->cgm, (double) ctxcanvas->canvas->clip_rect.xmin, (double) ctxcanvas->canvas->clip_rect.ymin,
-                                          (double) ctxcanvas->canvas->clip_rect.xmax, (double) ctxcanvas->canvas->clip_rect.ymax );
+                                         (double) ctxcanvas->canvas->clip_rect.xmax, (double) ctxcanvas->canvas->clip_rect.ymax );
 
   return mode;
-}
-
-static void clip_bbox (cdCtxCanvas *ctxcanvas, double xmin, double ymin, double xmax, double ymax)
-{
-  if ( ctxcanvas->clip.first )
-  {
-    ctxcanvas->clip.bbox.xmin = xmin;
-    ctxcanvas->clip.bbox.xmax = xmax;
-    ctxcanvas->clip.bbox.ymin = ymin;
-    ctxcanvas->clip.bbox.ymax = ymax;
-    ctxcanvas->clip.first = 0;
-  }
-  
-  if ( xmin < ctxcanvas->clip.bbox.xmin ) ctxcanvas->clip.bbox.xmin = xmin;
-  if ( ymin < ctxcanvas->clip.bbox.ymin ) ctxcanvas->clip.bbox.ymin = ymin;
-  if ( xmax > ctxcanvas->clip.bbox.xmax ) ctxcanvas->clip.bbox.xmax = xmax;
-  if ( ymax > ctxcanvas->clip.bbox.ymax ) ctxcanvas->clip.bbox.ymax = ymax;
 }
 
 static void cdcliparea(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
@@ -251,16 +161,12 @@ static void cdcliparea(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int
   if (ctxcanvas->canvas->clip_mode == CD_CLIPAREA)
     cgm_clip_rectangle ( ctxcanvas->cgm, (double) xmin, (double) ymin,
                                          (double) xmax, (double) ymax );
-  
-  clip_bbox (ctxcanvas,  (double)xmin, (double)ymin, (double)xmax, (double)ymax );
 }
 
 static void cdfcliparea(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
 {
   if (ctxcanvas->canvas->clip_mode == CD_CLIPAREA)
     cgm_clip_rectangle ( ctxcanvas->cgm, xmin, ymin, xmax, ymax );
-  
-  clip_bbox (ctxcanvas, xmin, ymin, xmax, ymax );
 }
 
 /******************************************************/
@@ -279,9 +185,6 @@ static void cdline(cdCtxCanvas *ctxcanvas, int px1, int py1, int px2, int py2)
   points[3] = (double)py2;
   
   cgm_polyline( ctxcanvas->cgm, 2, points);
-  
-  setbbox (ctxcanvas,  points[0], points[1] );
-  setbbox (ctxcanvas,  points[2], points[3] );
 }
 
 static void cdfline(cdCtxCanvas *ctxcanvas, double px1, double py1, double px2, double py2)
@@ -294,9 +197,6 @@ static void cdfline(cdCtxCanvas *ctxcanvas, double px1, double py1, double px2, 
   points[3] = py2;
   
   cgm_polyline( ctxcanvas->cgm, 2, points);
-  
-  setbbox (ctxcanvas,  points[0], points[1] );
-  setbbox (ctxcanvas,  points[2], points[3] );
 }
 
 static void cdrect(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
@@ -311,11 +211,6 @@ static void cdrect(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int yma
   cgm_interior_style ( ctxcanvas->cgm, HOLLOW);
   cgm_rectangle( ctxcanvas->cgm, points);
   cdinteriorstyle(ctxcanvas, ctxcanvas->canvas->interior_style);
-  
-  setbbox (ctxcanvas,  points[0], points[1] );
-  setbbox (ctxcanvas,  points[2], points[1] );
-  setbbox (ctxcanvas,  points[2], points[3] );
-  setbbox (ctxcanvas,  points[0], points[3] );
 }
 
 static void cdfrect(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
@@ -330,11 +225,6 @@ static void cdfrect(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymi
   cgm_interior_style ( ctxcanvas->cgm, HOLLOW);
   cgm_rectangle( ctxcanvas->cgm, points);
   cdinteriorstyle(ctxcanvas, ctxcanvas->canvas->interior_style);
-  
-  setbbox (ctxcanvas,  points[0], points[1] );
-  setbbox (ctxcanvas,  points[2], points[1] );
-  setbbox (ctxcanvas,  points[2], points[3] );
-  setbbox (ctxcanvas,  points[0], points[3] );
 }
 
 static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
@@ -347,11 +237,6 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
   points[3] = (double)ymax;
   
   cgm_rectangle( ctxcanvas->cgm, points);
-  
-  setbbox (ctxcanvas,  points[0], points[1] );
-  setbbox (ctxcanvas,  points[2], points[1] );
-  setbbox (ctxcanvas,  points[2], points[3] );
-  setbbox (ctxcanvas,  points[0], points[3] );
 }
 
 static void cdfbox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
@@ -364,14 +249,9 @@ static void cdfbox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin
   points[3] = ymax;
   
   cgm_rectangle( ctxcanvas->cgm, points);
-  
-  setbbox (ctxcanvas,  points[0], points[1] );
-  setbbox (ctxcanvas,  points[2], points[1] );
-  setbbox (ctxcanvas,  points[2], points[3] );
-  setbbox (ctxcanvas,  points[0], points[3] );
 }
 
-static void arc (cdCtxCanvas *ctxcanvas,  double xc, double yc, double w, double h, double a1, double a2,
+static void arc (double xc, double yc, double w, double h, double a1, double a2,
                  double *center, double *first_end_point,
                  double *second_end_point, double *dx_start, double *dy_start,
                  double *dx_end, double *dy_end )
@@ -395,11 +275,6 @@ static void arc (cdCtxCanvas *ctxcanvas,  double xc, double yc, double w, double
   
   *dx_end = width*cos(a2*CD_DEG2RAD);
   *dy_end = height*sin(a2*CD_DEG2RAD);
-  
-  setbbox (ctxcanvas,  center[0]-width, center[1]-height );
-  setbbox (ctxcanvas,  center[0]+width, center[1]-height );
-  setbbox (ctxcanvas,  center[0]+width, center[1]+height );
-  setbbox (ctxcanvas,  center[0]-width, center[1]+height );
 }
 
 static void cdarc(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
@@ -407,7 +282,7 @@ static void cdarc(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a
   double center[2], first_end_point[2], second_end_point[2];
   double dx_start, dy_start, dx_end, dy_end;
   
-  arc (ctxcanvas, (double)xc, (double)yc, (double)w, (double)h, a1, a2, center, first_end_point, second_end_point,
+  arc ((double)xc, (double)yc, (double)w, (double)h, a1, a2, center, first_end_point, second_end_point,
        &dx_start, &dy_start, &dx_end, &dy_end );
   
   cgm_elliptical_arc ( ctxcanvas->cgm, center, first_end_point, second_end_point, dx_start, dy_start, dx_end, dy_end );
@@ -418,7 +293,7 @@ static void cdfarc(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, doubl
   double center[2], first_end_point[2], second_end_point[2];
   double dx_start, dy_start, dx_end, dy_end;
   
-  arc (ctxcanvas, xc, yc, w, h, a1, a2, center, first_end_point, second_end_point,
+  arc (xc, yc, w, h, a1, a2, center, first_end_point, second_end_point,
        &dx_start, &dy_start, &dx_end, &dy_end );
   
   cgm_elliptical_arc ( ctxcanvas->cgm, center, first_end_point, second_end_point, dx_start, dy_start, dx_end, dy_end );
@@ -429,17 +304,12 @@ static void cdsector(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, doubl
   double center[2], first_end_point[2], second_end_point[2];
   double dx_start, dy_start, dx_end, dy_end;
   
-  arc (ctxcanvas, (double)xc, (double)yc, (double)w, (double)h, a1, a2, center, first_end_point, second_end_point,
+  arc ((double)xc, (double)yc, (double)w, (double)h, a1, a2, center, first_end_point, second_end_point,
        &dx_start, &dy_start, &dx_end, &dy_end );
   
   
   cgm_elliptical_arc_close ( ctxcanvas->cgm, center, first_end_point, second_end_point,
                              dx_start, dy_start, dx_end, dy_end, 0 );
-  
-  setbbox (ctxcanvas,  (double)xc-w/2., (double)yc-h/2. );
-  setbbox (ctxcanvas,  (double)xc+w/2., (double)yc-h/2. );
-  setbbox (ctxcanvas,  (double)xc+w/2., (double)yc+h/2. );
-  setbbox (ctxcanvas,  (double)xc-w/2., (double)yc+h/2. );
 }
 
 static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
@@ -447,72 +317,12 @@ static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, do
   double center[2], first_end_point[2], second_end_point[2];
   double dx_start, dy_start, dx_end, dy_end;
   
-  arc (ctxcanvas, xc, yc, w, h, a1, a2, center, first_end_point, second_end_point,
+  arc (xc, yc, w, h, a1, a2, center, first_end_point, second_end_point,
        &dx_start, &dy_start, &dx_end, &dy_end );
   
   
   cgm_elliptical_arc_close ( ctxcanvas->cgm, center, first_end_point, second_end_point,
                              dx_start, dy_start, dx_end, dy_end, 0 );
-  
-  setbbox (ctxcanvas,  xc-w/2., yc-h/2. );
-  setbbox (ctxcanvas,  xc+w/2., yc-h/2. );
-  setbbox (ctxcanvas,  xc+w/2., yc+h/2. );
-  setbbox (ctxcanvas,  xc-w/2., yc+h/2. );
-}
-
-static void settextbbox (cdCtxCanvas *ctxcanvas,  double x, double y, int width, int height )
-{
-  switch ( ctxcanvas->canvas->text_alignment )
-  {
-  case CD_NORTH:
-    setbbox (ctxcanvas,  x-(width/2.), y-height );
-    setbbox (ctxcanvas,  x+(width/2.), y );
-    break;
-  case CD_SOUTH:
-    setbbox (ctxcanvas,  x-(width/2.), y+height );
-    setbbox (ctxcanvas,  x+(width/2.), y );
-    break;
-  case CD_EAST:
-    setbbox (ctxcanvas,  x-width, y-(height/2.) );
-    setbbox (ctxcanvas,  x, y+(height/2.) );
-    break;
-  case CD_WEST:
-    setbbox (ctxcanvas,  x, y-(height/2.) );
-    setbbox (ctxcanvas,  x+width, y+(height/2.) );
-    break;
-  case CD_NORTH_EAST:
-    setbbox (ctxcanvas,  x-width, y-height );
-    setbbox (ctxcanvas,  x, y );
-    break;
-  case CD_NORTH_WEST:
-    setbbox (ctxcanvas,  x, y-height );
-    setbbox (ctxcanvas,  x+width, y );
-    break;
-  case CD_SOUTH_EAST:
-    setbbox (ctxcanvas,  x-width, y );
-    setbbox (ctxcanvas,  x, y+height );
-    break;
-  case CD_SOUTH_WEST:
-    setbbox (ctxcanvas,  x, y );
-    setbbox (ctxcanvas,  x+width, y+height );
-    break;
-  case CD_CENTER:
-    setbbox (ctxcanvas,  x-(width/2.), y-(height/2.) );
-    setbbox (ctxcanvas,  x+(width/2.), y+(height/2.) );
-    break;
-  case CD_BASE_LEFT:
-    setbbox (ctxcanvas,  x, y );
-    setbbox (ctxcanvas,  x+width, y+height );
-    break;
-  case CD_BASE_CENTER:
-    setbbox (ctxcanvas,  x-(width/2.), y );
-    setbbox (ctxcanvas,  x+(width/2.), y+height );
-    break;
-  case CD_BASE_RIGHT:
-    setbbox (ctxcanvas,  x-width, y );
-    setbbox (ctxcanvas,  x, y+height );
-    break;
-  }
 }
 
 static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
@@ -522,8 +332,6 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
   cgm_text( ctxcanvas->cgm, 1 /* final */ , (double)x, (double)y, s, len );
   
   cdgettextsizeEX(ctxcanvas, s, len, &width, &height);
-  
-  settextbbox (ctxcanvas, (double) x, (double) y, width, height );
 }
 
 static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, int len)
@@ -533,8 +341,6 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, i
   cgm_text( ctxcanvas->cgm, 1 /* final */ , x, y, s, len);
   
   cdgettextsizeEX(ctxcanvas, s, len, &width, &height);
-  
-  settextbbox (ctxcanvas, x, y, width, height );
 }
 
 static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
@@ -548,8 +354,6 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
   {
     fpoly[2*i] = (double) poly[i].x;
     fpoly[2*i+1] = (double) poly[i].y;
-
-    setbbox (ctxcanvas, fpoly[2*i] , fpoly[2*i+1] );
   }
 
   switch ( mode )
@@ -579,14 +383,8 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
 
 static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 {
-  int i;
   double *fpoly = (double*)poly;
   
-  for (i = 0; i < n; i++)
-  {
-    setbbox (ctxcanvas, fpoly[2*i] , fpoly[2*i+1] );
-  }
-
   switch ( mode )
   {
   case CD_OPEN_LINES:
@@ -876,7 +674,7 @@ static long int cdbackground(cdCtxCanvas *ctxcanvas, long int color)
   bc[2] = get_blue(color);
   
   ctxcanvas->canvas->background = color;
-  cgm_backgound_colour ( ctxcanvas->cgm, bc );
+  cgm_auxiliary_colour(ctxcanvas->cgm, bc);
   
   return color;
 }
@@ -927,9 +725,6 @@ static void cdputimagerectrgb(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   cgm_cell_array ( ctxcanvas->cgm, p, (long)rw, (long)rh, 8, color_array );
   
   free(color_array);
-  
-  setbbox (ctxcanvas,  p[0], p[1] );
-  setbbox (ctxcanvas,  p[2], p[3] );
 }
 
 static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsigned char *index, const long int *colors, int x, int y, int w, int h, int xmin, int xmax, int ymin, int ymax)
@@ -966,9 +761,6 @@ static void cdputimagerectmap(cdCtxCanvas *ctxcanvas, int iw, int ih, const unsi
   cgm_cell_array ( ctxcanvas->cgm, p, (long)rw, (long)rh, 8, color_array );
   
   free(color_array);
-  
-  setbbox (ctxcanvas, p[0], p[1] );
-  setbbox (ctxcanvas, p[2], p[3] );
 }
 
 /******************************************************/
@@ -1001,93 +793,85 @@ Parametros passados em data:
 static void cdcreatecanvas(cdCanvas* canvas, void *data)
 {
   cdCtxCanvas *ctxcanvas;
-  char *line = (char *)data;
-  char c;
-  char words[4][256];
+  char* strdata = (char*)data, *prec;
   char filename[10240] = "";
-  double w=0, h=0, r=0;
-  int p=0;
-  int i, n;
+  double res = 3.78;
+  double w_mm = INT_MAX*res, 
+         h_mm = INT_MAX*res;
+  int codificacao = CD_BIN;
 
-  line += cdGetFileName(line, filename);
+  strdata += cdGetFileName(strdata, filename);
   if (filename[0] == 0)
     return;
   
-  n = sscanf(line, "%s %s %s %s", words[0], words[1], words[2], words[3]);
-  
   ctxcanvas = (cdCtxCanvas *)malloc(sizeof(cdCtxCanvas));
+  memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
 
-  canvas->ctxcanvas = ctxcanvas;
-  ctxcanvas->canvas = canvas;
+  if (strstr(strdata, "-t")!=NULL)
+    codificacao = CD_CLEAR_TEXT;
 
-  strcpy(ctxcanvas->filename, filename);
-  
-  canvas->w_mm = (double)INT_MAX*3.78;
-  canvas->h_mm = (double)INT_MAX*3.78;
-  canvas->xres = 3.78;
-  canvas->yres = 3.78;
-  canvas->bpp = 24;
-
-  ctxcanvas->vdc_int_prec = 16;
-  ctxcanvas->codificacao = CD_BIN;
-  ctxcanvas->first = 1;
-  ctxcanvas->clip.first = 1;
-  ctxcanvas->patindex = 1;
-  
-  ctxcanvas->hassize = 0;		/* Indica se foi passado um tamanho para o canvas */
-  
-  for (i = 0; i < n; i++)
-  {
-    if (sscanf ( words[i], "%lgx%lg",  &w, &h )== 2)
-    {
-      canvas->w_mm = w;
-      canvas->h_mm = h;
-      ctxcanvas->hassize = 1;
-    }
-    else if (sscanf ( words[i], "%lg", &r ) == 1)
-      canvas->yres = canvas->xres = r;
-    else if (sscanf ( words[i], "-%c%d", &c, &p )>0)
-    {
-      if ( c=='t' ) 
-        ctxcanvas->codificacao = CD_CLEAR_TEXT;
-      else if ( c=='p' ) 
-        ctxcanvas->vdc_int_prec = p;
-    }
-  }
-  
-  if ( ctxcanvas->vdc_int_prec != 16 && w == 0.0 && h == 0.0 )
-  {
-    canvas->w_mm = (double) (pow(2,p)/2)-1;
-    canvas->h_mm = (double) (pow(2,p)/2)-1;
-  }
-  
-  /* update canvas context */
-  canvas->w = (int)(canvas->w_mm * canvas->xres);
-  canvas->h = (int)(canvas->h_mm * canvas->yres);
-  
-  ctxcanvas->cgm = cgm_begin_metafile ( ctxcanvas->filename, ctxcanvas->codificacao, "CD - CanvasDraw, Tecgraf/PUC-Rio" );
+  ctxcanvas->cgm = cgm_begin_metafile(filename, codificacao, "CD - CanvasDraw, Tecgraf/PUC-Rio");
   if (!ctxcanvas->cgm)
   {
     free(ctxcanvas);
-    canvas->ctxcanvas = NULL;
     return; 
   }
+
+  /* store the base canvas */
+  canvas->ctxcanvas = ctxcanvas;
+  ctxcanvas->canvas = canvas;
+
+  /* get size */
+  sscanf(strdata, "%lgx%lg %lg", &w_mm, &h_mm, &res);
+  canvas->w = (int)(w_mm * res);
+  canvas->h = (int)(h_mm * res);
+  canvas->w_mm = w_mm;
+  canvas->h_mm = h_mm;
+  canvas->xres = res;
+  canvas->yres = res;
+
+  canvas->bpp = 24;
+
+  /* internal defaults */
+  ctxcanvas->int_prec = 16;
+  ctxcanvas->real_prec = 0;
+  ctxcanvas->vdc_type = 0;
+  ctxcanvas->patindex = 1;
+
+  ctxcanvas->codificacao = codificacao;
   
+  prec = strstr(strdata, "-p");
+  if (prec!=NULL)
+  {
+    prec += 2; /* skip "-p" */
+    if (prec[0]=='1' && prec[1]=='6')
+    {
+      ctxcanvas->int_prec = 16;
+      ctxcanvas->vdc_type = 0;
+    }
+    else if (prec[0]=='3' && prec[1]=='2')
+    {
+      ctxcanvas->int_prec = 32;
+      ctxcanvas->vdc_type = 0;
+    }
+    else if (prec[0]=='F')
+    {
+      ctxcanvas->real_prec = 0;
+      ctxcanvas->vdc_type = 1;
+    }
+    else if (prec[0]=='D')
+    {
+      ctxcanvas->real_prec = 1;
+      ctxcanvas->vdc_type = 1;
+    }
+  } 
+  
+  /* header */
   metafile_descriptor(ctxcanvas);
   
   cgm_begin_picture ( ctxcanvas->cgm, "Picture x" );
-
-  picture_descriptor (ctxcanvas);
-
-  cgm_clip_rectangle ( ctxcanvas->cgm, 0, 0, (double)canvas->w, (double)canvas->h);
-  cgm_clip_indicator (ctxcanvas->cgm, 0);
-
+    picture_descriptor (ctxcanvas);
   cgm_begin_picture_body ( ctxcanvas->cgm );
-  
-  control_elements (ctxcanvas);
-
-  cgm_marker_type( ctxcanvas->cgm, MARKER_DOT);
-  cgm_marker_size( ctxcanvas->cgm, 1.0);
 }
 
 static void cdinittable(cdCanvas* canvas)

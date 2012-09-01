@@ -236,18 +236,18 @@ void DrawCanvasDriver(cdContext* ctx, char* StrData)
   printf("KillCanvas()\n");
 }
 
-void DrawCanvasDriverSize(cdContext* ctx, char* name, int pixels)
+void DrawCanvasDriverSize(cdContext* ctx, char* name, int pixels, const char* opt)
 {
   char StrData[100];
   int w, h;
   double w_mm, h_mm;
   cdCanvasGetSize(curCanvas, &w, &h, &w_mm, &h_mm);
-  if (pixels == 1)
-    sprintf(StrData, "%s %dx%d", name, w, h);
-  else if (pixels == 2)
-    sprintf(StrData, "%s -w%g -h%g -s%g", name, w_mm, h_mm, ((double)w/w_mm)*25.4);
-  else
-    sprintf(StrData, "%s %gx%g %g", name, w_mm, h_mm, (double)w/w_mm);
+  if (pixels == 1)  /* WMF and EMF */
+    sprintf(StrData, "%s %dx%d %s", name, w, h, opt);
+  else if (pixels == 2)  /* PDF and PS */
+    sprintf(StrData, "%s -w%g -h%g -s%g %s", name, w_mm, h_mm, ((double)w/w_mm)*25.4, opt);
+  else  /* others */
+    sprintf(StrData, "%s %gx%g %g %s", name, w_mm, h_mm, (double)w/w_mm, opt);
   DrawCanvasDriver(ctx, StrData);
 }
 
@@ -262,75 +262,75 @@ void DrawCanvasDriverSizeParam(cdContext* ctx, char* param)
 
 int SimpleDrawDebug(void)
 {
-  DrawCanvasDriverSize(CD_DEBUG, "simple_debug.txt", 0);
+  DrawCanvasDriverSize(CD_DEBUG, "simple_debug.txt", 0, "");
   return 0;
 }
 
 int SimpleDrawCGMText(void)
 {
-  DrawCanvasDriverSize(CD_CGM, "simple_t.cgm -t", 0);
+  DrawCanvasDriverSize(CD_CGM, "simple_t.cgm", 0, "-t");
   return 0;
 }
 
 int SimpleDrawCGMBin(void)
 {
-  DrawCanvasDriverSize(CD_CGM, "simple_b.cgm", 0);
+  DrawCanvasDriverSize(CD_CGM, "simple_b.cgm", 0, "");
   return 0;
 }
 
 int SimpleDrawDXF(void)
 {
-  DrawCanvasDriverSize(CD_DXF, "simple.dxf", 0);
+  DrawCanvasDriverSize(CD_DXF, "simple.dxf", 0, "");
   return 0;
 }
 
 int SimpleDrawDGN(void)
 {
-  DrawCanvasDriverSize(CD_DGN, "simple.dgn", 0);
+  DrawCanvasDriverSize(CD_DGN, "simple.dgn", 0, "");
   return 0;
 }
 
 int SimpleDrawEMF(void)
 {
   if (contextplus) cdUseContextPlus(1);
-  DrawCanvasDriverSize(CD_EMF, "simple.emf", 1);
+  DrawCanvasDriverSize(CD_EMF, "simple.emf", 1, "");
   if (contextplus) cdUseContextPlus(0);
   return 0;
 }
 
 int SimpleDrawMetafile(void)
 {
-  DrawCanvasDriverSize(CD_METAFILE, "simple.mf", 0);
+  DrawCanvasDriverSize(CD_METAFILE, "simple.mf", 0, "");
   return 0;
 }
 
 int SimpleDrawPS(void)
 {
-  DrawCanvasDriverSize(CD_PS, "simple.ps -l0 -r0 -t0 -b0", 2);
+  DrawCanvasDriverSize(CD_PS, "simple.ps", 2, "-l0 -r0 -t0 -b0");
   return 0;
 }
 
 int SimpleDrawSVG(void)
 {
-  DrawCanvasDriverSize(CD_SVG, "simple.svg", 0);
+  DrawCanvasDriverSize(CD_SVG, "simple.svg", 0, "");
   return 0;
 }
 
 int SimpleDrawPDF(void)
 {
-  DrawCanvasDriverSize(CD_PDF, "simple.pdf", 2);
+  DrawCanvasDriverSize(CD_PDF, "simple.pdf", 2, "");
   return 0;
 }
 
 int SimpleDrawEPS(void)
 {
-  DrawCanvasDriverSize(CD_PS, "simple.eps -e", 2);
+  DrawCanvasDriverSize(CD_PS, "simple.eps", 2, "-e");
   return 0;
 }
 
 int SimpleDrawWMF(void)
 {
-  DrawCanvasDriverSize(CD_WMF, "simple.wmf", 1);
+  DrawCanvasDriverSize(CD_WMF, "simple.wmf", 1, "");
   return 0;
 }
 

@@ -22,18 +22,18 @@
   Data)</font>, which <b>opens</b> the file and writes its header. Then, other functions in the CD library can be called 
   as usual. The <font face="Courier">Data</font> parameter string has the following format:</p>
   
-    <pre><em>&quot;filename [widthxheight] [resolution] [-t] -p[precision]&quot; or in C style &quot;<strong><tt>%s %gx%g %g %s</tt></strong>&quot;</em></pre>
+    <pre><em>&quot;filename [widthxheight] [resolution] [-t] [-pprec]&quot; or in C style &quot;<strong><tt>%s %gx%g %g %s</tt></strong>&quot;</em></pre>
   
   <p>Only the parameter <font face="Courier">filename</font> is required. The filename must be inside double quotes (&quot;) 
   if it has spaces.<font face="Courier"> Width</font> and <font face="Courier">height</font> are provided in millimeters 
   (note the lowercase &quot;x&quot; between them), and their default value in pixels is <font face="Courier">INT_MAX</font> for 
-  both dimensions. When the canvas' size is not specified, the VDC Extension saved to the file is the image's bounding 
-  rectangle. The resolution is the number of pixels per millimeter; its default value is &quot;3.78 pixels/mm&quot; (96 DPI).
+  both dimensions. The resolution is the number of pixels per millimeter; its default value is &quot;3.78 pixels/mm&quot; (96 DPI).
   <font face="Courier">Width</font>, <font face="Courier">height</font> and <font face="Courier">resolution</font> are 
   real values. <font face="Courier">Width</font>, <font face="Courier">height</font> and <font face="Courier">resolution</font> 
   are used only by <strong><font face="Courier">cdGetCanvasSize</font> </strong>and in pixel-millimeter conversion. 
   Parameter <font face="Courier">-t</font> modifies the codification. Parameter <font face="Courier">-p</font> specifies 
-  the precision of integers, which can be 16 (default) or 32.</p>
+  the precision which can be &quot;16&quot; bits interger (default), &quot;32&quot; bits (integer), 
+  &quot;F&quot; (float) or &quot;D&quot; (double).</p>
   <p>Any amount of such canvases may exist simultaneously. It is important to note that a call to function
   <a href="../func/init.html#cdKillCanvas"><font face="Courier"><strong>
   cdKillCanvas</strong></font></a> is required to <b>close</b> the file properly.</p>

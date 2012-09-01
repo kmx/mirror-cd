@@ -1231,21 +1231,17 @@ static void cdcreatecanvas(cdCanvas *canvas, void *data)
 {
   char filename[10240] = "";
   char* strdata = (char*)data;
-  double w_mm = INT_MAX*3.78, h_mm = INT_MAX*3.78, res = 3.78;
+  double res = 3.78;
+  double w_mm = INT_MAX*res, 
+         h_mm = INT_MAX*res;
   cdCtxCanvas* ctxcanvas;
 
   strdata += cdGetFileName(strdata, filename);
   if (filename[0] == 0)
     return;
 
-  sscanf(strdata, "%lgx%lg %lg", &w_mm, &h_mm, &res);
-
   ctxcanvas = (cdCtxCanvas *)malloc(sizeof(cdCtxCanvas));
   memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
-
-  /* SVN specification states that number must use dot as decimal separator */
-  ctxcanvas->old_locale = cdStrDup(setlocale(LC_NUMERIC, NULL));
-  setlocale(LC_NUMERIC, "C");
 
   ctxcanvas->file = fopen(filename, "w");
   if (!ctxcanvas->file)
@@ -1256,20 +1252,27 @@ static void cdcreatecanvas(cdCanvas *canvas, void *data)
 
   /* store the base canvas */
   ctxcanvas->canvas = canvas;
+  canvas->ctxcanvas = ctxcanvas;
 
-  /* update canvas context */
+  /* get size */
+  sscanf(strdata, "%lgx%lg %lg", &w_mm, &h_mm, &res);
   canvas->w = (int)(w_mm * res);
   canvas->h = (int)(h_mm * res);
   canvas->w_mm = w_mm;
   canvas->h_mm = h_mm;
-  canvas->bpp = 24;
   canvas->xres = res;
   canvas->yres = res;
+
+  canvas->bpp = 24;
+
+  /* top-down orientation */
   canvas->invert_yaxis = 1;
 
-  /* update canvas context */
-  canvas->ctxcanvas = ctxcanvas;
+  /* SVN specification states that number must use dot as decimal separator */
+  ctxcanvas->old_locale = cdStrDup(setlocale(LC_NUMERIC, NULL));
+  setlocale(LC_NUMERIC, "C");
 
+  /* internal defaults */
   ctxcanvas->last_fill_mode = -1;
   ctxcanvas->last_clip_poly = -1;
   ctxcanvas->last_clip_rect = -1;
@@ -1281,10 +1284,12 @@ static void cdcreatecanvas(cdCanvas *canvas, void *data)
   ctxcanvas->hatchboxsize = 8;
   ctxcanvas->opacity = 1.0;
 
+  /* custom attributes */
   cdRegisterAttribute(canvas, &cmd_attrib);
   cdRegisterAttribute(canvas, &hatchboxsize_attrib);
   cdRegisterAttribute(canvas, &opacity_attrib);
 
+  /* header */
   fprintf(ctxcanvas->file, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
   fprintf(ctxcanvas->file, "<svg xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\" width=\"%gpt\" height=\"%gpt\" viewBox=\"0 0 %d %d\" version=\"1.1\">\n", CD_MM2PT*canvas->w_mm, CD_MM2PT*canvas->h_mm, canvas->w, canvas->h);
   fprintf(ctxcanvas->file, "<g>\n"); /* open global container */

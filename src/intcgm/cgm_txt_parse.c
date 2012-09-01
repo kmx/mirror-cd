@@ -273,7 +273,7 @@ static int cgm_txt_clslmd(tCGM* cgm)   /* color selection mode */
 
 static int cgm_txt_lnwdmd(tCGM* cgm)   /* line width specification mode */
 {
-  const char *options[] = { "ABSTRACT", "SCALED", NULL };  /* mapped to ABSOLUTE, SCALED */
+  const char *options[] = { "ABSOLUTE", "SCALED", NULL };
 
   if(cgm_txt_get_e(cgm, &(cgm->linewidth_mode), options)) 
     return CGM_ERR_READ;
@@ -283,7 +283,7 @@ static int cgm_txt_lnwdmd(tCGM* cgm)   /* line width specification mode */
 
 static int cgm_txt_mkszmd(tCGM* cgm)   /* marker size specification mode */
 {
-  const char *options[] = { "ABSTRACT", "SCALED", NULL };  /* mapped to ABSOLUTE, SCALED */
+  const char *options[] = { "ABSOLUTE", "SCALED", NULL };
 
   if(cgm_txt_get_e(cgm, &(cgm->markersize_mode), options)) 
     return CGM_ERR_READ;
@@ -293,7 +293,7 @@ static int cgm_txt_mkszmd(tCGM* cgm)   /* marker size specification mode */
 
 static int cgm_txt_edwdmd(tCGM* cgm)   /* edge width specification mode */
 {
-  const char *options[] = { "ABSTRACT", "SCALED", NULL };  /* mapped to ABSOLUTE, SCALED */
+  const char *options[] = { "ABSOLUTE", "SCALED", NULL };
 
   if(cgm_txt_get_e(cgm, &(cgm->edgewidth_mode), options)) 
     return CGM_ERR_READ;

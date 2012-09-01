@@ -347,8 +347,6 @@ static const cgmCommand **comandos[] = {
          external,
          NULL };
 
-#define unit (cgm->file)
-
 /************************************************
 *                                               *
 *         listas de funcoes necessarias         *
@@ -498,15 +496,15 @@ static void cgmb_putc ( CGM *cgm, int b )
     {
       if ( cgm->bc[i] == 32766 - 2*i )
       {
-        long po = ftell(unit);
+        long po = ftell(cgm->file);
         int op  = cgm->op;
 
         cgm->op = -1;
-        fseek(unit, cgm->po[i] , SEEK_SET);
+        fseek(cgm->file, cgm->po[i] , SEEK_SET);
         cgmb_putw ( cgm, (1 << 15) | (cgm->bc[i]) );
 
         cgm->op = i - 1;
-        fseek(unit, po, SEEK_SET);
+        fseek(cgm->file, po, SEEK_SET);
         cgmb_putw ( cgm, 0 );
 
         cgm->op    = op;
@@ -517,7 +515,7 @@ static void cgmb_putc ( CGM *cgm, int b )
     }
   }
 
-  fputc ( b, unit );
+  fputc ( b, cgm->file );
 }
 
 
@@ -636,7 +634,7 @@ static void cgmb_wch ( CGM* cgm, int c, int id, int len )
 
   if ( len > 30 )
   {
-    cgm->po[cgm->op] = ftell(unit);
+    cgm->po[cgm->op] = ftell(cgm->file);
     cgmb_putw ( cgm, 0 );
   }
   else
@@ -763,31 +761,35 @@ static void cgmb_s ( CGM *cgm, const char *s, int len )
 static void cgmb_vdc ( CGM *cgm, double vdc)
 {
   if ( cgm->vdc_type == 0 )
-    switch ( cgm->vdc_int )
   {
-    case 0: cgmb_puti8  ( cgm, (int )vdc ); break;
-    case 1: 
-      /* Evita overflow em ambientes de 32 bits */          
-      if (vdc < -32768)     vdc = -32768;
-      else if (vdc > 32767) vdc = +32767;
-      cgmb_puti16 ( cgm, (int) vdc ); 
-      break;
-    case 2: cgmb_puti24 ( cgm, (long)vdc ); break;
-    case 3:
-      /* Evita overflow em ambientes de 32 bits */
-      if (vdc < (double)-2147483648.0)     vdc = (double)-2147483648.0;
-      else if (vdc > (double)2147483647.0) vdc = (double)2147483647.0;
-      cgmb_puti32 ( cgm, (long)vdc );
-      break;
+    switch ( cgm->vdc_int )
+    {
+      case 0: cgmb_puti8  ( cgm, (int )vdc ); break;
+      case 1: 
+        /* Evita overflow em ambientes de 32 bits */          
+        if (vdc < -32768)     vdc = -32768;
+        else if (vdc > 32767) vdc = +32767;
+        cgmb_puti16 ( cgm, (int) vdc ); 
+        break;
+      case 2: cgmb_puti24 ( cgm, (long)vdc ); break;
+      case 3:
+        /* Evita overflow em ambientes de 32 bits */
+        if (vdc < (double)-2147483648.0)     vdc = (double)-2147483648.0;
+        else if (vdc > (double)2147483647.0) vdc = (double)2147483647.0;
+        cgmb_puti32 ( cgm, (long)vdc );
+        break;
 
+    }
   }
   else
-    switch ( cgm->vdc_real )
   {
-    case 0: cgmb_putfl32 ( cgm, (float )vdc ); break;
-    case 1: cgmb_putfl64 ( cgm, (double)vdc ); break;
-    case 2: cgmb_putfx32 ( cgm, (float )vdc ); break;
-    case 3: cgmb_putfx64 ( cgm, (double)vdc ); break;
+    switch ( cgm->vdc_real )
+    {
+      case 0: cgmb_putfl32 ( cgm, (float )vdc ); break;
+      case 1: cgmb_putfl64 ( cgm, (double)vdc ); break;
+      case 2: cgmb_putfx32 ( cgm, (float )vdc ); break;
+      case 3: cgmb_putfx64 ( cgm, (double)vdc ); break;
+    }
   }
 
 }
@@ -838,14 +840,14 @@ static int cgmb_term ( CGM *cgm )
 
     if ( cgm->po[cgm->op] != 0L )
     {
-      long po = ftell(unit);
+      long po = ftell(cgm->file);
       int  op = cgm->op;
 
       cgm->op = -1;
-      fseek ( unit, cgm->po[op], SEEK_SET);
+      fseek ( cgm->file, cgm->po[op], SEEK_SET);
       cgmb_putw ( cgm, cgm->bc[op] );
 
-      fseek ( unit, po, SEEK_SET );
+      fseek ( cgm->file, po, SEEK_SET );
       cgm->op = op;
     }
     cgm->op --;
@@ -862,7 +864,7 @@ static int cgmb_term ( CGM *cgm )
 
 static void cgmt_wch ( CGM* cgm, int c, int id, int len )
 {
-  cgm->cl += fprintf ( unit, "%s", comandos[c+1][id]->ct );
+  cgm->cl += fprintf ( cgm->file, "%s", comandos[c+1][id]->ct );
 }
 
 static void cgmt_ci ( CGM *cgm, unsigned long ci )
@@ -891,40 +893,40 @@ static void cgmt_ix ( CGM *cgm, long ix )
 
 static void cgmt_e ( CGM *cgm, int e, const char *el[] )
 {
-  cgm->cl += fprintf ( unit, " %s", el[e] );
+  cgm->cl += fprintf ( cgm->file, " %s", el[e] );
 }
 
 static void cgmt_i ( CGM *cgm, long i )
 {
-  cgm->cl += fprintf ( unit, " %ld", i );
+  cgm->cl += fprintf ( cgm->file, " %ld", i );
 }
 
 static void cgmt_u ( CGM *cgm, unsigned long i )
 {
-  cgm->cl += fprintf ( unit, " %lu", i );
+  cgm->cl += fprintf ( cgm->file, " %lu", i );
 }
 
 static void cgmt_r ( CGM *cgm, double func )
 {
-  cgm->cl += fprintf ( unit, " %g", func );
+  cgm->cl += fprintf ( cgm->file, " %g", func );
 }
 
 static void cgmt_s ( CGM *cgm, const char *s, int len )
 {
   register unsigned i;
-  fputc ( 34, unit );
+  fputc ( 34, cgm->file );
 
   for ( i=0; i<len; i++ )
   {
     if ( s[i] == 34 )
     {
-      fputc ( 34, unit );
+      fputc ( 34, cgm->file );
       cgm->cl ++;
     }
-    fputc ( s[i], unit );
+    fputc ( s[i], cgm->file );
   }
 
-  fputc ( 34, unit );
+  fputc ( 34, cgm->file );
   cgm->cl += len + 2;
 }
 
@@ -967,7 +969,7 @@ static void cgmt_co ( CGM *cgm, const void * co)
 
 static void cgmt_sep ( CGM *cgm, const char * sep )
 {
-  cgm->cl += fprintf ( unit, " %s", sep );
+  cgm->cl += fprintf ( cgm->file, " %s", sep );
 }
 
 static int  cgmt_get_col ( CGM *cgm )
@@ -978,18 +980,18 @@ static int  cgmt_get_col ( CGM *cgm )
 static void cgmt_align ( CGM *cgm, int n )
 {
   for ( ; cgm->cl < n ; cgm->cl ++ )
-    fputc ( ' ', unit );
+    fputc ( ' ', cgm->file );
 }
 
 static void cgmt_nl    ( CGM *cgm )
 {
-  fputc ( '\n', unit );
+  fputc ( '\n', cgm->file );
   cgm->cl = 1;
 }
 
 static int cgmt_term ( CGM *cgm )
 {
-  fputc ( ';', unit );
+  fputc ( ';', cgm->file );
   cgm->func->nl(cgm);
   return 0;
 }
@@ -1002,7 +1004,7 @@ static int cgmt_term ( CGM *cgm )
 
 static void cgmc_wch ( CGM* cgm, int c, int id, int len )
 {
-  cgm->cl += fprintf ( unit, "%s", comandos[c+1][id]->ct );
+  cgm->cl += fprintf ( cgm->file, "%s", comandos[c+1][id]->ct );
 }
 
 static void cgmc_ci ( CGM *cgm, unsigned long ci )
@@ -1031,40 +1033,40 @@ static void cgmc_ix ( CGM *cgm, long ix )
 
 static void cgmc_e ( CGM *cgm, int e, const char *el[] )
 {
-  cgm->cl += fprintf ( unit, " %s", el[e] );
+  cgm->cl += fprintf ( cgm->file, " %s", el[e] );
 }
 
 static void cgmc_i ( CGM *cgm, long i )
 {
-  cgm->cl += fprintf ( unit, " %ld", i );
+  cgm->cl += fprintf ( cgm->file, " %ld", i );
 }
 
 static void cgmc_u ( CGM *cgm, unsigned long i )
 {
-  cgm->cl += fprintf ( unit, " %lu", i );
+  cgm->cl += fprintf ( cgm->file, " %lu", i );
 }
 
 static void cgmc_r ( CGM *cgm, double func )
 {
-  cgm->cl += fprintf ( unit, " %g", func );
+  cgm->cl += fprintf ( cgm->file, " %g", func );
 }
 
 static void cgmc_s ( CGM *cgm, const char *s, int len )
 {
   register unsigned i;
-  fputc ( 34, unit );
+  fputc ( 34, cgm->file );
 
   for ( i=0; i<len; i++ )
   {
     if ( s[i] == 34 )
     {
-      fputc ( 34, unit );
+      fputc ( 34, cgm->file );
       cgm->cl ++;
     }
-    fputc ( s[i], unit );
+    fputc ( s[i], cgm->file );
   }
 
-  fputc ( 34, unit );
+  fputc ( 34, cgm->file );
   cgm->cl += len + 2;
 }
 
@@ -1101,7 +1103,7 @@ static void cgmc_co ( CGM *cgm, const void * co)
 
 static void cgmc_sep ( CGM *cgm, const char * sep )
 {
-  cgm->cl += fprintf ( unit, " %s", sep );
+  cgm->cl += fprintf ( cgm->file, " %s", sep );
 }
 
 static int  cgmc_get_col ( CGM *cgm )
@@ -1112,18 +1114,18 @@ static int  cgmc_get_col ( CGM *cgm )
 static void cgmc_align ( CGM *cgm, int n )
 {
   for ( ; cgm->cl < n ; cgm->cl ++ )
-    fputc ( ' ', unit );
+    fputc ( ' ', cgm->file );
 }
 
 static void cgmc_nl    ( CGM *cgm )
 {
-  fputc ( '\n', unit );
+  fputc ( '\n', cgm->file );
   cgm->cl = 1;
 }
 
 static int cgmc_term ( CGM *cgm )
 {
-  fputc ( ';', unit );
+  fputc ( ';', cgm->file );
   cgm->func->nl(cgm);
   return 0;
 }
@@ -1174,19 +1176,15 @@ CGM *cgm_begin_metafile ( char *file, int mode, char *header )
     return NULL;
 
 #ifdef __VAXC__
-
   if ( mode == 2 )
     cgm->file = fopen ( file , "w"  , "rfm=var", "rat=cr" );
   else
     cgm->file = fopen ( file , "w+b", "rfm=var", "ctx=stm" );
-
 #else
-
   if ( mode == 2 )
     cgm->file = fopen ( file , "w"  );
   else
     cgm->file = fopen ( file , "w+b" );
-
 #endif
 
   if ( cgm->file  == NULL )
@@ -1310,7 +1308,7 @@ int cgm_vdc_type ( CGM *cgm, int mode )
     cgm->vdc_size = cgm->vdc_int + 1;
   else
     cgm->vdc_size = ( _cgm_ireal_precs[cgm->vdc_real][1] +
-    _cgm_ireal_precs[cgm->vdc_real][2]) / 8;
+                      _cgm_ireal_precs[cgm->vdc_real][2]) / 8;
 
   return cgm->func->term(cgm);
 }
@@ -1563,7 +1561,7 @@ int cgm_colour_selection_mode ( CGM *cgm, int mode)
 
 static int _cgm_width_specify_mode ( CGM *cgm, int t, int mode)
 {
-  static const char *sm[] = { "abstract", "scaled" };
+  static const char *sm[] = { "absolute", "scaled" };
   cgm->func->wch ( cgm, 2, t, 2 );
   cgm->func->e   ( cgm, mode, sm );
   return cgm->func->term(cgm);

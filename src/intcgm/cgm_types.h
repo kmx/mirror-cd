@@ -117,15 +117,15 @@ struct _tCGM {
   tData buff;
 
   union  {
-    long b_prec;  /* 8, 16, 24, 32 */
+    long b_prec;  /* 0=8, 1=16, 2=24, 3=32 */
     struct { long minint; long maxint; } t_prec ;
   } int_prec;
   union {
-    long b_prec; /* float*32, float*64, fixed*32, fixed*64 */
+    long b_prec;  /* 0=float*32, 1=float*64(double), 2=fixed*32, 3=fixed*64 */
     struct { double minreal; double maxreal; long digits; } t_prec;
   } real_prec;
   union {
-    long b_prec;  /* 8, 16, 24, 32 */
+    long b_prec;  /* 0=8, 1=16, 2=24, 3=32 */
     struct { long minint; long maxint; } t_prec;
   } ix_prec;
   long cd_prec;
@@ -151,11 +151,11 @@ struct _tCGM {
 
   short vdc_type;  /* integer, real */
   union {
-    long b_prec;   /* 8, 16, 24, 32 */
+    long b_prec;   /* 0=8, 1=16, 2=24, 3=32 */
     struct { long minint; long maxint; } t_prec;
   } vdc_int;
   union {
-    long b_prec;   /* float*32, float*64, fixed*32, fixed*64 */
+    long b_prec;   /* 0=float*32, 1=float*64(double), 2=fixed*32, 3=fixed*64 */
     struct { double minreal; double maxreal; long digits; } t_prec;
   } vdc_real;
 

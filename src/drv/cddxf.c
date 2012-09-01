@@ -1201,19 +1201,16 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   char filename[10240] = "";
   char* strdata = (char*)data;
   cdCtxCanvas *ctxcanvas;
-  double param1, param2, param3;
-
-  ctxcanvas = (cdCtxCanvas *) malloc (sizeof (cdCtxCanvas));
-
-  param1 = 0;
-  param2 = 0;
-  param3 = 0;
+  double res = 3.78;
+  double w_mm = INT_MAX*res, 
+         h_mm = INT_MAX*res;
 
   strdata += cdGetFileName(strdata, filename);
   if (filename[0] == 0)
     return;
 
-  sscanf(strdata, "%lfx%lf %lf", &param1, &param2, &param3);
+  ctxcanvas = (cdCtxCanvas *) malloc (sizeof (cdCtxCanvas));
+  memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
 
   ctxcanvas->file = fopen (filename, "w");
   if (ctxcanvas->file == NULL)
@@ -1222,43 +1219,23 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
     return;
   }
 
-  if (!param1)
-  {
-    canvas->w_mm  = INT_MAX*3.78;
-    canvas->h_mm = INT_MAX*3.78;
-    canvas->xres = 3.78;
-  }
-  else if (!param2)
-  {
-    canvas->w_mm  = INT_MAX*param1;
-    canvas->h_mm = INT_MAX*param1;
-    canvas->xres = param1;
-  }
-  else if (!param3)
-  {
-    canvas->w_mm  = param1;
-    canvas->h_mm = param2;
-    canvas->xres = 3.78;
-  }
-  else
-  {
-    canvas->w_mm  = param1;
-    canvas->h_mm = param2;
-    canvas->xres = param3;
-  }
-
+  /* store the base canvas */
   ctxcanvas->canvas = canvas;
   canvas->ctxcanvas = ctxcanvas;
 
-  canvas->bpp = 8;
+  /* get size */
+  sscanf(strdata, "%lgx%lg %lg", &w_mm, &h_mm, &res);
+  canvas->w = (int)(w_mm * res);
+  canvas->h = (int)(h_mm * res);
+  canvas->w_mm = w_mm;
+  canvas->h_mm = h_mm;
+  canvas->xres = res;
+  canvas->yres = res;
 
-  canvas->yres = canvas->xres;
+  canvas->bpp = 8;      /* DXF has indexed colors */
 
-  canvas->w = (int)(canvas->w_mm * canvas->xres);
-  canvas->h = (int)(canvas->h_mm * canvas->yres);
-
+  /* internal defaults */
   ctxcanvas->layer = 0;            /* reset layer    */
-
   ctxcanvas->tf  = 0;              /* text font (0 is STANDARD)               */
   ctxcanvas->th  = 9;              /* text height                             */
   ctxcanvas->toa = 0;              /* text oblique angle                      */
@@ -1266,6 +1243,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   ctxcanvas->tha = 0;              /* text horizontal alignment (0 is left)   */
   ctxcanvas->fgcolor   = 7;        /* foreground AutoCAD palette color        */
 
+  /* header */
   fprintf (ctxcanvas->file, "0\n");
   fprintf (ctxcanvas->file, "SECTION\n");  /* header maker */
   fprintf (ctxcanvas->file, "2\n");
