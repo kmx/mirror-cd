@@ -12,7 +12,7 @@
 
 <h2 style="text-align: left">CD_CGM - <em>Computer Graphics Metafile Driver </em>(cdcgm.h)</h2>
 
-  <p>This driver allows generating a Computer Graphics Metafile, which is an ANSI standard for the persistent storage of 
+  <p>This driver allows generating a Computer Graphics Metafile version 1, which is an ANSI standard for the persistent storage of 
   graphics primitives. The file usually has an extension .CGM.</p>
 
 <h3>Use</h3>
@@ -40,8 +40,9 @@
   <p><strong>Coding -</strong> The CGM format supports binary and text coding. If you are not sure what to do, use 
   binary coding, which is the default. Should you prefer text coding, add a &quot;<font face="Courier">-t</font>&quot; string to 
   the <font face="Courier">Data</font> parameter.</p>
-  <p><strong>Precision of Coordinates -</strong> The primitives can use coordinates in real numbers. However, for 
-  compatibility reasons, we use coordinates in integers.</p>
+  <p><strong>Precision of Coordinates -</strong> The primitives can use 
+  coordinates in real numbers. But to be effective the parameters &quot;-pF&quot; or &quot;-pD&quot; 
+  must be used when creating the canvas.</p>
 
 <h3>Behavior of Functions</h3>
 <h4>Control&nbsp; </h4>
@@ -49,7 +50,7 @@
   <li><a href="../func/control.html#cdClear"><font face="Courier"><strong>Clear</strong></font></a>: 
   does nothing.</li>
   <li><a href="../func/control.html#cdFlush"><font face="Courier"><strong>Flush</strong></font></a>: 
-  creates a new image, preserving the previous one. The CGM format supports multiple images in a file.</li>
+  creates a new picture. The CGM format supports multiple picture in the file.</li>
   <li><a href="../func/other.html#cdPlay"><font face="Courier"><strong>Play</strong></font></a>: 
   works with files created with text or binary coding. There are several callbacks for this driver. If one of the 
   callbacks returns a value different from zero, <font face="Courier">cdPlay</font>'s processing is interrupted. The 
@@ -94,7 +95,8 @@
   does not exist in CGM, is simulated using a mark with size 1.</li>
   <li><strong><font face="Courier"><a href="../func/filled.html#cdChord">Chord</a></font></strong>: 
   does nothing.</li>
-  <li>Floating point primitives are supported.</li>
+  <li>Floating point primitives are supported. But to be effective the 
+  parameters &quot;-pF&quot; or &quot;-pD&quot; must be used when creating the canvas.</li>
 </ul>
 <h4>Attributes </h4>
 <ul>
