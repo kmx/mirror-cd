@@ -1561,7 +1561,7 @@ int cgm_colour_selection_mode ( CGM *cgm, int mode)
 
 static int _cgm_width_specify_mode ( CGM *cgm, int t, int mode)
 {
-  static const char *sm[] = { "absolute", "scaled" };
+  static const char *sm[] = { "abs", "scaled" };
   cgm->func->wch ( cgm, 2, t, 2 );
   cgm->func->e   ( cgm, mode, sm );
   return cgm->func->term(cgm);
