@@ -31,7 +31,8 @@ struct _cdCtxCanvas
   int  real_prec;   /* 0=float, 1=double */
   int  int_prec;    /* 16, 32 */
   int  count;       /* picture count */
-  int patindex;
+  int pattable_index;     /* each pattern must have an index */
+  int pattern_index, stipple_index; /* last pattern and stipple index */
 };
 
 static double cve_black[] = { 0.0, 0.0, 0.0 };
@@ -90,7 +91,7 @@ static void metafile_descriptor (cdCtxCanvas *ctxcanvas, const char* desc)
       cgm_vdc_real_precision(ctxcanvas->cgm, ctxcanvas->real_prec);
     }
     /* CD default attributes that are different from CGM defaults */
-    cgm_interior_style(ctxcanvas->cgm, 1);  /* SOLID */
+    cgm_interior_style(ctxcanvas->cgm, SOLID);
     cgm_edge_visibility(ctxcanvas->cgm, 0);  /* OFF */
     cgm_clip_rectangle ( ctxcanvas->cgm, 0, 0, (double)ctxcanvas->canvas->w, (double)ctxcanvas->canvas->h);
     cgm_clip_indicator (ctxcanvas->cgm, 0);
@@ -460,18 +461,29 @@ static int cdinteriorstyle (cdCtxCanvas *ctxcanvas,  int style )
   switch ( style )
   {
   case CD_SOLID:
-    style = 1;
+    style = SOLID;
     break;
   case CD_STIPPLE:
+    if (!ctxcanvas->stipple_index)
+      return style;
+    cgm_pattern_index(ctxcanvas->cgm, (long)ctxcanvas->stipple_index);
+    style = PAT;
+    break;
   case CD_PATTERN:
-    style = 2;
+    if (!ctxcanvas->pattern_index)
+      return style;
+    cgm_pattern_index(ctxcanvas->cgm, (long)ctxcanvas->pattern_index);
+    style = PAT;
     break;
   case CD_HATCH:
-    style = 3;
+    style = HATCH;
+    break;
+  case CD_HOLLOW:
+    style = HOLLOW;
     break;
   }
   
-  cgm_interior_style ( ctxcanvas->cgm, style );
+  cgm_interior_style ( ctxcanvas->cgm, style);
   
   return style;
 }
@@ -486,8 +498,7 @@ static int cdhatch(cdCtxCanvas *ctxcanvas, int style)
     cgm_style = 2;
 
   cgm_hatch_index ( ctxcanvas->cgm, (long)cgm_style+1 );
-
-  cgm_interior_style ( ctxcanvas->cgm, 3 );
+  cgm_interior_style ( ctxcanvas->cgm, HATCH );
 
   return style;
 }
@@ -507,11 +518,14 @@ static void cdstipple(cdCtxCanvas *ctxcanvas, int n, int m, const unsigned char 
     j+=3;
   }
   
-  cgm_pattern_table ( ctxcanvas->cgm, (long) ctxcanvas->patindex, (long) n, (long) m, (int) 8, pattab );
-  cgm_pattern_index ( ctxcanvas->cgm, (long) ctxcanvas->patindex++ );
+  cgm_pattern_table ( ctxcanvas->cgm, (long) ctxcanvas->pattable_index, (long) n, (long) m, (int) 8, pattab );
   free(pattab);
-  
-  cgm_interior_style  ( ctxcanvas->cgm, 2 );  /* PATTERN */
+
+  ctxcanvas->stipple_index = ctxcanvas->pattable_index;
+  cgm_pattern_index ( ctxcanvas->cgm, (long)ctxcanvas->stipple_index);
+  cgm_interior_style  ( ctxcanvas->cgm, PAT ); 
+
+  ctxcanvas->pattable_index++;
 }
 
 static void cdpattern(cdCtxCanvas *ctxcanvas, int n, int m, const long int *pattern)
@@ -529,11 +543,14 @@ static void cdpattern(cdCtxCanvas *ctxcanvas, int n, int m, const long int *patt
     j+=3;
   }
   
-  cgm_pattern_table ( ctxcanvas->cgm, (long) ctxcanvas->patindex, (long) n, (long) m, (int) 8, pattab );
-  cgm_pattern_index ( ctxcanvas->cgm, (long) ctxcanvas->patindex++ );
+  cgm_pattern_table ( ctxcanvas->cgm, (long) ctxcanvas->pattable_index, (long) n, (long) m, (int) 8, pattab );
   free(pattab);
-  
-  cgm_interior_style  ( ctxcanvas->cgm, 2 );  /* PATTERN */
+
+  ctxcanvas->pattern_index = ctxcanvas->pattable_index;
+  cgm_pattern_index(ctxcanvas->cgm, (long)ctxcanvas->pattern_index);
+  cgm_interior_style(ctxcanvas->cgm, PAT); 
+
+  ctxcanvas->pattable_index++;
 }
 
 static int cdfont(cdCtxCanvas *ctxcanvas, const char *type_face, int style, int size)
@@ -873,7 +890,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   ctxcanvas->int_prec = 16;
   ctxcanvas->real_prec = 0;
   ctxcanvas->vdc_type = 0;
-  ctxcanvas->patindex = 1;
+  ctxcanvas->pattable_index = 1;
 
   ctxcanvas->codificacao = codificacao;
   

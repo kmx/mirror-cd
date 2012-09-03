@@ -687,6 +687,7 @@ static void cgmb_ix ( CGM *cgm, long ix )
 
 static void cgmb_e ( CGM *cgm, int e, const char *el[] )
 {
+  (void)el;
   cgmb_puti16 ( cgm, e );
 }
 
@@ -815,18 +816,27 @@ static void cgmb_co ( CGM *cgm, const void * co)
 }
 
 static void cgmb_sep ( CGM *cgm, const char * sep )
-{}
+{
+  (void)cgm;
+  (void)sep;
+}
 
 static int  cgmb_get_col ( CGM *cgm )
 {
+  (void)cgm;
   return 0;
 }
 
 static void cgmb_align ( CGM *cgm, int n )
-{}
+{
+  (void)cgm;
+  (void)n;
+}
 
 static void cgmb_nl    ( CGM *cgm )
-{}
+{
+  (void)cgm;
+}
 
 static int cgmb_term ( CGM *cgm )
 {
@@ -864,6 +874,7 @@ static int cgmb_term ( CGM *cgm )
 
 static void cgmt_wch ( CGM* cgm, int c, int id, int len )
 {
+  (void)len;
   cgm->cl += fprintf ( cgm->file, "%s", comandos[c+1][id]->ct );
 }
 
@@ -913,7 +924,7 @@ static void cgmt_r ( CGM *cgm, double func )
 
 static void cgmt_s ( CGM *cgm, const char *s, int len )
 {
-  register unsigned i;
+  register int i;
   fputc ( 34, cgm->file );
 
   for ( i=0; i<len; i++ )
@@ -1004,6 +1015,7 @@ static int cgmt_term ( CGM *cgm )
 
 static void cgmc_wch ( CGM* cgm, int c, int id, int len )
 {
+  (void)len;
   cgm->cl += fprintf ( cgm->file, "%s", comandos[c+1][id]->ct );
 }
 
@@ -1053,7 +1065,7 @@ static void cgmc_r ( CGM *cgm, double func )
 
 static void cgmc_s ( CGM *cgm, const char *s, int len )
 {
-  register unsigned i;
+  register int i;
   fputc ( 34, cgm->file );
 
   for ( i=0; i<len; i++ )
@@ -1410,7 +1422,7 @@ int cgm_colour_precision ( CGM *cgm, int prec )
     break;
 
   case 2:     /* clear text */
-    cgm->func->i ( cgm, 1ul+ 2ul * (unsigned long)_cgm_int_precs[prec/8 - 1][1] );
+    cgm->func->i ( cgm, 1 + 2*_cgm_int_precs[prec/8 - 1][1]);
     break;
   }
 
@@ -1437,7 +1449,7 @@ int cgm_colour_index_precision ( CGM *cgm, int prec )
     break;
 
   case 2:     /* clear text */
-    cgm->func->i ( cgm, 1ul+ 2ul * (unsigned long)_cgm_int_precs[prec/8 - 1][1] );
+    cgm->func->i ( cgm, 1 + 2*_cgm_int_precs[prec/8 - 1][1] );
     break;
   }
 
@@ -1794,7 +1806,7 @@ int cgm_polygon ( CGM *cgm, int n, const double *p )
   return _cgm_point_list ( cgm, 7, n, p );
 }
 
-static int _cgm_cell_rows ( CGM *cgm, long sx, long sy, int prec, const void *c )
+static int _cgm_cell_rows ( CGM *cgm, long sx, long sy, const void *c )
 {
   register long i,j, brk;
 
@@ -1863,14 +1875,14 @@ int cgm_cell_array ( CGM *cgm, const double *p, long sx, long sy, int prec, cons
       break;
 
     case 2:     /* clear text */
-      cgm->func->i ( cgm, 2 * ( _cgm_int_precs[prec/8 - 1][1] + 1) );
+      cgm->func->i ( cgm, 1 + 2*_cgm_int_precs[prec/8 - 1][1]);
       break;
     }
   }
 
   if ( cgm->mode==1 ) cgm->func->e ( cgm, 1, repmode );
 
-  _cgm_cell_rows( cgm, sx, sy, prec, c );
+  _cgm_cell_rows( cgm, sx, sy, c );
 
   return cgm->func->term(cgm);
 }
@@ -2181,12 +2193,12 @@ int cgm_pattern_table ( CGM *cgm, long pi, long sx, long sy, int prec, const voi
       break;
 
     case 2:     /* clear text */
-      cgm->func->i ( cgm, 2 * ( _cgm_int_precs[prec/8 - 1][1] + 1) );
+      cgm->func->i ( cgm, 1 + 2*_cgm_int_precs[prec/8 - 1][1]);
       break;
     }
   }
 
-  _cgm_cell_rows( cgm, sx, sy, prec, c );
+  _cgm_cell_rows( cgm, sx, sy, c );
 
   return cgm->func->term(cgm);
 }

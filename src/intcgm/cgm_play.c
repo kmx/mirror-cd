@@ -673,7 +673,7 @@ int cgmPlay(const char* filename, void* userdata, cgmPlayFuncs* funcs)
     int i;
     tPatTable* p;
 
-    for(i=0;(p=(tPatTable *)cgm_list_get(cgm->fill_att.pat_list,i))!=NULL; i++)
+    for(i=1; (p=(tPatTable *)cgm_list_get(cgm->fill_att.pat_list,i))!=NULL; i++)
       free(p->pattern);
 
     cgm_list_delete(cgm->fill_att.pat_list);

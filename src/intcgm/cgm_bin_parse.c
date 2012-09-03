@@ -1744,7 +1744,7 @@ static int cgm_bin_pattab(tCGM* cgm)
   }
 
   /* remove if exist a patttern with the same index */
-  for(i=0;(p=(tPatTable *)cgm_list_get(cgm->fill_att.pat_list,i))!=NULL; i++)
+  for(i=1; (p=(tPatTable *)cgm_list_get(cgm->fill_att.pat_list,i))!=NULL; i++)
   {
     if(p->index==pat->index)
     {

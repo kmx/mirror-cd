@@ -273,7 +273,7 @@ static int cgm_txt_clslmd(tCGM* cgm)   /* color selection mode */
 
 static int cgm_txt_lnwdmd(tCGM* cgm)   /* line width specification mode */
 {
-  const char *options[] = { "ABSOLUTE", "SCALED", NULL };
+  const char *options[] = { "ABS", "SCALED", NULL };
 
   if(cgm_txt_get_e(cgm, &(cgm->linewidth_mode), options)) 
     return CGM_ERR_READ;
@@ -283,7 +283,7 @@ static int cgm_txt_lnwdmd(tCGM* cgm)   /* line width specification mode */
 
 static int cgm_txt_mkszmd(tCGM* cgm)   /* marker size specification mode */
 {
-  const char *options[] = { "ABSOLUTE", "SCALED", NULL };
+  const char *options[] = { "ABS", "SCALED", NULL };
 
   if(cgm_txt_get_e(cgm, &(cgm->markersize_mode), options)) 
     return CGM_ERR_READ;
@@ -293,7 +293,7 @@ static int cgm_txt_mkszmd(tCGM* cgm)   /* marker size specification mode */
 
 static int cgm_txt_edwdmd(tCGM* cgm)   /* edge width specification mode */
 {
-  const char *options[] = { "ABSOLUTE", "SCALED", NULL };
+  const char *options[] = { "ABS", "SCALED", NULL };
 
   if(cgm_txt_get_e(cgm, &(cgm->edgewidth_mode), options)) 
     return CGM_ERR_READ;
@@ -1474,7 +1474,7 @@ static int cgm_txt_pattab(tCGM* cgm)   /* pattern table */
   cgm_txt_skip_parentheses(cgm);
 
   /* remove if exist a patttern with the same index */
-  for(i=0;(p=(tPatTable *)cgm_list_get(cgm->fill_att.pat_list,i))!=NULL; i++)
+  for(i=1; (p=(tPatTable *)cgm_list_get(cgm->fill_att.pat_list,i))!=NULL; i++)
   {
     if(p->index==pat->index)
     {
