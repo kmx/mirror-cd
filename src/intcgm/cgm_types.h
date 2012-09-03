@@ -75,8 +75,8 @@ typedef struct {
   tColor color;
   double height;
   cgmPoint char_up;    /* unused */
-  cgmPoint char_base;  /* unused */
-  short path;          /* unused */
+  cgmPoint char_base; 
+  short path;          
   struct { 
     short hor;
     short ver;

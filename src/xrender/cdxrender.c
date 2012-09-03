@@ -651,7 +651,7 @@ static int cdnativefont(cdCtxCanvas *ctxcanvas, const char* nativefont)
 
 static double cdtextorientation(cdCtxCanvas *ctxcanvas, double angle)
 {
-  /* must recriate the font if orientation changes */
+  /* must recreate the font if orientation changes */
   ctxcanvas->canvas->text_orientation = angle;
   cdfont(ctxcanvas, ctxcanvas->canvas->font_type_face, ctxcanvas->canvas->font_style, ctxcanvas->canvas->font_size);
   return angle;

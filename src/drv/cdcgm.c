@@ -325,6 +325,32 @@ static void cdfsector(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, do
                              dx_start, dy_start, dx_end, dy_end, 0 );
 }
 
+static void cdchord(cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
+{
+  double center[2], first_end_point[2], second_end_point[2];
+  double dx_start, dy_start, dx_end, dy_end;
+  
+  arc ((double)xc, (double)yc, (double)w, (double)h, a1, a2, center, first_end_point, second_end_point,
+       &dx_start, &dy_start, &dx_end, &dy_end );
+  
+  
+  cgm_elliptical_arc_close ( ctxcanvas->cgm, center, first_end_point, second_end_point,
+                             dx_start, dy_start, dx_end, dy_end, 1 );
+}
+
+static void cdfchord(cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
+{
+  double center[2], first_end_point[2], second_end_point[2];
+  double dx_start, dy_start, dx_end, dy_end;
+  
+  arc (xc, yc, w, h, a1, a2, center, first_end_point, second_end_point,
+       &dx_start, &dy_start, &dx_end, &dy_end );
+  
+  
+  cgm_elliptical_arc_close ( ctxcanvas->cgm, center, first_end_point, second_end_point,
+                             dx_start, dy_start, dx_end, dy_end, 1 );
+}
+
 static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
 {
   int width, height;
@@ -646,6 +672,13 @@ static int cdtextalignment(cdCtxCanvas *ctxcanvas, int alignment)
   return alignment;
 }
 
+static double cdtextorientation(cdCtxCanvas *ctxcanvas, double angle)
+{
+  cgm_char_orientation ( ctxcanvas->cgm, 100*cos((angle+90)*CD_DEG2RAD), 100*sin((angle+90)*CD_DEG2RAD), 100*cos(angle*CD_DEG2RAD), 100*sin(angle*CD_DEG2RAD));
+  return angle;
+}
+
+
 /******************************************************/
 /* color                                              */
 /******************************************************/
@@ -885,6 +918,7 @@ static void cdinittable(cdCanvas* canvas)
   canvas->cxBox = cdbox;
   canvas->cxArc = cdarc;
   canvas->cxSector = cdsector;
+  canvas->cxChord = cdchord;
   canvas->cxText = cdtext;
   canvas->cxFLine = cdfline;
   canvas->cxFPoly = cdfpoly;
@@ -892,6 +926,7 @@ static void cdinittable(cdCanvas* canvas)
   canvas->cxFBox = cdfbox;
   canvas->cxFArc = cdfarc;
   canvas->cxFSector = cdfsector;
+  canvas->cxFChord = cdfchord;
   canvas->cxFText = cdftext;
   canvas->cxPutImageRectRGB = cdputimagerectrgb;
   canvas->cxPutImageRectMap = cdputimagerectmap;
@@ -910,6 +945,7 @@ static void cdinittable(cdCanvas* canvas)
   canvas->cxBackground = cdbackground;
   canvas->cxForeground = cdforeground;
   canvas->cxBackOpacity = cdbackopacity;
+  canvas->cxTextOrientation = cdtextorientation;
 
   canvas->cxKillCanvas = cdkillcanvas;
   canvas->cxDeactivate = cddeactivate;

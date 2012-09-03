@@ -425,7 +425,7 @@ static int cdinteriorstyle (cdCtxCanvas* ctxcanvas, int style)
     cairo_set_source(ctxcanvas->cr, ctxcanvas->solid);
     ctxcanvas->last_source = 0;
     break;
-  /* must recriate the current pattern */
+  /* must recreate the current pattern */
   case CD_HATCH:
     cdhatch(ctxcanvas, ctxcanvas->canvas->hatch_style);
     break;
