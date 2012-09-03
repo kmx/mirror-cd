@@ -30,6 +30,7 @@ struct _cdCtxCanvas
   int  vdc_type;    /* 0=integer, 1=real */
   int  real_prec;   /* 0=float, 1=double */
   int  int_prec;    /* 16, 32 */
+  int  count;       /* picture count */
   int patindex;
 };
 
@@ -41,7 +42,7 @@ int cdplayCGM(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
 int cdRegisterCallbackCGM(int cb, cdCallback func);
 
 /* metafile descriptor elements */
-static void metafile_descriptor (cdCtxCanvas *ctxcanvas)
+static void metafile_descriptor (cdCtxCanvas *ctxcanvas, const char* desc)
 {
   const char *font_list[] = { "SYSTEM", "COURIER", "TIMES_ROMAN", "HELVETICA", 
     "SYSTEM_BOLD", "COURIER_BOLD", "TIMES_ROMAN_BOLD", "HELVETICA_BOLD",
@@ -50,7 +51,7 @@ static void metafile_descriptor (cdCtxCanvas *ctxcanvas)
     "TIMES_ROMAN_BOLDITALIC", "HELVETICA_BOLDITALIC", NULL };
   
   cgm_metafile_version        ( ctxcanvas->cgm, 1);
-  cgm_metafile_description    ( ctxcanvas->cgm, "CD generated" );
+  cgm_metafile_description    ( ctxcanvas->cgm, desc );
   if (ctxcanvas->vdc_type==0) 
   {
     cgm_vdc_type                ( ctxcanvas->cgm, 0  );  /* integer */
@@ -128,11 +129,14 @@ static void cddeactivate(cdCtxCanvas *ctxcanvas)
 */
 static void cdflush(cdCtxCanvas *ctxcanvas)
 {
+  char str[20];
   fflush(ctxcanvas->cgm->file);
   
   cgm_end_picture        ( ctxcanvas->cgm );
 
-  cgm_begin_picture      ( ctxcanvas->cgm, "Picture x" );
+  ctxcanvas->count++;
+  sprintf(str, "Picture %d", ctxcanvas->count);
+  cgm_begin_picture      ( ctxcanvas->cgm, str);
     picture_descriptor ( ctxcanvas);
   cgm_begin_picture_body ( ctxcanvas->cgm );
 }
@@ -826,7 +830,7 @@ Parametros passados em data:
 static void cdcreatecanvas(cdCanvas* canvas, void *data)
 {
   cdCtxCanvas *ctxcanvas;
-  char* strdata = (char*)data, *prec;
+  char* strdata = (char*)data, *prec, *desc;
   char filename[10240] = "";
   double res = 3.78;
   double w_mm = INT_MAX*res, 
@@ -899,10 +903,17 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
     }
   } 
   
+  desc = strstr(strdata, "-d");
+  if (desc!=NULL)
+    desc += 2; /* skip "-d" */
+  else
+    desc = "CD generated";
+
   /* header */
-  metafile_descriptor(ctxcanvas);
+  metafile_descriptor(ctxcanvas, desc);
   
-  cgm_begin_picture ( ctxcanvas->cgm, "Picture x" );
+  cgm_begin_picture ( ctxcanvas->cgm, "Picture 1" );
+    ctxcanvas->count = 1;
     picture_descriptor (ctxcanvas);
   cgm_begin_picture_body ( ctxcanvas->cgm );
 }
