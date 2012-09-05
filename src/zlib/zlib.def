@@ -1,6 +1,3 @@
-LIBRARY
-; zlib data compression library
-
 EXPORTS
 ; basic functions
     zlibVersion
