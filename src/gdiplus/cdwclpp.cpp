@@ -27,7 +27,7 @@ static void cdkillcanvasCLIPBDMF (cdCtxCanvas* ctxcanvas)
   /* guardar antes de remover o canvas */
   strcpy(filename, mfcanvas->filename);
   
-  OpenClipboard(NULL);
+  OpenClipboard(GetForegroundWindow());
   EmptyClipboard();        
   
   cdkillcanvasMF(mfcanvas); /* this will close the file */
@@ -52,7 +52,7 @@ static void cdkillcanvas (cdCtxCanvas* ctxcanvas)
 {
   cdwpKillCanvas(ctxcanvas);
   
-  OpenClipboard(NULL);
+  OpenClipboard(GetForegroundWindow());
   EmptyClipboard();
   
   if (ctxcanvas->wtype == CDW_EMF)

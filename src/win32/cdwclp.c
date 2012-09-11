@@ -16,6 +16,7 @@
 #include "cdmf_private.h"
 
 
+
 static cdSizeCB cdsizecb = NULL;
 
 static int cdregistercallback(int cb, cdCallback func)
@@ -50,7 +51,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
     if (!cdStrTmpFileName(filename))
       return CD_ERROR;
     
-    OpenClipboard(NULL);
+    OpenClipboard(GetForegroundWindow());
     Handle = GetClipboardData(CF_TEXT);
     if (Handle == NULL)
     {
@@ -84,7 +85,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
     if (!cdStrTmpFileName(filename))
       return CD_ERROR;
     
-    OpenClipboard(NULL);
+    OpenClipboard(GetForegroundWindow());
     Handle = (HENHMETAFILE)GetClipboardData(CF_ENHMETAFILE);
     if (Handle == NULL)
     {
@@ -121,7 +122,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
     if (!cdStrTmpFileName(filename))
       return CD_ERROR;
     
-    OpenClipboard(NULL);
+    OpenClipboard(GetForegroundWindow());
     Handle = GetClipboardData(CF_METAFILEPICT);
     if (Handle == NULL)
     {
@@ -158,7 +159,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
     int size;
     cdwDIB dib;
     
-    OpenClipboard(NULL);
+    OpenClipboard(GetForegroundWindow());
     Handle = GetClipboardData(CF_DIB);
     if (Handle == NULL)
     {
@@ -239,7 +240,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
     HDC ScreenDC;
     SIZE sz;
     
-    OpenClipboard(NULL);
+    OpenClipboard(GetForegroundWindow());
     Handle = GetClipboardData(CF_BITMAP);
     if (Handle == NULL)
     {
@@ -330,8 +331,12 @@ static void cdkillcanvasCLIPBDMF (cdCtxCanvas *ctxcanvas)
 
   /* guardar antes de remover o canvas */
   strcpy(filename, mfcanvas->filename);
-  
-  OpenClipboard(NULL);
+
+  /* If an application calls OpenClipboard with hwnd set to NULL, 
+     EmptyClipboard sets the clipboard owner to NULL; 
+     this causes SetClipboardData to fail.
+     Because of this we use GetForegroundWindow() */
+  OpenClipboard(GetForegroundWindow());
   EmptyClipboard();        
   
   cdkillcanvasMF(mfcanvas); /* this will close the file */
@@ -356,7 +361,7 @@ static void cdkillcanvas (cdCtxCanvas *ctxcanvas)
 {
   cdwKillCanvas(ctxcanvas);
   
-  OpenClipboard(NULL);
+  OpenClipboard(GetForegroundWindow());
   EmptyClipboard();
   
   if (ctxcanvas->wtype == CDW_WMF)
