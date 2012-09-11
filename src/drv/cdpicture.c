@@ -1102,14 +1102,12 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
         {
         case CD_PATH_MOVETO:
         case CD_PATH_LINETO:
-          if (n+1 > n) break;
           cdCanvasVertex(canvas, sScaleX(prim->param.path.points[n].x), sScaleY(prim->param.path.points[n].y));
           n++;
           break;
         case CD_PATH_CURVETO:
         case CD_PATH_ARC:
           {
-            if (n+3 > n) break;
             cdCanvasVertex(canvas, sScaleX(prim->param.path.points[n].x), sScaleY(prim->param.path.points[n].y));
             cdCanvasVertex(canvas, sScaleX(prim->param.path.points[n+1].x), sScaleY(prim->param.path.points[n+1].y));
             cdCanvasVertex(canvas, sScaleX(prim->param.path.points[n+2].x), sScaleY(prim->param.path.points[n+2].y));
@@ -1135,14 +1133,12 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
         {
         case CD_PATH_MOVETO:
         case CD_PATH_LINETO:
-          if (n+1 > n) break;
           cdfCanvasVertex(canvas, sfScaleX(prim->param.pathf.points[n].x), sfScaleY(prim->param.pathf.points[n].y));
           n++;
           break;
         case CD_PATH_CURVETO:
         case CD_PATH_ARC:
           {
-            if (n+3 > n) break;
             cdfCanvasVertex(canvas, sfScaleX(prim->param.pathf.points[n].x), sfScaleY(prim->param.pathf.points[n].y));
             cdfCanvasVertex(canvas, sfScaleX(prim->param.pathf.points[n+1].x), sfScaleY(prim->param.pathf.points[n+1].y));
             cdfCanvasVertex(canvas, sfScaleX(prim->param.pathf.points[n+2].x), sfScaleY(prim->param.pathf.points[n+2].y));

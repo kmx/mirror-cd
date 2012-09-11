@@ -557,11 +557,6 @@ static void irgbClipFillLine(unsigned char* clip_line, int combine_mode, int x1,
   }
 }
 
-static int compare_int(const int* xx1, const int* xx2)
-{
-  return *xx1 - *xx2;
-}
-
 static void irgbClipPoly(cdCtxCanvas* ctxcanvas, unsigned char* clip_region, cdPoint* poly, int n, int combine_mode) 
 {
   /***********IMPORTANT: the reference for this function is simPolyFill in "sim_linepolyfill.c",
