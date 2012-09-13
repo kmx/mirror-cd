@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <memory.h>
 
+/* This file is not used for GTK 3, 
+   because Cairo is the main drawing toolkit on it. */
 
 void cdFinishContextPlus(void)
 {

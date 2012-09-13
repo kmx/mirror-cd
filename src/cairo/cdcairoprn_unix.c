@@ -9,9 +9,12 @@
 #include <string.h>
 
 #include <gtk/gtk.h>
-#if GTK_CHECK_VERSION(2, 10, 0)
+#if GTK_CHECK_VERSION(3, 0, 0)
+#include <gtk/gtkunixprint.h>
+#elif GTK_CHECK_VERSION(2, 10, 0)
 #include <gtk/gtkprintunixdialog.h>
 #endif
+
 
 #include "cdcairoctx.h"
 #include "cdprint.h"
@@ -201,7 +204,11 @@ static cdContext cdPrinterCairoContext =
   NULL,
 };
 
+#ifdef USE_GTK3
+cdContext* cdContextPrinter(void)
+#else
 cdContext* cdContextCairoPrinter(void)
+#endif
 {
   return &cdPrinterCairoContext;
 }

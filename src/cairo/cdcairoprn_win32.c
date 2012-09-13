@@ -188,7 +188,11 @@ static cdContext cdPrinterCairoContext =
   NULL,
 };
 
+#ifdef USE_GTK3
+cdContext* cdContextPrinter(void)
+#else
 cdContext* cdContextCairoPrinter(void)
+#endif
 {
   return &cdPrinterCairoContext;
 }

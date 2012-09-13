@@ -53,7 +53,7 @@ struct _cdCtxCanvas
   int poly_holes[500];
   int holes;
 
-  void* drawable;    /* used in NativeWindow in GDK */
+  void* window;    /* used in NativeWindow in GDK */
 
 #ifdef WIN32
   void* hWnd;        /* used in NativeWindow in Win32 */

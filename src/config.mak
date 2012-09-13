@@ -47,7 +47,7 @@ SRCGDK = cdgdk.c cdgdkclp.c cdgdkdbuf.c cdgdkimg.c cdgdknative.c
 SRCGDK  := $(addprefix gdk/, $(SRCGDK))
 
 SRCCAIRO = cdcairodbuf.c cdcairopdf.c cdcairosvg.c cdcairo.c \
-           cdcairoimg.c cdcairoplus.c cdcairoirgb.c cdcairops.c cdcaironative_gdk.c
+           cdcairoimg.c cdcairoirgb.c cdcairops.c
 SRCCAIRO := $(addprefix cairo/, $(SRCCAIRO))
 
 SRCDRV = cddgn.c cdcgm.c cgm.c cddxf.c cdirgb.c cdmf.c cdps.c cdpicture.c cddebug.c
@@ -62,15 +62,36 @@ SRCCOMM = cd.c wd.c wdhdcpy.c rgb2map.c cd_vectortext.c cd_active.c \
 SRC = $(SRCCOMM) $(SRCSVG) $(SRCINTCGM) $(SRCDRV) $(SRCSIM)
 INCLUDES = . drv x11 win32 intcgm freetype2 sim cairo ../include
 
-ifdef USE_GDK
+ifdef USE_GDK3
+     # temporary for tests
+     LIBNAME := $(LIBNAME)gdk3
+  # Do not include old GDK driver
+  SRC += drv/cd0wmf.c
+  USE_GTK3 = Yes
+  CHECK_GTK = Yes
+  DEFINES += GTK_DISABLE_DEPRECATED GDK_DISABLE_DEPRECATED GSEAL_ENABLE USE_GTK3
+  LIBS = pangocairo-1.0 cairo
+  SRC += $(SRCCAIRO) cairo/cdcaironative_gdk.c gdk/cdgdkclp.c
+  ifneq ($(findstring Win, $(TEC_SYSNAME)), )
+    SRC += cairo/cdcairoprn_win32.c cairo/cdcairoemf.c
+    LIBS += freetype6
+  else
+    SRC += cairo/cdcairoprn_unix.c drv/cd0emf.c
+    INCLUDES += $(GTK)/include/gtk-3.0/unix-print
+    LIBS += freetype
+    ifneq ($(findstring cygw, $(TEC_UNAME)), )
+      LIBS += fontconfig
+    endif
+  endif
+else ifdef USE_GDK
   SRC += $(SRCGDK) $(SRCNULL) 
   USE_GTK = Yes
   CHECK_GTK = Yes
-  # Temporarily to build inside Tecgraf  (????)
+  # So we can disable Cairo on older systems (deprecated, remove this in the future)
   ADD_CAIRO = Yes
   ifdef ADD_CAIRO
     LIBS = pangocairo-1.0 cairo
-    SRC += $(SRCCAIRO)
+    SRC += $(SRCCAIRO) cdcairoplus.c cairo/cdcaironative_gdk.c
   endif
   ifneq ($(findstring Win, $(TEC_SYSNAME)), )
     ifdef ADD_CAIRO
@@ -78,7 +99,7 @@ ifdef USE_GDK
     endif
     LIBS += freetype6
   else
-#    ifeq ($(findstring MacOS, $(TEC_UNAME)), )     (????)
+#    ifeq ($(findstring MacOS, $(TEC_UNAME)), )     (still has to handle GTK using Darwin)
       ifdef ADD_CAIRO
         SRC += cairo/cdcairoprn_unix.c
       endif
@@ -89,17 +110,15 @@ ifdef USE_GDK
       LIBS += fontconfig
     endif
   endif
+else ifdef USE_X11
+  SRC += $(SRCX11) $(SRCNULL)
+  LIBS += freetype
 else
-  ifdef USE_X11
-    SRC += $(SRCX11) $(SRCNULL)
-    LIBS += freetype
+  SRC += $(SRCWIN32)
+  ifneq ($(findstring cygw, $(TEC_UNAME)), )
+    LIBS += freetype-6 fontconfig
   else
-    SRC += $(SRCWIN32)
-    ifneq ($(findstring cygw, $(TEC_UNAME)), )
-      LIBS += freetype-6 fontconfig
-    else
-      LIBS += freetype6
-    endif
+    LIBS += freetype6
   endif
 endif
 

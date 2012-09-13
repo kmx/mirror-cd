@@ -115,7 +115,11 @@ static cdContext cdEMFCairoContext =
   NULL,
 };
 
+#ifdef USE_GTK3
+cdContext* cdContextEMF(void)
+#else
 cdContext* cdContextCairoEMF(void)
+#endif
 {
   return &cdEMFCairoContext;
 }

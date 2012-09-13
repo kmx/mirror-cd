@@ -145,7 +145,11 @@ static cdContext cdDBufferContext =
   NULL, 
 };
 
+#ifdef USE_GTK3
+cdContext* cdContextDBuffer(void)
+#else
 cdContext* cdContextCairoDBuffer(void)
+#endif
 {
   return &cdDBufferContext;
 }

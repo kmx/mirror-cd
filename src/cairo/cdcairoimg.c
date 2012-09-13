@@ -46,7 +46,11 @@ static cdContext cdImageContext =
   NULL
 };
 
+#ifdef USE_GTK3
+cdContext* cdContextImage(void)
+#else
 cdContext* cdContextCairoImage(void)
+#endif
 {
   return &cdImageContext;
 }

@@ -2196,3 +2196,10 @@ void cdcairoInitTable(cdCanvas* canvas)
   canvas->cxPutImageRectMap = cdputimagerectmap;
   canvas->cxPutImageRectRGBA = cdputimagerectrgba;
 }
+
+#ifdef USE_GTK3
+int cdBaseDriver(void)
+{
+  return CD_BASE_GDK;
+}
+#endif
