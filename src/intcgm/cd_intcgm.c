@@ -289,6 +289,8 @@ static void cdcgm_Polygon(int n, cgmPoint* pt, int fill, cdCGM* cd_cgm)
     style = CD_CLOSED_LINES;
   else if (fill==CGM_LINES)
     style = CD_OPEN_LINES;
+  else if (fill==CGM_BEZIER)
+    style = CD_BEZIER;
 
   cdCanvasBegin(cd_cgm->canvas, style);
 
@@ -366,7 +368,7 @@ static void cdcgm_CircularArc(cgmPoint center, double radius, double angle1, dou
 
 static void cdcgm_EllipticalArc(cgmPoint center, cgmPoint first, cgmPoint second, double angle1, double angle2, int arc, cdCGM* cd_cgm)
 {
-  /* oriented elipsis are not supported in CD */
+  /* oriented ellipsis are not supported in CD */
   double w = 2*sScaleW(second.x-first.x);
   double h = 2*sScaleH(second.y-first.y);
 
@@ -602,9 +604,13 @@ static void cdcgm_TextAttrib(const char* horiz_align, const char* vert_align, co
   cdCanvasForeground(cd_cgm->canvas, cdEncodeColor(color.red, color.green, color.blue));
 }
 
-static void cdcgm_LineAttrib(const char *type, double width, cgmRGB color, cdCGM* cd_cgm)
+/* Rafael */
+static void cdcgm_LineAttrib(const char *type, const char *cap, const char * join, double width, cgmRGB color, cdCGM* cd_cgm)
 {
   int style = CD_CONTINUOUS;
+  int linecap = CD_CAPFLAT;
+  int linejoin = CD_MITER;
+
   if (strcmp(type, "SOLID")==0)
     style = CD_CONTINUOUS;
   else if (strcmp(type, "DASH")==0)
@@ -615,6 +621,24 @@ static void cdcgm_LineAttrib(const char *type, double width, cgmRGB color, cdCGM
     style = CD_DASH_DOT;
   else if (strcmp(type, "DASH_DOT_DOT")==0)
     style = CD_DASH_DOT_DOT;
+
+  if (strcmp(cap, "UNSPECIFIED")==0  || strcmp(cap, "BUTT")==0 || strcmp(cap, "TRIANGLE")==0)
+    linecap = CD_CAPFLAT;
+  else if (strcmp(cap, "ROUND")==0)
+    linecap = CD_CAPROUND;
+  else if (strcmp(cap, "PROJECTING_SQUARE")==0)
+    linecap = CD_CAPSQUARE;
+
+  if (strcmp(join, "UNSPECIFIED")==0  || strcmp(join, "MITRE")==0)
+    linejoin = CD_MITER;
+  else if (strcmp(join, "ROUND")==0)
+    linejoin = CD_ROUND;
+  else if (strcmp(join, "BEVEL")==0)
+    linejoin = CD_BEVEL;
+
+  cdCanvasLineCap(cd_cgm->canvas, linecap);
+
+  cdCanvasLineJoin(cd_cgm->canvas, linejoin);
 
   cdCanvasLineStyle(cd_cgm->canvas, style);
 

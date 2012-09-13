@@ -37,7 +37,7 @@ typedef struct {
   cgmRGB *pattern;
 } cgmPattern;
 
-enum { CGM_LINES, CGM_CLOSEDLINES, CGM_FILL };  /* polygon options */
+enum { CGM_LINES, CGM_CLOSEDLINES, CGM_FILL, CGM_BEZIER };  /* polygon options */
 enum { CGM_PIE, CGM_CHORD, CGM_OPENARC };  /* arc options */
 
 typedef struct { 
@@ -72,7 +72,7 @@ typedef struct {
 
   /* Attributes */
   void (*TextAttrib)(const char* horiz_align, const char* vert_align, const char* font, double height, cgmRGB color, cgmPoint base_dir, void* userdata);
-  void (*LineAttrib)(const char *type, double width, cgmRGB color, void* userdata);  
+  void (*LineAttrib)(const char *type, const char *cap, const char *join, double width, cgmRGB color, void* userdata);
   void (*MarkerAttrib)(const char *type, double size, cgmRGB color, void* userdata);
   void (*FillAttrib)(const char* type, cgmRGB color, const char* hatch, cgmPattern* pat, void* userdata);  
 

@@ -182,19 +182,35 @@ void cgm_setmarker_attrib(tCGM* cgm)
 void cgm_setline_attrib(tCGM* cgm)
 {
   const char* options[] = {"SOLID", "DASH", "DOT", "DASH_DOT", "DASH_DOT_DOT" };  /* starts at 1 */
+  const char* cap[] = {"UNSPECIFIED", "BUTT", "ROUND", "PROJECTING_SQUARE", "TRIANGLE" };  /* starts at 1 */
+  const char* join[] = {"UNSPECIFIED", "MITRE", "ROUND", "BEVEL" };  /* starts at 1 */
   double sign = cgm->linewidth_mode==CGM_ABSOLUTE? 1: -1;  /* use negative values for scaled */
   int op = cgm->line_att.type-1;
+  int opCap = cgm->line_att.linecap-1;
+  int opJoin = cgm->line_att.linejoin-1;
+
   if (op<0 || op>4) op=0;
-  cgm->dof.LineAttrib(options[op], sign*cgm->line_att.width, cgm_getcolor(cgm, cgm->line_att.color), cgm->userdata);
+  if (opCap<0 || opCap>4) opCap=0;
+  if (opJoin<0 || opJoin>3) opJoin=0;
+
+  cgm->dof.LineAttrib(options[op], cap[opCap], join[opJoin], sign*cgm->line_att.width, cgm_getcolor(cgm, cgm->line_att.color), cgm->userdata);
 }
 
 void cgm_setedge_attrib(tCGM* cgm)
 {
   const char* options[] = {"SOLID", "DASH", "DOT", "DASH_DOT", "DASH_DOT_DOT" };  /* starts at 1 */
+  const char* cap[] = {"UNSPECIFIED", "BUTT", "ROUND", "PROJECTING_SQUARE", "TRIANGLE" };  /* starts at 1 */
+  const char* join[] = {"UNSPECIFIED", "MITRE", "ROUND", "BEVEL" };  /* starts at 1 */
   double sign = cgm->edgewidth_mode==CGM_ABSOLUTE? 1: -1;  /* use negative values for scaled */
   int op = cgm->edge_att.type-1;
+  int opCap = cgm->edge_att.linecap-1;
+  int opJoin = cgm->edge_att.linejoin-1;
+
   if (op<0 || op>4) op=0;
-  cgm->dof.LineAttrib(options[op], sign*cgm->edge_att.width, cgm_getcolor(cgm, cgm->edge_att.color), cgm->userdata);
+  if (opCap<0 || opCap>4) opCap=0;
+  if (opJoin<0 || opJoin>3) opJoin=0;
+
+  cgm->dof.LineAttrib(options[op], cap[opCap], join[opJoin], sign*cgm->edge_att.width, cgm_getcolor(cgm, cgm->edge_att.color), cgm->userdata);
   cgm->dof.FillAttrib("HOLLOW", cgm_getcolor(cgm, cgm->edge_att.color), NULL, NULL, cgm->userdata);
 }
 
@@ -433,7 +449,7 @@ static void set_funcs(cgmPlayFuncs* dof, cgmPlayFuncs* funcs)
   dof->CircularArc = (void (*)(cgmPoint, double, double, double, int, void*))dummy_func;
   dof->Ellipse = (void (*)(cgmPoint, cgmPoint, cgmPoint, void*))dummy_func;
   dof->EllipticalArc = (void (*)(cgmPoint, cgmPoint, cgmPoint, double, double, int, void*))dummy_func;
-  dof->LineAttrib = (void (*)(const char*, double, cgmRGB, void*))dummy_func;
+  dof->LineAttrib = (void (*)(const char*, const char*, const char*, double, cgmRGB, void*))dummy_func;
   dof->MarkerAttrib = (void (*)(const char*, double, cgmRGB, void*))dummy_func;
   dof->FillAttrib = (void (*)(const char*, cgmRGB, const char*, cgmPattern*, void*))dummy_func;
   dof->TextAttrib = (void (*)(const char*, const char*, const char*, double, cgmRGB, cgmPoint, void*))dummy_func;
@@ -594,11 +610,17 @@ int cgmPlay(const char* filename, void* userdata, cgmPlayFuncs* funcs)
 
   cgm->line_att.index = 1;
   cgm->line_att.type = 1;
+  cgm->line_att.linecap = 1;
+  cgm->line_att.dashcap = 1;
+  cgm->line_att.linejoin = 1;
   cgm->line_att.width = 1;
   cgm->line_att.color.index = 1;
 
   cgm->edge_att.index = 1;
   cgm->edge_att.type  = 1;
+  cgm->edge_att.linecap = 1;
+  cgm->edge_att.dashcap = 1;
+  cgm->edge_att.linejoin = 1;
   cgm->edge_att.width = 1;
   cgm->edge_att.color.index = 1;
   cgm->edge_att.visibility = CGM_OFF;

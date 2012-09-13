@@ -59,7 +59,7 @@ static int cgm_txt_mtfver(tCGM* cgm)   /* metafile version */
   if(cgm_txt_get_i(cgm, &version)) 
     return CGM_ERR_READ;
   
-  if (version > 1)      /* unsupported */
+  if (version > 3)      /* unsupported */
     return CGM_ERR_READ;
 
   return cgm_txt_get_ter(cgm);
@@ -418,6 +418,44 @@ static cgmPoint *get_points(tCGM* cgm, int *np)
   } while(cgm_txt_get_ter_noerr(cgm));
 
   return cgm->point_list;
+}
+
+static int cgm_txt_polybz(tCGM* cgm)
+{
+  cgmPoint *pt;
+  int np;
+  long indicator;
+
+  if(cgm_txt_get_i(cgm, &(indicator))) 
+    return CGM_ERR_READ;
+
+  pt = get_points(cgm, &np);
+  if(pt==NULL) 
+    return CGM_ERR_READ;
+
+  cgm_setline_attrib(cgm);
+
+  if(indicator == 1)  /* discontinuous: sequence of curves with four points (one or more) */
+  {
+    int i, j = 0, numCurves = np / 4;
+    cgmPoint ptTmp[4];
+
+    for(i = 0; i < numCurves; i++)
+    {
+      ptTmp[0] = pt[j++];
+      ptTmp[1] = pt[j++];
+      ptTmp[2] = pt[j++];
+      ptTmp[3] = pt[j++];
+      cgm->dof.Polygon(4, ptTmp, CGM_BEZIER, cgm->userdata);
+    }
+  }
+  else  /* continuous: sequence of curves with three points (one or more) */
+  {
+    /* Two or more curves: the first curve, and only the first, is defined by 4 points */
+    cgm->dof.Polygon(np, pt, CGM_BEZIER, cgm->userdata);
+  }
+
+  return CGM_OK;
 }
 
 static int cgm_txt_polyln(tCGM* cgm)   /* polyline */
@@ -1138,6 +1176,25 @@ static int cgm_txt_lntype(tCGM* cgm)   /* line type */
   return cgm_txt_get_ter(cgm);
 }
 
+static int cgm_txt_lncap(tCGM* cgm)   /* line cap */
+{
+  if(cgm_txt_get_i(cgm, &(cgm->line_att.linecap))) 
+    return CGM_ERR_READ;
+
+  if(cgm_txt_get_i(cgm, &(cgm->line_att.dashcap))) 
+    return CGM_ERR_READ;
+
+  return cgm_txt_get_ter(cgm);
+}
+
+static int cgm_txt_lnjoin(tCGM* cgm)   /* line join */
+{
+  if(cgm_txt_get_i(cgm, &(cgm->line_att.linejoin))) 
+    return CGM_ERR_READ;
+
+  return cgm_txt_get_ter(cgm);
+}
+
 static int cgm_txt_lnwidt(tCGM* cgm)  /* line width */
 {
   if(cgm->linewidth_mode==CGM_ABSOLUTE)
@@ -1376,6 +1433,25 @@ static int cgm_txt_edgind(tCGM* cgm)   /* edge bundle index */
 static int cgm_txt_edgtyp(tCGM* cgm)   /* edge type */
 {
   if(cgm_txt_get_i(cgm, &(cgm->edge_att.type))) 
+    return CGM_ERR_READ;
+
+  return cgm_txt_get_ter(cgm);
+}
+
+static int cgm_txt_edgcap(tCGM* cgm)   /* edge type */
+{
+  if(cgm_txt_get_i(cgm, &(cgm->edge_att.linecap))) 
+    return CGM_ERR_READ;
+
+  if(cgm_txt_get_i(cgm, &(cgm->edge_att.dashcap))) 
+    return CGM_ERR_READ;
+
+  return cgm_txt_get_ter(cgm);
+}
+
+static int cgm_txt_edgjoin(tCGM* cgm)   /* edge type */
+{
+  if(cgm_txt_get_i(cgm, &(cgm->edge_att.linejoin))) 
     return CGM_ERR_READ;
 
   return cgm_txt_get_ter(cgm);
@@ -1697,6 +1773,8 @@ static tCommand _cgm_txt_ARC_CTR_CLOSE    = { "ARCCTR_CLOSE"   , cgm_txt_ccntcl 
 static tCommand _cgm_txt_ELLIPSE          = { "ELLIPSE"        , cgm_txt_ellips };
 static tCommand _cgm_txt_ELLIP_ARC        = { "ELLIPARC"       , cgm_txt_ellarc };
 static tCommand _cgm_txt_ELLIP_ARC_CLOSE  = { "ELLIPARCCLOSE"  , cgm_txt_ellacl };
+static tCommand _cgm_txt_ARC_CTR_REVERSE  = { "ARCCTRREV"      , cgm_txt_circnt };
+static tCommand _cgm_txt_BEZIER           = { "POLYBEZIER"     , cgm_txt_polybz }; 
 
 /* attribute elements */
 
@@ -1735,6 +1813,10 @@ static tCommand _cgm_txt_PAT_TABLE        = { "PATTABLE"       , cgm_txt_pattab 
 static tCommand _cgm_txt_PAT_SIZE         = { "PATSIZE"        , cgm_txt_patsiz };
 static tCommand _cgm_txt_COLR_TABLE       = { "COLRTABLE"      , cgm_txt_coltab };
 static tCommand _cgm_txt_ASF              = { "ASF"            , cgm_txt_asf };
+static tCommand _cgm_txt_LINE_CAP         = { "LINECAP"        , cgm_txt_lncap  };
+static tCommand _cgm_txt_LINE_JOIN        = { "LINEJOIN"       , cgm_txt_lnjoin };
+static tCommand _cgm_txt_EDGE_CAP         = { "EDGECAP"        , cgm_txt_edgcap  };
+static tCommand _cgm_txt_EDGE_JOIN        = { "EDGEJOIN"       , cgm_txt_edgjoin };
 
 /* escape elements */
 
@@ -1824,7 +1906,10 @@ static tCommand *_cgm_txt_primitive[] = {
       &_cgm_txt_ELLIPSE,
       &_cgm_txt_ELLIP_ARC,
       &_cgm_txt_ELLIP_ARC_CLOSE,
-      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+      &_cgm_txt_ARC_CTR_REVERSE,
+      NULL, NULL, NULL, NULL, NULL,
+      &_cgm_txt_BEZIER,
+      NULL, NULL, NULL };
 
 static tCommand *_cgm_txt_attributes[] = {
       &_cgm_txt_NULL,
@@ -1863,7 +1948,13 @@ static tCommand *_cgm_txt_attributes[] = {
       &_cgm_txt_PAT_SIZE,
       &_cgm_txt_COLR_TABLE,
       &_cgm_txt_ASF,
-      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+      NULL,
+      &_cgm_txt_LINE_CAP, 
+      &_cgm_txt_LINE_JOIN,
+      NULL, NULL, NULL, NULL, NULL, 
+      &_cgm_txt_EDGE_CAP, 
+      &_cgm_txt_EDGE_JOIN,
+      NULL, NULL, NULL, NULL,
       NULL, NULL, NULL, NULL };
 
 static tCommand *_cgm_txt_escape[] = {

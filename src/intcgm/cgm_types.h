@@ -46,6 +46,9 @@ typedef struct {
 typedef struct {
   long index;
   long type;
+  long linecap;
+  long dashcap;
+  long linejoin;
   double width;
   tColor color;
 } tLineAtt;
@@ -53,6 +56,9 @@ typedef struct {
 typedef struct {
   long index;
   long type;
+  long linecap;
+  long dashcap;
+  long linejoin;
   double width;
   tColor color;
   short visibility;

@@ -73,7 +73,7 @@ static int cgm_bin_mtfver(tCGM* cgm)
   if(cgm_bin_get_i(cgm, &version)) 
     return CGM_ERR_READ;
   
-  if (version > 1)      /* unsupported */
+  if (version > 3)      /* unsupported */
     return CGM_ERR_READ;
 
   return CGM_OK;
@@ -546,6 +546,44 @@ static cgmPoint *get_points(tCGM* cgm, int *np)
   }
 
   return cgm->point_list;
+}
+
+static int cgm_bin_polybz(tCGM* cgm)
+{
+  cgmPoint *pt;
+  int np;
+  long indicator;
+
+  if(cgm_bin_get_ix(cgm, &(indicator))) 
+    return CGM_ERR_READ;
+
+  pt = get_points(cgm, &np);
+  if(pt==NULL) 
+    return CGM_ERR_READ;
+
+  cgm_setline_attrib(cgm);
+
+  if(indicator == 1)  /* discontinuous: sequence of curves with four points (one or more) */
+  {
+    int i, j = 0, numCurves = np / 4;
+    cgmPoint ptTmp[4];
+
+    for(i = 0; i < numCurves; i++)
+    {
+      ptTmp[0] = pt[j++];
+      ptTmp[1] = pt[j++];
+      ptTmp[2] = pt[j++];
+      ptTmp[3] = pt[j++];
+      cgm->dof.Polygon(4, ptTmp, CGM_BEZIER, cgm->userdata);
+    }
+  }
+  else  /* continuous: sequence of curves with three points (one or more) */
+  {
+    /* Two or more curves: the first curve, and only the first, is defined by 4 points */
+    cgm->dof.Polygon(np, pt, CGM_BEZIER, cgm->userdata);
+  }
+
+  return CGM_OK;
 }
 
 static int cgm_bin_polyln(tCGM* cgm)
@@ -1421,6 +1459,25 @@ static int cgm_bin_lntype(tCGM* cgm)
   return CGM_OK;
 }
 
+static int cgm_bin_lncap(tCGM* cgm)
+{
+  if(cgm_bin_get_ix(cgm, &(cgm->line_att.linecap))) 
+    return CGM_ERR_READ;
+
+  if(cgm_bin_get_ix(cgm, &(cgm->line_att.dashcap))) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
+}
+
+static int cgm_bin_lnjoin(tCGM* cgm)
+{
+  if(cgm_bin_get_ix(cgm, &(cgm->line_att.linejoin))) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
+}
+
 static int cgm_bin_lnwidt(tCGM* cgm)
 {
   if(cgm->linewidth_mode==CGM_ABSOLUTE)
@@ -1651,6 +1708,25 @@ static int cgm_bin_edgind(tCGM* cgm)
 static int cgm_bin_edgtyp(tCGM* cgm)
 {
   if(cgm_bin_get_ix(cgm, &(cgm->edge_att.type))) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
+}
+
+static int cgm_bin_edgcap(tCGM* cgm)
+{
+  if(cgm_bin_get_ix(cgm, &(cgm->edge_att.linecap))) 
+    return CGM_ERR_READ;
+
+  if(cgm_bin_get_ix(cgm, &(cgm->edge_att.dashcap))) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
+}
+
+static int cgm_bin_edgjoin(tCGM* cgm)
+{
+  if(cgm_bin_get_ix(cgm, &(cgm->edge_att.linejoin))) 
     return CGM_ERR_READ;
 
   return CGM_OK;
@@ -1957,6 +2033,8 @@ static CGM_FUNC _cgm_bin_ARC_CTR_CLOSE    = &cgm_bin_ccntcl;
 static CGM_FUNC _cgm_bin_ELLIPSE          = &cgm_bin_ellips;
 static CGM_FUNC _cgm_bin_ELLIP_ARC        = &cgm_bin_ellarc;
 static CGM_FUNC _cgm_bin_ELLIP_ARC_CLOSE  = &cgm_bin_ellacl;
+static CGM_FUNC _cgm_bin_ARC_CTR_REVERSE  = &cgm_bin_circnt;
+static CGM_FUNC _cgm_bin_BEZIER           = &cgm_bin_polybz;
 
 /* attribute elements */
 
@@ -1995,6 +2073,10 @@ static CGM_FUNC _cgm_bin_PAT_TABLE        = &cgm_bin_pattab;
 static CGM_FUNC _cgm_bin_PAT_SIZE         = &cgm_bin_patsiz;
 static CGM_FUNC _cgm_bin_COLR_TABLE       = &cgm_bin_coltab;
 static CGM_FUNC _cgm_bin_ASF              = &cgm_bin_asf;
+static CGM_FUNC _cgm_bin_LINE_CAP         = &cgm_bin_lncap; 
+static CGM_FUNC _cgm_bin_LINE_JOIN        = &cgm_bin_lnjoin;
+static CGM_FUNC _cgm_bin_EDGE_CAP         = &cgm_bin_edgcap; 
+static CGM_FUNC _cgm_bin_EDGE_JOIN        = &cgm_bin_edgjoin;
 
 /* escape elements */
 
@@ -2078,7 +2160,10 @@ static CGM_FUNC *_cgm_bin_primitive[] = {
       &_cgm_bin_ELLIPSE,
       &_cgm_bin_ELLIP_ARC,
       &_cgm_bin_ELLIP_ARC_CLOSE,
-      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+      &_cgm_bin_ARC_CTR_REVERSE,
+      NULL, NULL, NULL, NULL, NULL,
+      &_cgm_bin_BEZIER,
+      NULL, NULL, NULL };
 
 static CGM_FUNC *_cgm_bin_attributes[] = {
       &_cgm_bin_NULL,
@@ -2117,7 +2202,13 @@ static CGM_FUNC *_cgm_bin_attributes[] = {
       &_cgm_bin_PAT_SIZE,
       &_cgm_bin_COLR_TABLE,
       &_cgm_bin_ASF,
-      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+      NULL,
+      &_cgm_bin_LINE_CAP, 
+      &_cgm_bin_LINE_JOIN,
+      NULL, NULL, NULL, NULL, NULL, 
+      &_cgm_bin_EDGE_CAP, 
+      &_cgm_bin_EDGE_JOIN,
+      NULL, NULL, NULL, NULL,
       NULL, NULL, NULL, NULL };
 
 static CGM_FUNC *_cgm_bin_escape[] = {
