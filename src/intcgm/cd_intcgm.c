@@ -604,8 +604,7 @@ static void cdcgm_TextAttrib(const char* horiz_align, const char* vert_align, co
   cdCanvasForeground(cd_cgm->canvas, cdEncodeColor(color.red, color.green, color.blue));
 }
 
-/* Rafael */
-static void cdcgm_LineAttrib(const char *type, const char *cap, const char * join, double width, cgmRGB color, cdCGM* cd_cgm)
+static void cdcgm_LineAttrib(const char *type, const char *cap, const char *join, double width, cgmRGB color, cdCGM* cd_cgm)
 {
   int style = CD_CONTINUOUS;
   int linecap = CD_CAPFLAT;

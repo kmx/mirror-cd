@@ -420,44 +420,6 @@ static cgmPoint *get_points(tCGM* cgm, int *np)
   return cgm->point_list;
 }
 
-static int cgm_txt_polybz(tCGM* cgm)
-{
-  cgmPoint *pt;
-  int np;
-  long indicator;
-
-  if(cgm_txt_get_i(cgm, &(indicator))) 
-    return CGM_ERR_READ;
-
-  pt = get_points(cgm, &np);
-  if(pt==NULL) 
-    return CGM_ERR_READ;
-
-  cgm_setline_attrib(cgm);
-
-  if(indicator == 1)  /* discontinuous: sequence of curves with four points (one or more) */
-  {
-    int i, j = 0, numCurves = np / 4;
-    cgmPoint ptTmp[4];
-
-    for(i = 0; i < numCurves; i++)
-    {
-      ptTmp[0] = pt[j++];
-      ptTmp[1] = pt[j++];
-      ptTmp[2] = pt[j++];
-      ptTmp[3] = pt[j++];
-      cgm->dof.Polygon(4, ptTmp, CGM_BEZIER, cgm->userdata);
-    }
-  }
-  else  /* continuous: sequence of curves with three points (one or more) */
-  {
-    /* Two or more curves: the first curve, and only the first, is defined by 4 points */
-    cgm->dof.Polygon(np, pt, CGM_BEZIER, cgm->userdata);
-  }
-
-  return CGM_OK;
-}
-
 static int cgm_txt_polyln(tCGM* cgm)   /* polyline */
 {
   cgmPoint *pt;
@@ -1156,6 +1118,73 @@ static int cgm_txt_ellacl(tCGM* cgm)   /* elliptical arc close */
   return cgm_txt_get_ter(cgm);
 }
 
+static int cgm_txt_circntrev(tCGM* cgm)   /* circular arc center reversed */
+{
+  cgmPoint center, start, end;
+  double radius, angle1, angle2;
+
+  if(cgm_txt_get_p(cgm, &(center.x), &(center.y))) 
+    return CGM_ERR_READ;
+
+  if(cgm_txt_get_vdc(cgm, &(start.x))) 
+    return CGM_ERR_READ;
+  if(cgm_txt_get_vdc(cgm, &(start.y))) 
+    return CGM_ERR_READ;
+
+  if(cgm_txt_get_vdc(cgm, &(end.x))) 
+    return CGM_ERR_READ;
+  if(cgm_txt_get_vdc(cgm, &(end.y))) 
+    return CGM_ERR_READ;
+
+  if(cgm_txt_get_vdc(cgm, &radius)) 
+    return CGM_ERR_READ;
+
+  cgm_calc_arc_rev(start, end, &angle1, &angle2);
+
+  cgm_setline_attrib(cgm);
+  cgm->dof.CircularArc(center, radius, angle1, angle2, CGM_OPENARC, cgm->userdata);
+
+  return cgm_txt_get_ter(cgm);
+}
+
+static int cgm_txt_polybz(tCGM* cgm)
+{
+  cgmPoint *pt;
+  int np;
+  long indicator;
+
+  if(cgm_txt_get_i(cgm, &(indicator))) 
+    return CGM_ERR_READ;
+
+  pt = get_points(cgm, &np);
+  if(pt==NULL) 
+    return CGM_ERR_READ;
+
+  cgm_setline_attrib(cgm);
+
+  if(indicator == 1)  /* discontinuous: sequence of curves with four points (one or more) */
+  {
+    int i, j = 0, numCurves = np / 4;
+    cgmPoint ptTmp[4];
+
+    for(i = 0; i < numCurves; i++)
+    {
+      ptTmp[0] = pt[j++];
+      ptTmp[1] = pt[j++];
+      ptTmp[2] = pt[j++];
+      ptTmp[3] = pt[j++];
+      cgm->dof.Polygon(4, ptTmp, CGM_BEZIER, cgm->userdata);
+    }
+  }
+  else  /* continuous: sequence of curves with three points (one or more) */
+  {
+    /* Two or more curves: the first curve, and only the first, is defined by 4 points */
+    cgm->dof.Polygon(np, pt, CGM_BEZIER, cgm->userdata);
+  }
+
+  return CGM_OK;
+}
+
 /*********************
 * Attribute Elements *
 *********************/
@@ -1773,7 +1802,7 @@ static tCommand _cgm_txt_ARC_CTR_CLOSE    = { "ARCCTR_CLOSE"   , cgm_txt_ccntcl 
 static tCommand _cgm_txt_ELLIPSE          = { "ELLIPSE"        , cgm_txt_ellips };
 static tCommand _cgm_txt_ELLIP_ARC        = { "ELLIPARC"       , cgm_txt_ellarc };
 static tCommand _cgm_txt_ELLIP_ARC_CLOSE  = { "ELLIPARCCLOSE"  , cgm_txt_ellacl };
-static tCommand _cgm_txt_ARC_CTR_REVERSE  = { "ARCCTRREV"      , cgm_txt_circnt };
+static tCommand _cgm_txt_ARC_CTR_REVERSE  = { "ARCCTRREV"      , cgm_txt_circntrev };
 static tCommand _cgm_txt_BEZIER           = { "POLYBEZIER"     , cgm_txt_polybz }; 
 
 /* attribute elements */

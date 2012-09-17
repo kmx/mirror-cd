@@ -4,6 +4,9 @@
 #include "cgm_types.h"
 #include "cgm_bin_get.h"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 static int cgm_bin_exec_command(tCGM* cgm, int, int);
 
@@ -62,6 +65,22 @@ static int cgm_bin_endpic(tCGM* cgm)
   cgm->dof.EndPicture(cgm->userdata);
   return CGM_OK;
 }
+
+/* No implemented: BEGIN SEGMENT */
+/* No implemented: END SEGMENT */
+/* No implemented: BEGIN FIGURE */
+/* No implemented: END FIGURE */
+/* No implemented: BEGIN PROTECTION REGION */
+/* No implemented: END PROTECTION REGION */
+/* No implemented: BEGIN COMPOUND LINE */
+/* No implemented: END COMPOUND LINE */
+/* No implemented: BEGIN COMPOUND TEXT PATH */
+/* No implemented: END COMPOUND TEXT PATH */
+/* No implemented: BEGIN TILE ARRAY */
+/* No implemented: END TILE ARRAY */
+/* No implemented: BEGIN APPLICATION STRUCTURE (version 4) */
+/* No implemented: BEGIN APPLICATION STRUCTURE BODY (version 4) */
+/* No implemented: END APPLICATION STRUCTURE (version 4) */
 
 /*******************************
 * Metafile Descriptor Elements *
@@ -371,6 +390,15 @@ static int cgm_bin_chcdac(tCGM* cgm)
   return CGM_OK;
 }
 
+/* No implemented: NAME PRECISION */
+/* No implemented: MAXIMUM VDC EXTENT */
+/* No implemented: SEGMENT PRIORITY EXTENT */
+/* No implemented: COLOUR MODEL */
+/* No implemented: COLOUR CALIBRATION */
+/* No implemented: FONT PROPERTIES */
+/* No implemented: GLYPH MAPPING */
+/* No implemented: SYMBOL LIBRARY LIST */
+/* No implemented: PICTURE DIRECTORY (version 4) */
 
 /******************************
 * Picture Descriptor Elements *
@@ -442,6 +470,20 @@ static int cgm_bin_bckcol(tCGM* cgm)
 
   return CGM_OK;
 }
+
+/* No implemented: DEVICE VIEWPORT */
+/* No implemented: DEVICE VIEWPORT SPECIFICATION MODE */
+/* No implemented: DEVICE VIEWPORT MAPPING */
+/* No implemented: LINE REPRESENTATION */
+/* No implemented: MARKER REPRESENTATION */
+/* No implemented: TEXT REPRESENTATION */
+/* No implemented: FILL REPRESENTATION */
+/* No implemented: EDGE REPRESENTATION */
+/* No implemented: INTERIOR STYLE SPECIFICATION MODE */
+/* No implemented: LINE AND EDGE TYPE DEFINITION */
+/* No implemented: HATCH STYLE DEFINITION */
+/* No implemented: GEOMETRIC PATTERN DEFINITION */
+/* No implemented: APPLICATION STRUCTURE DIRECTORY (version 4) */
 
 /*******************
 * Control Elements *
@@ -523,6 +565,17 @@ static int cgm_bin_clpind(tCGM* cgm)
   return CGM_OK;
 }
 
+/* No implemented: LINE CLIPPING MODE */
+/* No implemented: MARKER CLIPPING MODE */
+/* No implemented: EDGE CLIPPING MODE */
+/* No implemented: NEW REGION */
+/* No implemented: SAVE PRIMITIVE CONTEXT */
+/* No implemented: RESTORE PRIMITIVE CONTEXT */
+/* No implemented: PROTECTION REGION INDICATOR */
+/* No implemented: GENERALIZED TEXT PATH MODE */
+/* No implemented: MITRE LIMIT */
+/* No implemented: TRANSPARENT CELL COLOUR */
+
 /*******************************
 * Graphical Primitive Elements *
 *******************************/
@@ -546,44 +599,6 @@ static cgmPoint *get_points(tCGM* cgm, int *np)
   }
 
   return cgm->point_list;
-}
-
-static int cgm_bin_polybz(tCGM* cgm)
-{
-  cgmPoint *pt;
-  int np;
-  long indicator;
-
-  if(cgm_bin_get_ix(cgm, &(indicator))) 
-    return CGM_ERR_READ;
-
-  pt = get_points(cgm, &np);
-  if(pt==NULL) 
-    return CGM_ERR_READ;
-
-  cgm_setline_attrib(cgm);
-
-  if(indicator == 1)  /* discontinuous: sequence of curves with four points (one or more) */
-  {
-    int i, j = 0, numCurves = np / 4;
-    cgmPoint ptTmp[4];
-
-    for(i = 0; i < numCurves; i++)
-    {
-      ptTmp[0] = pt[j++];
-      ptTmp[1] = pt[j++];
-      ptTmp[2] = pt[j++];
-      ptTmp[3] = pt[j++];
-      cgm->dof.Polygon(4, ptTmp, CGM_BEZIER, cgm->userdata);
-    }
-  }
-  else  /* continuous: sequence of curves with three points (one or more) */
-  {
-    /* Two or more curves: the first curve, and only the first, is defined by 4 points */
-    cgm->dof.Polygon(np, pt, CGM_BEZIER, cgm->userdata);
-  }
-
-  return CGM_OK;
 }
 
 static int cgm_bin_polyln(tCGM* cgm)
@@ -1439,6 +1454,83 @@ static int cgm_bin_ellacl(tCGM* cgm)
   return CGM_OK;
 }
 
+static int cgm_bin_circntrev(tCGM* cgm)
+{
+  cgmPoint center, start, end;
+  double radius, angle1, angle2;
+
+  if(cgm_bin_get_p(cgm, &(center.x), &(center.y))) 
+    return CGM_ERR_READ;
+
+  if(cgm_bin_get_vdc(cgm, &(start.x))) 
+    return CGM_ERR_READ;
+  if(cgm_bin_get_vdc(cgm, &(start.y))) 
+    return CGM_ERR_READ;
+
+  if(cgm_bin_get_vdc(cgm, &(end.x))) 
+    return CGM_ERR_READ;
+  if(cgm_bin_get_vdc(cgm, &(end.y))) 
+    return CGM_ERR_READ;
+
+  if(cgm_bin_get_vdc(cgm, &radius)) 
+    return CGM_ERR_READ;
+
+  cgm_calc_arc_rev(start, end, &angle1, &angle2);
+
+  cgm_setline_attrib(cgm);
+  cgm->dof.CircularArc(center, radius, angle1, angle2, CGM_OPENARC, cgm->userdata);
+
+  return CGM_OK;
+}
+
+/* No implemented: CONNECTING EDGE */
+/* No implemented: HYPERBOLIC ARC */
+/* No implemented: PARABOLIC ARC */
+/* No implemented: NON-UNIFORM B-SPLINE */
+/* No implemented: NON-UNIFORM RATIONAL B-SPLINE */
+
+static int cgm_bin_polybz(tCGM* cgm)
+{
+  cgmPoint *pt;
+  int np;
+  long indicator;
+
+  if(cgm_bin_get_ix(cgm, &(indicator))) 
+    return CGM_ERR_READ;
+
+  pt = get_points(cgm, &np);
+  if(pt==NULL) 
+    return CGM_ERR_READ;
+
+  cgm_setline_attrib(cgm);
+
+  if(indicator == 1)  /* discontinuous: sequence of curves with four points (one or more) */
+  {
+    int i, j = 0, numCurves = np / 4;
+    cgmPoint ptTmp[4];
+
+    for(i = 0; i < numCurves; i++)
+    {
+      ptTmp[0] = pt[j++];
+      ptTmp[1] = pt[j++];
+      ptTmp[2] = pt[j++];
+      ptTmp[3] = pt[j++];
+      cgm->dof.Polygon(4, ptTmp, CGM_BEZIER, cgm->userdata);
+    }
+  }
+  else  /* continuous: sequence of curves with three points (one or more) */
+  {
+    /* Two or more curves: the first curve, and only the first, is defined by 4 points */
+    cgm->dof.Polygon(np, pt, CGM_BEZIER, cgm->userdata);
+  }
+
+  return CGM_OK;
+}
+
+/* No implemented: POLYSYMBOL */
+/* No implemented: BITONAL TILE */
+/* No implemented: TILE */
+
 /*********************
 * Attribute Elements *
 *********************/
@@ -1454,25 +1546,6 @@ static int cgm_bin_lnbdin(tCGM* cgm)
 static int cgm_bin_lntype(tCGM* cgm)
 {
   if(cgm_bin_get_ix(cgm, &(cgm->line_att.type))) 
-    return CGM_ERR_READ;
-
-  return CGM_OK;
-}
-
-static int cgm_bin_lncap(tCGM* cgm)
-{
-  if(cgm_bin_get_ix(cgm, &(cgm->line_att.linecap))) 
-    return CGM_ERR_READ;
-
-  if(cgm_bin_get_ix(cgm, &(cgm->line_att.dashcap))) 
-    return CGM_ERR_READ;
-
-  return CGM_OK;
-}
-
-static int cgm_bin_lnjoin(tCGM* cgm)
-{
-  if(cgm_bin_get_ix(cgm, &(cgm->line_att.linejoin))) 
     return CGM_ERR_READ;
 
   return CGM_OK;
@@ -1713,25 +1786,6 @@ static int cgm_bin_edgtyp(tCGM* cgm)
   return CGM_OK;
 }
 
-static int cgm_bin_edgcap(tCGM* cgm)
-{
-  if(cgm_bin_get_ix(cgm, &(cgm->edge_att.linecap))) 
-    return CGM_ERR_READ;
-
-  if(cgm_bin_get_ix(cgm, &(cgm->edge_att.dashcap))) 
-    return CGM_ERR_READ;
-
-  return CGM_OK;
-}
-
-static int cgm_bin_edgjoin(tCGM* cgm)
-{
-  if(cgm_bin_get_ix(cgm, &(cgm->edge_att.linejoin))) 
-    return CGM_ERR_READ;
-
-  return CGM_OK;
-}
-
 static int cgm_bin_edgwid(tCGM* cgm)
 {
   if(cgm->edgewidth_mode==CGM_ABSOLUTE)
@@ -1819,7 +1873,7 @@ static int cgm_bin_pattab(tCGM* cgm)
     }
   }
 
-  /* remove if exist a patttern with the same index */
+  /* remove if exist a pattern with the same index */
   for(i=1; (p=(tPatTable *)cgm_list_get(cgm->fill_att.pat_list,i))!=NULL; i++)
   {
     if(p->index==pat->index)
@@ -1904,6 +1958,59 @@ static int cgm_bin_asf(tCGM* cgm)
   return CGM_OK;
 }
 
+/* No implemented: PICK IDENTIFIER */
+
+static int cgm_bin_lncap(tCGM* cgm)
+{
+  if(cgm_bin_get_ix(cgm, &(cgm->line_att.linecap))) 
+    return CGM_ERR_READ;
+
+  if(cgm_bin_get_ix(cgm, &(cgm->line_att.dashcap))) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
+}
+
+static int cgm_bin_lnjoin(tCGM* cgm)
+{
+  if(cgm_bin_get_ix(cgm, &(cgm->line_att.linejoin))) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
+}
+
+/* No implemented: LINE TYPE CONTINUATION */
+/* No implemented: LINE TYPE INITIAL OFFSET */
+/* No implemented: TEXT SCORE TYPE */
+/* No implemented: RESTRICTED TEXT TYPE */
+/* No implemented: INTERPOLATED INTERIOR */
+
+static int cgm_bin_edgcap(tCGM* cgm)
+{
+  if(cgm_bin_get_ix(cgm, &(cgm->edge_att.linecap))) 
+    return CGM_ERR_READ;
+
+  if(cgm_bin_get_ix(cgm, &(cgm->edge_att.dashcap))) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
+}
+
+static int cgm_bin_edgjoin(tCGM* cgm)
+{
+  if(cgm_bin_get_ix(cgm, &(cgm->edge_att.linejoin))) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
+}
+
+/* No implemented: EDGE TYPE CONTINUATION */
+/* No implemented: EDGE TYPE INITIAL OFFSET */
+/* No implemented: SYMBOL LIBRARY INDEX */
+/* No implemented: SYMBOL COLOUR */
+/* No implemented: SYMBOL SIZE */
+/* No implemented: SYMBOL ORIENTATION */
+
 /*****************
 * Escape Element *
 *****************/
@@ -1911,12 +2018,12 @@ static int cgm_bin_asf(tCGM* cgm)
 static int cgm_bin_escape(tCGM* cgm)
 {
   /* ignored */
-#if 1     // TODO check
-  int i;
-  unsigned char c;
-  for(i=0; i<cgm->buff.len; i++) 
-    cgm_bin_get_c(cgm, &c);
-#else
+// #if 1     // TODO check
+//   int i;
+//   unsigned char c;
+//   for(i=0; i<cgm->buff.len; i++) 
+//     cgm_bin_get_c(cgm, &c);
+// #else
   long identifier;
   char *data_rec;
 
@@ -1926,7 +2033,7 @@ static int cgm_bin_escape(tCGM* cgm)
     return CGM_ERR_READ;
 
   free(data_rec);
-#endif
+// #endif
   return CGM_OK;
 }
 
@@ -1963,6 +2070,22 @@ static int cgm_bin_appdta(tCGM* cgm)
 
   return CGM_OK;
 }
+
+/*******************
+* Segment elements *
+*******************/
+/* No implemented: COPY SEGMENT */
+/* No implemented: INHERITANCE FILTER */
+/* No implemented: CLIP INHERITANCE */
+/* No implemented: SEGMENT TRANSFORMATION */
+/* No implemented: SEGMENT HIGHLIGHTING */
+/* No implemented: SEGMENT DISPLAY PRIORITY */
+/* No implemented: SEGMENT PICK PRIORITY */
+
+/*********************************
+* Application structure elements *
+*********************************/
+/* No implemented: APPLICATION STRUCTURE ATTRIBUTE (version 4) */
 
 /* delimiter elements */
 
@@ -2033,7 +2156,7 @@ static CGM_FUNC _cgm_bin_ARC_CTR_CLOSE    = &cgm_bin_ccntcl;
 static CGM_FUNC _cgm_bin_ELLIPSE          = &cgm_bin_ellips;
 static CGM_FUNC _cgm_bin_ELLIP_ARC        = &cgm_bin_ellarc;
 static CGM_FUNC _cgm_bin_ELLIP_ARC_CLOSE  = &cgm_bin_ellacl;
-static CGM_FUNC _cgm_bin_ARC_CTR_REVERSE  = &cgm_bin_circnt;
+static CGM_FUNC _cgm_bin_ARC_CTR_REVERSE  = &cgm_bin_circntrev;
 static CGM_FUNC _cgm_bin_BEZIER           = &cgm_bin_polybz;
 
 /* attribute elements */

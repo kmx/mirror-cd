@@ -92,6 +92,24 @@ void cgm_calc_arc(cgmPoint start, cgmPoint end,
   *angle2 = atan2(end.y, end.x);
 }
 
+void cgm_calc_arc_rev(cgmPoint start, cgmPoint end, 
+                      double *angle1, double *angle2)
+{
+  /* The arc is drawn from start to end, 
+     in the negative angular direction */
+  double temp;
+  cgm_calc_arc(start, end, angle1, angle2);
+
+  /* if angle2 is greater than angle1 it will be progressively decreased by 2*M_PI until it is less than angle1 */
+  while(*angle2 > *angle1)
+    *angle2 -= 2*M_PI;
+
+  /* angle1 must be less than angle2 */ 
+  temp = *angle1;
+  *angle1 = *angle2;
+  *angle2 = temp;
+}
+
 void cgm_calc_arc_3p(cgmPoint start, cgmPoint intermediate, cgmPoint end, 
                     cgmPoint *center, double *radius, double *angle1, double *angle2)
 {

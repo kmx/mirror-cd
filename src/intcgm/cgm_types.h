@@ -219,6 +219,8 @@ void cgm_calc_arc_3p(cgmPoint start, cgmPoint intermediate, cgmPoint end,
                     cgmPoint *center, double *radius, double *angle1, double *angle2);
 void cgm_calc_arc(cgmPoint start, cgmPoint end, 
                   double *angle1, double *angle2);
+void cgm_calc_arc_rev(cgmPoint start, cgmPoint end, 
+                      double *angle1, double *angle2);
 void cgm_calc_ellipse(cgmPoint center, cgmPoint first, cgmPoint second, cgmPoint start, cgmPoint end, 
                       double *angle1, double *angle2);
 
