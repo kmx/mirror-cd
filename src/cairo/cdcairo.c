@@ -2092,6 +2092,13 @@ static cdAttribute cairodc_attrib =
   get_cairodc_attrib
 }; 
 
+static cdAttribute gc_attrib =
+{
+  "GC",
+  NULL,
+  get_cairodc_attrib
+}; 
+
 #if !PANGO_VERSION_CHECK(1,22,0)
 static PangoContext * cd_pango_cairo_create_context (cairo_t *cr)
 {
@@ -2133,6 +2140,7 @@ cdCtxCanvas *cdcairoCreateCanvas(cdCanvas* canvas, cairo_t* cr)
   cdRegisterAttribute(canvas, &radialgradient_attrib);
   cdRegisterAttribute(canvas, &interp_attrib);
   cdRegisterAttribute(canvas, &cairodc_attrib);
+  cdRegisterAttribute(canvas, &gc_attrib);
   cdRegisterAttribute(canvas, &hatchboxsize_attrib);
   cdRegisterAttribute(canvas, &pattern_image_attrib);
 
