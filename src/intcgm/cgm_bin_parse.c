@@ -857,7 +857,7 @@ static int cgm_bin_cellar(tCGM* cgm)
       b=cgm->buff.bc;
       cgm->buff.pc=0;
 
-      for(i=0; i<sx;)
+      for(i=0; i<sx; i++)
       {
         long l;
         if(cgm_bin_get_i(cgm, &l)) 
