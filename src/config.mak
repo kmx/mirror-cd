@@ -62,9 +62,9 @@ SRCCOMM = cd.c wd.c wdhdcpy.c rgb2map.c cd_vectortext.c cd_active.c \
 SRC = $(SRCCOMM) $(SRCSVG) $(SRCINTCGM) $(SRCDRV) $(SRCSIM)
 INCLUDES = . drv x11 win32 intcgm freetype2 sim cairo ../include
 
-ifdef USE_GDK3
+ifdef USE_GTK3
      # temporary for tests
-     LIBNAME := $(LIBNAME)gdk3
+     #LIBNAME := $(LIBNAME)gtk3
   # Do not include old GDK driver
   SRC += drv/cd0wmf.c
   USE_GTK3 = Yes
