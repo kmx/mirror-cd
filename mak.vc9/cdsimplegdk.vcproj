@@ -74,7 +74,7 @@
 				OutputFile="$(OutDir)\$(ProjectName).exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="..\lib,..\..\iup\lib;d:\lng\gtk\lib"
+				AdditionalLibraryDirectories="..\lib,..\..\iup\lib;d:\lng\gtk2\lib"
 				GenerateManifest="false"
 				GenerateDebugInformation="true"
 				ProgramDatabaseFile="$(TargetDir)$(TargetName).pdb"

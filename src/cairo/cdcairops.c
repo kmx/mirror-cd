@@ -28,11 +28,6 @@ static cdAttribute comment_attrib =
   NULL
 }; 
 
-static void cdkillcanvas (cdCtxCanvas *ctxcanvas)
-{
-  cdcairoKillCanvas(ctxcanvas);
-}
-
 static void cdflush(cdCtxCanvas *ctxcanvas)
 {
   if (!ctxcanvas->eps)
@@ -151,7 +146,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void* data)
 static void cdinittable(cdCanvas* canvas)
 {
   cdcairoInitTable(canvas);
-  canvas->cxKillCanvas = cdkillcanvas;
+  canvas->cxKillCanvas = cdcairoKillCanvas;
   canvas->cxFlush = cdflush;
 }
 

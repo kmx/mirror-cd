@@ -15,11 +15,6 @@
 #include <cairo-xlib.h>
 
 
-static void cdkillcanvas(cdCtxCanvas *ctxcanvas)
-{
-  cdcairoKillCanvas(ctxcanvas);
-}
-
 int cdactivate(cdCtxCanvas *ctxcanvas)
 {
   Window root;
@@ -75,7 +70,7 @@ static void cdinittable(cdCanvas* canvas)
 {
   cdcairoInitTable(canvas);
 
-  canvas->cxKillCanvas = cdkillcanvas;
+  canvas->cxKillCanvas = cdcairoKillCanvas;
   canvas->cxActivate = cdactivate;
 }
 

@@ -64,9 +64,47 @@ void cdGetScreenSize(int *width, int *height, double *width_mm, double *height_m
 }
 #endif
 
-static void cdkillcanvas(cdCtxCanvas *ctxcanvas)
+#if GTK_CHECK_VERSION(3, 0, 0)
+#ifdef WIN32
+#include <gdk/gdkwin32.h>
+#include <cairo-win32.h>
+#else
+#include <gdk/gdkx.h>
+#include <cairo-xlib.h>
+#endif
+#endif
+
+static cairo_t* cdcairoNativeCreateContext(cdCanvas* canvas, GdkWindow* window)
 {
-  cdcairoKillCanvas(ctxcanvas);
+#if GTK_CHECK_VERSION(3, 0, 0)
+	cairo_t* cr;
+	cairo_surface_t* surface;
+#ifdef WIN32
+  /* UNTESTED */
+  HWND hWnd = GDK_WINDOW_HWND(window);
+  HDC hDC = GetDC(hWnd);
+  /* initial clip extents controls size */
+  HRGN clip_hrgn = CreateRectRgn(0, 0, canvas->w, canvas->h);
+  SelectClipRgn(hDC, clip_hrgn);
+  DeleteObject(clip_hrgn);
+  surface = cairo_win32_surface_create(hDC);
+/* TODO: HDC cairo_win32_surface_get_dc(cairo_surface_t *surface);
+   ReleaseDC(GDK_WINDOW_HWND(window), ctxcanvas->hDC);  */
+#else
+  XWindowAttributes wa;
+  GdkDisplay* display = gdk_display_get_default();
+  Display* dpy = GDK_DISPLAY_XDISPLAY(display);
+  Window wnd = GDK_WINDOW_XID(window);
+  XGetWindowAttributes(dpy, wnd, &wa);
+  surface = cairo_xlib_surface_create(dpy, wnd, wa.visual, canvas->w, canvas->h);
+#endif
+  cr = cairo_create(surface);
+  cairo_surface_destroy(surface);
+  return cr;
+#else
+  (void)canvas;
+  return gdk_cairo_create(window);  /* this does not works for GTK3 because of the new paint stack they implemented */
+#endif
 }
 
 int cdactivate(cdCtxCanvas *ctxcanvas)
@@ -85,11 +123,11 @@ int cdactivate(cdCtxCanvas *ctxcanvas)
   ctxcanvas->canvas->w_mm = ((double)canvas->w) / canvas->xres;
   ctxcanvas->canvas->h_mm = ((double)canvas->h) / canvas->yres;
 
-  if (old_w != canvas->w || old_h != canvas->h)
+ if (old_w != canvas->w || old_h != canvas->h)
   {
     /* Re-create the context so internal size is updated. */
     cairo_destroy(ctxcanvas->cr);
-    ctxcanvas->cr = gdk_cairo_create(ctxcanvas->window);
+    ctxcanvas->cr = cdcairoNativeCreateContext(canvas, ctxcanvas->window);
 
     ctxcanvas->last_source = -1;
 
@@ -124,10 +162,6 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 #endif
     return;
 
-  cr = gdk_cairo_create(window);
-  if (!cr) 
-    return;
-
 #if GTK_CHECK_VERSION(3, 0, 0)
   screen = gdk_window_get_screen(window);
   canvas->bpp = gdk_visual_get_depth(gdk_window_get_visual(window));
@@ -138,6 +172,10 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   canvas->bpp = gdk_drawable_get_depth(window);
   gdk_drawable_get_size(window, &canvas->w, &canvas->h);
 #endif
+
+  cr = cdcairoNativeCreateContext(canvas, window);
+  if (!cr) 
+    return;
 
   canvas->xres = ((double)gdk_screen_get_width(screen)  / (double)gdk_screen_get_width_mm(screen));
   canvas->yres = ((double)gdk_screen_get_height(screen) / (double)gdk_screen_get_height_mm(screen));
@@ -153,7 +191,7 @@ static void cdinittable(cdCanvas* canvas)
 {
   cdcairoInitTable(canvas);
 
-  canvas->cxKillCanvas = cdkillcanvas;
+  canvas->cxKillCanvas = cdcairoKillCanvas;
   canvas->cxActivate = cdactivate;
 }
 

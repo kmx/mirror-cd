@@ -21,14 +21,8 @@ static void cdflush(cdCtxCanvas *ctxcanvas)
   /* does nothing in SVG */
 }
 
-static void cdkillcanvas (cdCtxCanvas *ctxcanvas)
-{
-  cdcairoKillCanvas(ctxcanvas);
-}
-
 static void cdcreatecanvas(cdCanvas* canvas, void* data)
 {
-  cdCtxCanvas* ctxcanvas;
   char* strdata = (char*)data;
   char filename[10240] = "";
   double w_mm = INT_MAX*3.78, h_mm = INT_MAX*3.78, res = 3.78;
@@ -56,14 +50,14 @@ static void cdcreatecanvas(cdCanvas* canvas, void* data)
 	surface = cairo_svg_surface_create(filename, CD_MM2PT*w_mm, CD_MM2PT*h_mm);
 
   /* Starting Cairo driver */
-  ctxcanvas = cdcairoCreateCanvas(canvas, cairo_create(surface));
+  cdcairoCreateCanvas(canvas, cairo_create(surface));
   cairo_surface_destroy(surface);
 }
 
 static void cdinittable(cdCanvas* canvas)
 {
   cdcairoInitTable(canvas);
-  canvas->cxKillCanvas = cdkillcanvas;
+  canvas->cxKillCanvas = cdcairoKillCanvas;
   canvas->cxFlush = cdflush;
 }
 
