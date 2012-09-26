@@ -597,10 +597,15 @@ int cgmPlay(const char* filename, void* userdata, cgmPlayFuncs* funcs)
   cgm->linewidth_mode = CGM_SCALED;
   cgm->markersize_mode = CGM_SCALED;
   cgm->edgewidth_mode = CGM_SCALED;
+  cgm->interiorstyle_mode = CGM_SCALED;
   cgm->vdc_ext.first.x = 0;
   cgm->vdc_ext.first.y = 0;
   cgm->vdc_ext.second.x = 32767;
   cgm->vdc_ext.second.y = 32767;
+  cgm->vdc_ext.maxFirst.x = cgm->vdc_ext.first.x;
+  cgm->vdc_ext.maxFirst.y = cgm->vdc_ext.first.y;
+  cgm->vdc_ext.maxSecond.x = cgm->vdc_ext.second.x;
+  cgm->vdc_ext.maxSecond.y = cgm->vdc_ext.second.y;
   cgm->back_color.red = 0;
   cgm->back_color.green = 0;
   cgm->back_color.blue = 0;
@@ -616,6 +621,9 @@ int cgmPlay(const char* filename, void* userdata, cgmPlayFuncs* funcs)
   cgm->clip_rect.second.x = 32767;
   cgm->clip_rect.second.y = 32767;
   cgm->clip_ind = CGM_ON;
+  cgm->cell_transp = CGM_OFF;
+  cgm->region_idx = 1;
+  cgm->region_ind = 1;
 
   cgm->point_list_n = 500;
   cgm->point_list =(cgmPoint *) malloc(sizeof(cgmPoint)*cgm->point_list_n);
@@ -633,6 +641,7 @@ int cgmPlay(const char* filename, void* userdata, cgmPlayFuncs* funcs)
   cgm->line_att.linejoin = 1;
   cgm->line_att.width = 1;
   cgm->line_att.color.index = 1;
+  cgm->line_att.miterlimit = 32767;
 
   cgm->edge_att.index = 1;
   cgm->edge_att.type  = 1;
@@ -661,6 +670,7 @@ int cgmPlay(const char* filename, void* userdata, cgmPlayFuncs* funcs)
   cgm->text_att.char_base.x = 1;
   cgm->text_att.char_base.y = 0;
   cgm->text_att.path = 0;  /* RIGHT */
+  cgm->text_att.restr_type = 1;
 
   cgm->fill_att.index = 1;
   cgm->fill_att.int_style = 0;

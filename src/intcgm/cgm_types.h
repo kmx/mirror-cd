@@ -49,6 +49,7 @@ typedef struct {
   long linecap;
   long dashcap;
   long linejoin;
+  double miterlimit;
   double width;
   tColor color;
 } tLineAtt;
@@ -83,6 +84,7 @@ typedef struct {
   cgmPoint char_up;    /* unused */
   cgmPoint char_base; 
   short path;          
+  long restr_type;  /* unused */
   struct { 
     short hor;
     short ver;
@@ -154,6 +156,7 @@ struct _tCGM {
   short linewidth_mode;   /* absolute, scaled = (pixels, mm) */
   short markersize_mode;  /* absolute, scaled */
   short edgewidth_mode;   /* absolute, scaled */
+  short interiorstyle_mode;  /* absolute, scaled */
 
   short vdc_type;  /* integer, real */
   union {
@@ -168,17 +171,24 @@ struct _tCGM {
   struct {
     cgmPoint first;    /* lower-left corner  */
     cgmPoint second;   /* upper-right corner */
+    cgmPoint maxFirst;    /* maximum lower-left  corner */
+    cgmPoint maxSecond;   /* maximum upper-right corner */
   } vdc_ext;
 
   tRGB back_color;
   tColor aux_color;
   short transparency;
 
+  short cell_transp;
+  tColor cell_color;
+
   struct {
     cgmPoint first;
     cgmPoint second;
   } clip_rect;
   short clip_ind;
+  long region_idx;
+  long region_ind;
 
   long gdp_sample_type, 
        gdp_n_samples;

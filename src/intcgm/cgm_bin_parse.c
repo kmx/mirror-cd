@@ -66,22 +66,6 @@ static int cgm_bin_endpic(tCGM* cgm)
   return CGM_OK;
 }
 
-/* No implemented: BEGIN SEGMENT */
-/* No implemented: END SEGMENT */
-/* No implemented: BEGIN FIGURE */
-/* No implemented: END FIGURE */
-/* No implemented: BEGIN PROTECTION REGION */
-/* No implemented: END PROTECTION REGION */
-/* No implemented: BEGIN COMPOUND LINE */
-/* No implemented: END COMPOUND LINE */
-/* No implemented: BEGIN COMPOUND TEXT PATH */
-/* No implemented: END COMPOUND TEXT PATH */
-/* No implemented: BEGIN TILE ARRAY */
-/* No implemented: END TILE ARRAY */
-/* No implemented: BEGIN APPLICATION STRUCTURE (version 4) */
-/* No implemented: BEGIN APPLICATION STRUCTURE BODY (version 4) */
-/* No implemented: END APPLICATION STRUCTURE (version 4) */
-
 /*******************************
 * Metafile Descriptor Elements *
 *******************************/
@@ -390,15 +374,15 @@ static int cgm_bin_chcdac(tCGM* cgm)
   return CGM_OK;
 }
 
-/* No implemented: NAME PRECISION */
-/* No implemented: MAXIMUM VDC EXTENT */
-/* No implemented: SEGMENT PRIORITY EXTENT */
-/* No implemented: COLOUR MODEL */
-/* No implemented: COLOUR CALIBRATION */
-/* No implemented: FONT PROPERTIES */
-/* No implemented: GLYPH MAPPING */
-/* No implemented: SYMBOL LIBRARY LIST */
-/* No implemented: PICTURE DIRECTORY (version 4) */
+static int cgm_bin_maxvdcext(tCGM* cgm)
+{
+  if(cgm_bin_get_p(cgm, &(cgm->vdc_ext.maxFirst.x), &(cgm->vdc_ext.maxFirst.y))) 
+    return CGM_ERR_READ;
+  if(cgm_bin_get_p(cgm, &(cgm->vdc_ext.maxSecond.x), &(cgm->vdc_ext.maxSecond.y))) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
+}
 
 /******************************
 * Picture Descriptor Elements *
@@ -456,6 +440,19 @@ static int cgm_bin_vdcext(tCGM* cgm)
   if(cgm_bin_get_p(cgm, &(cgm->vdc_ext.second.x), &(cgm->vdc_ext.second.y))) 
     return CGM_ERR_READ;
 
+  /* Verify the bounds values, defined by Maximum VDC Extent element */
+  if(cgm->vdc_ext.first.x < cgm->vdc_ext.maxFirst.x)
+    cgm->vdc_ext.first.x = cgm->vdc_ext.maxFirst.x;
+
+  if(cgm->vdc_ext.first.y < cgm->vdc_ext.maxFirst.y)
+    cgm->vdc_ext.first.y = cgm->vdc_ext.maxFirst.y;
+
+  if(cgm->vdc_ext.second.x > cgm->vdc_ext.maxSecond.x)
+    cgm->vdc_ext.second.x = cgm->vdc_ext.maxSecond.x;
+
+  if(cgm->vdc_ext.second.y > cgm->vdc_ext.maxSecond.y)
+    cgm->vdc_ext.second.y = cgm->vdc_ext.maxSecond.y;
+
   cgm->dof.DeviceExtent(&(cgm->vdc_ext.first), &(cgm->vdc_ext.second), cgm->userdata);
 
   return CGM_OK;
@@ -471,19 +468,13 @@ static int cgm_bin_bckcol(tCGM* cgm)
   return CGM_OK;
 }
 
-/* No implemented: DEVICE VIEWPORT */
-/* No implemented: DEVICE VIEWPORT SPECIFICATION MODE */
-/* No implemented: DEVICE VIEWPORT MAPPING */
-/* No implemented: LINE REPRESENTATION */
-/* No implemented: MARKER REPRESENTATION */
-/* No implemented: TEXT REPRESENTATION */
-/* No implemented: FILL REPRESENTATION */
-/* No implemented: EDGE REPRESENTATION */
-/* No implemented: INTERIOR STYLE SPECIFICATION MODE */
-/* No implemented: LINE AND EDGE TYPE DEFINITION */
-/* No implemented: HATCH STYLE DEFINITION */
-/* No implemented: GEOMETRIC PATTERN DEFINITION */
-/* No implemented: APPLICATION STRUCTURE DIRECTORY (version 4) */
+static int cgm_bin_intstymode(tCGM* cgm)
+{
+  if(cgm_bin_get_e(cgm, &(cgm->interiorstyle_mode))) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
+}
 
 /*******************
 * Control Elements *
@@ -565,16 +556,35 @@ static int cgm_bin_clpind(tCGM* cgm)
   return CGM_OK;
 }
 
-/* No implemented: LINE CLIPPING MODE */
-/* No implemented: MARKER CLIPPING MODE */
-/* No implemented: EDGE CLIPPING MODE */
-/* No implemented: NEW REGION */
-/* No implemented: SAVE PRIMITIVE CONTEXT */
-/* No implemented: RESTORE PRIMITIVE CONTEXT */
-/* No implemented: PROTECTION REGION INDICATOR */
-/* No implemented: GENERALIZED TEXT PATH MODE */
-/* No implemented: MITRE LIMIT */
-/* No implemented: TRANSPARENT CELL COLOUR */
+static int cgm_bin_pregionind(tCGM* cgm)
+{
+  if(cgm_bin_get_ix(cgm, &(cgm->region_idx))) 
+    return CGM_ERR_READ;
+
+  if(cgm_bin_get_ix(cgm, &(cgm->region_ind))) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
+}
+
+static int cgm_bin_miterlimit(tCGM* cgm)
+{
+  if(cgm_bin_get_r(cgm, &(cgm->line_att.miterlimit))) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
+}
+
+static int cgm_bin_transpcellcolor(tCGM* cgm)
+{
+  if(cgm_bin_get_e(cgm, &(cgm->cell_transp))) 
+    return CGM_ERR_READ;
+
+  if(cgm_bin_get_co(cgm, &cgm->cell_color)) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
+}
 
 /*******************************
 * Graphical Primitive Elements *
@@ -790,7 +800,7 @@ static int cgm_bin_plgset(tCGM* cgm)
   return CGM_OK;
 }
 
-static int cgm_bin_cellar(tCGM* cgm)
+static int cgm_bin_cellar(tCGM* cgm)  /* TODO: error */
 {
   register int i, j, k, offset;
   long prec;
@@ -1483,12 +1493,6 @@ static int cgm_bin_circntrev(tCGM* cgm)
   return CGM_OK;
 }
 
-/* No implemented: CONNECTING EDGE */
-/* No implemented: HYPERBOLIC ARC */
-/* No implemented: PARABOLIC ARC */
-/* No implemented: NON-UNIFORM B-SPLINE */
-/* No implemented: NON-UNIFORM RATIONAL B-SPLINE */
-
 static int cgm_bin_polybz(tCGM* cgm)
 {
   cgmPoint *pt;
@@ -1526,10 +1530,6 @@ static int cgm_bin_polybz(tCGM* cgm)
 
   return CGM_OK;
 }
-
-/* No implemented: POLYSYMBOL */
-/* No implemented: BITONAL TILE */
-/* No implemented: TILE */
 
 /*********************
 * Attribute Elements *
@@ -1958,8 +1958,6 @@ static int cgm_bin_asf(tCGM* cgm)
   return CGM_OK;
 }
 
-/* No implemented: PICK IDENTIFIER */
-
 static int cgm_bin_lncap(tCGM* cgm)
 {
   if(cgm_bin_get_ix(cgm, &(cgm->line_att.linecap))) 
@@ -1979,11 +1977,13 @@ static int cgm_bin_lnjoin(tCGM* cgm)
   return CGM_OK;
 }
 
-/* No implemented: LINE TYPE CONTINUATION */
-/* No implemented: LINE TYPE INITIAL OFFSET */
-/* No implemented: TEXT SCORE TYPE */
-/* No implemented: RESTRICTED TEXT TYPE */
-/* No implemented: INTERPOLATED INTERIOR */
+static int cgm_bin_restrtype(tCGM* cgm)
+{
+  if(cgm_bin_get_ix(cgm, &(cgm->text_att.restr_type))) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
+}
 
 static int cgm_bin_edgcap(tCGM* cgm)
 {
@@ -2003,13 +2003,6 @@ static int cgm_bin_edgjoin(tCGM* cgm)
 
   return CGM_OK;
 }
-
-/* No implemented: EDGE TYPE CONTINUATION */
-/* No implemented: EDGE TYPE INITIAL OFFSET */
-/* No implemented: SYMBOL LIBRARY INDEX */
-/* No implemented: SYMBOL COLOUR */
-/* No implemented: SYMBOL SIZE */
-/* No implemented: SYMBOL ORIENTATION */
 
 /*****************
 * Escape Element *
@@ -2074,18 +2067,7 @@ static int cgm_bin_appdta(tCGM* cgm)
 /*******************
 * Segment elements *
 *******************/
-/* No implemented: COPY SEGMENT */
-/* No implemented: INHERITANCE FILTER */
-/* No implemented: CLIP INHERITANCE */
-/* No implemented: SEGMENT TRANSFORMATION */
-/* No implemented: SEGMENT HIGHLIGHTING */
-/* No implemented: SEGMENT DISPLAY PRIORITY */
-/* No implemented: SEGMENT PICK PRIORITY */
 
-/*********************************
-* Application structure elements *
-*********************************/
-/* No implemented: APPLICATION STRUCTURE ATTRIBUTE (version 4) */
 
 /* delimiter elements */
 
@@ -2100,40 +2082,45 @@ static CGM_FUNC _cgm_bin_END_PIC         = &cgm_bin_endpic;
 
 /* metafile descriptor elements */
 
-static CGM_FUNC _cgm_bin_MF_VERSION       = &cgm_bin_mtfver;
-static CGM_FUNC _cgm_bin_MF_DESC          = &cgm_bin_mtfdsc;
-static CGM_FUNC _cgm_bin_VDC_TYPE         = &cgm_bin_vdctyp;
-static CGM_FUNC _cgm_bin_INTEGER_PREC     = &cgm_bin_intpre;
-static CGM_FUNC _cgm_bin_REAL_PREC        = &cgm_bin_realpr;
-static CGM_FUNC _cgm_bin_INDEX_PREC       = &cgm_bin_indpre;
-static CGM_FUNC _cgm_bin_COLR_PREC        = &cgm_bin_colpre;
-static CGM_FUNC _cgm_bin_COLR_INDEX_PREC  = &cgm_bin_colipr;
-static CGM_FUNC _cgm_bin_MAX_COLR_INDEX   = &cgm_bin_maxcoi;
-static CGM_FUNC _cgm_bin_COLR_VALUE_EXT   = &cgm_bin_covaex;
-static CGM_FUNC _cgm_bin_MF_ELEM_LIST     = &cgm_bin_mtfell;
-static CGM_FUNC _cgm_bin_MF_DEFAULTS_RPL  = &cgm_bin_bmtfdf;
-static CGM_FUNC _cgm_bin_FONT_LIST        = &cgm_bin_fntlst;
-static CGM_FUNC _cgm_bin_CHAR_SET_LIST    = &cgm_bin_chslst;
-static CGM_FUNC _cgm_bin_CHAR_CODING      = &cgm_bin_chcdac;
+static CGM_FUNC _cgm_bin_MF_VERSION         = &cgm_bin_mtfver;
+static CGM_FUNC _cgm_bin_MF_DESC            = &cgm_bin_mtfdsc;
+static CGM_FUNC _cgm_bin_VDC_TYPE           = &cgm_bin_vdctyp;
+static CGM_FUNC _cgm_bin_INTEGER_PREC       = &cgm_bin_intpre;
+static CGM_FUNC _cgm_bin_REAL_PREC          = &cgm_bin_realpr;
+static CGM_FUNC _cgm_bin_INDEX_PREC         = &cgm_bin_indpre;
+static CGM_FUNC _cgm_bin_COLR_PREC          = &cgm_bin_colpre;
+static CGM_FUNC _cgm_bin_COLR_INDEX_PREC    = &cgm_bin_colipr;
+static CGM_FUNC _cgm_bin_MAX_COLR_INDEX     = &cgm_bin_maxcoi;
+static CGM_FUNC _cgm_bin_COLR_VALUE_EXT     = &cgm_bin_covaex;
+static CGM_FUNC _cgm_bin_MF_ELEM_LIST       = &cgm_bin_mtfell;
+static CGM_FUNC _cgm_bin_MF_DEFAULTS_RPL    = &cgm_bin_bmtfdf;
+static CGM_FUNC _cgm_bin_FONT_LIST          = &cgm_bin_fntlst;
+static CGM_FUNC _cgm_bin_CHAR_SET_LIST      = &cgm_bin_chslst;
+static CGM_FUNC _cgm_bin_CHAR_CODING        = &cgm_bin_chcdac;
+static CGM_FUNC _cgm_bin_MAXIMUM_VDC_EXTENT = &cgm_bin_maxvdcext;
 
 /* picture descriptor elements */
 
-static CGM_FUNC _cgm_bin_SCALE_MODE       = &cgm_bin_sclmde;
-static CGM_FUNC _cgm_bin_COLR_MODE        = &cgm_bin_clslmd;
-static CGM_FUNC _cgm_bin_LINE_WIDTH_MODE  = &cgm_bin_lnwdmd;
-static CGM_FUNC _cgm_bin_MARKER_SIZE_MODE = &cgm_bin_mkszmd;
-static CGM_FUNC _cgm_bin_EDGE_WIDTH_MODE  = &cgm_bin_edwdmd;
-static CGM_FUNC _cgm_bin_VDC_EXTENT       = &cgm_bin_vdcext;
-static CGM_FUNC _cgm_bin_BACK_COLR        = &cgm_bin_bckcol;
+static CGM_FUNC _cgm_bin_SCALE_MODE          = &cgm_bin_sclmde;
+static CGM_FUNC _cgm_bin_COLR_MODE           = &cgm_bin_clslmd;
+static CGM_FUNC _cgm_bin_LINE_WIDTH_MODE     = &cgm_bin_lnwdmd;
+static CGM_FUNC _cgm_bin_MARKER_SIZE_MODE    = &cgm_bin_mkszmd;
+static CGM_FUNC _cgm_bin_EDGE_WIDTH_MODE     = &cgm_bin_edwdmd;
+static CGM_FUNC _cgm_bin_VDC_EXTENT          = &cgm_bin_vdcext;
+static CGM_FUNC _cgm_bin_BACK_COLR           = &cgm_bin_bckcol;
+static CGM_FUNC _cgm_bin_INTERIOR_STYLE_MODE = &cgm_bin_intstymode;
 
 /* control elements */
 
-static CGM_FUNC _cgm_bin_VDC_INTEGER_PREC = &cgm_bin_vdcipr;
-static CGM_FUNC _cgm_bin_VDC_REAL_PREC    = &cgm_bin_vdcrpr;
-static CGM_FUNC _cgm_bin_AUX_COLR         = &cgm_bin_auxcol;
-static CGM_FUNC _cgm_bin_TRANSPARENCY     = &cgm_bin_transp;
-static CGM_FUNC _cgm_bin_CLIP_RECT        = &cgm_bin_clprec;
-static CGM_FUNC _cgm_bin_CLIP             = &cgm_bin_clpind;
+static CGM_FUNC _cgm_bin_VDC_INTEGER_PREC  = &cgm_bin_vdcipr;
+static CGM_FUNC _cgm_bin_VDC_REAL_PREC     = &cgm_bin_vdcrpr;
+static CGM_FUNC _cgm_bin_AUX_COLR          = &cgm_bin_auxcol;
+static CGM_FUNC _cgm_bin_TRANSPARENCY      = &cgm_bin_transp;
+static CGM_FUNC _cgm_bin_CLIP_RECT         = &cgm_bin_clprec;
+static CGM_FUNC _cgm_bin_CLIP              = &cgm_bin_clpind;
+static CGM_FUNC _cgm_bin_PROTECTION_REGION = &cgm_bin_pregionind;
+static CGM_FUNC _cgm_bin_MITER_LIMIT       = &cgm_bin_miterlimit;
+static CGM_FUNC _cgm_bin_TRANSP_CELL_COLOR = &cgm_bin_transpcellcolor;
 
 /* primitive elements */
 
@@ -2145,7 +2132,7 @@ static CGM_FUNC _cgm_bin_RESTR_TEXT       = &cgm_bin_rsttxt;
 static CGM_FUNC _cgm_bin_APND_TEXT        = &cgm_bin_apdtxt;
 static CGM_FUNC _cgm_bin_POLYGON          = &cgm_bin_polygn;
 static CGM_FUNC _cgm_bin_POLYGON_SET      = &cgm_bin_plgset;
-static CGM_FUNC _cgm_bin_CELL_ARRAY       = &cgm_bin_cellar;
+static CGM_FUNC _cgm_bin_CELL_ARRAY       = &cgm_bin_cellar;  /* TODO: error */
 static CGM_FUNC _cgm_bin_GDP              = &cgm_bin_gdp;
 static CGM_FUNC _cgm_bin_RECT             = &cgm_bin_rect;
 static CGM_FUNC _cgm_bin_CIRCLE           = &cgm_bin_circle;
@@ -2200,6 +2187,7 @@ static CGM_FUNC _cgm_bin_LINE_CAP         = &cgm_bin_lncap;
 static CGM_FUNC _cgm_bin_LINE_JOIN        = &cgm_bin_lnjoin;
 static CGM_FUNC _cgm_bin_EDGE_CAP         = &cgm_bin_edgcap; 
 static CGM_FUNC _cgm_bin_EDGE_JOIN        = &cgm_bin_edgjoin;
+static CGM_FUNC _cgm_bin_RESTR_TEXT_TYPE  = &cgm_bin_restrtype;
 
 /* escape elements */
 
@@ -2210,6 +2198,9 @@ static CGM_FUNC _cgm_bin_ESCAPE           = &cgm_bin_escape;
 static CGM_FUNC _cgm_bin_MESSAGE          = &cgm_bin_messag;
 static CGM_FUNC _cgm_bin_APPL_DATA        = &cgm_bin_appdta;
 
+/* segment elements */
+
+
 static CGM_FUNC *_cgm_bin_delimiter[] = {
       &_cgm_bin_NOOP,
       &_cgm_bin_BEGMF,
@@ -2217,8 +2208,7 @@ static CGM_FUNC *_cgm_bin_delimiter[] = {
       &_cgm_bin_BEG_PIC,
       &_cgm_bin_BEG_PIC_BODY,
       &_cgm_bin_END_PIC,
-      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-      NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
 static CGM_FUNC *_cgm_bin_metafile[] = {
       &_cgm_bin_NULL,
@@ -2237,7 +2227,9 @@ static CGM_FUNC *_cgm_bin_metafile[] = {
       &_cgm_bin_FONT_LIST,
       &_cgm_bin_CHAR_SET_LIST,
       &_cgm_bin_CHAR_CODING,
-      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+      NULL,
+      &_cgm_bin_MAXIMUM_VDC_EXTENT,
+      NULL, NULL, NULL, NULL, NULL, NULL };
 
 static CGM_FUNC *_cgm_bin_picture[] = {
       &_cgm_bin_NULL,
@@ -2249,7 +2241,8 @@ static CGM_FUNC *_cgm_bin_picture[] = {
       &_cgm_bin_VDC_EXTENT,
       &_cgm_bin_BACK_COLR,
       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-      NULL, NULL, NULL, NULL };
+      &_cgm_bin_INTERIOR_STYLE_MODE,
+      NULL, NULL, NULL };
 
 static CGM_FUNC *_cgm_bin_control[] = {
       &_cgm_bin_NULL,
@@ -2259,8 +2252,11 @@ static CGM_FUNC *_cgm_bin_control[] = {
       &_cgm_bin_TRANSPARENCY,
       &_cgm_bin_CLIP_RECT,
       &_cgm_bin_CLIP,
-      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-      NULL, NULL, NULL, NULL, NULL, NULL };
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+      &_cgm_bin_PROTECTION_REGION,
+      NULL,
+      &_cgm_bin_MITER_LIMIT,
+      &_cgm_bin_TRANSP_CELL_COLOR };
 
 static CGM_FUNC *_cgm_bin_primitive[] = {
       &_cgm_bin_NULL,
@@ -2272,7 +2268,7 @@ static CGM_FUNC *_cgm_bin_primitive[] = {
       &_cgm_bin_APND_TEXT,
       &_cgm_bin_POLYGON,
       &_cgm_bin_POLYGON_SET,
-      &_cgm_bin_CELL_ARRAY,
+      NULL, //  &_cgm_bin_CELL_ARRAY,    /* TODO: error */
       &_cgm_bin_GDP,
       &_cgm_bin_RECT,
       &_cgm_bin_CIRCLE,
@@ -2328,16 +2324,17 @@ static CGM_FUNC *_cgm_bin_attributes[] = {
       NULL,
       &_cgm_bin_LINE_CAP, 
       &_cgm_bin_LINE_JOIN,
-      NULL, NULL, NULL, NULL, NULL, 
+      NULL, NULL, NULL,
+      &_cgm_bin_RESTR_TEXT_TYPE,
+      NULL, 
       &_cgm_bin_EDGE_CAP, 
       &_cgm_bin_EDGE_JOIN,
-      NULL, NULL, NULL, NULL,
-      NULL, NULL, NULL, NULL };
+      NULL, NULL, NULL, NULL, NULL, NULL };
 
 static CGM_FUNC *_cgm_bin_escape[] = {
       &_cgm_bin_NULL,
       &_cgm_bin_ESCAPE,
-      NULL};
+      NULL };
 
 static CGM_FUNC *_cgm_bin_external[] = {
       &_cgm_bin_NULL,
@@ -2345,7 +2342,9 @@ static CGM_FUNC *_cgm_bin_external[] = {
       &_cgm_bin_APPL_DATA,
       NULL };
 
-static CGM_FUNC *_cgm_bin_segment[] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+static CGM_FUNC *_cgm_bin_segment[] = {
+      &_cgm_bin_NULL,
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
 static CGM_FUNC **_cgm_bin_commands[] = {
        _cgm_bin_delimiter,
