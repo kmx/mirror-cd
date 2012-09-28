@@ -61,8 +61,8 @@ struct _cdCtxCanvas
   cdCanvas* canvas;
 
   FTGLfont *font;
-
   char* glLastConvertUTF8;
+  int txt_antialias;
 
   float rotate_angle;
   int rotate_center_x;
@@ -486,7 +486,7 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
 
 static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, int len)
 {
-  int stipple = 0;
+  int stipple = 0, reset_antialias = 0;
   float bounds[6];
   int w, h, descent, baseline;
   double x_origin = x;
@@ -563,11 +563,20 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, i
     glDisable(GL_POLYGON_STIPPLE);
   }
 
+  if (ctxcanvas->txt_antialias && !glIsEnabled(GL_LINE_SMOOTH))
+  {
+    cdCanvasSetAttribute(ctxcanvas->canvas, "ANTIALIAS", "1");
+    reset_antialias = 1;
+  }
+
   glPushMatrix();
     glTranslated(x, y, 0.0);
     glRotated(ctxcanvas->canvas->text_orientation, 0, 0, 1);
     ftglRenderFont(ctxcanvas->font, s, FTGL_RENDER_ALL);
   glPopMatrix();
+
+  if (reset_antialias)
+    cdCanvasSetAttribute(ctxcanvas->canvas, "ANTIALIAS", "0");
 
   if(stipple)
     glEnable(GL_POLYGON_STIPPLE);
@@ -1139,6 +1148,29 @@ static cdAttribute aa_attrib =
   get_aa_attrib
 };
 
+static void set_txtaa_attrib(cdCtxCanvas* ctxcanvas, char* data)
+{
+  if (!data || data[0] == '0')
+    ctxcanvas->txt_antialias = 0;
+  else
+    ctxcanvas->txt_antialias = 1;
+}
+
+static char* get_txtaa_attrib(cdCtxCanvas* ctxcanvas)
+{
+  if (ctxcanvas->txt_antialias)
+    return "1";
+  else
+    return "0";
+}
+
+static cdAttribute txtaa_attrib =
+{
+  "TEXTANTIALIAS",
+  set_txtaa_attrib,
+  get_txtaa_attrib
+}; 
+
 static void set_poly_attrib(cdCtxCanvas *ctxcanvas, char* data)
 {
   int hole;
@@ -1278,9 +1310,11 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   cdRegisterAttribute(canvas, &size_attrib);
   cdRegisterAttribute(canvas, &alpha_attrib);
   cdRegisterAttribute(canvas, &aa_attrib);
+  cdRegisterAttribute(canvas, &txtaa_attrib);
 
   cdCanvasSetAttribute(canvas, "ALPHA", "1");
   cdCanvasSetAttribute(canvas, "ANTIALIAS", "1");
+  cdCanvasSetAttribute(canvas, "TEXTANTIALIAS", "1");
 }
 
 static void cdinittable(cdCanvas* canvas)

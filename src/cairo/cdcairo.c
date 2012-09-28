@@ -1864,6 +1864,35 @@ static cdAttribute aa_attrib =
   get_aa_attrib
 }; 
 
+static void set_txtaa_attrib(cdCtxCanvas* ctxcanvas, char* data)
+{
+  cairo_font_options_t* options = cairo_font_options_copy(pango_cairo_context_get_font_options(ctxcanvas->fontcontext));
+
+  if (!data || data[0] == '0')
+    cairo_font_options_set_antialias(options, CAIRO_ANTIALIAS_NONE);
+  else
+    cairo_font_options_set_antialias(options, CAIRO_ANTIALIAS_DEFAULT);
+
+  pango_cairo_context_set_font_options(ctxcanvas->fontcontext, options);
+  cairo_font_options_destroy(options);
+}
+
+static char* get_txtaa_attrib(cdCtxCanvas* ctxcanvas)
+{
+  const cairo_font_options_t* options = pango_cairo_context_get_font_options(ctxcanvas->fontcontext);
+  if (cairo_font_options_get_antialias(options) != CAIRO_ANTIALIAS_NONE)
+    return "1";
+  else
+    return "0";
+}
+
+static cdAttribute txtaa_attrib =
+{
+  "TEXTANTIALIAS",
+  set_txtaa_attrib,
+  get_txtaa_attrib
+}; 
+
 static void set_pattern_image_attrib(cdCtxCanvas *ctxcanvas, char* data)
 {
   if (data)
@@ -2136,6 +2165,7 @@ cdCtxCanvas *cdcairoCreateCanvas(cdCanvas* canvas, cairo_t* cr)
   cdRegisterAttribute(canvas, &version_attrib);
   cdRegisterAttribute(canvas, &poly_attrib);
   cdRegisterAttribute(canvas, &aa_attrib);
+  cdRegisterAttribute(canvas, &txtaa_attrib);
   cdRegisterAttribute(canvas, &linegradient_attrib);
   cdRegisterAttribute(canvas, &radialgradient_attrib);
   cdRegisterAttribute(canvas, &interp_attrib);

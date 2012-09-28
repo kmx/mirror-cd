@@ -12,7 +12,7 @@ struct _cdSimulation
 {
   cdTT_Text* tt_text; /* TrueType Font Simulation using FreeType library */
 
-  int antialias;
+  int antialias, txt_antialias;
 
   cdCanvas *canvas;
 

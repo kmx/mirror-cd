@@ -2600,20 +2600,12 @@ static void set_aa_attrib(cdCtxCanvas* ctxcanvas, char* data)
   {
     ctxcanvas->graphics->SetInterpolationMode(InterpolationModeNearestNeighbor);
     ctxcanvas->graphics->SetSmoothingMode(SmoothingModeNone);
-    ctxcanvas->graphics->SetTextRenderingHint(TextRenderingHintSingleBitPerPixelGridFit);
     ctxcanvas->antialias = 0;
   }
   else
   {
     ctxcanvas->graphics->SetInterpolationMode(InterpolationModeBilinear);
     ctxcanvas->graphics->SetSmoothingMode(SmoothingModeAntiAlias);
-    if (Is_WinXP_or_WinSrv03())
-      /* Microsoft Windows XP and Windows Server 2003 only: 
-         ClearType rendering is supported only on Windows XP and Windows Server 2003. 
-         Therefore, TextRenderingHintClearTypeGridFit is ignored on other operating systems. */
-      ctxcanvas->graphics->SetTextRenderingHint(TextRenderingHintClearTypeGridFit);
-    else
-      ctxcanvas->graphics->SetTextRenderingHint(TextRenderingHintAntiAliasGridFit);
 
     /* Do NOT set PixelOffsetMode because some graphic objects move their position and size.
        ctxcanvas->graphics->SetPixelOffsetMode(PixelOffsetModeHalf); */
@@ -2635,6 +2627,42 @@ static cdAttribute aa_attrib =
   "ANTIALIAS",
   set_aa_attrib,
   get_aa_attrib
+}; 
+
+static void set_txtaa_attrib(cdCtxCanvas* ctxcanvas, char* data)
+{
+  if (!data || data[0] == '0')
+  {
+    ctxcanvas->graphics->SetTextRenderingHint(TextRenderingHintSingleBitPerPixelGridFit);
+    ctxcanvas->txt_antialias = 0;
+  }
+  else
+  {
+    if (Is_WinXP_or_WinSrv03())
+      /* Microsoft Windows XP and Windows Server 2003 only: 
+         ClearType rendering is supported only on Windows XP and Windows Server 2003. 
+         Therefore, TextRenderingHintClearTypeGridFit is ignored on other operating systems. */
+      ctxcanvas->graphics->SetTextRenderingHint(TextRenderingHintClearTypeGridFit);
+    else
+      ctxcanvas->graphics->SetTextRenderingHint(TextRenderingHintAntiAliasGridFit);
+
+    ctxcanvas->txt_antialias = 1;
+  }
+}
+
+static char* get_txtaa_attrib(cdCtxCanvas* ctxcanvas)
+{
+  if (ctxcanvas->txt_antialias)
+    return "1";
+  else
+    return "0";
+}
+
+static cdAttribute txtaa_attrib =
+{
+  "TEXTANTIALIAS",
+  set_txtaa_attrib,
+  get_txtaa_attrib
 }; 
 
 static void set_window_rgn(cdCtxCanvas* ctxcanvas, char* data)
@@ -2708,6 +2736,11 @@ void cdwpUpdateCanvas(cdCtxCanvas* ctxcanvas)
   else
     set_aa_attrib(ctxcanvas, NULL);
 
+  if (ctxcanvas->txt_antialias)
+    set_txtaa_attrib(ctxcanvas, "1");
+  else
+    set_txtaa_attrib(ctxcanvas, NULL);
+
   sUpdateTransform(ctxcanvas);
 }
 
@@ -2732,6 +2765,7 @@ cdCtxCanvas *cdwpCreateCanvas(cdCanvas* canvas, Graphics* graphics, int wtype)
   ctxcanvas->font = NULL; // will be created in the update default attrib
 
   set_aa_attrib(ctxcanvas, "1");  // default is ANTIALIAS=1
+  set_txtaa_attrib(ctxcanvas, "1");  // default is TEXTANTIALIAS=1
 
   ctxcanvas->fg = Color(); // black,opaque
   ctxcanvas->bg = Color(255, 255, 255); // white,opaque => used only for fill
@@ -2749,6 +2783,7 @@ cdCtxCanvas *cdwpCreateCanvas(cdCanvas* canvas, Graphics* graphics, int wtype)
   cdRegisterAttribute(canvas, &img_format_attrib);
   cdRegisterAttribute(canvas, &img_alpha_attrib);
   cdRegisterAttribute(canvas, &aa_attrib);
+  cdRegisterAttribute(canvas, &txtaa_attrib);
   cdRegisterAttribute(canvas, &gradientcolor_attrib);
   cdRegisterAttribute(canvas, &linegradient_attrib);
   cdRegisterAttribute(canvas, &rotate_attrib);

@@ -235,7 +235,7 @@ static void simDrawTextBitmap(cdSimulation* simulation, FT_Bitmap* bitmap, int x
     {
       for (j = 0; j < width; j++)
       {
-        if (simulation->antialias)
+        if (simulation->txt_antialias)
         {
           if (fg_alpha == 255)
             calpha = bitmap_data[j];
@@ -281,7 +281,7 @@ static void simDrawTextBitmap(cdSimulation* simulation, FT_Bitmap* bitmap, int x
 
     for (i = 0; i < height; i++)
     {
-      if (simulation->antialias)
+      if (simulation->txt_antialias)
       {
         if (fg_alpha == 255)
         {

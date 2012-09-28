@@ -1668,6 +1668,29 @@ static cdAttribute aa_attrib =
   get_aa_attrib
 }; 
 
+static void set_txtaa_attrib(cdCtxCanvas* ctxcanvas, char* data)
+{
+  if (!data || data[0] == '0')
+    ctxcanvas->canvas->simulation->txt_antialias = 0;
+  else
+    ctxcanvas->canvas->simulation->txt_antialias = 1;
+}
+
+static char* get_txtaa_attrib(cdCtxCanvas* ctxcanvas)
+{
+  if (ctxcanvas->canvas->simulation->txt_antialias)
+    return "0";
+  else
+    return "1";
+}
+
+static cdAttribute txtaa_attrib =
+{
+  "TEXTANTIALIAS",
+  set_txtaa_attrib,
+  get_txtaa_attrib
+}; 
+
 static void set_rotate_attrib(cdCtxCanvas* ctxcanvas, char* data)
 {
   if (data)
@@ -1801,12 +1824,14 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
      pois isso sera' feito na inicializacao dos atributos default do driver */
 
   canvas->simulation->antialias = 1;
+  canvas->simulation->txt_antialias = 1;
 
   cdRegisterAttribute(canvas, &red_attrib);
   cdRegisterAttribute(canvas, &green_attrib);
   cdRegisterAttribute(canvas, &blue_attrib);
   cdRegisterAttribute(canvas, &alpha_attrib);
   cdRegisterAttribute(canvas, &aa_attrib);
+  cdRegisterAttribute(canvas, &txtaa_attrib);
   cdRegisterAttribute(canvas, &rotate_attrib);
 }
 

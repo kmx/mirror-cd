@@ -54,7 +54,7 @@ struct _cdCtxCanvas
 
   Region *new_region;
 
-  int antialias;
+  int antialias, txt_antialias;
 
   Point gradient[2];
 
