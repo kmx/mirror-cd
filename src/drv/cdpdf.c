@@ -936,7 +936,7 @@ static int cdlinejoin(cdCtxCanvas *ctxcanvas, int join)
 
 static int cdlinecap(cdCtxCanvas *ctxcanvas, int cap)
 {
-  int cd2pdf_cap[] =  {0, 2, 1};
+  int cd2pdf_cap[] =  {0, 2, 1};  /* butt, projecting, round */
   PDF_setlinecap(ctxcanvas->pdf, cd2pdf_cap[cap]);
   return cap;
 }

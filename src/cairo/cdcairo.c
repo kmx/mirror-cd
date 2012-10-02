@@ -662,6 +662,27 @@ static void cdfline(cdCtxCanvas *ctxcanvas, double x1, double y1, double x2, dou
 
 static void cdline(cdCtxCanvas *ctxcanvas, int x1, int y1, int x2, int y2)
 {
+  /* try to draw single row of pixels at full intensity */
+  if (ctxcanvas->canvas->line_width == 1 && !ctxcanvas->canvas->use_matrix)
+  {
+    if (x1==x2)
+    {
+      if (y1>y2)
+        cdfline(ctxcanvas, (double)x1+0.5, (double)y1+1, (double)x2+0.5, (double)y2);
+      else
+        cdfline(ctxcanvas, (double)x1+0.5, (double)y1, (double)x2+0.5, (double)y2+1);
+      return;
+    }
+    else if (y1==y2)
+    {
+      if (x1>x2)
+        cdfline(ctxcanvas, (double)x1+1, (double)y1+0.5, (double)x2, (double)y2+0.5);
+      else
+        cdfline(ctxcanvas, (double)x1, (double)y1+0.5, (double)x2+1, (double)y2+0.5);
+      return;
+    }
+  }
+
   cdfline(ctxcanvas, (double)x1, (double)y1, (double)x2, (double)y2);
 }
 
@@ -799,7 +820,15 @@ static void cdfrect(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymi
 
 static void cdrect(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
 {
-  cdfrect(ctxcanvas, (double)xmin, (double)xmax, (double)ymin, (double)ymax);
+  if (ctxcanvas->canvas->line_width == 1 && !ctxcanvas->canvas->use_matrix)
+  {
+    cdline(ctxcanvas, xmin, ymin, xmin, ymax);
+    cdline(ctxcanvas, xmin, ymax, xmax, ymax);
+    cdline(ctxcanvas, xmax, ymax, xmax, ymin);
+    cdline(ctxcanvas, xmax, ymin, xmin, ymin);
+  }
+  else
+    cdfrect(ctxcanvas, (double)xmin, (double)xmax, (double)ymin, (double)ymax);
 }
 
 static void cdfbox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
