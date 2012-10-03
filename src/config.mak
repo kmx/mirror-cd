@@ -62,48 +62,31 @@ SRCCOMM = cd.c wd.c wdhdcpy.c rgb2map.c cd_vectortext.c cd_active.c \
 SRC = $(SRCCOMM) $(SRCSVG) $(SRCINTCGM) $(SRCDRV) $(SRCSIM)
 INCLUDES = . drv x11 win32 intcgm freetype2 sim cairo ../include
 
-ifdef USE_GTK3
-     # temporary for tests
-     #LIBNAME := $(LIBNAME)gtk3
-  # Do not include old GDK driver
-  SRC += drv/cd0wmf.c
-  USE_GTK3 = Yes
+ifdef USE_GDK
+  USE_GTK = Yes
   CHECK_GTK = Yes
-  DEFINES += GTK_DISABLE_DEPRECATED GDK_DISABLE_DEPRECATED GSEAL_ENABLE USE_GTK3
   LIBS = pangocairo-1.0 cairo
-  SRC += $(SRCCAIRO) cairo/cdcaironative_gdk.c gdk/cdgdkclp.c
+  DEFINES += GTK_DISABLE_DEPRECATED 
+  ifdef USE_GTK3
+    DEFINES += GDK_DISABLE_DEPRECATED GSEAL_ENABLE USE_GTK3
+    # Do not include old GDK driver
+    SRC += gdk/cdgdkclp.c drv/cd0wmf.c
+  else
+    SRC += $(SRCGDK) drv/cd0wmf.c cairo/cdcairoplus.c 
+  endif
+  SRC += $(SRCCAIRO) cairo/cdcaironative_gdk.c
+  
   ifneq ($(findstring Win, $(TEC_SYSNAME)), )
     SRC += cairo/cdcairoprn_win32.c cairo/cdcairoemf.c
     LIBS += freetype6
   else
-    SRC += cairo/cdcairoprn_unix.c drv/cd0emf.c
-    INCLUDES += $(GTK)/include/gtk-3.0/unix-print
-    LIBS += freetype
-    ifneq ($(findstring cygw, $(TEC_UNAME)), )
-      LIBS += fontconfig
-    endif
-  endif
-else ifdef USE_GDK
-  SRC += $(SRCGDK) $(SRCNULL) 
-  USE_GTK = Yes
-  CHECK_GTK = Yes
-  # So we can disable Cairo on older systems (deprecated, remove this in the future)
-  ADD_CAIRO = Yes
-  ifdef ADD_CAIRO
-    LIBS = pangocairo-1.0 cairo
-    SRC += $(SRCCAIRO) cdcairoplus.c cairo/cdcaironative_gdk.c
-  endif
-  ifneq ($(findstring Win, $(TEC_SYSNAME)), )
-    ifdef ADD_CAIRO
-      SRC += cairo/cdcairoprn_win32.c cdcairoemf.c
-    endif
-    LIBS += freetype6
-  else
-#    ifeq ($(findstring MacOS, $(TEC_UNAME)), )     (still has to handle GTK using Darwin)
-      ifdef ADD_CAIRO
-        SRC += cairo/cdcairoprn_unix.c
-      endif
-      INCLUDES += $(GTK)/include/gtk-unix-print-2.0
+#    ifeq ($(findstring MacOS, $(TEC_UNAME)), )     (TODO: handle GTK using Darwin)
+      SRC += cairo/cdcairoprn_unix.c drv/cd0emf.c
+      ifdef USE_GTK3
+        INCLUDES += $(GTK)/include/gtk-3.0/unix-print
+      else
+        INCLUDES += $(GTK)/include/gtk-unix-print-2.0
+      endif 
 #    endif
     LIBS += freetype
     ifneq ($(findstring cygw, $(TEC_UNAME)), )

@@ -1224,8 +1224,8 @@ void SimpleDrawTextFonts(cdCanvas* canvas)
   //cdText(500, 360, "'\"!@#$%¨&*()_+-=[]^/;.,");
 }
 
-void SimpleDrawTest(cdCanvas* canvas)
-//void SimpleDrawMainTest(cdCanvas* canvas)
+//void SimpleDrawTest(cdCanvas* canvas)
+void SimpleDrawTest1(cdCanvas* canvas)
 {
   long pattern[16];  /* 4x4 pattern */
   int w, h;
@@ -1466,3 +1466,39 @@ void SimpleDrawPoly(cdCanvas* canvas)
   cdEnd();
 }
 #endif
+
+void SimpleDrawTest(cdCanvas* canvas1)
+{
+   //gbgxpImage = cdCreateBitmap (gbgxJPGwidth, gbgxJPGheight, CD_RGB);
+   //r = cdBitmapGetData (gbgxpImage, CD_IRED);
+   //g = cdBitmapGetData (gbgxpImage, CD_IGREEN);
+   //b = cdBitmapGetData (gbgxpImage, CD_IBLUE);
+
+  cdCanvas* canvas = cdCreateCanvas(CD_IMAGERGB, "570x569");
+  cdCanvasBegin(canvas, CD_FILL);
+  cdCanvasVertex(canvas,279,81);
+  cdCanvasVertex(canvas,280,81);
+  cdCanvasVertex(canvas,281,81);
+  cdCanvasVertex(canvas,282,81);
+  cdCanvasVertex(canvas,283,81);
+  cdCanvasVertex(canvas,284,82);
+  cdCanvasVertex(canvas,284,81);
+  cdCanvasVertex(canvas,286,81);
+  cdCanvasVertex(canvas,287,81);
+  cdCanvasVertex(canvas,288,80);
+  cdCanvasVertex(canvas,288,79);
+  cdCanvasVertex(canvas,288,77);
+  cdCanvasVertex(canvas,288,76);
+  cdCanvasVertex(canvas,286,76);
+  cdCanvasVertex(canvas,285,76);
+  cdCanvasVertex(canvas,284,76);
+  cdCanvasVertex(canvas,283,76);
+  cdCanvasVertex(canvas,282,77);
+  cdCanvasVertex(canvas,281,77);
+  cdCanvasVertex(canvas,279,78);
+  cdCanvasVertex(canvas,279,79);
+  cdCanvasVertex(canvas,280,80);
+  cdCanvasVertex(canvas,280,81);
+  cdCanvasVertex(canvas,279,81);
+  cdCanvasEnd(canvas);
+}
