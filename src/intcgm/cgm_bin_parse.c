@@ -834,6 +834,7 @@ static int cgm_bin_cellar(tCGM* cgm)  /* TODO: error */
 
   if(mode)
   {
+    /* Packed mode */
     for(k=0; k<sy; k++)
     {
       b=cgm->buff.bc;
@@ -862,11 +863,12 @@ static int cgm_bin_cellar(tCGM* cgm)  /* TODO: error */
   }
   else
   {
+    /* run length encoding */
     for(k=0; k<sy; k++)
     {
+      long suml = 0;
       b=cgm->buff.bc;
       cgm->buff.pc=0;
-
       for(i=0; i<sx; i++)
       {
         long l;
@@ -880,10 +882,21 @@ static int cgm_bin_cellar(tCGM* cgm)  /* TODO: error */
           free(rgb);
           return CGM_ERR_READ;
         }
-        for(j=0; j<l; j++)
-        {  
-          offset = 3*(k*sx+i);
-          cgm_getcolor_ar(cgm, cell, rgb + offset+0, rgb + offset+1, rgb + offset+2);
+        /* The count of a number of consecutive cells using a color
+           can not be a negative value  or a value greater than the
+           width dimension of the color array */
+        if(l > 0 && l <= sx)
+        {
+          suml += l;
+          for(j=0; j<l; j++)
+          {  
+            offset = 3*(k*sx+i);
+            cgm_getcolor_ar(cgm, cell, rgb + offset+0, rgb + offset+1, rgb + offset+2);
+          }
+          /* The sum of the consecutive colored cells in a row can not
+             be greater than the width dimension of the color array */ 
+          if(suml >= sx)
+            break;
         }
       }
 
@@ -2268,7 +2281,7 @@ static CGM_FUNC *_cgm_bin_primitive[] = {
       &_cgm_bin_APND_TEXT,
       &_cgm_bin_POLYGON,
       &_cgm_bin_POLYGON_SET,
-      NULL, //  &_cgm_bin_CELL_ARRAY,    /* TODO: error */
+      &_cgm_bin_CELL_ARRAY,
       &_cgm_bin_GDP,
       &_cgm_bin_RECT,
       &_cgm_bin_CIRCLE,

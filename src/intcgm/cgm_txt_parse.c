@@ -239,6 +239,16 @@ static int cgm_txt_chcdac(tCGM* cgm)   /* character coding announcer */
   return cgm_txt_get_ter(cgm);
 }
 
+static int cgm_txt_maxvdcext(tCGM* cgm)   /* maximum vdc extent */
+{
+  if(cgm_txt_get_p(cgm, &(cgm->vdc_ext.maxFirst.x), &(cgm->vdc_ext.maxFirst.y))) 
+    return CGM_ERR_READ;
+  if(cgm_txt_get_p(cgm, &(cgm->vdc_ext.maxSecond.x), &(cgm->vdc_ext.maxSecond.y))) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
+}
+
 /******************************
 * Picture Descriptor Elements *
 ******************************/
@@ -309,12 +319,25 @@ static int cgm_txt_vdcext(tCGM* cgm)   /* vdc extent */
   if(cgm_txt_get_p(cgm, &(cgm->vdc_ext.second.x), &(cgm->vdc_ext.second.y))) 
     return CGM_ERR_READ;
 
+  /* Verify the bounds values, defined by Maximum VDC Extent element */
+  if(cgm->vdc_ext.first.x < cgm->vdc_ext.maxFirst.x)
+    cgm->vdc_ext.first.x = cgm->vdc_ext.maxFirst.x;
+
+  if(cgm->vdc_ext.first.y < cgm->vdc_ext.maxFirst.y)
+    cgm->vdc_ext.first.y = cgm->vdc_ext.maxFirst.y;
+
+  if(cgm->vdc_ext.second.x > cgm->vdc_ext.maxSecond.x)
+    cgm->vdc_ext.second.x = cgm->vdc_ext.maxSecond.x;
+
+  if(cgm->vdc_ext.second.y > cgm->vdc_ext.maxSecond.y)
+    cgm->vdc_ext.second.y = cgm->vdc_ext.maxSecond.y;
+
   cgm->dof.DeviceExtent(&(cgm->vdc_ext.first), &(cgm->vdc_ext.second), cgm->userdata);
 
   return cgm_txt_get_ter(cgm);
 }
 
-static int cgm_txt_bckcol(tCGM* cgm)   /* backgound color */
+static int cgm_txt_bckcol(tCGM* cgm)   /* background color */
 {
   if(cgm_txt_get_cd(cgm, &(cgm->back_color.red), &(cgm->back_color.green), &(cgm->back_color.blue))) 
     return CGM_ERR_READ;
@@ -322,6 +345,16 @@ static int cgm_txt_bckcol(tCGM* cgm)   /* backgound color */
   cgm->dof.BackgroundColor(cgm_getrgb(cgm, cgm->back_color), cgm->userdata);
 
   return cgm_txt_get_ter(cgm);
+}
+
+static int cgm_txt_intstymode(tCGM* cgm)  /* interior style specification mode */
+{
+  const char *options[] = { "ABS", "SCALED", NULL };
+
+  if(cgm_txt_get_e(cgm, &(cgm->interiorstyle_mode), options)) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
 }
 
 /*******************
@@ -393,6 +426,38 @@ static int cgm_txt_clpind(tCGM* cgm)   /* clip indicator */
   cgm->dof.ClipIndicator(cgm->clip_ind, cgm->userdata);
 
   return cgm_txt_get_ter(cgm);
+}
+
+static int cgm_txt_pregionind(tCGM* cgm)
+{
+  if(cgm_txt_get_i(cgm, &(cgm->region_idx))) 
+    return CGM_ERR_READ;
+
+  if(cgm_txt_get_i(cgm, &(cgm->region_ind))) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
+}
+
+static int cgm_txt_miterlimit(tCGM* cgm)
+{
+  if(cgm_txt_get_r(cgm, &(cgm->line_att.miterlimit))) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
+}
+
+static int cgm_txt_transpcellcolor(tCGM* cgm)
+{
+  const char *options[] = { "OFF", "ON", NULL };
+
+  if(cgm_txt_get_e(cgm, &(cgm->cell_transp), options)) 
+    return CGM_ERR_READ;
+
+  if(cgm_txt_get_co(cgm, &cgm->cell_color)) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
 }
 
 /*******************************
@@ -1486,6 +1551,14 @@ static int cgm_txt_edgjoin(tCGM* cgm)   /* edge type */
   return cgm_txt_get_ter(cgm);
 }
 
+static int cgm_txt_restrtype(tCGM* cgm)   /* restricted text type */
+{
+  if(cgm_txt_get_i(cgm, &(cgm->text_att.restr_type))) 
+    return CGM_ERR_READ;
+
+  return CGM_OK;
+}
+
 static int cgm_txt_edgwid(tCGM* cgm)   /* edge width */
 {
   if(cgm->edgewidth_mode==CGM_ABSOLUTE)
@@ -1740,41 +1813,46 @@ static tCommand _cgm_txt_END_PIC          = { "ENDPIC"    , cgm_txt_endpic };
 
 /* metafile descriptor elements */
 
-static tCommand _cgm_txt_MF_VERSION       = { "MFVERSION"    , cgm_txt_mtfver };
-static tCommand _cgm_txt_MF_DESC          = { "MFDESC"       , cgm_txt_mtfdsc };
-static tCommand _cgm_txt_VDC_TYPE         = { "VDCTYPE"      , cgm_txt_vdctyp };
-static tCommand _cgm_txt_INTEGER_PREC     = { "INTEGERPREC"  , cgm_txt_intpre };
-static tCommand _cgm_txt_REAL_PREC        = { "REALPREC"     , cgm_txt_realpr };
-static tCommand _cgm_txt_INDEX_PREC       = { "INDEXPREC"    , cgm_txt_indpre };
-static tCommand _cgm_txt_COLR_PREC        = { "COLRPREC"     , cgm_txt_colpre };
-static tCommand _cgm_txt_COLR_INDEX_PREC  = { "COLRINDEXPREC", cgm_txt_colipr };
-static tCommand _cgm_txt_MAX_COLR_INDEX   = { "MAXCOLRINDEX" , cgm_txt_maxcoi };
-static tCommand _cgm_txt_COLR_VALUE_EXT   = { "COLRVALUEEXT" , cgm_txt_covaex };
-static tCommand _cgm_txt_MF_ELEM_LIST     = { "MFELEMLIST"   , cgm_txt_mtfell };
-static tCommand _cgm_txt_BEG_MF_DEFAULTS  = { "BEGMFDEFAULTS", cgm_txt_bmtfdf };
-static tCommand _cgm_txt_END_MF_DEFAULTS  = { "ENDMFDEFAULTS", cgm_txt_emtfdf };
-static tCommand _cgm_txt_FONT_LIST        = { "FONTLIST"     , cgm_txt_fntlst };
-static tCommand _cgm_txt_CHAR_SET_LIST    = { "CHARSETLIST"  , cgm_txt_chslst };
-static tCommand _cgm_txt_CHAR_CODING      = { "CHARCODING"   , cgm_txt_chcdac };
+static tCommand _cgm_txt_MF_VERSION         = { "MFVERSION"    , cgm_txt_mtfver };
+static tCommand _cgm_txt_MF_DESC            = { "MFDESC"       , cgm_txt_mtfdsc };
+static tCommand _cgm_txt_VDC_TYPE           = { "VDCTYPE"      , cgm_txt_vdctyp };
+static tCommand _cgm_txt_INTEGER_PREC       = { "INTEGERPREC"  , cgm_txt_intpre };
+static tCommand _cgm_txt_REAL_PREC          = { "REALPREC"     , cgm_txt_realpr };
+static tCommand _cgm_txt_INDEX_PREC         = { "INDEXPREC"    , cgm_txt_indpre };
+static tCommand _cgm_txt_COLR_PREC          = { "COLRPREC"     , cgm_txt_colpre };
+static tCommand _cgm_txt_COLR_INDEX_PREC    = { "COLRINDEXPREC", cgm_txt_colipr };
+static tCommand _cgm_txt_MAX_COLR_INDEX     = { "MAXCOLRINDEX" , cgm_txt_maxcoi };
+static tCommand _cgm_txt_COLR_VALUE_EXT     = { "COLRVALUEEXT" , cgm_txt_covaex };
+static tCommand _cgm_txt_MF_ELEM_LIST       = { "MFELEMLIST"   , cgm_txt_mtfell };
+static tCommand _cgm_txt_BEG_MF_DEFAULTS    = { "BEGMFDEFAULTS", cgm_txt_bmtfdf };
+static tCommand _cgm_txt_END_MF_DEFAULTS    = { "ENDMFDEFAULTS", cgm_txt_emtfdf };
+static tCommand _cgm_txt_FONT_LIST          = { "FONTLIST"     , cgm_txt_fntlst };
+static tCommand _cgm_txt_CHAR_SET_LIST      = { "CHARSETLIST"  , cgm_txt_chslst };
+static tCommand _cgm_txt_CHAR_CODING        = { "CHARCODING"   , cgm_txt_chcdac };
+static tCommand _cgm_bin_MAXIMUM_VDC_EXTENT = { "MAXVDCEXT"    , cgm_txt_maxvdcext };
 
 /* picture descriptor elements */
 
-static tCommand _cgm_txt_SCALE_MODE       = { "SCALEMODE"      , cgm_txt_sclmde };
-static tCommand _cgm_txt_COLR_MODE        = { "COLRMODE"       , cgm_txt_clslmd };
-static tCommand _cgm_txt_LINE_WIDTH_MODE  = { "LINEWIDTHMODE"  , cgm_txt_lnwdmd };
-static tCommand _cgm_txt_MARKER_SIZE_MODE = { "MARKERSIZEMODE" , cgm_txt_mkszmd };
-static tCommand _cgm_txt_EDGE_WIDTH_MODE  = { "EDGEWIDTHMODE"  , cgm_txt_edwdmd };
-static tCommand _cgm_txt_VDC_EXTENT       = { "VDCEXT"         , cgm_txt_vdcext };
-static tCommand _cgm_txt_BACK_COLR        = { "BACKCOLR"       , cgm_txt_bckcol };
+static tCommand _cgm_txt_SCALE_MODE          = { "SCALEMODE"      , cgm_txt_sclmde };
+static tCommand _cgm_txt_COLR_MODE           = { "COLRMODE"       , cgm_txt_clslmd };
+static tCommand _cgm_txt_LINE_WIDTH_MODE     = { "LINEWIDTHMODE"  , cgm_txt_lnwdmd };
+static tCommand _cgm_txt_MARKER_SIZE_MODE    = { "MARKERSIZEMODE" , cgm_txt_mkszmd };
+static tCommand _cgm_txt_EDGE_WIDTH_MODE     = { "EDGEWIDTHMODE"  , cgm_txt_edwdmd };
+static tCommand _cgm_txt_VDC_EXTENT          = { "VDCEXT"         , cgm_txt_vdcext };
+static tCommand _cgm_txt_BACK_COLR           = { "BACKCOLR"       , cgm_txt_bckcol };
+static tCommand _cgm_txt_INTERIOR_STYLE_MODE = { "INTSTYLEMODE"   , cgm_txt_intstymode };
 
 /* control elements */
 
-static tCommand _cgm_txt_VDC_INTEGER_PREC = { "VDCINTEGERPREC" , cgm_txt_vdcipr };
-static tCommand _cgm_txt_VDC_REAL_PREC    = { "VDCREALPREC"    , cgm_txt_vdcrpr };
-static tCommand _cgm_txt_AUX_COLR         = { "AUXCOLR"        , cgm_txt_auxcol };
-static tCommand _cgm_txt_TRANSPARENCY     = { "TRANSPARENCY"   , cgm_txt_transp };
-static tCommand _cgm_txt_CLIP_RECT        = { "CLIPRECT"       , cgm_txt_clprec };
-static tCommand _cgm_txt_CLIP             = { "CLIP"           , cgm_txt_clpind };
+static tCommand _cgm_txt_VDC_INTEGER_PREC  = { "VDCINTEGERPREC" , cgm_txt_vdcipr };
+static tCommand _cgm_txt_VDC_REAL_PREC     = { "VDCREALPREC"    , cgm_txt_vdcrpr };
+static tCommand _cgm_txt_AUX_COLR          = { "AUXCOLR"        , cgm_txt_auxcol };
+static tCommand _cgm_txt_TRANSPARENCY      = { "TRANSPARENCY"   , cgm_txt_transp };
+static tCommand _cgm_txt_CLIP_RECT         = { "CLIPRECT"       , cgm_txt_clprec };
+static tCommand _cgm_txt_CLIP              = { "CLIP"           , cgm_txt_clpind };
+static tCommand _cgm_txt_PROTECTION_REGION = { "PROTREGION"     , cgm_txt_pregionind };
+static tCommand _cgm_txt_MITER_LIMIT       = { "MITRELIMIT"     , cgm_txt_miterlimit };
+static tCommand _cgm_txt_TRANSP_CELL_COLOR = { "TRANSPCELLCOLR" , cgm_txt_transpcellcolor };
 
 /* primitive elements */
 
@@ -1844,8 +1922,9 @@ static tCommand _cgm_txt_COLR_TABLE       = { "COLRTABLE"      , cgm_txt_coltab 
 static tCommand _cgm_txt_ASF              = { "ASF"            , cgm_txt_asf };
 static tCommand _cgm_txt_LINE_CAP         = { "LINECAP"        , cgm_txt_lncap  };
 static tCommand _cgm_txt_LINE_JOIN        = { "LINEJOIN"       , cgm_txt_lnjoin };
-static tCommand _cgm_txt_EDGE_CAP         = { "EDGECAP"        , cgm_txt_edgcap  };
+static tCommand _cgm_txt_EDGE_CAP         = { "EDGECAP"        , cgm_txt_edgcap };
 static tCommand _cgm_txt_EDGE_JOIN        = { "EDGEJOIN"       , cgm_txt_edgjoin };
+static tCommand _cgm_txt_RESTR_TEXT_TYPE  = { "RESTRTEXTTYPE"  , cgm_txt_restrtype };
 
 /* escape elements */
 
@@ -1864,8 +1943,7 @@ static tCommand *_cgm_txt_delimiter[] = {
       &_cgm_txt_BEG_PIC,
       &_cgm_txt_BEG_PIC_BODY,
       &_cgm_txt_END_PIC,
-      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-      NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
 static tCommand *_cgm_txt_metafile[] = {
       &_cgm_txt_END_MF_DEFAULTS,
@@ -1884,7 +1962,9 @@ static tCommand *_cgm_txt_metafile[] = {
       &_cgm_txt_FONT_LIST,
       &_cgm_txt_CHAR_SET_LIST,
       &_cgm_txt_CHAR_CODING,
-      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+      NULL,
+      &_cgm_bin_MAXIMUM_VDC_EXTENT,
+      NULL, NULL, NULL, NULL, NULL, NULL };
 
 static tCommand *_cgm_txt_picture[] = {
       &_cgm_txt_NULL,
@@ -1896,7 +1976,8 @@ static tCommand *_cgm_txt_picture[] = {
       &_cgm_txt_VDC_EXTENT,
       &_cgm_txt_BACK_COLR,
       NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-      NULL, NULL, NULL, NULL };
+      &_cgm_txt_INTERIOR_STYLE_MODE,
+      NULL, NULL, NULL };
 
 static tCommand *_cgm_txt_control[] = {
       &_cgm_txt_NULL,
@@ -1906,8 +1987,11 @@ static tCommand *_cgm_txt_control[] = {
       &_cgm_txt_TRANSPARENCY,
       &_cgm_txt_CLIP_RECT,
       &_cgm_txt_CLIP,
-      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-      NULL, NULL, NULL, NULL, NULL, NULL };
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
+      &_cgm_txt_PROTECTION_REGION,
+      NULL,
+      &_cgm_txt_MITER_LIMIT,
+      &_cgm_txt_TRANSP_CELL_COLOR };
 
 static tCommand *_cgm_txt_primitive[] = {
       &_cgm_txt_NULL,
@@ -1980,11 +2064,12 @@ static tCommand *_cgm_txt_attributes[] = {
       NULL,
       &_cgm_txt_LINE_CAP, 
       &_cgm_txt_LINE_JOIN,
-      NULL, NULL, NULL, NULL, NULL, 
+      NULL, NULL, NULL,
+      &_cgm_txt_RESTR_TEXT_TYPE,
+      NULL,
       &_cgm_txt_EDGE_CAP, 
       &_cgm_txt_EDGE_JOIN,
-      NULL, NULL, NULL, NULL,
-      NULL, NULL, NULL, NULL };
+      NULL, NULL, NULL, NULL, NULL, NULL };
 
 static tCommand *_cgm_txt_escape[] = {
       &_cgm_txt_NULL,
@@ -1998,11 +2083,13 @@ static tCommand *_cgm_txt_external[] = {
       &_cgm_txt_APPL_DATA,
       NULL };
 
-static tCommand *_cgm_txt_segment[] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+static tCommand *_cgm_txt_segment[] = {
+      &_cgm_txt_NULL,
+      NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
 static tCommand *_cgm_txt_NULL_NULL[] = {
       &_cgm_txt_NULL,
-	  NULL };
+      NULL };
 		
 static tCommand **_cgm_txt_commands[] = {
        _cgm_txt_NULL_NULL,
