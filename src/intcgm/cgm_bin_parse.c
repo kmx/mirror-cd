@@ -4,10 +4,6 @@
 #include "cgm_types.h"
 #include "cgm_bin_get.h"
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
-
 static int cgm_bin_exec_command(tCGM* cgm, int, int);
 
 /*******************************
@@ -22,7 +18,7 @@ static int cgm_bin_noop(tCGM* cgm)
 
 static int cgm_bin_begmtf(tCGM* cgm)
 {
-  if (cgm->buff.len) // TODO check
+  if (cgm->buff.len)
   {
     char *s;
     if(cgm_bin_get_s(cgm, &s)) 
@@ -800,7 +796,7 @@ static int cgm_bin_plgset(tCGM* cgm)
   return CGM_OK;
 }
 
-static int cgm_bin_cellar(tCGM* cgm)  /* TODO: error */
+static int cgm_bin_cellar(tCGM* cgm)
 {
   register int i, j, k, offset;
   long prec;
@@ -2024,12 +2020,6 @@ static int cgm_bin_edgjoin(tCGM* cgm)
 static int cgm_bin_escape(tCGM* cgm)
 {
   /* ignored */
-// #if 1     // TODO check
-//   int i;
-//   unsigned char c;
-//   for(i=0; i<cgm->buff.len; i++) 
-//     cgm_bin_get_c(cgm, &c);
-// #else
   long identifier;
   char *data_rec;
 
@@ -2039,7 +2029,7 @@ static int cgm_bin_escape(tCGM* cgm)
     return CGM_ERR_READ;
 
   free(data_rec);
-// #endif
+
   return CGM_OK;
 }
 
