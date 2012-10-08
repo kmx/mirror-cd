@@ -170,7 +170,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   ctxcanvas->job = job;
 
   cairo_identity_matrix(ctxcanvas->cr);
-  cairo_scale(ctxcanvas->cr, 0.25, 0.25);  /* TODO: why this is needed? */
+  cairo_scale(ctxcanvas->cr, 0.25, 0.25);  /* TODO: why this is necessary? */
 
   cdRegisterAttribute(canvas, &printername_attrib);
 

@@ -2363,28 +2363,13 @@ static CGM_FUNC **_cgm_bin_commands[] = {
 
 static int cgm_bin_exec_command(tCGM* cgm, int classe, int id)
 {
-  int ret;
-
-  if(_cgm_bin_commands[classe][id]==NULL)
+  if (_cgm_bin_commands[classe][id]==NULL)
   {
     cgm->buff.bc = cgm->buff.len;
     return CGM_OK;
   }
 
-  ret = (*_cgm_bin_commands[classe][id])(cgm);
-
-  // TODO check
-#if 0
-  if (err == CGM_ABORT_COUNTER)
-    return CGM_ABORT_COUNTER;
-  else if (ret == CGM_ERR_READ)
-  {
-    cgm->buff.bc=cgm->buff.len;
-    return CGM_OK;
-  }
-#endif
-
-  return ret;
+  return (*_cgm_bin_commands[classe][id])(cgm);
 }
 
 int cgm_bin_rch(tCGM* cgm)
