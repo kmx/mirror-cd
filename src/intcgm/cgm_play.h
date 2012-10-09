@@ -5,9 +5,9 @@
  * mailto:cd@tecgraf.puc-rio.br
  *
  * Based on INTCGM implemented by Camilo Freire.
- * New implementation by Antonio Scuri.
+ * New implementation by Antonio Scuri & Rafael Rieder.
  *
- * Version 1.0 - XX/August/2012
+ * Version 1.0 - 22/Sep/2012
  *
  * See Copyright Notice at the end of this file
  */
@@ -72,8 +72,8 @@ typedef struct {
 
   /* Attributes */
   void (*TextAttrib)(const char* horiz_align, const char* vert_align, const char* font, double height, cgmRGB color, cgmPoint base_dir, void* userdata);
-  void (*LineAttrib)(const char *type, const char *cap, const char *join, double width, cgmRGB color, void* userdata);
-  void (*MarkerAttrib)(const char *type, double size, cgmRGB color, void* userdata);
+  void (*LineAttrib)(const char *type, const char *cap, const char *join, double width, const char *mode, cgmRGB color, void* userdata);
+  void (*MarkerAttrib)(const char *type, double size, const char* mode, cgmRGB color, void* userdata);
   void (*FillAttrib)(const char* type, cgmRGB color, const char* hatch, cgmPattern* pat, void* userdata);  
 
   /* Utilities */
@@ -81,7 +81,8 @@ typedef struct {
 } cgmPlayFuncs;
 
 /* Notes:
-  Only CGM version 1 is supported.
+  CGM version 1 is fully supported.
+  CGM version 2 and 3 are partially supported.
   All modules are independent from the CD and can be reused.
   All methods are optional and can be NULL.
   Call Order
@@ -114,12 +115,16 @@ typedef struct {
   Ellipse,EllipticalArc
     first,second define the major and minor axis
     angle is oriented from second to first in the positive angular direction
-  LineAttrib (type=SOLID,DASH,DOT,DASH_DOT,DASH_DOT_DOT)
-    width > 0 = pixels
-    width < 0 = scaled
-  MarkerAttrib (type=DOT,PLUS,ASTERISK,CIRCLE,CROSS)
-    size > 0 = pixels
-    size < 0 = scaled
+  LineAttrib 
+    (type=SOLID,DASH,DOT,DASH_DOT,DASH_DOT_DOT)
+    (mode=ABSOLUTE,SCALED,FRACTIONAL,MM)
+    absolute => pixels
+    scaled => scale factor to be applied by the interpreter to a device-dependent "nominal" measure
+    fractional => fraction of the horizontal dimension of the default device viewport
+    mm => millimetres
+  MarkerAttrib 
+    (type=DOT,PLUS,ASTERISK,CIRCLE,CROSS)
+    (mode=ABS,SCALED,FRACTIONAL,MM)
   FillAttrib (type=HOLLOW,SOLID,PATTERN,HATCH)
     hath is NULL if type!=HATCH
     pat is NULL if type!=PATTERN 

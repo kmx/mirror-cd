@@ -283,7 +283,7 @@ static int cgm_txt_clslmd(tCGM* cgm)   /* color selection mode */
 
 static int cgm_txt_lnwdmd(tCGM* cgm)   /* line width specification mode */
 {
-  const char *options[] = { "ABS", "SCALED", NULL };
+  const char *options[] = { "ABS", "SCALED", "FRACTIONAL", "MM", NULL };
 
   if(cgm_txt_get_e(cgm, &(cgm->linewidth_mode), options)) 
     return CGM_ERR_READ;
@@ -293,7 +293,7 @@ static int cgm_txt_lnwdmd(tCGM* cgm)   /* line width specification mode */
 
 static int cgm_txt_mkszmd(tCGM* cgm)   /* marker size specification mode */
 {
-  const char *options[] = { "ABS", "SCALED", NULL };
+  const char *options[] = { "ABS", "SCALED", "FRACTIONAL", "MM", NULL };
 
   if(cgm_txt_get_e(cgm, &(cgm->markersize_mode), options)) 
     return CGM_ERR_READ;
@@ -303,7 +303,7 @@ static int cgm_txt_mkszmd(tCGM* cgm)   /* marker size specification mode */
 
 static int cgm_txt_edwdmd(tCGM* cgm)   /* edge width specification mode */
 {
-  const char *options[] = { "ABS", "SCALED", NULL };
+  const char *options[] = { "ABS", "SCALED", "FRACTIONAL", "MM", NULL };
 
   if(cgm_txt_get_e(cgm, &(cgm->edgewidth_mode), options)) 
     return CGM_ERR_READ;
@@ -349,7 +349,7 @@ static int cgm_txt_bckcol(tCGM* cgm)   /* background color */
 
 static int cgm_txt_intstymode(tCGM* cgm)  /* interior style specification mode */
 {
-  const char *options[] = { "ABS", "SCALED", NULL };
+  const char *options[] = { "ABS", "SCALED", "FRACTIONAL", "MM", NULL };
 
   if(cgm_txt_get_e(cgm, &(cgm->interiorstyle_mode), options)) 
     return CGM_ERR_READ;
@@ -441,7 +441,7 @@ static int cgm_txt_pregionind(tCGM* cgm)
 
 static int cgm_txt_miterlimit(tCGM* cgm)
 {
-  if(cgm_txt_get_r(cgm, &(cgm->line_att.miterlimit))) 
+  if(cgm_txt_get_r(cgm, &(cgm->mitrelimit))) 
     return CGM_ERR_READ;
 
   return CGM_OK;
@@ -814,7 +814,7 @@ static int cgm_txt_cellar(tCGM* cgm)   /* cell array */
   if(cgm_txt_get_i(cgm, &ny)) 
     return CGM_ERR_READ;
 
-  if(cgm_txt_get_i(cgm, &(local_color_prec))) 
+  if(cgm_txt_get_i(cgm, &(local_color_prec)))  /* unused */
     return CGM_ERR_READ;
 
   rgb = malloc(nx*ny*3);
@@ -1484,7 +1484,7 @@ static int cgm_txt_fillin(tCGM* cgm)   /* fill bundle index */
 
 static int cgm_txt_intsty(tCGM* cgm)   /* interior style */
 {
-  const char *options[] = { "HOLLOW", "SOLID", "PAT", "HATCH", "EMPTY", NULL };
+  const char *options[] = { "HOLLOW", "SOLID", "PAT", "HATCH", "EMPTY", "GEOPAT", "INTERP", NULL };
 
   if(cgm_txt_get_e(cgm, &(cgm->fill_att.int_style), options)) 
     return CGM_ERR_READ;

@@ -47,9 +47,8 @@ typedef struct {
   long index;
   long type;
   long linecap;
-  long dashcap;
+  long dashcap;  /* unused */
   long linejoin;
-  double miterlimit;
   double width;
   tColor color;
 } tLineAtt;
@@ -58,7 +57,7 @@ typedef struct {
   long index;
   long type;
   long linecap;
-  long dashcap;
+  long dashcap;  /* unused */
   long linejoin;
   double width;
   tColor color;
@@ -136,8 +135,8 @@ struct _tCGM {
     long b_prec;  /* 0=8, 1=16, 2=24, 3=32 */
     struct { long minint; long maxint; } t_prec;
   } ix_prec;
-  long cd_prec;
-  long cix_prec;
+  long cd_prec;   /* used only for binary */
+  long cix_prec;  /* used only for binary */ 
 
   struct {
     tRGB black;
@@ -153,10 +152,10 @@ struct _tCGM {
   } scale_mode;
 
   short color_mode;       /* indexed, direct */
-  short linewidth_mode;   /* absolute, scaled = (pixels, mm) */
-  short markersize_mode;  /* absolute, scaled */
-  short edgewidth_mode;   /* absolute, scaled */
-  short interiorstyle_mode;  /* absolute, scaled */
+  short linewidth_mode;   /* absolute, scaled, fractional, mm */
+  short markersize_mode;  /* absolute, scaled, fractional, mm */
+  short edgewidth_mode;   /* absolute, scaled, fractional, mm */
+  short interiorstyle_mode;  /* absolute, scaled, fractional, mm (unused) */
 
   short vdc_type;  /* integer, real */
   union {
@@ -179,21 +178,23 @@ struct _tCGM {
   tColor aux_color;
   short transparency;
 
-  short cell_transp;
-  tColor cell_color;
+  short cell_transp;  /* (affects cellarray and pattern) unused */
+  tColor cell_color;  /* unused */
 
   struct {
     cgmPoint first;
     cgmPoint second;
   } clip_rect;
   short clip_ind;
-  long region_idx;
-  long region_ind;
+  long region_idx;  /* unused */
+  long region_ind;  /* unused */
 
   long gdp_sample_type, 
        gdp_n_samples;
   cgmPoint gdp_pt[4];
   char* gdp_data_rec;
+
+  double mitrelimit;  /* unused */
 
   tLineAtt line_att;
   tMarkerAtt marker_att;
@@ -213,10 +214,10 @@ struct _tCGM {
 enum { CGM_OFF, CGM_ON };
 enum { CGM_INTEGER, CGM_REAL };
 enum { CGM_STRING, CGM_CHAR, CGM_STROKE };
-enum { CGM_ABSOLUTE, CGM_SCALED };
+enum { CGM_ABSOLUTE, CGM_SCALED, CGM_FRACTIONAL, CGM_MM };
 enum { CGM_ABSTRACT, CGM_METRIC };
 enum { CGM_INDEXED, CGM_DIRECT };
-enum { CGM_HOLLOW, CGM_SOLID, CGM_PATTERN, CGM_HATCH, CGM_EMPTY };
+enum { CGM_HOLLOW, CGM_SOLID, CGM_PATTERN, CGM_HATCH, CGM_EMPTY, CGM_GEOPAT, CGM_INTERP };
 enum { CGM_INVISIBLE, CGM_VISIBLE, CGM_CLOSE_INVISIBLE, CGM_CLOSE_VISIBLE };
 enum { CGM_PATH_RIGHT, CGM_PATH_LEFT, CGM_PATH_UP, CGM_PATH_DOWN };
 

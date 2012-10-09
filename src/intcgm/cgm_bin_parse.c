@@ -565,7 +565,7 @@ static int cgm_bin_pregionind(tCGM* cgm)
 
 static int cgm_bin_miterlimit(tCGM* cgm)
 {
-  if(cgm_bin_get_r(cgm, &(cgm->line_att.miterlimit))) 
+  if(cgm_bin_get_r(cgm, &(cgm->mitrelimit))) 
     return CGM_ERR_READ;
 
   return CGM_OK;
@@ -800,7 +800,7 @@ static int cgm_bin_cellar(tCGM* cgm)
 {
   register int i, j, k, offset;
   long prec;
-  long sx, sy;
+  long nx, ny;
   short mode;
   int b;
   unsigned char dummy;
@@ -815,27 +815,29 @@ static int cgm_bin_cellar(tCGM* cgm)
   if(cgm_bin_get_p(cgm, &(corner3.x), &(corner3.y))) 
     return CGM_ERR_READ;
 
-  if(cgm_bin_get_i(cgm, &sx)) 
+  if(cgm_bin_get_i(cgm, &nx)) 
     return CGM_ERR_READ;
-  if(cgm_bin_get_i(cgm, &sy)) 
+  if(cgm_bin_get_i(cgm, &ny)) 
     return CGM_ERR_READ;
 
   if(cgm_bin_get_i(cgm, &prec)) 
     return CGM_ERR_READ;
 
+  /* cell representation flag (only in binary mode) */
   if(cgm_bin_get_e(cgm, &mode)) 
     return CGM_ERR_READ;
 
-  rgb = malloc(sx*sy*3);
+  rgb = malloc(nx*ny*3);
 
-  if(mode)
+  if (mode)
   {
     /* Packed mode */
-    for(k=0; k<sy; k++)
+    for(k=0; k<ny; k++)
     {
       b=cgm->buff.bc;
       cgm->buff.pc=0;
-      for(i=0; i<sx; i++)
+
+      for(i=0; i<nx; i++)
       {
         if(cgm_bin_get_pixel(cgm, &cell, prec)) 
         {
@@ -843,11 +845,12 @@ static int cgm_bin_cellar(tCGM* cgm)
           return CGM_ERR_READ;
         }
 
-        offset = 3*(k*sx+i);
+        offset = 3*(k*nx+i);
         cgm_getcolor_ar(cgm, cell, rgb + offset+0, rgb + offset+1, rgb + offset+2);
       }
 
-      if(k<(sy-1) &&(cgm->buff.bc-b)%2) 
+      /* row starts on a word boundary */
+      if(k<(ny-1) &&(cgm->buff.bc-b)%2) 
         cgm_bin_get_c(cgm, &dummy);
 
       if (cgm_inccounter(cgm))
@@ -860,12 +863,14 @@ static int cgm_bin_cellar(tCGM* cgm)
   else
   {
     /* run length encoding */
-    for(k=0; k<sy; k++)
+    for(k=0; k<ny; k++)
     {
       long suml = 0;
+
       b=cgm->buff.bc;
       cgm->buff.pc=0;
-      for(i=0; i<sx; i++)
+
+      for(i=0; i<nx; i++)
       {
         long l;
         if(cgm_bin_get_i(cgm, &l)) 
@@ -878,25 +883,27 @@ static int cgm_bin_cellar(tCGM* cgm)
           free(rgb);
           return CGM_ERR_READ;
         }
+
         /* The count of a number of consecutive cells using a color
            can not be a negative value  or a value greater than the
            width dimension of the color array */
-        if(l > 0 && l <= sx)
+        if(l > 0 && l <= nx)
         {
           suml += l;
           for(j=0; j<l; j++)
           {  
-            offset = 3*(k*sx+i);
+            offset = 3*(k*nx+i);
             cgm_getcolor_ar(cgm, cell, rgb + offset+0, rgb + offset+1, rgb + offset+2);
           }
+
           /* The sum of the consecutive colored cells in a row can not
              be greater than the width dimension of the color array */ 
-          if(suml >= sx)
+          if(suml >= nx)
             break;
         }
       }
 
-      if(k<(sy-1) &&(cgm->buff.bc-b)%2) 
+      if(k<(ny-1) &&(cgm->buff.bc-b)%2) 
         cgm_bin_get_c(cgm, &dummy);
 
       if (cgm_inccounter(cgm))
@@ -907,7 +914,7 @@ static int cgm_bin_cellar(tCGM* cgm)
     }
   }
 
-  cgm->dof.CellArray(corner1, corner2, corner3, sx, sy, rgb, cgm->userdata);
+  cgm->dof.CellArray(corner1, corner2, corner3, nx, ny, rgb, cgm->userdata);
 
   free(rgb);
   return CGM_OK;

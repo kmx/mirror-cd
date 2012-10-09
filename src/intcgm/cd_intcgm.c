@@ -604,7 +604,34 @@ static void cdcgm_TextAttrib(const char* horiz_align, const char* vert_align, co
   cdCanvasForeground(cd_cgm->canvas, cdEncodeColor(color.red, color.green, color.blue));
 }
 
-static void cdcgm_LineAttrib(const char *type, const char *cap, const char *join, double width, cgmRGB color, cdCGM* cd_cgm)
+static double get_size_mode(cdCanvas* canvas, double size, const char* mode, double current_size)
+{
+  if (strcmp(mode, "SCALED")==0)
+  {
+    /* scale factor to be applied by the interpreter to a device-dependent "nominal" measure */
+    return size*current_size;
+  }
+  else if (strcmp(mode, "FRACTIONAL")==0)
+  {
+    /* fraction of the horizontal dimension of the default device viewport */
+    int width;
+    cdCanvasGetSize(canvas, &width, NULL, NULL, NULL);
+    return size*width;
+  }
+  else if (strcmp(mode, "MM")==0)
+  {
+    /* millimetres */
+    cdfCanvasMM2Pixel(canvas, size, 0, &size, NULL);
+    return size;
+  }
+  else /* "ABSOLUTE" */
+  {
+    /* pixels */
+    return size;  
+  }
+}
+
+static void cdcgm_LineAttrib(const char *type, const char *cap, const char *join, double width, const char *mode, cgmRGB color, cdCGM* cd_cgm)
 {
   int style = CD_CONTINUOUS;
   int linecap = CD_CAPFLAT;
@@ -641,16 +668,14 @@ static void cdcgm_LineAttrib(const char *type, const char *cap, const char *join
 
   cdCanvasLineStyle(cd_cgm->canvas, style);
 
-  /* scaled: units are a scale factor to be applied by the interpreter to a device-dependent "nominal" measure */
-  if (width < 0)
-    width = -width*cdCanvasLineWidth(cd_cgm->canvas, CD_QUERY);
+  width = get_size_mode(cd_cgm->canvas, width, mode, cdCanvasLineWidth(cd_cgm->canvas, CD_QUERY));
 
   cdCanvasLineWidth(cd_cgm->canvas, sMin1(sRound(width)));
 
   cdCanvasForeground(cd_cgm->canvas, cdEncodeColor(color.red, color.green, color.blue));
 }
 
-static void cdcgm_MarkerAttrib(const char *type, double size, cgmRGB color, cdCGM* cd_cgm)
+static void cdcgm_MarkerAttrib(const char *type, double size, const char *mode, cgmRGB color, cdCGM* cd_cgm)
 {
   int style = CD_PLUS;
   if (strcmp(type, "DOT")==0)
@@ -666,9 +691,7 @@ static void cdcgm_MarkerAttrib(const char *type, double size, cgmRGB color, cdCG
 
   cdCanvasMarkType(cd_cgm->canvas, style);
 
-  /* scaled: units are a scale factor to be applied by the interpreter to a device-dependent "nominal" measure */
-  if (size < 0)
-    size = -size*cdCanvasMarkSize(cd_cgm->canvas, CD_QUERY);
+  size = get_size_mode(cd_cgm->canvas, size, mode, cdCanvasMarkSize(cd_cgm->canvas, CD_QUERY));
 
   cdCanvasMarkSize(cd_cgm->canvas, sMin1(sRound(size)));
 
