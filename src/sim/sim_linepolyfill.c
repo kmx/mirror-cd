@@ -493,20 +493,31 @@ int simPolyFindHorizontalIntervals(simLineSegment *segments, int n_seg, int* xx,
       if (i == n_seg)
         break;
 
-      /* save the previous y, not in the horizontal line */
+      if (i_prev == n_seg-1)
+      {
+        /* if at the first segment, find the previous segment that 
+           is not an horizontal line */
+        while (seg_i_prev->y1 == seg_i_prev->y2 && i_prev > 0)
+        {
+          i_prev--;
+          seg_i_prev = segments + i_prev;
+        }
+      }
+
+      /* save the previous y, not in current the horizontal line */
       if (seg_i_prev->y1 == y)
         prev_y = seg_i_prev->y2;
       else
         prev_y = seg_i_prev->y1;
 
-      /* save the next y, not in the horizontal line */
+      /* save the next y, not in the current horizontal line */
       if (seg_i_next->y1 == y)
         next_y = seg_i_next->y2;
       else
         next_y = seg_i_next->y1;
 
-      /* if the horizontal line is part of a step  |_  then compute a normal intersection in the middle */
-      /*                                             |                                                  */
+      /* if the horizontal line is part of a step  \_  then add one virtual intersection in the middle */
+      /*                                             \                                                  */
       if ((next_y > y && prev_y < y) ||
           (next_y < y && prev_y > y))
       {

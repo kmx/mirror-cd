@@ -1469,12 +1469,15 @@ void SimpleDrawPoly(cdCanvas* canvas)
 
 void SimpleDrawTest(cdCanvas* canvas1)
 {
-   //gbgxpImage = cdCreateBitmap (gbgxJPGwidth, gbgxJPGheight, CD_RGB);
-   //r = cdBitmapGetData (gbgxpImage, CD_IRED);
-   //g = cdBitmapGetData (gbgxpImage, CD_IGREEN);
-   //b = cdBitmapGetData (gbgxpImage, CD_IBLUE);
+  //cdCanvas* canvas = cdCreateCanvas(CD_IMAGERGB, "570x569");
+  cdCanvas* canvas = canvas1;
 
-  cdCanvas* canvas = cdCreateCanvas(CD_IMAGERGB, "570x569");
+  if (canvas == canvas1)
+  {
+    cdCanvasClear(canvas);
+    cdCanvasInteriorStyle(canvas, CD_SOLID);
+  }
+
   cdCanvasBegin(canvas, CD_FILL);
   cdCanvasVertex(canvas,279,81);
   cdCanvasVertex(canvas,280,81);
@@ -1501,4 +1504,7 @@ void SimpleDrawTest(cdCanvas* canvas1)
   cdCanvasVertex(canvas,280,81);
   cdCanvasVertex(canvas,279,81);
   cdCanvasEnd(canvas);
+
+  if (canvas != canvas1)
+    cdKillCanvas(canvas);
 }
