@@ -172,6 +172,7 @@ struct _tCGM {
     cgmPoint second;   /* upper-right corner */
     cgmPoint maxFirst;    /* maximum lower-left  corner */
     cgmPoint maxSecond;   /* maximum upper-right corner */
+    short has_max;
   } vdc_ext;
 
   tRGB back_color;

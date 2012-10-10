@@ -377,6 +377,8 @@ static int cgm_bin_maxvdcext(tCGM* cgm)
   if(cgm_bin_get_p(cgm, &(cgm->vdc_ext.maxSecond.x), &(cgm->vdc_ext.maxSecond.y))) 
     return CGM_ERR_READ;
 
+  cgm->vdc_ext.has_max = 1;
+
   return CGM_OK;
 }
 
@@ -436,18 +438,21 @@ static int cgm_bin_vdcext(tCGM* cgm)
   if(cgm_bin_get_p(cgm, &(cgm->vdc_ext.second.x), &(cgm->vdc_ext.second.y))) 
     return CGM_ERR_READ;
 
-  /* Verify the bounds values, defined by Maximum VDC Extent element */
-  if(cgm->vdc_ext.first.x < cgm->vdc_ext.maxFirst.x)
-    cgm->vdc_ext.first.x = cgm->vdc_ext.maxFirst.x;
+  if (cgm->vdc_ext.has_max)
+  {
+    /* Verify the bounds values, defined by Maximum VDC Extent element */
+    if(cgm->vdc_ext.first.x < cgm->vdc_ext.maxFirst.x)
+      cgm->vdc_ext.first.x = cgm->vdc_ext.maxFirst.x;
 
-  if(cgm->vdc_ext.first.y < cgm->vdc_ext.maxFirst.y)
-    cgm->vdc_ext.first.y = cgm->vdc_ext.maxFirst.y;
+    if(cgm->vdc_ext.first.y < cgm->vdc_ext.maxFirst.y)
+      cgm->vdc_ext.first.y = cgm->vdc_ext.maxFirst.y;
 
-  if(cgm->vdc_ext.second.x > cgm->vdc_ext.maxSecond.x)
-    cgm->vdc_ext.second.x = cgm->vdc_ext.maxSecond.x;
+    if(cgm->vdc_ext.second.x > cgm->vdc_ext.maxSecond.x)
+      cgm->vdc_ext.second.x = cgm->vdc_ext.maxSecond.x;
 
-  if(cgm->vdc_ext.second.y > cgm->vdc_ext.maxSecond.y)
-    cgm->vdc_ext.second.y = cgm->vdc_ext.maxSecond.y;
+    if(cgm->vdc_ext.second.y > cgm->vdc_ext.maxSecond.y)
+      cgm->vdc_ext.second.y = cgm->vdc_ext.maxSecond.y;
+  }
 
   cgm->dof.DeviceExtent(&(cgm->vdc_ext.first), &(cgm->vdc_ext.second), cgm->userdata);
 
