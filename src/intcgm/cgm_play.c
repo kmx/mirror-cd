@@ -344,6 +344,9 @@ void cgm_settext_attrib(tCGM* cgm)
       height = h/100;
   }
 
+  if (!font)
+    font = "TIMES_ROMAN";
+
   cgm->dof.TextAttrib(hor, ver, font, height*cgm->text_att.exp_fact, cgm_getcolor(cgm, cgm->text_att.color), cgm->text_att.char_base, cgm->userdata);
 }
 
