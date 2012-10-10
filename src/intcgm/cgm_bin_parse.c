@@ -865,15 +865,13 @@ static int cgm_bin_cellar(tCGM* cgm)
     /* run length encoding */
     for(k=0; k<ny; k++)
     {
-      long suml = 0;
-
       b=cgm->buff.bc;
       cgm->buff.pc=0;
 
-      for(i=0; i<nx; i++)
+      for(i=0; i<nx; ) /* do not increment here */
       {
-        long l;
-        if(cgm_bin_get_i(cgm, &l)) 
+        long run_count;
+        if(cgm_bin_get_i(cgm, &run_count)) 
         {
           free(rgb);
           return CGM_ERR_READ;
@@ -884,25 +882,15 @@ static int cgm_bin_cellar(tCGM* cgm)
           return CGM_ERR_READ;
         }
 
-        /* The count of a number of consecutive cells using a color
-           can not be a negative value  or a value greater than the
-           width dimension of the color array */
-        if(l > 0 && l <= nx)
-        {
-          suml += l;
-          for(j=0; j<l; j++)
-          {  
-            offset = 3*(k*nx+i);
-            cgm_getcolor_ar(cgm, cell, rgb + offset+0, rgb + offset+1, rgb + offset+2);
-          }
-
-          /* The sum of the consecutive colored cells in a row can not
-             be greater than the width dimension of the color array */ 
-          if(suml >= nx)
-            break;
+        for(j=0; j<run_count && i<nx; j++)
+        {  
+          offset = 3*(k*nx+i);
+          cgm_getcolor_ar(cgm, cell, rgb + offset+0, rgb + offset+1, rgb + offset+2);
+          i++; /* only increment here */
         }
       }
 
+      /* row starts on a word boundary */
       if(k<(ny-1) &&(cgm->buff.bc-b)%2) 
         cgm_bin_get_c(cgm, &dummy);
 
