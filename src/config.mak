@@ -67,12 +67,13 @@ ifdef USE_GDK
   CHECK_GTK = Yes
   LIBS = pangocairo-1.0 cairo
   DEFINES += GTK_DISABLE_DEPRECATED 
+  SRC += drv/cd0wmf.c
   ifdef USE_GTK3
     DEFINES += GDK_DISABLE_DEPRECATED GSEAL_ENABLE USE_GTK3
     # Do not include old GDK driver
-    SRC += gdk/cdgdkclp.c drv/cd0wmf.c
+    SRC += gdk/cdgdkclp.c 
   else
-    SRC += $(SRCGDK) drv/cd0wmf.c cairo/cdcairoplus.c 
+    SRC += $(SRCGDK) cairo/cdcairoplus.c 
   endif
   SRC += $(SRCCAIRO) cairo/cdcaironative_gdk.c
   
@@ -86,6 +87,7 @@ ifdef USE_GDK
         INCLUDES += $(GTK)/include/gtk-3.0/unix-print
       else
         INCLUDES += $(GTK)/include/gtk-unix-print-2.0
+        SRC += drv/cd0prn.c
       endif 
 #    endif
     LIBS += freetype
