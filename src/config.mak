@@ -73,7 +73,7 @@ ifdef USE_GDK
     # Do not include old GDK driver
     SRC += gdk/cdgdkclp.c 
   else
-    SRC += $(SRCGDK) cairo/cdcairoplus.c 
+    SRC += $(SRCGDK) cairo/cdcairoplus.c drv/cd0prn.c drv/cd0emf.c
   endif
   SRC += $(SRCCAIRO) cairo/cdcaironative_gdk.c
   
@@ -82,12 +82,12 @@ ifdef USE_GDK
     LIBS += freetype6
   else
 #    ifeq ($(findstring MacOS, $(TEC_UNAME)), )     (TODO: handle GTK using Darwin)
-      SRC += cairo/cdcairoprn_unix.c drv/cd0emf.c
+      SRC += cairo/cdcairoprn_unix.c
       ifdef USE_GTK3
         INCLUDES += $(GTK)/include/gtk-3.0/unix-print
+        SRC += drv/cd0emf.c
       else
         INCLUDES += $(GTK)/include/gtk-unix-print-2.0
-        SRC += drv/cd0prn.c
       endif 
 #    endif
     LIBS += freetype
