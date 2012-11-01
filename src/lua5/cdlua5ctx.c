@@ -834,14 +834,15 @@ static int clipboard_sizecb(cdCanvas *canvas, int w, int h, double mm_w, double 
 \***************************************************************************/
 static void *cdnativewindow_checkdata(lua_State *L, int param)
 {
-  if (!lua_isnil(L,param) && 
-     (!lua_isuserdata(L,param) || !lua_isstring(L, param)))
-    luaL_argerror(L, param, "data should be of type userdata or a string");
-
+  if (lua_isnil(L,param))
+    return NULL;
   if (lua_isuserdata(L,param))
     return lua_touserdata(L,param);
-  else
-    return (void *)luaL_checkstring(L,param);
+  if (lua_isstring(L, param))
+    return (void *)lua_tostring(L,param);
+
+  luaL_argerror(L, param, "data should be of type userdata or a string, or a nil value");
+  return NULL;
 }
 
 static cdluaContext cdluanativewindowctx = 
