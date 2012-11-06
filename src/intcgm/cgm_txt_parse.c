@@ -2148,10 +2148,16 @@ int cgm_txt_rch(tCGM* cgm)
         if (cgm_inccounter(cgm))
           return CGM_ABORT_COUNTER;
 
-        return CGM_OK;
+        if (feof(cgm->fp))
+          return CGM_OK;
+        else
+          return CGM_CONT;
       }
     }
   }
 
-  return CGM_OK;
+  if (feof(cgm->fp))
+    return CGM_OK;
+  else
+    return CGM_CONT;
 }

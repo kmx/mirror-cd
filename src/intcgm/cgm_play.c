@@ -710,14 +710,14 @@ int cgmPlay(const char* filename, void* userdata, cgmPlayFuncs* funcs)
     do
     {
       ret = cgm_bin_rch(cgm);  /* binary */
-    } while(ret==CGM_OK);  
+    } while(ret==CGM_CONT);  
   }
   else
   {
     do
     {
       ret = cgm_txt_rch(cgm);  /* text */
-    } while(ret==CGM_OK);  
+    } while(ret==CGM_CONT);  
   }
 
   if(cgm->point_list)

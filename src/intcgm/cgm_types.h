@@ -212,6 +212,8 @@ struct _tCGM {
   void* userdata;
 };
 
+#define CGM_CONT 3
+
 enum { CGM_OFF, CGM_ON };
 enum { CGM_INTEGER, CGM_REAL };
 enum { CGM_STRING, CGM_CHAR, CGM_STROKE };

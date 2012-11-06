@@ -2386,7 +2386,12 @@ int cgm_bin_rch(tCGM* cgm)
 
   ret = fread(ch, 1, 2, cgm->fp);
   if(ret<2) 
-    return CGM_ERR_READ;
+  {
+    if (feof(cgm->fp))
+      return CGM_OK;
+    else
+      return CGM_ERR_READ;
+  }
 
   b =(ch[0] << 8) + ch[1];
   len = b & 0x001F;
@@ -2421,7 +2426,7 @@ int cgm_bin_rch(tCGM* cgm)
     if(ret<cgm->buff.len) 
       return CGM_ERR_READ;
 
-    if(len & 1)
+    if (len & 1)
     {
       ret = fread(&dummy, 1, 1, cgm->fp);
       if(ret<1) 
@@ -2479,5 +2484,8 @@ int cgm_bin_rch(tCGM* cgm)
       return CGM_ERR_READ;
   }
 
-  return CGM_OK;
+  if (feof(cgm->fp))
+    return CGM_OK;
+  else
+    return CGM_CONT;
 }
