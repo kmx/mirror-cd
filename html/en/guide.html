@@ -99,8 +99,8 @@ folder were the IM and Lua libraries are installed.</p>
 <pre>cd -&gt; <strong><span class="style2">FreeType</span></strong> (included as separate library)
 <em>   cdwin*</em> -&gt; <strong><span class="style4">gdi32</span></strong> <strong><span class="style4">user32</span></strong> <strong><span class="style4">comdlg32</span></strong> (system - Windows)
 <em>   cdx11*</em> -&gt; <strong><span class="style4">X11</span></strong> (system - UNIX)
-<em>   </em><em>cdgdk+cdcairo*</em> -&gt; <strong><span class="style1">gdk-win32-2.0 pangowin32-1.0</span></strong>(system - Windows)
-<em>   </em>       -&gt; <strong><span class="style1">gdk-x11-2.0</span></strong> <strong><span class="style1">pangox-1.0 </span></strong>(system - UNIX)
+<em>   </em><em>cdgdk+cdcairo*</em> -&gt; <strong><span class="style1">gdk-win32-2.0/gdk-3 pangowin32-1.0</span></strong>(system - Windows)
+<em>   </em>       -&gt; <strong><span class="style1">gdk-x11-2.0/gdk-3</span></strong> <strong><span class="style1">pangox-1.0 </span></strong>(system - UNIX)
           -&gt; <span class="style1"><strong>cairo </strong></span><strong><span class="style1">gdk_pixbuf-2.0 pango-1.0 gobject-2.0</span></strong> <strong><span class="style1">gmodule-2.0 glib-2.0</span></strong> (system - Windows/UNIX)
 <em>cdgdiplus*</em> -&gt; cd
           -&gt; <strong><span class="style4">gdiplus</span></strong> (system - Windows)
@@ -135,6 +135,8 @@ distribution. So if you are going to build from source, then use the <strong>Lua
 source package also, not the <strong>Lua.org</strong> original source package. 
 If you like to use another location for the Lua files define LUA_SUFFIX, LUA_INC, 
 LUA_LIB and LUA_BIN before using Tecmake.</p>
+<p>To build the driver with GTK 3.x support define USE_GTK3=Yes before calling 
+make in the &quot;cd/src&quot; folder. Just the main library must be rebuilt. </p>
 <p>In Ubuntu you will need to install the following packages:</p>
 <pre>libx11-dev
 libxpm-dev

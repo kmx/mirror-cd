@@ -28,6 +28,11 @@
 	<b>Image</b>, <b>EMF</b>, <b>Printer</b> and <b>Double Buffer</b> were implemented.</p>
 <p>It can be used as the context plus driver of the GDI, GDK and X-Win based 
 drivers. But its primary focus is the GDK base driver.</p>
+<p>IMPORTANT: when using GTK 3.x the Cairo driver became the main driver (not a 
+context plus driver anymore), because there is no support for drawing primitives 
+in GDK since GTK 3.0. To build the driver with GTK 3.x support define 
+USE_GTK3=Yes before calling make in the &quot;iup/src&quot; folder. Just the main library 
+must be rebuilt. </p>
 <p>The main motivation for the use of Cairo was transparency for all the 
 primitives. Beyond that we got other features like anti-aliasing, gradient 
 filling, transformations and other back-ends (support to rendering: PDF, PS, SVG and 

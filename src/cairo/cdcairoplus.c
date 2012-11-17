@@ -10,7 +10,7 @@
 #include <stdlib.h>
 #include <memory.h>
 
-/* This file is not used for GTK 3, 
+/* For GTK 3, only provides dummy functions,
    because Cairo is the main drawing toolkit on it. */
 
 void cdFinishContextPlus(void)
@@ -19,6 +19,7 @@ void cdFinishContextPlus(void)
 
 void cdInitContextPlus(void)
 {
+#ifndef USE_GTK3
   cdContext* ctx_list[CD_CTXPLUS_COUNT];
   memset(ctx_list, 0, sizeof(ctx_list));
 
@@ -33,4 +34,5 @@ void cdInitContextPlus(void)
 #endif
 
   cdInitContextPlusList(ctx_list);
+#endif
 }

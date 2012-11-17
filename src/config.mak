@@ -71,7 +71,7 @@ ifdef USE_GDK
   ifdef USE_GTK3
     DEFINES += GDK_DISABLE_DEPRECATED GSEAL_ENABLE USE_GTK3
     # Do not include old GDK driver
-    SRC += gdk/cdgdkclp.c 
+    SRC += gdk/cdgdkclp.c cairo/cdcairoplus.c
   else
     SRC += $(SRCGDK) cairo/cdcairoplus.c drv/cd0prn.c drv/cd0emf.c
   endif
