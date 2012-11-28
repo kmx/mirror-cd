@@ -95,15 +95,17 @@ ifdef USE_GDK
       LIBS += fontconfig
     endif
   endif
-else ifdef USE_X11
-  SRC += $(SRCX11) $(SRCNULL)
-  LIBS += freetype
-else
-  SRC += $(SRCWIN32)
-  ifneq ($(findstring cygw, $(TEC_UNAME)), )
-    LIBS += freetype-6 fontconfig
+else 
+  ifdef USE_X11
+    SRC += $(SRCX11) $(SRCNULL)
+    LIBS += freetype
   else
-    LIBS += freetype6
+    SRC += $(SRCWIN32)
+    ifneq ($(findstring cygw, $(TEC_UNAME)), )
+      LIBS += freetype-6 fontconfig
+    else
+      LIBS += freetype6
+    endif
   endif
 endif
 
