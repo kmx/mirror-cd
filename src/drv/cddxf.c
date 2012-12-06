@@ -33,6 +33,7 @@ struct _cdCtxCanvas
 
   FILE *file;        /* pointer to file                        */
   int layer;         /* layer                                  */
+  int fill;          /* Use new DXF version with fill support  */
 
   int tf;            /* text font                              */
   double th;         /* text height (in points)                */
@@ -112,7 +113,6 @@ static void wnamfont (cdCtxCanvas *ctxcanvas, int t)   /* write name of a font *
   fprintf (ctxcanvas->file, "%s\n", font[t]);
 }
 
-
 static void writepoly (cdCtxCanvas *ctxcanvas, cdPoint *poly, int nv) /* write polygon */
 {
   int i;
@@ -130,9 +130,18 @@ static void writepoly (cdCtxCanvas *ctxcanvas, cdPoint *poly, int nv) /* write p
   fprintf ( ctxcanvas->file, "66\n" );
   fprintf ( ctxcanvas->file, "1\n" );
   fprintf ( ctxcanvas->file, "40\n" );
-  fprintf ( ctxcanvas->file, "%f\n", ctxcanvas->lw/ctxcanvas->canvas->xres );
+  fprintf ( ctxcanvas->file, "%f\n", ctxcanvas->lw);
   fprintf ( ctxcanvas->file, "41\n" );           /* entire polygon line width */
-  fprintf ( ctxcanvas->file, "%f\n", ctxcanvas->lw/ctxcanvas->canvas->xres );
+  fprintf ( ctxcanvas->file, "%f\n", ctxcanvas->lw);
+
+  /* TODO: comentar */
+  fprintf ( ctxcanvas->file, "10\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+  fprintf ( ctxcanvas->file, "20\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+  fprintf ( ctxcanvas->file, "30\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+
   for ( i=0; i<nv; i++ )
   {
     fprintf ( ctxcanvas->file, "0\n" );
@@ -140,10 +149,13 @@ static void writepoly (cdCtxCanvas *ctxcanvas, cdPoint *poly, int nv) /* write p
     fprintf ( ctxcanvas->file, "8\n" );
     fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer); /* current layer */
     fprintf ( ctxcanvas->file, "10\n" );
-    fprintf ( ctxcanvas->file, "%f\n", poly[i].x/ctxcanvas->canvas->xres );
+    fprintf ( ctxcanvas->file, "%f\n", (float)poly[i].x);
     fprintf ( ctxcanvas->file, "20\n" );
-    fprintf ( ctxcanvas->file, "%f\n", poly[i].y/ctxcanvas->canvas->xres );
+    fprintf ( ctxcanvas->file, "%f\n", (float)poly[i].y);
+    fprintf ( ctxcanvas->file, "30\n" );
+    fprintf ( ctxcanvas->file, "0.0\n" );
   }
+
   fprintf ( ctxcanvas->file, "0\n" );
   fprintf ( ctxcanvas->file, "SEQEND\n" );
 }
@@ -158,16 +170,24 @@ static void writepolyf (cdCtxCanvas *ctxcanvas, cdfPoint *poly, int nv) /* write
   fprintf ( ctxcanvas->file, "8\n" );    /* GC: current layer name */
   fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer);
   fprintf ( ctxcanvas->file, "6\n" );    /* GC: line type */
-  wnamline( ctxcanvas, ctxcanvas->lt );                    
+  wnamline( ctxcanvas, ctxcanvas->lt );
   fprintf ( ctxcanvas->file, "62\n" );   /* GC: color number */
   fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->fgcolor );
 
   fprintf ( ctxcanvas->file, "66\n" );   /* GC: vertices-follow flag */
   fprintf ( ctxcanvas->file, "1\n" );
   fprintf ( ctxcanvas->file, "40\n" );   /* GC: default start width */
-  fprintf ( ctxcanvas->file, "%f\n", ctxcanvas->lw/ctxcanvas->canvas->xres );
+  fprintf ( ctxcanvas->file, "%f\n", ctxcanvas->lw);
   fprintf ( ctxcanvas->file, "41\n" );   /* GC: default end width */
-  fprintf ( ctxcanvas->file, "%f\n", ctxcanvas->lw/ctxcanvas->canvas->xres );
+  fprintf ( ctxcanvas->file, "%f\n", ctxcanvas->lw);
+
+  /* TODO: comentar */
+  fprintf ( ctxcanvas->file, "10\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+  fprintf ( ctxcanvas->file, "20\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+  fprintf ( ctxcanvas->file, "30\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
 
   for ( i=0; i<nv; i++ )
   {
@@ -176,13 +196,15 @@ static void writepolyf (cdCtxCanvas *ctxcanvas, cdfPoint *poly, int nv) /* write
     fprintf ( ctxcanvas->file, "8\n" );  /* GC: current layer name */
     fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer);
     fprintf ( ctxcanvas->file, "10\n" ); /* GC: X value */
-    fprintf ( ctxcanvas->file, "%f\n", poly[i].x/ctxcanvas->canvas->xres );
+    fprintf ( ctxcanvas->file, "%f\n", poly[i].x);
     fprintf ( ctxcanvas->file, "20\n" ); /* GC: Y value */
-    fprintf ( ctxcanvas->file, "%f\n", poly[i].y/ctxcanvas->canvas->xres );
+    fprintf ( ctxcanvas->file, "%f\n", poly[i].y);
+    fprintf ( ctxcanvas->file, "30\n" );
+    fprintf ( ctxcanvas->file, "0.0\n" );
   }
 
-  /* The "vertices follow" flag is always 1, indicating that a 
-     series of Vertex entities is expected to follow the 
+  /* The "vertices follow" flag is always 1, indicating that a
+     series of Vertex entities is expected to follow the
      Polyline, terminated by a sequence end (Seqend) entity. */
   fprintf ( ctxcanvas->file, "0\n" );    /* GC: entity type */
   fprintf ( ctxcanvas->file, "SEQEND\n" );
@@ -190,9 +212,6 @@ static void writepolyf (cdCtxCanvas *ctxcanvas, cdfPoint *poly, int nv) /* write
 
 static void writehatch (cdCtxCanvas *ctxcanvas, cdPoint *poly, int nv) /* write polygon */
 {
-#ifndef ACAD14
-  writepoly(ctxcanvas, poly, nv);
-#else
   /* This code only work with ACADVER=AC1014  Meaning AutoCAD Release 14 */
   /* But the current generated DXF seems to be incompatible with this version,
      something needs to be fixed. */
@@ -203,10 +222,11 @@ static void writehatch (cdCtxCanvas *ctxcanvas, cdPoint *poly, int nv) /* write 
 
   fprintf ( ctxcanvas->file, "8\n" );    /* GC: current layer name */
   fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer);
+
   fprintf ( ctxcanvas->file, "62\n" );   /* GC: color number */
   fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->fgcolor );
 
-  fprintf ( ctxcanvas->file, "10\n" );   /* GC: X value */
+  fprintf ( ctxcanvas->file, "10\n" );   /* GC: Elevation point (in OCS) X value */
   fprintf ( ctxcanvas->file, "0.0\n" );
   fprintf ( ctxcanvas->file, "20\n" );   /* GC: Y value */
   fprintf ( ctxcanvas->file, "0.0\n" );
@@ -220,53 +240,57 @@ static void writehatch (cdCtxCanvas *ctxcanvas, cdPoint *poly, int nv) /* write 
   fprintf ( ctxcanvas->file, "230\n" );  /* GC: Z extrusion direction */
   fprintf ( ctxcanvas->file, "1.0\n" );
 
-  fprintf ( ctxcanvas->file, "2\n" );    /* GC: hatch pattern name */
+  fprintf ( ctxcanvas->file, "2\n" );   /* GC: hatch pattern name */
   fprintf ( ctxcanvas->file, "SOLID\n" );
-  fprintf ( ctxcanvas->file, "70\n" );   /* GC: solid fill flag */
-  fprintf ( ctxcanvas->file, "1\n" );    /* solid fill */
-  fprintf ( ctxcanvas->file, "71\n" );   /* GC: Associativity flag */
-  fprintf ( ctxcanvas->file, "0\n" );    /* non-associative */
-  fprintf ( ctxcanvas->file, "91\n" );   /* GC: number of boundary paths */
+
+  fprintf ( ctxcanvas->file, "70\n" );  /* GC: Solid fill flag (solid fill = 1; pattern fill = 0) */
+  fprintf ( ctxcanvas->file, "1\n" );   /* solid fill */
+
+  fprintf ( ctxcanvas->file, "71\n" );  /* GC: Associativity flag (associative = 1; non-associative = 0) */
+  fprintf ( ctxcanvas->file, "0\n" );   /* non-associative */
+
+  fprintf ( ctxcanvas->file, "91\n" );  /* GC: number of boundary paths */
   fprintf ( ctxcanvas->file, "1\n" );
 
-    /* Boundary Path Data */
-    fprintf ( ctxcanvas->file, "92\n" );   /* GC: boundary path type */
-    fprintf ( ctxcanvas->file, "2\n" );    /* polyline */
+  fprintf ( ctxcanvas->file, "92\n" );  /* Boundary path type flag (bit coded): */
+  fprintf ( ctxcanvas->file, "2\n" );   /* 0 = Default; 1 = External; 2 = Polyline */
+                                        /* 4 = Derived; 8 = Textbox; 16 = Outermost */
 
-      /* Polyline boundary type data */
-      fprintf ( ctxcanvas->file, "72\n" );   /* GC: has bulge flag */
-      fprintf ( ctxcanvas->file, "1\n" );    
-      fprintf ( ctxcanvas->file, "73\n" );   /* GC: is closed */
-      fprintf ( ctxcanvas->file, "1\n" );
-      fprintf ( ctxcanvas->file, "93\n" );   /* GC: number of polyline vertices */
-      fprintf ( ctxcanvas->file, "%d\n", nv );
-      for ( i=0; i<nv; i++ )
-      {
-        fprintf ( ctxcanvas->file, "10\n" ); /* GC: X point value */
-        fprintf ( ctxcanvas->file, "%f\n", poly[i].x/ctxcanvas->canvas->xres );
-        fprintf ( ctxcanvas->file, "20\n" ); /* GC: Y point value */
-        fprintf ( ctxcanvas->file, "%f\n", poly[i].y/ctxcanvas->canvas->xres );
-      }
+  fprintf ( ctxcanvas->file, "72\n" );  /* Edge type (only if boundary is not a polyline): */
+  fprintf ( ctxcanvas->file, "1\n" );   /* 1 = Line; 2 = Circular arc; 3 = Elliptic arc; 4 = Spline */
 
-    fprintf ( ctxcanvas->file, "97\n" );  /* GC: number of source boundary objects */
-    fprintf ( ctxcanvas->file, "0\n" );
+  fprintf ( ctxcanvas->file, "73\n" );  /* Is closed flag */
+  fprintf ( ctxcanvas->file, "1\n" );
 
-  fprintf ( ctxcanvas->file, "75\n" );  /* GC: Hatch style */
-  fprintf ( ctxcanvas->file, "0\n" );   /* normal style */
-  fprintf ( ctxcanvas->file, "76\n" );  /* GC: hatch pattern type */
-  fprintf ( ctxcanvas->file, "1\n" );   /* predefined */
-#endif
+  fprintf ( ctxcanvas->file, "93\n" );     /* Number of edges in this boundary path */
+  fprintf ( ctxcanvas->file, "%d\n", nv ); /* (only if boundary is not a polyline) */
+
+  for ( i=0; i<nv; i++ )
+  {
+    fprintf ( ctxcanvas->file, "10\n" );
+    fprintf ( ctxcanvas->file, "%f\n", poly[i].x);
+    fprintf ( ctxcanvas->file, "20\n" );
+    fprintf ( ctxcanvas->file, "%f\n", poly[i].y);
+  }
+
+  fprintf ( ctxcanvas->file, "97\n" );  /* Number of source boundary objects */
+  fprintf ( ctxcanvas->file, "0\n" );
+
+  fprintf ( ctxcanvas->file, "75\n" );  /* Hatch style: */
+  fprintf ( ctxcanvas->file, "0\n" );   /* 0 = Hatch "odd parity" area (Normal style) */
+                                        /* 1 = Hatch outermost area only (Outer style) */
+                                        /* 2 = Hatch through entire area (Ignore style) */
+
+  fprintf ( ctxcanvas->file, "76\n" );  /* Hatch pattern type: */
+  fprintf ( ctxcanvas->file, "1\n" );   /* 0 = User-defined; 1 = Predefined; 2 = Custom */
 }
 
 static void writehatchf (cdCtxCanvas *ctxcanvas, cdfPoint *poly, int nv) /* write polygon */
 {
-#ifndef ACAD14
-  writepolyf(ctxcanvas, poly, nv);
-#else
   int i;
-
   fprintf ( ctxcanvas->file, "0\n" );
   fprintf ( ctxcanvas->file, "HATCH\n" );
+
   fprintf ( ctxcanvas->file, "8\n" );
   fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer); /* current layer */
   fprintf ( ctxcanvas->file, "62\n" );
@@ -304,20 +328,21 @@ static void writehatchf (cdCtxCanvas *ctxcanvas, cdfPoint *poly, int nv) /* writ
   fprintf ( ctxcanvas->file, "1\n" );
   fprintf ( ctxcanvas->file, "93\n" );           /* entire polygon line width */
   fprintf ( ctxcanvas->file, "%d\n", nv );
+
   for ( i=0; i<nv; i++ )
   {
     fprintf ( ctxcanvas->file, "10\n" );
-    fprintf ( ctxcanvas->file, "%f\n", poly[i].x/ctxcanvas->canvas->xres );
+    fprintf ( ctxcanvas->file, "%f\n", poly[i].x);
     fprintf ( ctxcanvas->file, "20\n" );
-    fprintf ( ctxcanvas->file, "%f\n", poly[i].y/ctxcanvas->canvas->xres );
+    fprintf ( ctxcanvas->file, "%f\n", poly[i].y);
   }
+
   fprintf ( ctxcanvas->file, "97\n" );
   fprintf ( ctxcanvas->file, "0\n" );
   fprintf ( ctxcanvas->file, "75\n" );
   fprintf ( ctxcanvas->file, "0\n" );
   fprintf ( ctxcanvas->file, "76\n" );
   fprintf ( ctxcanvas->file, "1\n" );
-#endif
 }
 
 static void deflines (cdCtxCanvas *ctxcanvas)    /* define lines */
@@ -479,7 +504,7 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
     n++;
   }
 
-  if( mode == CD_FILL )
+  if( mode == CD_FILL && ctxcanvas->fill)
     writehatch (ctxcanvas, poly, n);               /* write fill area */
   else
     writepoly (ctxcanvas, poly, n);                /* write polygon */
@@ -527,7 +552,11 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
   rect[3].y = ymin;
   rect[4].x = xmin;
   rect[4].y = ymin;
-  writehatch (ctxcanvas, rect, 5);               /* write fill area */
+  
+  if(ctxcanvas->fill)
+    writehatch (ctxcanvas, rect, 5);               /* write fill area */
+  else
+    writepoly (ctxcanvas, rect, 5);                /* write polygon */
 }
 
 static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
@@ -550,7 +579,7 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
     n++;
   }
 
-  if( mode == CD_FILL )
+  if( mode == CD_FILL && ctxcanvas->fill)
     writehatchf (ctxcanvas, poly, n);               /* write fill area */
   else
     writepolyf (ctxcanvas, poly, n);                /* write polygon */
@@ -598,7 +627,11 @@ static void cdfbox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin
   rect[3].y = ymin;
   rect[4].x = xmin;
   rect[4].y = ymin;
-  writehatchf (ctxcanvas, rect, 5);               /* write fill area */
+
+  if(ctxcanvas->fill)
+    writehatchf (ctxcanvas, rect, 5);               /* write fill area */
+  else
+    writepolyf (ctxcanvas, rect, 5);                /* write polygon */
 }
 
 /*--------------------------------------------------------------------------*/
@@ -616,7 +649,7 @@ static double calc_radius (double a, double b, double t)
 /*--------------------------------------------------------------------------*/
 static double calc_bulge (double a, double b, double t1, double t2)
 {
-  cdfPoint p1, p2;          /* initial and ending arc points                 */
+  cdfPoint p1, p2;        /* initial and ending arc points                 */
   double r;               /* radius most resembling arc at angle (t1+t2)/2 */
   double theta;           /* angle of circular arc segment                 */
   double sin_theta;       /* sine of theta                                 */
@@ -640,25 +673,26 @@ static double calc_bulge (double a, double b, double t1, double t2)
   return tan(theta/4);
 }
 
-static void writevertex (cdCtxCanvas *ctxcanvas, int xc, int yc, double a, double b, double t, double bulge)
+static void writevertex (cdCtxCanvas *ctxcanvas, double xc, double yc, double a, double b, double t, double bulge)
 {
-  cdfPoint p;
-  p.x = (xc + a*cos(t))/ctxcanvas->canvas->xres;
-  p.y = (yc + b*sin(t))/ctxcanvas->canvas->xres;
+  double x = xc + a*cos(t);
+  double y = yc + b*sin(t);
 
   fprintf ( ctxcanvas->file, "0\n" );
   fprintf ( ctxcanvas->file, "VERTEX\n" );
   fprintf ( ctxcanvas->file, "8\n" );
   fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer);      /* current layer */
   fprintf ( ctxcanvas->file, "10\n" );
-  fprintf ( ctxcanvas->file, "%f\n", p.x );
+  fprintf ( ctxcanvas->file, "%f\n", x );
   fprintf ( ctxcanvas->file, "20\n" );               /* vertex coordinates     */
-  fprintf ( ctxcanvas->file, "%f\n", p.y );
+  fprintf ( ctxcanvas->file, "%f\n", y );
+  fprintf ( ctxcanvas->file, "30\n" );               /* vertex coordinates     */
+  fprintf ( ctxcanvas->file, "0.0\n" );
   fprintf ( ctxcanvas->file, "42\n" );               /* bulge from this vertex */
   fprintf ( ctxcanvas->file, "%f\n", bulge );         /* to the next one        */
 }
 
-static void cdarc (cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
+static void cdfarc (cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
 {
   double bulge;        /* bulge is the tangent of 1/4 the angle for a given */
                        /* circle arc segment (a bulge of 1 is a semicircle) */
@@ -672,8 +706,8 @@ static void cdarc (cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double 
   int nseg;            /* number of arc segments                */
   int i;
 
-  a         = w/2;
-  b         = h/2;
+  a         = w/2.0;
+  b         = h/2.0;
   t1        = a1*CD_DEG2RAD;                /* a1 in radians */
   t2        = a2*CD_DEG2RAD;                /* a2 in radians */
   diff      = fabs(a2 - a1);
@@ -698,6 +732,13 @@ static void cdarc (cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double 
   fprintf ( ctxcanvas->file, "41\n" );          /* entire arc line width */
   fprintf ( ctxcanvas->file, "%f\n", ctxcanvas->lw );
 
+  fprintf ( ctxcanvas->file, "10\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+  fprintf ( ctxcanvas->file, "20\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+  fprintf ( ctxcanvas->file, "30\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+
   for (i=0, t=t1; i<nseg; i++, t+=seg_angle)
   {                                            /* calculate bulge between t */
     bulge = calc_bulge (a, b, t, t+seg_angle); /* and t+seg_angle and write */
@@ -710,7 +751,13 @@ static void cdarc (cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double 
   fprintf ( ctxcanvas->file, "SEQEND\n" );
 }
 
-static void cdsector (cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
+static void cdarc (cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
+{
+  /* Use double precision to export */
+  cdfarc(ctxcanvas, (double)xc, (double)yc, (double)w, (double)h, a1, a2);
+}
+
+static void cdfsector (cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
 {
   double bulge;        /* bulge is the tangent of 1/4 the angle for a given */
                        /* circle arc segment (a bulge of 1 is a semicircle) */
@@ -750,6 +797,13 @@ static void cdsector (cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, doub
   fprintf ( ctxcanvas->file, "41\n" );          /* entire arc line width */
   fprintf ( ctxcanvas->file, "%f\n", ctxcanvas->lw );
 
+  fprintf ( ctxcanvas->file, "10\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+  fprintf ( ctxcanvas->file, "20\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+  fprintf ( ctxcanvas->file, "30\n" );
+  fprintf ( ctxcanvas->file, "0.0\n" );
+
   if ((a2-a1) != 360)
     writevertex (ctxcanvas, xc, yc, 0, 0, 0, 0);    /* center */
 
@@ -768,7 +822,13 @@ static void cdsector (cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, doub
   fprintf ( ctxcanvas->file, "SEQEND\n" );
 }
 
-static void cdtext (cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
+static void cdsector (cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
+{
+  /* Use double precision to export */
+  cdfsector(ctxcanvas, (double)xc, (double)yc, (double)w, (double)h, a1, a2);
+}
+
+static void cdftext (cdCtxCanvas *ctxcanvas, double x, double y, const char *s, int len)
 {
   fprintf ( ctxcanvas->file, "0\n" );
   fprintf ( ctxcanvas->file, "TEXT\n" );
@@ -777,15 +837,17 @@ static void cdtext (cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len
   fprintf ( ctxcanvas->file, "7\n" );
   wnamfont( ctxcanvas, ctxcanvas->tf );                      /* current font  */
   fprintf ( ctxcanvas->file, "62\n" );
-  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->fgcolor );         /* color            */
+  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->fgcolor );   /* color            */
+
   fprintf ( ctxcanvas->file, "10\n" );
-  fprintf ( ctxcanvas->file, "%f\n", x/ctxcanvas->canvas->xres );    /* current position */
+  fprintf ( ctxcanvas->file, "%f\n", x);    /* current position */
   fprintf ( ctxcanvas->file, "20\n" );
-  fprintf ( ctxcanvas->file, "%f\n", y/ctxcanvas->canvas->xres );
+  fprintf ( ctxcanvas->file, "%f\n", y);
   fprintf ( ctxcanvas->file, "11\n" );
-  fprintf ( ctxcanvas->file, "%f\n", x/ctxcanvas->canvas->xres );    /* alignment point  */
+  fprintf ( ctxcanvas->file, "%f\n", x);    /* alignment point  */
   fprintf ( ctxcanvas->file, "21\n" );
-  fprintf ( ctxcanvas->file, "%f\n", y/ctxcanvas->canvas->xres );
+  fprintf ( ctxcanvas->file, "%f\n", y);
+  
   fprintf ( ctxcanvas->file, "40\n" );
   fprintf ( ctxcanvas->file, "%f\n",  ctxcanvas->th );    /* text height */
   fprintf ( ctxcanvas->file, "50\n" );
@@ -803,6 +865,10 @@ static void cdtext (cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len
   free((char*)s);
 }
 
+static void cdtext (cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
+{
+  cdftext (ctxcanvas, (double)x, (double)y, s, len);
+}
 
 /*==========================================================================*/
 /* Attributes                                                               */
@@ -834,7 +900,7 @@ static int cdlinestyle (cdCtxCanvas *ctxcanvas, int style)
 
 static int cdlinewidth (cdCtxCanvas *ctxcanvas, int width)
 {
-  ctxcanvas->lw = width/ctxcanvas->canvas->xres;
+  ctxcanvas->lw = ( width <= 1 ? 0.0 : width );
   return width;
 }
 
@@ -1188,9 +1254,9 @@ static void cdpixel (cdCtxCanvas *ctxcanvas, int x, int y, long int color)
   fprintf ( ctxcanvas->file, "62\n" );
   fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->fgcolor );  /* color */
   fprintf ( ctxcanvas->file, "10\n" );
-  fprintf ( ctxcanvas->file, "%f\n", x/ctxcanvas->canvas->xres );         /* position */
-  fprintf ( ctxcanvas->file, " 20\n" );
-  fprintf ( ctxcanvas->file, "%f\n", y/ctxcanvas->canvas->xres );
+  fprintf ( ctxcanvas->file, "%f\n", (float)x);         /* position */
+  fprintf ( ctxcanvas->file, "20\n" );
+  fprintf ( ctxcanvas->file, "%f\n", (float)y);
   ctxcanvas->fgcolor = oldcolor;                        /* retrieve old fgcolor */
 }
 
@@ -1204,6 +1270,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   double res = 3.78;
   double w_mm = INT_MAX*res, 
          h_mm = INT_MAX*res;
+  double xmin = 0, xmax = 0, ymin = 0, ymax = 0;
 
   strdata += cdGetFileName(strdata, filename);
   if (filename[0] == 0)
@@ -1232,7 +1299,21 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   canvas->xres = res;
   canvas->yres = res;
 
-  canvas->bpp = 8;      /* DXF has indexed colors */
+  /* Get Additional parameters */
+  if(strstr(strdata, "-fill") != NULL)
+    ctxcanvas->fill = 1;
+
+  strdata = strstr(strdata, "-limits");
+  if (strdata)
+  {
+    strdata += strlen("-limits ");
+    sscanf(strdata, "%lg %lg %lg %lg", &xmin, &ymin, &xmax, &ymax);
+  }
+
+  if (xmin==xmax) xmax = canvas->w;
+  if (ymin==ymax) ymax = canvas->h;
+
+  canvas->bpp = 8;
 
   /* internal defaults */
   ctxcanvas->layer = 0;            /* reset layer    */
@@ -1243,43 +1324,57 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   ctxcanvas->tha = 0;              /* text horizontal alignment (0 is left)   */
   ctxcanvas->fgcolor   = 7;        /* foreground AutoCAD palette color        */
 
-  /* header */
+  /* Initial HEADER Section */
   fprintf (ctxcanvas->file, "0\n");
   fprintf (ctxcanvas->file, "SECTION\n");  /* header maker */
   fprintf (ctxcanvas->file, "2\n");
   fprintf (ctxcanvas->file, "HEADER\n");
   fprintf (ctxcanvas->file, "9\n");
-  fprintf (ctxcanvas->file, "$ACADVER\n");
-  fprintf (ctxcanvas->file, "1\n");
-  fprintf (ctxcanvas->file, "AC1006\n"); /* AutoCAD R10 */
+  fprintf (ctxcanvas->file, "$ACADVER\n"); /* The AutoCAD drawing database version number: */
+  fprintf (ctxcanvas->file, "1\n");        
+  if(ctxcanvas->fill)
+    fprintf (ctxcanvas->file, "AC1021\n"); /* AC1021 = AutoCAD 2007 */
+  else
+    fprintf (ctxcanvas->file, "AC1006\n"); /* AC1006 = R10 */
+                                           /* AC1009 = R11 and R12 */
+                                           /* AC1012 = R13 */
+                                           /* AC1014 = R14 */
+                                           /* AC1015 = AutoCAD 2000 */
+                                           /* AC1018 = AutoCAD 2004 */
+                                           /* AC1024 = AutoCAD 2010 */
+                                           /* AC1027 = AutoCAD 2013 */
+
   fprintf (ctxcanvas->file, "9\n");
   fprintf (ctxcanvas->file, "$LIMCHECK\n");
   fprintf (ctxcanvas->file, "70\n");
   fprintf (ctxcanvas->file, "1\n");
+
   fprintf (ctxcanvas->file, "9\n");
   fprintf (ctxcanvas->file, "$LIMMIN\n");
   fprintf (ctxcanvas->file, "10\n");
-  fprintf (ctxcanvas->file, "0\n");
+  fprintf (ctxcanvas->file, "%f\n", xmin);
   fprintf (ctxcanvas->file, "20\n");
-  fprintf (ctxcanvas->file, "0\n");
+  fprintf (ctxcanvas->file, "%f\n", ymin);
   fprintf (ctxcanvas->file, "9\n");
   fprintf (ctxcanvas->file, "$LIMMAX\n");
   fprintf (ctxcanvas->file, "10\n");
-  fprintf (ctxcanvas->file, "%f\n", ctxcanvas->canvas->w_mm);
+  fprintf (ctxcanvas->file, "%f\n", xmax);
   fprintf (ctxcanvas->file, "20\n");
-  fprintf (ctxcanvas->file, "%f\n", ctxcanvas->canvas->h_mm);
+  fprintf (ctxcanvas->file, "%f\n", ymax);
+
   fprintf (ctxcanvas->file, "9\n");
   fprintf (ctxcanvas->file, "$EXTMIN\n");
   fprintf (ctxcanvas->file, "10\n");
-  fprintf (ctxcanvas->file, "0\n");
+  fprintf (ctxcanvas->file, "%f\n", xmin);
   fprintf (ctxcanvas->file, "20\n");
-  fprintf (ctxcanvas->file, "0\n");
+  fprintf (ctxcanvas->file, "%f\n", ymin);
   fprintf (ctxcanvas->file, "9\n");
   fprintf (ctxcanvas->file, "$EXTMAX\n");
   fprintf (ctxcanvas->file, "10\n");
-  fprintf (ctxcanvas->file, "%f\n", ctxcanvas->canvas->w_mm);
+  fprintf (ctxcanvas->file, "%f\n", xmax);
   fprintf (ctxcanvas->file, "20\n");
-  fprintf (ctxcanvas->file, "%f\n", ctxcanvas->canvas->h_mm);
+  fprintf (ctxcanvas->file, "%f\n", ymax);
+
   fprintf (ctxcanvas->file, "9\n");
   fprintf (ctxcanvas->file, "$CLAYER\n");
   fprintf (ctxcanvas->file, "8\n");
@@ -1305,8 +1400,10 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   fprintf (ctxcanvas->file, "7\n");
   fprintf (ctxcanvas->file, "STANDARD\n");
   fprintf (ctxcanvas->file, "0\n");
-  fprintf (ctxcanvas->file, "ENDSEC\n");
-  fprintf (ctxcanvas->file, "0\n");
+  fprintf (ctxcanvas->file, "ENDSEC\n");  /* End HEADER section */
+
+  /* Initial TABLES Section */
+  fprintf (ctxcanvas->file, "0\n");       /* Begin TABLES section */
   fprintf (ctxcanvas->file, "SECTION\n");
   fprintf (ctxcanvas->file, "2\n");
   fprintf (ctxcanvas->file, "TABLES\n");
@@ -1315,7 +1412,18 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   deffonts (ctxcanvas);      /* define fonts */
 
   fprintf (ctxcanvas->file, "0\n");
-  fprintf (ctxcanvas->file, "ENDSEC\n");
+  fprintf (ctxcanvas->file, "ENDSEC\n");  /* End TABLES section */
+
+  /* TODO: verificar se tem na versão antiga */
+  /* Initial BLOCKS Section */
+  fprintf (ctxcanvas->file, "0\n");       /* Begin BLOCKS section */
+  fprintf (ctxcanvas->file, "SECTION\n");
+  fprintf (ctxcanvas->file, "2\n");
+  fprintf (ctxcanvas->file, "BLOCKS\n");
+  fprintf (ctxcanvas->file, "0\n");
+  fprintf (ctxcanvas->file, "ENDSEC\n");  /* End BLOCKS section */
+
+  /* Initial ENTITIES Section */
   fprintf (ctxcanvas->file, "0\n");
   fprintf (ctxcanvas->file, "SECTION\n");
   fprintf (ctxcanvas->file, "2\n");
@@ -1335,8 +1443,11 @@ static void cdinittable(cdCanvas* canvas)
   canvas->cxFRect = cdfrect;
   canvas->cxFBox = cdfbox;
   canvas->cxArc = cdarc;
+  canvas->cxFArc = cdfarc;
   canvas->cxSector = cdsector;
+  canvas->cxFSector = cdfsector;
   canvas->cxText = cdtext;
+  canvas->cxFText = cdftext;
   canvas->cxGetFontDim = cdgetfontdim;
   canvas->cxGetTextSize = cdgettextsize;
 
