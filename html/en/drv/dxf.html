@@ -24,7 +24,7 @@
   opens the file and writes its header. Then, other functions in the CD library can be called as usual. The
   <font face="Courier">Data</font> parameter string has the following format:</p>
   
-    <pre><em>&quot;filename [widthxheight] [resolution]&quot;    </em>or in C <em>&quot;<strong><tt>%s %gx%g %g</tt></strong>&quot;</em></pre>
+    <pre><em>&quot;filename [widthxheight] [resolution] [-fill] [-limits xmin ymin xmax ymax]&quot;    </em>or in C <em>&quot;<strong><tt>%s %gx%g %g %s %s %g %g %g %g</tt></strong>&quot;</em></pre>
   
   <p>Only the parameter <font face="Courier">filename</font> is required. The filename must be inside double quotes (&quot;) 
   if it has spaces.<font face="Courier"> Width</font> and <font face="Courier">height</font> are provided in millimeters 
@@ -38,8 +38,14 @@
   <a href="../func/init.html#cdKillCanvas"><font face="Courier"><strong>
   cdKillCanvas</strong></font></a> is required to close the DXF file properly.</p>
   <p><b>Images </b>- The DXF format does not support client or server images and works with an indexed-color format 
-  (color quality is limited to 256 fixed colors). </p>
+  (color quality is limited to 256 fixed colors).</p>
   <p><strong>Precision of Coordinates -</strong> The primitives use coordinates in real numbers.</p>
+<p><strong>Fill Area</strong> - Only AutoCAD version ?? added support for filled 
+primitives. To use that support specify the &quot;-fill&quot; parameter. But...&nbsp; 
+(since 5.7)</p>
+<p><strong>Limits</strong> - the default limits are 0, 0, width, height, but a 
+custom limits can be specified using the &quot;-limits&quot; parameter followed by the 
+limits coodinates.&nbsp; (since 5.7)</p>
   <p><strong>Layers -</strong> The format can work with several layers. It is necessary to draw the primitives of layer 
   '0' first, then layer '1' and so on. Use functions
   <a href="../func/control.html#cdFlush"><font face="Courier"><strong>Flush</strong></font></a> 
@@ -74,7 +80,7 @@
   <li><strong><font face="Courier"><a href="../func/filled.html#cdChord">Chord</a></font></strong>: 
   does nothing.</li>
   <li>Floating point primitives are supported.</li>
-	<li>filled primitives are NOT supported.</li>
+	<li>filled primitives are supported only if parameter &quot;-fill&quot; is used.</li>
 </ul>
 <h4>Attributes</h4>
 <ul>
