@@ -1,0 +1,284 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Source Files\FTFont">
+      <UniqueIdentifier>{e121db13-90f0-4afc-9636-be70a23cd6c3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\FTGlyph">
+      <UniqueIdentifier>{c73e0deb-b0e9-4483-a0db-63e633c1459f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\FTLayout">
+      <UniqueIdentifier>{6ec9d728-5780-4f59-bce1-3a354e3cf756}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Header Files\FTFont">
+      <UniqueIdentifier>{54d580d9-d460-462f-9a0a-ee465028f811}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\FTGlyph">
+      <UniqueIdentifier>{692b8552-206d-4d66-946a-a70cd624f0fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\FTGL">
+      <UniqueIdentifier>{9cf7c805-4b95-4865-bc55-7080c7fc7ce7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\FTLayout">
+      <UniqueIdentifier>{2aeac3a4-0971-4f58-aec1-1b9582ad2417}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\ftgl\FTBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTCharmap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTContour.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTFace.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTGlyphContainer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTLibrary.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTPoint.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTSize.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTVectoriser.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTFont\FTBitmapFont.cpp">
+      <Filter>Source Files\FTFont</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTFont\FTBufferFont.cpp">
+      <Filter>Source Files\FTFont</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTFont\FTExtrudeFont.cpp">
+      <Filter>Source Files\FTFont</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTFont\FTFont.cpp">
+      <Filter>Source Files\FTFont</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTFont\FTFontGlue.cpp">
+      <Filter>Source Files\FTFont</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTFont\FTOutlineFont.cpp">
+      <Filter>Source Files\FTFont</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTFont\FTPixmapFont.cpp">
+      <Filter>Source Files\FTFont</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTFont\FTPolygonFont.cpp">
+      <Filter>Source Files\FTFont</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTFont\FTTextureFont.cpp">
+      <Filter>Source Files\FTFont</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTGlyph\FTBitmapGlyph.cpp">
+      <Filter>Source Files\FTGlyph</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTGlyph\FTBufferGlyph.cpp">
+      <Filter>Source Files\FTGlyph</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTGlyph\FTExtrudeGlyph.cpp">
+      <Filter>Source Files\FTGlyph</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTGlyph\FTGlyph.cpp">
+      <Filter>Source Files\FTGlyph</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTGlyph\FTGlyphGlue.cpp">
+      <Filter>Source Files\FTGlyph</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTGlyph\FTOutlineGlyph.cpp">
+      <Filter>Source Files\FTGlyph</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTGlyph\FTPixmapGlyph.cpp">
+      <Filter>Source Files\FTGlyph</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTGlyph\FTPolygonGlyph.cpp">
+      <Filter>Source Files\FTGlyph</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTGlyph\FTTextureGlyph.cpp">
+      <Filter>Source Files\FTGlyph</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTLayout\FTLayout.cpp">
+      <Filter>Source Files\FTLayout</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTLayout\FTLayoutGlue.cpp">
+      <Filter>Source Files\FTLayout</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\ftgl\FTLayout\FTSimpleLayout.cpp">
+      <Filter>Source Files\FTLayout</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\ftgl\FTCharmap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTCharToGlyphIndexMap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTContour.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTFace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGlyphContainer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTInternals.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTLibrary.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTSize.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTUnicode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTVector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTVectoriser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTFont\FTBitmapFontImpl.h">
+      <Filter>Header Files\FTFont</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTFont\FTBufferFontImpl.h">
+      <Filter>Header Files\FTFont</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTFont\FTExtrudeFontImpl.h">
+      <Filter>Header Files\FTFont</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTFont\FTFontImpl.h">
+      <Filter>Header Files\FTFont</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTFont\FTOutlineFontImpl.h">
+      <Filter>Header Files\FTFont</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTFont\FTPixmapFontImpl.h">
+      <Filter>Header Files\FTFont</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTFont\FTPolygonFontImpl.h">
+      <Filter>Header Files\FTFont</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTFont\FTTextureFontImpl.h">
+      <Filter>Header Files\FTFont</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGlyph\FTBitmapGlyphImpl.h">
+      <Filter>Header Files\FTGlyph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGlyph\FTBufferGlyphImpl.h">
+      <Filter>Header Files\FTGlyph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGlyph\FTExtrudeGlyphImpl.h">
+      <Filter>Header Files\FTGlyph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGlyph\FTGlyphImpl.h">
+      <Filter>Header Files\FTGlyph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGlyph\FTOutlineGlyphImpl.h">
+      <Filter>Header Files\FTGlyph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGlyph\FTPixmapGlyphImpl.h">
+      <Filter>Header Files\FTGlyph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGlyph\FTPolygonGlyphImpl.h">
+      <Filter>Header Files\FTGlyph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGlyph\FTTextureGlyphImpl.h">
+      <Filter>Header Files\FTGlyph</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTBBox.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTBitmapGlyph.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTBuffer.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTBufferFont.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTBufferGlyph.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTExtrdGlyph.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTFont.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\ftgl.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTGLBitmapFont.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTGLExtrdFont.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTGLOutlineFont.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTGLPixmapFont.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTGLPolygonFont.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTGLTextureFont.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTGlyph.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTLayout.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTOutlineGlyph.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTPixmapGlyph.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTPoint.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTPolyGlyph.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTSimpleLayout.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTGL\FTTextureGlyph.h">
+      <Filter>Header Files\FTGL</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTLayout\FTLayoutImpl.h">
+      <Filter>Header Files\FTLayout</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\ftgl\FTLayout\FTSimpleLayoutImpl.h">
+      <Filter>Header Files\FTLayout</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

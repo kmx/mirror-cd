@@ -1,0 +1,138 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>ftgl</ProjectName>
+    <ProjectGuid>{1D758EEA-59C3-46E4-BEF5-16DCCA8C0B21}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\lib\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\obj\Debug\$(ProjectName)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>../src/ftgl;../src/freetype2;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;FTGL_LIBRARY_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level4</WarningLevel>
+      <DebugInformationFormat>OldStyle</DebugInformationFormat>
+      <CompileAs>Default</CompileAs>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)$(ProjectName).lib</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\ftgl\FTBuffer.cpp" />
+    <ClCompile Include="..\src\ftgl\FTCharmap.cpp" />
+    <ClCompile Include="..\src\ftgl\FTContour.cpp" />
+    <ClCompile Include="..\src\ftgl\FTFace.cpp" />
+    <ClCompile Include="..\src\ftgl\FTGlyphContainer.cpp" />
+    <ClCompile Include="..\src\ftgl\FTLibrary.cpp" />
+    <ClCompile Include="..\src\ftgl\FTPoint.cpp" />
+    <ClCompile Include="..\src\ftgl\FTSize.cpp" />
+    <ClCompile Include="..\src\ftgl\FTVectoriser.cpp" />
+    <ClCompile Include="..\src\ftgl\FTFont\FTBitmapFont.cpp" />
+    <ClCompile Include="..\src\ftgl\FTFont\FTBufferFont.cpp" />
+    <ClCompile Include="..\src\ftgl\FTFont\FTExtrudeFont.cpp" />
+    <ClCompile Include="..\src\ftgl\FTFont\FTFont.cpp" />
+    <ClCompile Include="..\src\ftgl\FTFont\FTFontGlue.cpp" />
+    <ClCompile Include="..\src\ftgl\FTFont\FTOutlineFont.cpp" />
+    <ClCompile Include="..\src\ftgl\FTFont\FTPixmapFont.cpp" />
+    <ClCompile Include="..\src\ftgl\FTFont\FTPolygonFont.cpp" />
+    <ClCompile Include="..\src\ftgl\FTFont\FTTextureFont.cpp" />
+    <ClCompile Include="..\src\ftgl\FTGlyph\FTBitmapGlyph.cpp" />
+    <ClCompile Include="..\src\ftgl\FTGlyph\FTBufferGlyph.cpp" />
+    <ClCompile Include="..\src\ftgl\FTGlyph\FTExtrudeGlyph.cpp" />
+    <ClCompile Include="..\src\ftgl\FTGlyph\FTGlyph.cpp" />
+    <ClCompile Include="..\src\ftgl\FTGlyph\FTGlyphGlue.cpp" />
+    <ClCompile Include="..\src\ftgl\FTGlyph\FTOutlineGlyph.cpp" />
+    <ClCompile Include="..\src\ftgl\FTGlyph\FTPixmapGlyph.cpp" />
+    <ClCompile Include="..\src\ftgl\FTGlyph\FTPolygonGlyph.cpp" />
+    <ClCompile Include="..\src\ftgl\FTGlyph\FTTextureGlyph.cpp" />
+    <ClCompile Include="..\src\ftgl\FTLayout\FTLayout.cpp" />
+    <ClCompile Include="..\src\ftgl\FTLayout\FTLayoutGlue.cpp" />
+    <ClCompile Include="..\src\ftgl\FTLayout\FTSimpleLayout.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\src\ftgl\FTCharmap.h" />
+    <ClInclude Include="..\src\ftgl\FTCharToGlyphIndexMap.h" />
+    <ClInclude Include="..\src\ftgl\FTContour.h" />
+    <ClInclude Include="..\src\ftgl\FTFace.h" />
+    <ClInclude Include="..\src\ftgl\FTGlyphContainer.h" />
+    <ClInclude Include="..\src\ftgl\FTInternals.h" />
+    <ClInclude Include="..\src\ftgl\FTLibrary.h" />
+    <ClInclude Include="..\src\ftgl\FTList.h" />
+    <ClInclude Include="..\src\ftgl\FTSize.h" />
+    <ClInclude Include="..\src\ftgl\FTUnicode.h" />
+    <ClInclude Include="..\src\ftgl\FTVector.h" />
+    <ClInclude Include="..\src\ftgl\FTVectoriser.h" />
+    <ClInclude Include="..\src\ftgl\FTFont\FTBitmapFontImpl.h" />
+    <ClInclude Include="..\src\ftgl\FTFont\FTBufferFontImpl.h" />
+    <ClInclude Include="..\src\ftgl\FTFont\FTExtrudeFontImpl.h" />
+    <ClInclude Include="..\src\ftgl\FTFont\FTFontImpl.h" />
+    <ClInclude Include="..\src\ftgl\FTFont\FTOutlineFontImpl.h" />
+    <ClInclude Include="..\src\ftgl\FTFont\FTPixmapFontImpl.h" />
+    <ClInclude Include="..\src\ftgl\FTFont\FTPolygonFontImpl.h" />
+    <ClInclude Include="..\src\ftgl\FTFont\FTTextureFontImpl.h" />
+    <ClInclude Include="..\src\ftgl\FTGlyph\FTBitmapGlyphImpl.h" />
+    <ClInclude Include="..\src\ftgl\FTGlyph\FTBufferGlyphImpl.h" />
+    <ClInclude Include="..\src\ftgl\FTGlyph\FTExtrudeGlyphImpl.h" />
+    <ClInclude Include="..\src\ftgl\FTGlyph\FTGlyphImpl.h" />
+    <ClInclude Include="..\src\ftgl\FTGlyph\FTOutlineGlyphImpl.h" />
+    <ClInclude Include="..\src\ftgl\FTGlyph\FTPixmapGlyphImpl.h" />
+    <ClInclude Include="..\src\ftgl\FTGlyph\FTPolygonGlyphImpl.h" />
+    <ClInclude Include="..\src\ftgl\FTGlyph\FTTextureGlyphImpl.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTBBox.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTBitmapGlyph.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTBuffer.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTBufferFont.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTBufferGlyph.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTExtrdGlyph.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTFont.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\ftgl.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTGLBitmapFont.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTGLExtrdFont.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTGLOutlineFont.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTGLPixmapFont.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTGLPolygonFont.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTGLTextureFont.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTGlyph.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTLayout.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTOutlineGlyph.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTPixmapGlyph.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTPoint.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTPolyGlyph.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTSimpleLayout.h" />
+    <ClInclude Include="..\src\ftgl\FTGL\FTTextureGlyph.h" />
+    <ClInclude Include="..\src\ftgl\FTLayout\FTLayoutImpl.h" />
+    <ClInclude Include="..\src\ftgl\FTLayout\FTSimpleLayoutImpl.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
