@@ -171,8 +171,8 @@ struct _cdCanvas
   cdRect clip_rect;
   cdfRect clip_frect;
   int clip_poly_n;
-  cdPoint* clip_poly;    /* only defined if integer poligon created, if exist clip_fpoly is NULL, and ->Poly exists */
-  cdfPoint* clip_fpoly;  /* only defined if real poligon created, if exist clip_poly is NULL, and ->fPoly exists  */
+  cdPoint* clip_poly;    /* only defined if integer polygon created, if exist clip_fpoly is NULL, and ->Poly exists */
+  cdfPoint* clip_fpoly;  /* only defined if real polygon created, if exist clip_poly is NULL, and ->fPoly exists  */
 
   /* clipping region attributes */
   int new_region;
@@ -213,14 +213,15 @@ struct _cdCanvas
   int poly_mode, 
       poly_n,                /* current number of vertices */
       poly_size, fpoly_size; /* allocated number of vertices, only increases */
-  cdPoint* poly;             /* used during an integer poligon creation, only if ->Poly exists */
-  cdfPoint* fpoly;           /* used during an real poligon creation, only if ->fPoly exists */
+  cdPoint* poly;             /* used during an integer polygon creation, only if ->Poly exists */
+  cdfPoint* fpoly;           /* used during an real polygon creation, only if ->fPoly exists */
   int use_fpoly;
 
   /* last path */
   int path_n,                /* current number of actions */
       path_size;             /* allocated number of actions, only increases */
   int* path;                 /* used during path creation */
+  int path_arc_index;        /* used for arc */
 
   /* simulation flags */
   int sim_mode;

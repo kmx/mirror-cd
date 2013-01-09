@@ -142,11 +142,26 @@ void cdCanvasBegin(cdCanvas* canvas, int mode)
   canvas->poly_mode = mode;
 }
 
+static int sCheckPathArc(cdCanvas* canvas)
+{
+  if (canvas->poly_mode == CD_PATH &&
+      canvas->path[canvas->path_n-1] == CD_PATH_ARC)
+  {
+     canvas->path_arc_index++;
+
+    if (canvas->path_arc_index == 1)
+      return 0;
+    else
+      return 1;  /* don't shift origin or invert Y axis for size and angle */
+  }
+
+  return 0;
+}
 void cdCanvasVertex(cdCanvas* canvas, int x, int y)
 {
   assert(canvas);
   if (!_cdCheckCanvas(canvas)) return;
-  if (canvas->use_fpoly == 1) return; /* integer vertex inside a real poligon */
+  if (canvas->use_fpoly == 1) return; /* integer vertex inside a real polygon */
 
   if (!canvas->poly)
   {
@@ -156,14 +171,17 @@ void cdCanvasVertex(cdCanvas* canvas, int x, int y)
 
   canvas->use_fpoly = 0;
 
-  if (canvas->use_origin)
+  if (!sCheckPathArc(canvas))
   {
-    x += canvas->origin.x;
-    y += canvas->origin.y;
-  }
+    if (canvas->use_origin)
+    {
+      x += canvas->origin.x;
+      y += canvas->origin.y;
+    }
 
-  if (canvas->invert_yaxis)
-    y = _cdInvertYAxis(canvas, y);
+    if (canvas->invert_yaxis)
+      y = _cdInvertYAxis(canvas, y);
+  }
 
   if (canvas->poly_n == canvas->poly_size)
   {
@@ -193,7 +211,7 @@ void cdfCanvasVertex(cdCanvas* canvas, double x, double y)
     return;
   }
 
-  if (canvas->use_fpoly == 0) return; /* real vertex inside a integer poligon */
+  if (canvas->use_fpoly == 0) return; /* real vertex inside a integer polygon */
 
   if (!canvas->fpoly)
   {
@@ -203,14 +221,17 @@ void cdfCanvasVertex(cdCanvas* canvas, double x, double y)
 
   canvas->use_fpoly = 1;
 
-  if (canvas->use_origin)
+  if (!sCheckPathArc(canvas))
   {
-    x += canvas->forigin.x;
-    y += canvas->forigin.y;
-  }
+    if (canvas->use_origin)
+    {
+      x += canvas->forigin.x;
+      y += canvas->forigin.y;
+    }
 
-  if (canvas->invert_yaxis)
-    y = _cdInvertYAxis(canvas, y);
+    if (canvas->invert_yaxis)
+      y = _cdInvertYAxis(canvas, y);
+  }
 
   if (canvas->poly_n == canvas->fpoly_size)
   {
@@ -242,6 +263,8 @@ void cdCanvasPathSet(cdCanvas* canvas, int action)
     canvas->path_size += _CD_POLY_BLOCK;
     canvas->path = (int*)realloc(canvas->path, sizeof(int) * (canvas->path_size+1));
   }
+
+  canvas->path_arc_index = 0;
 
   canvas->path[canvas->path_n] = action;
   canvas->path_n++;
@@ -768,12 +791,6 @@ int cdCanvasGetArcPath(cdCanvas* canvas, const cdPoint* poly, int *xc, int *yc, 
   *a1 = poly[2].x; 
   *a2 = poly[2].y;
 
-  if (canvas->invert_yaxis) /* undo axis invertion */
-  {
-    *h = _cdInvertYAxis(canvas, *h);
-    *a2 = _cdInvertYAxis(canvas, *a2);
-  }
-
   /* fix integer scale */
   *a1 /= 1000.0; 
   *a2 /= 1000.0;
@@ -794,12 +811,6 @@ int cdfCanvasGetArcPath(cdCanvas* canvas, const cdfPoint* poly, double *xc, doub
   *a1 = poly[2].x; 
   *a2 = poly[2].y;
 
-  if (canvas->invert_yaxis) /* undo axis invertion */
-  {
-    *h = _cdInvertYAxis(canvas, *h);
-    *a2 = _cdInvertYAxis(canvas, *a2);
-  }
-
   if (*a1 == *a2 || *w == 0 || *h == 0)
     return 0;
 
@@ -815,12 +826,6 @@ int cdCanvasGetArcPathF(cdCanvas* canvas, const cdPoint* poly, double *xc, doubl
   *h = poly[1].y; 
   *a1 = poly[2].x; 
   *a2 = poly[2].y;
-
-  if (canvas->invert_yaxis) /* undo axis invertion */
-  {
-    *h = _cdInvertYAxis(canvas, *h);
-    *a2 = _cdInvertYAxis(canvas, *a2);
-  }
 
   /* fix integer scale */
   *a1 /= 1000.0; 

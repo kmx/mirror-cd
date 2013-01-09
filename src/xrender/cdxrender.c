@@ -158,7 +158,7 @@ static void cdfline(cdCtxCanvas *ctxcanvas, double x1, double y1, double x2, dou
     XPointDouble fpoly[4];
 
     /* XRender does not have a function to draw lines. 
-       So we have to draw a poligon that covers the line area. */ 
+       So we have to draw a polygon that covers the line area. */ 
 
     double dx = x2-x1;
     double dy = y2-y1;
