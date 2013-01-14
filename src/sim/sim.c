@@ -26,7 +26,7 @@ static unsigned char SimHatchBits[6][8] = {            /* [style][y] (8x8) */
 #define CalcYPat(y, h) (canvas->invert_yaxis? h-1-(y%h): y%h)
 #define CalcYHatch(y, h) (canvas->invert_yaxis? h-(y&h): y&h)
 
-void simFillDrawAAPixel(cdCanvas *canvas, int x, int y, unsigned short alpha_weigth)
+void simFillDrawAAPixel(cdCanvas *canvas, int x, int y, unsigned short alpha_weight)
 {
   unsigned char aa_alpha;
   long color, aa_color;
@@ -74,7 +74,7 @@ void simFillDrawAAPixel(cdCanvas *canvas, int x, int y, unsigned short alpha_wei
     }
   }
 
-  aa_alpha = (unsigned char)((alpha_weigth * cdAlpha(color)) / 255);
+  aa_alpha = (unsigned char)((alpha_weight * cdAlpha(color)) / 255);
   aa_color = cdEncodeAlpha(color, aa_alpha);
   canvas->cxPixel(canvas->ctxcanvas, x, y, aa_color);
 }

@@ -33,21 +33,160 @@ struct _cdCtxCanvas
 
   FILE *file;        /* pointer to file                        */
   int layer;         /* layer                                  */
-  int fill;          /* Use new DXF version with fill support  */
 
-  int tf;            /* text font                              */
-  double th;         /* text height (in points)                */
-  int toa;           /* text oblique angle (for italics)       */
-  int tha, tva;      /* text horizontal and vertical alignment */
+  int font_index;           
+  double text_height;         /* (in points)          */
+  int text_oblique_angle;     /* (for italics)        */
+  int text_horiz_align,       /* horizontal alignment */
+      text_vert_align;        /* vertical alignment   */
 
-  int fgcolor;       /* foreground AutoCAD palette color       */
+  int fgcolor_index;
 
-  int lt;            /* line type                              */
-  double lw;         /* line width (in milimeters)             */
+  int line_type_index;
+  double line_width;
+
+  /* AutoCAD 2000 only */
+  int acad2000;      /* Use new DXF version  */
+  int handle;        /* next handle, starts at 0x30 */
 };
 
 
-static void wnamline (cdCtxCanvas* ctxcanvas, int t)   /* write name of a line */
+static void write_code(cdCtxCanvas *ctxcanvas, int code, const char* value)
+{
+  fprintf (ctxcanvas->file, "%d\n", code);
+  fprintf (ctxcanvas->file, "%s\n", value);
+}
+
+static void write_code_int(cdCtxCanvas *ctxcanvas, int code, int value)
+{
+  fprintf (ctxcanvas->file, "%d\n", code);
+  fprintf (ctxcanvas->file, "%d\n", value);
+}
+
+static void write_code_hex(cdCtxCanvas *ctxcanvas, int code, int value)
+{
+  fprintf (ctxcanvas->file, "%d\n", code);
+  fprintf (ctxcanvas->file, "%0X\n", value);
+}
+
+static void write_code_real(cdCtxCanvas *ctxcanvas, int code, double value)
+{
+  fprintf (ctxcanvas->file, "%d\n", code);
+  fprintf (ctxcanvas->file, "%f\n", value);
+}
+
+static void write_header_variable(cdCtxCanvas *ctxcanvas, const char* variable)
+{
+  fprintf (ctxcanvas->file, "9\n");
+  fprintf (ctxcanvas->file, "$%s\n", variable);
+}
+
+static void begin_section(cdCtxCanvas *ctxcanvas, const char* section_name)
+{
+  write_code(ctxcanvas, 0, "SECTION");
+  write_code(ctxcanvas, 2, section_name);
+}
+
+static void end_section(cdCtxCanvas *ctxcanvas)
+{
+  write_code(ctxcanvas, 0, "ENDSEC");
+}
+
+static void write_unique_handle(cdCtxCanvas *ctxcanvas)
+{
+  write_code_hex(ctxcanvas, 5, ctxcanvas->handle);
+  ctxcanvas->handle++;
+}
+
+static void write_header(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
+{
+  /* The AutoCAD drawing database version number */
+  write_header_variable(ctxcanvas, "ACADVER");
+  if(ctxcanvas->acad2000)
+    write_code(ctxcanvas, 1, "AC1015");  /* AutoCAD 2000 */
+  else
+    write_code(ctxcanvas, 1, "AC1006");  /* AutoCAD R10 */
+
+  if (ctxcanvas->acad2000)
+  {
+    /* Next available handle */
+    write_header_variable(ctxcanvas, "HANDSEED");
+    write_code(ctxcanvas, 5, "FFFF");
+
+    /* drawing units for AutoCAD DesignCenter blocks */
+    write_header_variable(ctxcanvas, "INSUNITS");
+    write_code(ctxcanvas, 70, "4");  /* 4 = Millimeters */
+     
+    /* Extension line extension */
+    write_header_variable(ctxcanvas, "DIMEXE");
+    write_code(ctxcanvas, 40, "1.25");
+  }
+
+  /* Nonzero if limits checking is on */
+  write_header_variable(ctxcanvas, "LIMCHECK");  
+  write_code(ctxcanvas, 70, "1");
+
+  /* XY drawing limits lower-left corner (in WCS) */
+  write_header_variable(ctxcanvas, "LIMMIN");
+  write_code_real(ctxcanvas, 10, xmin);
+  write_code_real(ctxcanvas, 20, ymin);
+    
+  /* XY drawing limits upper-right corner (in WCS) */
+  write_header_variable(ctxcanvas, "LIMMAX");
+  write_code_real(ctxcanvas, 10, xmax);
+  write_code_real(ctxcanvas, 20, ymax);
+
+  /* X, Y, and Z drawing extents lower-left corner (in WCS) */
+  write_header_variable(ctxcanvas, "EXTMIN");
+  write_code_real(ctxcanvas, 10, xmin);
+  write_code_real(ctxcanvas, 20, ymin);
+
+  /* X, Y, and Z drawing extents upper-right corner (in WCS) */
+  write_header_variable(ctxcanvas, "EXTMAX");
+  write_code_real(ctxcanvas, 10, xmax);
+  write_code_real(ctxcanvas, 20, ymax);
+
+  /* Current layer name */
+  write_header_variable(ctxcanvas, "CLAYER");
+  write_code(ctxcanvas, 8, "0");
+  /* Units format for coordinates and distances */
+  write_header_variable(ctxcanvas, "LUNITS");
+  write_code(ctxcanvas, 70, "2");  /* 2 = Decimal */
+  /* Units precision for coordinates and distances */
+  write_header_variable(ctxcanvas, "LUPREC");
+  write_code_int(ctxcanvas, 70, (int)ceil(log10(ctxcanvas->canvas->xres)));  /* precision (resolution dependant) */
+  /* Units format for angles */
+  write_header_variable(ctxcanvas, "AUNITS");
+  write_code(ctxcanvas, 70, "0");  /* 0 = Decimal degrees */
+  /* Units precision for angles */
+  write_header_variable(ctxcanvas, "AUPREC");
+  write_code(ctxcanvas, 70, "2");
+  /* Current text style name */
+  write_header_variable(ctxcanvas, "TEXTSTYLE");
+  write_code(ctxcanvas, 7, "STANDARD");
+}
+
+static void begin_table(cdCtxCanvas *ctxcanvas, const char* name, int count, const char* handle)
+{
+  write_code(ctxcanvas, 0, "TABLE");
+  write_code(ctxcanvas, 2, name);
+
+  if (ctxcanvas->acad2000)
+  {
+    write_code(ctxcanvas, 5, handle);
+    write_code(ctxcanvas, 100, "AcDbSymbolTable");
+  }
+
+  /* Maximum number of entries in table */
+  write_code_int(ctxcanvas, 70, count);
+}
+
+static void end_table(cdCtxCanvas *ctxcanvas)
+{
+  write_code(ctxcanvas, 0, "ENDTAB");
+}
+
+static void write_line_type_name (cdCtxCanvas* ctxcanvas, int code, int t)   /* write name of a line */
 {
 
   static char *line[] =
@@ -76,13 +215,12 @@ static void wnamline (cdCtxCanvas* ctxcanvas, int t)   /* write name of a line *
 
 */
 
-  fprintf (ctxcanvas->file, "%s\n", line[t]);
+  write_code(ctxcanvas, code, line[t]);
 }
 
-
-static void wnamfont (cdCtxCanvas *ctxcanvas, int t)   /* write name of a font */
+static void write_font_type (cdCtxCanvas *ctxcanvas, int code, int t)   /* write name of a font */
 {
-  static char *font[] =
+  static char *font[7] =
   {
     "STANDARD",
     "ROMAN",
@@ -98,271 +236,81 @@ static void wnamfont (cdCtxCanvas *ctxcanvas, int t)   /* write name of a font *
        CD_SYSTEM                           0 STANDARD
        CD_COURIER     / CD_PLAIN           1 ROMAN
        CD_COURIER     / CD_BOLD            2 ROMAN_BOLD
-       CD_COURIER     / CD_ITALIC          1 ROMAN         (ctxcanvas->toa = 15)
-       CD_COURIER     / CD_BOLD_ITALIC     2 ROMAN_BOLD    (ctxcanvas->toa = 15)
+       CD_COURIER     / CD_ITALIC          1 ROMAN          (oblique angle = 15)
+       CD_COURIER     / CD_BOLD_ITALIC     2 ROMAN_BOLD     (oblique angle = 15)
        CD_TIMES_ROMAN / CD_PLAIN           3 ROMANTIC
        CD_TIMES_ROMAN / CD_BOLD            4 ROMANTIC_BOLD
-       CD_TIMES_ROMAN / CD_ITALIC          3 ROMANTIC      (ctxcanvas->toa = 15)
-       CD_TIMES_ROMAN / CD_BOLD_ITALIC     4 ROMANTIC_BOLD (ctxcanvas->toa = 15)
+       CD_TIMES_ROMAN / CD_ITALIC          3 ROMANTIC       (oblique angle = 15)
+       CD_TIMES_ROMAN / CD_BOLD_ITALIC     4 ROMANTIC_BOLD  (oblique angle = 15)
        CD_HELVETICA   / CD_PLAIN           5 SANSSERIF
        CD_HELVETICA   / CD_BOLD            6 SANSSERIF_BOLD
-       CD_HELVETICA   / CD_ITALIC          5 SANSSERIF     (ctxcanvas->toa = 15)
-       CD_HELVETICA   / CD_BOLD_ITALIC     6 SANSSERIF_BOLD(ctxcanvas->toa = 15)
+       CD_HELVETICA   / CD_ITALIC          5 SANSSERIF      (oblique angle = 15)
+       CD_HELVETICA   / CD_BOLD_ITALIC     6 SANSSERIF_BOLD (oblique angle = 15)
 */
 
-  fprintf (ctxcanvas->file, "%s\n", font[t]);
+  write_code(ctxcanvas, code, font[t]);
 }
 
-static void writepoly (cdCtxCanvas *ctxcanvas, cdPoint *poly, int nv) /* write polygon */
+static void write_line_type(cdCtxCanvas *ctxcanvas, int j, int* tab, const char* desc)
 {
   int i;
 
-  fprintf ( ctxcanvas->file, "0\n" );
-  fprintf ( ctxcanvas->file, "POLYLINE\n" );
-  fprintf ( ctxcanvas->file, "8\n" );
-  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer); /* current layer */
-
-  fprintf ( ctxcanvas->file, "6\n" );
-  wnamline( ctxcanvas, ctxcanvas->lt );                    /* line type */
-
-  fprintf ( ctxcanvas->file, "62\n" );
-  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->fgcolor );
-  fprintf ( ctxcanvas->file, "66\n" );
-  fprintf ( ctxcanvas->file, "1\n" );
-  fprintf ( ctxcanvas->file, "40\n" );
-  fprintf ( ctxcanvas->file, "%f\n", ctxcanvas->lw);
-  fprintf ( ctxcanvas->file, "41\n" );           /* entire polygon line width */
-  fprintf ( ctxcanvas->file, "%f\n", ctxcanvas->lw);
-
-  /* TODO: comentar */
-  fprintf ( ctxcanvas->file, "10\n" );
-  fprintf ( ctxcanvas->file, "0.0\n" );
-  fprintf ( ctxcanvas->file, "20\n" );
-  fprintf ( ctxcanvas->file, "0.0\n" );
-  fprintf ( ctxcanvas->file, "30\n" );
-  fprintf ( ctxcanvas->file, "0.0\n" );
-
-  for ( i=0; i<nv; i++ )
+  /* Object type */
+  write_code(ctxcanvas, 0, "LTYPE");
+  if (ctxcanvas->acad2000)
   {
-    fprintf ( ctxcanvas->file, "0\n" );
-    fprintf ( ctxcanvas->file, "VERTEX\n" );
-    fprintf ( ctxcanvas->file, "8\n" );
-    fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer); /* current layer */
-    fprintf ( ctxcanvas->file, "10\n" );
-    fprintf ( ctxcanvas->file, "%f\n", (float)poly[i].x);
-    fprintf ( ctxcanvas->file, "20\n" );
-    fprintf ( ctxcanvas->file, "%f\n", (float)poly[i].y);
-    fprintf ( ctxcanvas->file, "30\n" );
-    fprintf ( ctxcanvas->file, "0.0\n" );
+    write_unique_handle(ctxcanvas);
+    write_code(ctxcanvas, 100, "AcDbSymbolTableRecord");
+    write_code(ctxcanvas, 100, "AcDbLinetypeTableRecord");
   }
 
-  fprintf ( ctxcanvas->file, "0\n" );
-  fprintf ( ctxcanvas->file, "SEQEND\n" );
-}
+  /* Linetype name */
+  if (j == -1)
+    write_code(ctxcanvas, 2, desc);
+  else
+    write_line_type_name (ctxcanvas, 2, j);
+  /* Standard flag values (bit-coded values) */
+  write_code(ctxcanvas, 70, "0");  /* need not be set by programs that write DXF files */
 
-static void writepolyf (cdCtxCanvas *ctxcanvas, cdfPoint *poly, int nv) /* write polygon */
-{
-  int i;
+  /* other group codes */
 
-  fprintf ( ctxcanvas->file, "0\n" );    /* GC: entity type */
-  fprintf ( ctxcanvas->file, "POLYLINE\n" );
+  /* Descriptive text for linetype */
+  if (j == -1)
+    write_code(ctxcanvas, 3, "");
+  else
+    write_code(ctxcanvas, 3, desc);
+  /* Alignment code; value is always 65, the ASCII code for A */
+  write_code(ctxcanvas, 72, "65");
+  /* The number of linetype elements */
+  write_code_int(ctxcanvas, 73, tab[0]);
+  /* Total pattern length */
+  write_code_int(ctxcanvas, 40, tab[1]);
 
-  fprintf ( ctxcanvas->file, "8\n" );    /* GC: current layer name */
-  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer);
-  fprintf ( ctxcanvas->file, "6\n" );    /* GC: line type */
-  wnamline( ctxcanvas, ctxcanvas->lt );
-  fprintf ( ctxcanvas->file, "62\n" );   /* GC: color number */
-  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->fgcolor );
-
-  fprintf ( ctxcanvas->file, "66\n" );   /* GC: vertices-follow flag */
-  fprintf ( ctxcanvas->file, "1\n" );
-  fprintf ( ctxcanvas->file, "40\n" );   /* GC: default start width */
-  fprintf ( ctxcanvas->file, "%f\n", ctxcanvas->lw);
-  fprintf ( ctxcanvas->file, "41\n" );   /* GC: default end width */
-  fprintf ( ctxcanvas->file, "%f\n", ctxcanvas->lw);
-
-  /* TODO: comentar */
-  fprintf ( ctxcanvas->file, "10\n" );
-  fprintf ( ctxcanvas->file, "0.0\n" );
-  fprintf ( ctxcanvas->file, "20\n" );
-  fprintf ( ctxcanvas->file, "0.0\n" );
-  fprintf ( ctxcanvas->file, "30\n" );
-  fprintf ( ctxcanvas->file, "0.0\n" );
-
-  for ( i=0; i<nv; i++ )
+  for (i = 2; i < 2 + tab[0]; i++)
   {
-    fprintf ( ctxcanvas->file, "0\n" );  /* GC: entity type */
-    fprintf ( ctxcanvas->file, "VERTEX\n" );
-    fprintf ( ctxcanvas->file, "8\n" );  /* GC: current layer name */
-    fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer);
-    fprintf ( ctxcanvas->file, "10\n" ); /* GC: X value */
-    fprintf ( ctxcanvas->file, "%f\n", poly[i].x);
-    fprintf ( ctxcanvas->file, "20\n" ); /* GC: Y value */
-    fprintf ( ctxcanvas->file, "%f\n", poly[i].y);
-    fprintf ( ctxcanvas->file, "30\n" );
-    fprintf ( ctxcanvas->file, "0.0\n" );
+    /* Dash, dot or space length (one entry per element) */
+    write_code_int(ctxcanvas, 49, tab[i]);  /* parameters */
+
+    if (ctxcanvas->acad2000)
+      write_code(ctxcanvas, 74, "0");
   }
-
-  /* The "vertices follow" flag is always 1, indicating that a
-     series of Vertex entities is expected to follow the
-     Polyline, terminated by a sequence end (Seqend) entity. */
-  fprintf ( ctxcanvas->file, "0\n" );    /* GC: entity type */
-  fprintf ( ctxcanvas->file, "SEQEND\n" );
 }
 
-static void writehatch (cdCtxCanvas *ctxcanvas, cdPoint *poly, int nv) /* write polygon */
+static void write_line_types (cdCtxCanvas *ctxcanvas)
 {
-  /* This code only work with ACADVER=AC1014  Meaning AutoCAD Release 14 */
-  /* But the current generated DXF seems to be incompatible with this version,
-     something needs to be fixed. */
-  int i;
+  int j;
+  static char *line[9] = {
+    "Solid line",
+    "Dashed line",
+    "Hidden line",
+    "Center line",
+    "Phantom line",
+    "Dot line",
+    "Dashdot line",
+    "Border line",
+    "Divide Line"};
 
-  fprintf ( ctxcanvas->file, "0\n" );    /* GC: entity type */
-  fprintf ( ctxcanvas->file, "HATCH\n" );
-
-  fprintf ( ctxcanvas->file, "8\n" );    /* GC: current layer name */
-  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer);
-
-  fprintf ( ctxcanvas->file, "62\n" );   /* GC: color number */
-  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->fgcolor );
-
-  fprintf ( ctxcanvas->file, "10\n" );   /* GC: Elevation point (in OCS) X value */
-  fprintf ( ctxcanvas->file, "0.0\n" );
-  fprintf ( ctxcanvas->file, "20\n" );   /* GC: Y value */
-  fprintf ( ctxcanvas->file, "0.0\n" );
-  fprintf ( ctxcanvas->file, "30\n" );   /* GC: Z value */
-  fprintf ( ctxcanvas->file, "0.0\n" );
-
-  fprintf ( ctxcanvas->file, "210\n" );  /* GC: X extrusion direction */
-  fprintf ( ctxcanvas->file, "0.0\n" );
-  fprintf ( ctxcanvas->file, "220\n" );  /* GC: Y extrusion direction */
-  fprintf ( ctxcanvas->file, "0.0\n" );
-  fprintf ( ctxcanvas->file, "230\n" );  /* GC: Z extrusion direction */
-  fprintf ( ctxcanvas->file, "1.0\n" );
-
-  fprintf ( ctxcanvas->file, "2\n" );   /* GC: hatch pattern name */
-  fprintf ( ctxcanvas->file, "SOLID\n" );
-
-  fprintf ( ctxcanvas->file, "70\n" );  /* GC: Solid fill flag (solid fill = 1; pattern fill = 0) */
-  fprintf ( ctxcanvas->file, "1\n" );   /* solid fill */
-
-  fprintf ( ctxcanvas->file, "71\n" );  /* GC: Associativity flag (associative = 1; non-associative = 0) */
-  fprintf ( ctxcanvas->file, "0\n" );   /* non-associative */
-
-  fprintf ( ctxcanvas->file, "91\n" );  /* GC: number of boundary paths */
-  fprintf ( ctxcanvas->file, "1\n" );
-
-  fprintf ( ctxcanvas->file, "92\n" );  /* Boundary path type flag (bit coded): */
-  fprintf ( ctxcanvas->file, "2\n" );   /* 0 = Default; 1 = External; 2 = Polyline */
-                                        /* 4 = Derived; 8 = Textbox; 16 = Outermost */
-
-  fprintf ( ctxcanvas->file, "72\n" );  /* Edge type (only if boundary is not a polyline): */
-  fprintf ( ctxcanvas->file, "1\n" );   /* 1 = Line; 2 = Circular arc; 3 = Elliptic arc; 4 = Spline */
-
-  fprintf ( ctxcanvas->file, "73\n" );  /* Is closed flag */
-  fprintf ( ctxcanvas->file, "1\n" );
-
-  fprintf ( ctxcanvas->file, "93\n" );     /* Number of edges in this boundary path */
-  fprintf ( ctxcanvas->file, "%d\n", nv ); /* (only if boundary is not a polyline) */
-
-  for ( i=0; i<nv; i++ )
-  {
-    fprintf ( ctxcanvas->file, "10\n" );
-    fprintf ( ctxcanvas->file, "%f\n", poly[i].x);
-    fprintf ( ctxcanvas->file, "20\n" );
-    fprintf ( ctxcanvas->file, "%f\n", poly[i].y);
-  }
-
-  fprintf ( ctxcanvas->file, "97\n" );  /* Number of source boundary objects */
-  fprintf ( ctxcanvas->file, "0\n" );
-
-  fprintf ( ctxcanvas->file, "75\n" );  /* Hatch style: */
-  fprintf ( ctxcanvas->file, "0\n" );   /* 0 = Hatch "odd parity" area (Normal style) */
-                                        /* 1 = Hatch outermost area only (Outer style) */
-                                        /* 2 = Hatch through entire area (Ignore style) */
-
-  fprintf ( ctxcanvas->file, "76\n" );  /* Hatch pattern type: */
-  fprintf ( ctxcanvas->file, "1\n" );   /* 0 = User-defined; 1 = Predefined; 2 = Custom */
-}
-
-static void writehatchf (cdCtxCanvas *ctxcanvas, cdfPoint *poly, int nv) /* write polygon */
-{
-  int i;
-  fprintf ( ctxcanvas->file, "0\n" );
-  fprintf ( ctxcanvas->file, "HATCH\n" );
-
-  fprintf ( ctxcanvas->file, "8\n" );
-  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer); /* current layer */
-  fprintf ( ctxcanvas->file, "62\n" );
-  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->fgcolor );
-
-  fprintf ( ctxcanvas->file, "10\n" );
-  fprintf ( ctxcanvas->file, "0.0\n" );
-  fprintf ( ctxcanvas->file, "20\n" );
-  fprintf ( ctxcanvas->file, "0.0\n" );
-  fprintf ( ctxcanvas->file, "30\n" );
-  fprintf ( ctxcanvas->file, "0.0\n" );
-
-  fprintf ( ctxcanvas->file, "210\n" );
-  fprintf ( ctxcanvas->file, "0.0\n" );
-  fprintf ( ctxcanvas->file, "220\n" );
-  fprintf ( ctxcanvas->file, "0.0\n" );
-  fprintf ( ctxcanvas->file, "230\n" );
-  fprintf ( ctxcanvas->file, "1.0\n" );
-
-  fprintf ( ctxcanvas->file, "2\n" );
-  fprintf ( ctxcanvas->file, "SOLID\n" );
-  fprintf ( ctxcanvas->file, "70\n" );
-  fprintf ( ctxcanvas->file, "1\n" );
-  fprintf ( ctxcanvas->file, "71\n" );
-  fprintf ( ctxcanvas->file, "0\n" );
-  fprintf ( ctxcanvas->file, "91\n" );           /* entire polygon line width */
-  fprintf ( ctxcanvas->file, "1\n" );
-
-  fprintf ( ctxcanvas->file, "92\n" );
-  fprintf ( ctxcanvas->file, "2\n" );
-  fprintf ( ctxcanvas->file, "72\n" );
-  fprintf ( ctxcanvas->file, "1\n" );
-
-  fprintf ( ctxcanvas->file, "73\n" );
-  fprintf ( ctxcanvas->file, "1\n" );
-  fprintf ( ctxcanvas->file, "93\n" );           /* entire polygon line width */
-  fprintf ( ctxcanvas->file, "%d\n", nv );
-
-  for ( i=0; i<nv; i++ )
-  {
-    fprintf ( ctxcanvas->file, "10\n" );
-    fprintf ( ctxcanvas->file, "%f\n", poly[i].x);
-    fprintf ( ctxcanvas->file, "20\n" );
-    fprintf ( ctxcanvas->file, "%f\n", poly[i].y);
-  }
-
-  fprintf ( ctxcanvas->file, "97\n" );
-  fprintf ( ctxcanvas->file, "0\n" );
-  fprintf ( ctxcanvas->file, "75\n" );
-  fprintf ( ctxcanvas->file, "0\n" );
-  fprintf ( ctxcanvas->file, "76\n" );
-  fprintf ( ctxcanvas->file, "1\n" );
-}
-
-static void deflines (cdCtxCanvas *ctxcanvas)    /* define lines */
-{
-  int i, j;
-  static char *line[] =
-  {"Solid line",
-   "Dashed line",
-   "Hidden line",
-   "Center line",
-   "Phantom line",
-   "Dot line",
-   "Dashdot line",
-   "Border line",
-   "Divide Line"};
-
-#define TABSIZE (sizeof(tab)/sizeof(tab[0]))
-
-  static int tab[][8] =
-  {
+  static int tab[9][8] =  {
     { 0,  0, 0 ,  0,  0,  0, 0,  0 },
     { 2, 15, 10, -5,  0,  0, 0,  0 },
     { 2, 10, 5 , -5,  0,  0, 0,  0 },
@@ -374,45 +322,21 @@ static void deflines (cdCtxCanvas *ctxcanvas)    /* define lines */
     { 6, 25, 10, -5,  0, -5, 0, -5 }
   };
 
-  fprintf (ctxcanvas->file, "0\n");
-  fprintf (ctxcanvas->file, "TABLE\n");
-  fprintf (ctxcanvas->file, "2\n");
-  fprintf (ctxcanvas->file, "LTYPE\n");
-  fprintf (ctxcanvas->file, "70\n");
-  fprintf (ctxcanvas->file, "5\n");
-  for (j = 0; j < TABSIZE; j++)
-  {
-    fprintf (ctxcanvas->file, "0\n");
-    fprintf (ctxcanvas->file, "LTYPE\n");
-    fprintf (ctxcanvas->file, "2\n");
+  begin_table(ctxcanvas, "LTYPE", 11, "5");   /* Line Types table handle=5 */
 
-    wnamline (ctxcanvas, j);                            /* line style */
+  write_line_type(ctxcanvas, -1, tab[0], "BYBLOCK");
+  write_line_type(ctxcanvas, -1, tab[0], "BYLAYER");
 
-    fprintf (ctxcanvas->file, "70\n");
-    fprintf (ctxcanvas->file, "64\n");
-    fprintf (ctxcanvas->file, "3\n");
-    fprintf (ctxcanvas->file, "%s\n", line[j]);      /* line style */
-    fprintf (ctxcanvas->file, "72\n");
-    fprintf (ctxcanvas->file, "65\n");
-    fprintf (ctxcanvas->file, "73\n");
-    fprintf (ctxcanvas->file, "%d\n", tab[j][0]);    /* number of parameters */
-    fprintf (ctxcanvas->file, "40\n");
-    fprintf (ctxcanvas->file, "%d\n", tab[j][1]);
-    for (i = 2; i < 2 + tab[j][0]; i++)
-    {
-      fprintf (ctxcanvas->file, "49\n");
-      fprintf (ctxcanvas->file, "%d\n", tab[j][i]);  /* parameters */
-    }
-  }
-  fprintf (ctxcanvas->file, "0\n");
-  fprintf (ctxcanvas->file, "ENDTAB\n");
+  for (j = 0; j < 9; j++)
+    write_line_type(ctxcanvas, j, tab[j], line[j]);
+
+  end_table(ctxcanvas);
 }
 
-
-static void deffonts (cdCtxCanvas *ctxcanvas)    /* define fonts */
+static void write_fonts (cdCtxCanvas *ctxcanvas)
 {
   int i;
-  static char *font[] =
+  static char *font[6] =
   {
     "romanc.shx",
     "romant.shx",
@@ -422,53 +346,724 @@ static void deffonts (cdCtxCanvas *ctxcanvas)    /* define fonts */
     "sasb____.pfb"
   };
 
-  fprintf (ctxcanvas->file, "0\n");
-  fprintf (ctxcanvas->file, "TABLE\n");
-  fprintf (ctxcanvas->file, "2\n");
-  fprintf (ctxcanvas->file, "STYLE\n");
-  fprintf (ctxcanvas->file, "70\n");
-  fprintf (ctxcanvas->file, "5\n");
-  for (i = 1; i < 7; i++)
+  begin_table(ctxcanvas, "STYLE", 6, "3");   /* Style table handle=3 */
+
+  for (i = 0; i < 6; i++)
   {
-    fprintf (ctxcanvas->file, "0\n");
-    fprintf (ctxcanvas->file, "STYLE\n");
-    fprintf (ctxcanvas->file, "2\n");
+    /* Object type */
+    write_code(ctxcanvas, 0, "STYLE");
+    if (ctxcanvas->acad2000)
+    {
+      write_unique_handle(ctxcanvas);
+      write_code(ctxcanvas, 100, "AcDbSymbolTableRecord");
+      write_code(ctxcanvas, 100, "AcDbTextStyleTableRecord");
+    }
 
-    wnamfont (ctxcanvas, i);                            /* font style name */
+    /* Style name */
+    write_font_type (ctxcanvas, 2, i+1);  /* skip Standard */
+    /* Standard flag values (bit-coded values) */
+    write_code(ctxcanvas, 70, "0");  /* need not be set by programs that write DXF files */
 
-    fprintf (ctxcanvas->file, "3\n");
-    fprintf (ctxcanvas->file, "%s\n", font[i-1]);    /* font style file */
-    fprintf (ctxcanvas->file, "70\n");
-    fprintf (ctxcanvas->file, "64\n");
-    fprintf (ctxcanvas->file, "71\n");
-    fprintf (ctxcanvas->file, "0\n");
-    fprintf (ctxcanvas->file, "40\n");
-    fprintf (ctxcanvas->file, "0\n");
-    fprintf (ctxcanvas->file, "41\n");
-    fprintf (ctxcanvas->file, "1\n");
-    fprintf (ctxcanvas->file, "42\n");
-    fprintf (ctxcanvas->file, "0\n");
-    fprintf (ctxcanvas->file, "50\n");
-    fprintf (ctxcanvas->file, "0\n");
+    /* other group codes */
+
+    /* Primary font file name */
+    write_code(ctxcanvas, 3, font[i]);    /* font style file */
+    /* Text generation flags */
+    write_code(ctxcanvas, 71, "0");  /* normal, no mirror */
+    /* Fixed text height */
+    write_code(ctxcanvas, 40, "0");  /* not fixed */
+    /* Width factor */
+    write_code(ctxcanvas, 41, "1");
+    /* Last height used */
+    write_code(ctxcanvas, 42, "0");
+    /* Bigfont file name; blank if none */
+    write_code(ctxcanvas, 4, "");
+    /* Oblique angle */
+    write_code(ctxcanvas, 50, "0");
   }
-  fprintf (ctxcanvas->file, "0\n");
-  fprintf (ctxcanvas->file, "ENDTAB\n");
+
+  end_table(ctxcanvas);
 }
+
+static void write_vport(cdCtxCanvas *ctxcanvas)
+{
+  /* Used here, only for AutoCAD 2000 */
+
+  begin_table(ctxcanvas, "VPORT", 1, "8");    /* View port table handle=8 */
+
+  write_code(ctxcanvas, 0, "VPORT");
+  write_unique_handle(ctxcanvas);
+  write_code(ctxcanvas, 100, "AcDbSymbolTableRecord");
+  write_code(ctxcanvas, 100, "AcDbViewportTableRecord");
+
+  write_code(ctxcanvas,   2, "*Active");
+  write_code(ctxcanvas,  70, "0");
+  write_code(ctxcanvas,  10, "0.0");
+  write_code(ctxcanvas,  20, "0.0");
+  write_code(ctxcanvas,  11, "1.0");
+  write_code(ctxcanvas,  21, "1.0");
+  write_code(ctxcanvas,  12, "286.3055555555554861");
+  write_code(ctxcanvas,  22, "148.5");
+  write_code(ctxcanvas,  13, "0.0");
+  write_code(ctxcanvas,  23, "0.0");
+  write_code(ctxcanvas,  14, "10.0");
+  write_code(ctxcanvas,  24, "10.0");
+  write_code(ctxcanvas,  15, "10.0");
+  write_code(ctxcanvas,  25, "10.0");
+  write_code(ctxcanvas,  16, "0.0");
+  write_code(ctxcanvas,  26, "0.0");
+  write_code(ctxcanvas,  36, "1.0");
+  write_code(ctxcanvas,  17, "0.0");
+  write_code(ctxcanvas,  27, "0.0");
+  write_code(ctxcanvas,  37, "0.0");
+  write_code(ctxcanvas,  40, "297.0");
+  write_code(ctxcanvas,  41, "1.92798353909465");
+  write_code(ctxcanvas,  42, "50.0");
+  write_code(ctxcanvas,  43, "0.0");
+  write_code(ctxcanvas,  44, "0.0");
+  write_code(ctxcanvas,  50, "0.0");
+  write_code(ctxcanvas,  51, "0.0");
+  write_code(ctxcanvas,  71, "0");
+  write_code(ctxcanvas,  72, "100");
+  write_code(ctxcanvas,  73, "1");
+  write_code(ctxcanvas,  74, "3");
+  write_code(ctxcanvas,  75, "1");
+  write_code(ctxcanvas,  76, "1");
+  write_code(ctxcanvas,  77, "0");
+  write_code(ctxcanvas,  78, "0");
+  write_code(ctxcanvas, 281, "0");
+  write_code(ctxcanvas,  65, "1");
+  write_code(ctxcanvas, 110, "0.0");
+  write_code(ctxcanvas, 120, "0.0");
+  write_code(ctxcanvas, 130, "0.0");
+  write_code(ctxcanvas, 111, "1.0");
+  write_code(ctxcanvas, 121, "0.0");
+  write_code(ctxcanvas, 131, "0.0");
+  write_code(ctxcanvas, 112, "0.0");
+  write_code(ctxcanvas, 122, "1.0");
+  write_code(ctxcanvas, 132, "0.0");
+  write_code(ctxcanvas,  79, "0");
+  write_code(ctxcanvas, 146, "0.0");
+
+  end_table(ctxcanvas);
+}
+
+static void write_layers(cdCtxCanvas *ctxcanvas)
+{
+  /* Used here, only for AutoCAD 2000 */
+
+  begin_table(ctxcanvas, "LAYER", 1, "2");    /* Layers table handle=2 */
+
+  write_code(ctxcanvas, 0, "LAYER");
+  write_code(ctxcanvas, 5, "10");   /* layer entry handle=10 */
+  write_code(ctxcanvas, 100, "AcDbSymbolTableRecord");
+  write_code(ctxcanvas, 100, "AcDbLayerTableRecord");
+
+  write_code(ctxcanvas, 2, "0");
+  write_code(ctxcanvas, 70, "0");
+  write_code(ctxcanvas, 62, "7");
+  write_code(ctxcanvas, 6, "CONTINUOUS");
+  write_code(ctxcanvas, 390, "F");
+
+  end_table(ctxcanvas);
+}
+
+static void write_view(cdCtxCanvas *ctxcanvas)
+{
+  /* Used here, only for AutoCAD 2000 */
+
+  begin_table(ctxcanvas, "VIEW", 0, "6");    /* View table handle=6 */
+    /* empty */
+  end_table(ctxcanvas);
+}
+
+static void write_ucs(cdCtxCanvas *ctxcanvas)
+{
+  /* Used here, only for AutoCAD 2000 */
+
+  begin_table(ctxcanvas, "UCS", 0, "7");    /* UCS table handle=7 */
+    /* empty */
+  end_table(ctxcanvas);
+}
+
+static void write_appid(cdCtxCanvas *ctxcanvas)
+{
+  /* Used here, only for AutoCAD 2000 */
+
+  begin_table(ctxcanvas, "APPID", 1, "9");    /* APPID table handle=9 */
+
+  write_code(ctxcanvas, 0, "APPID");
+  write_code(ctxcanvas, 5, "12");   /* appid entry handle=12 */
+  write_code(ctxcanvas, 100, "AcDbSymbolTableRecord");
+  write_code(ctxcanvas, 100, "AcDbRegAppTableRecord");
+
+  write_code(ctxcanvas, 2, "ACAD");
+  write_code(ctxcanvas, 70, "0");
+
+  end_table(ctxcanvas);
+}
+
+static void write_dimstyle(cdCtxCanvas *ctxcanvas)
+{
+  /* Used here, only for AutoCAD 2000 */
+
+  begin_table(ctxcanvas, "DIMSTYLE", 1, "A");    /* DIMSTYLE table handle=A */
+  write_code(ctxcanvas, 100, "AcDbDimStyleTable");
+  write_code(ctxcanvas, 71, "0");
+
+  write_code(ctxcanvas, 0, "DIMSTYLE");
+  write_code(ctxcanvas, 105, "27");   /* dimstyle entry handle=27, notice the different code for DIMSTYLE entry handle */
+  write_code(ctxcanvas, 100, "AcDbSymbolTableRecord");
+  write_code(ctxcanvas, 100, "AcDbDimStyleTableRecord");
+
+  write_code(ctxcanvas, 2, "Standard");
+  write_code(ctxcanvas, 41, "1");
+  write_code(ctxcanvas, 42, "1");
+  write_code(ctxcanvas, 43, "3.75");
+  write_code(ctxcanvas, 44, "1");
+  write_code(ctxcanvas, 70, "0");
+  write_code(ctxcanvas, 73, "0");
+  write_code(ctxcanvas, 74, "0");
+  write_code(ctxcanvas, 77, "1");
+  write_code(ctxcanvas, 78, "8");
+  write_code(ctxcanvas,140, "1");
+  write_code(ctxcanvas,141, "2.5");
+  write_code(ctxcanvas,143, "0.03937007874016");
+  write_code(ctxcanvas,147, "1");
+  write_code(ctxcanvas,171, "3");
+  write_code(ctxcanvas,172, "1");
+  write_code(ctxcanvas,271, "2");
+  write_code(ctxcanvas,272, "2");
+  write_code(ctxcanvas,274, "3");
+  write_code(ctxcanvas,278, "44");
+  write_code(ctxcanvas,283, "0");
+  write_code(ctxcanvas,284, "8");
+  write_code(ctxcanvas,340, "11");
+
+  end_table(ctxcanvas);
+}
+
+static void write_blockrecord(cdCtxCanvas *ctxcanvas)
+{
+  /* Used here, only for AutoCAD 2000 */
+
+  begin_table(ctxcanvas, "BLOCK_RECORD", 3, "1");    /* BLOCK_RECORD table handle=1 */
+
+  write_code(ctxcanvas, 0, "BLOCK_RECORD");
+  write_code(ctxcanvas, 5, "1F");   /* blockrecord entry handle=1F */
+  write_code(ctxcanvas, 100, "AcDbSymbolTableRecord");
+  write_code(ctxcanvas, 100, "AcDbBlockTableRecord");
+  write_code(ctxcanvas,  2, "*Model_Space");
+  write_code(ctxcanvas,340, "22");
+
+  write_code(ctxcanvas, 0, "BLOCK_RECORD");
+  write_code(ctxcanvas,5, "1B");   /* blockrecord entry handle=1B */
+  write_code(ctxcanvas,100, "AcDbSymbolTableRecord");
+  write_code(ctxcanvas,100, "AcDbBlockTableRecord");
+  write_code(ctxcanvas,  2, "*Paper_Space");
+  write_code(ctxcanvas,340, "1E");
+
+  write_code(ctxcanvas, 0, "BLOCK_RECORD");
+  write_code(ctxcanvas,5, "23");  /* blockrecord entry handle=23 */
+  write_code(ctxcanvas,100, "AcDbSymbolTableRecord");
+  write_code(ctxcanvas,100, "AcDbBlockTableRecord");
+  write_code(ctxcanvas,  2, "*Paper_Space0");
+  write_code(ctxcanvas,340, "26");
+
+  end_table(ctxcanvas);
+}
+
+static void write_block(cdCtxCanvas *ctxcanvas, const char* name, const char* handle_begin, const char* handle_end, int paper)
+{
+  /* Used here, only for AutoCAD 2000 */
+
+  write_code(ctxcanvas, 0, "BLOCK");
+  write_code(ctxcanvas, 5, handle_begin);
+  write_code(ctxcanvas, 100, "AcDbEntity");
+  if (paper)
+    write_code(ctxcanvas, 67, "1");
+  write_code(ctxcanvas, 8, "0");
+  write_code(ctxcanvas, 100, "AcDbBlockBegin");
+  write_code(ctxcanvas,2, name);
+  write_code(ctxcanvas,70, "0");
+  write_code(ctxcanvas,10, "0");
+  write_code(ctxcanvas,20, "0");
+  write_code(ctxcanvas,30, "0");
+  write_code(ctxcanvas,3, name);
+  write_code(ctxcanvas,1, "");
+
+  write_code(ctxcanvas, 0, "ENDBLK");
+  write_code(ctxcanvas, 5, handle_end);
+  write_code(ctxcanvas, 100, "AcDbEntity");
+  if (paper)
+    write_code(ctxcanvas, 67, "1");
+  write_code(ctxcanvas, 8, "0");
+  write_code(ctxcanvas, 100, "AcDbBlockEnd");
+}
+
+static void write_objects(cdCtxCanvas *ctxcanvas)
+{
+  write_code(ctxcanvas, 0, "DICTIONARY");
+  write_code_hex(ctxcanvas,5, 0xC); 
+  write_code(ctxcanvas,100, "AcDbDictionary");
+  write_code_int(ctxcanvas,280, 0);
+  write_code_int(ctxcanvas,281, 1);
+  write_code(ctxcanvas, 3, "ACAD_GROUP");
+  write_code_hex(ctxcanvas,350, 0xD);
+  write_code(ctxcanvas, 3, "ACAD_LAYOUT");
+  write_code_hex(ctxcanvas,350, 0x1A);
+  write_code(ctxcanvas, 3, "ACAD_MLINESTYLE");
+  write_code_hex(ctxcanvas,350, 0x17);
+  write_code(ctxcanvas, 3, "ACAD_PLOTSETTINGS");
+  write_code_hex(ctxcanvas,350, 0x19);
+  write_code(ctxcanvas, 3, "ACAD_PLOTSTYLENAME");
+  write_code_hex(ctxcanvas,350, 0xE);
+  write_code(ctxcanvas, 3, "AcDbVariableDictionary");
+  write_code_hex(ctxcanvas,350, ctxcanvas->handle);
+
+  write_code(ctxcanvas, 0, "DICTIONARY");
+  write_code_hex(ctxcanvas,5, 0xD);
+  write_code(ctxcanvas,100, "AcDbDictionary");
+  write_code_int(ctxcanvas,280, 0);
+  write_code_int(ctxcanvas,281, 1);
+
+  write_code(ctxcanvas, 0, "ACDBDICTIONARYWDFLT");
+  write_code_hex(ctxcanvas,5, 0xE);
+  write_code(ctxcanvas,100, "AcDbDictionary");
+  write_code_int(ctxcanvas,281, 1);
+  write_code(ctxcanvas, 3, "Normal");
+  write_code_hex(ctxcanvas,350, 0xF);
+  write_code(ctxcanvas,100, "AcDbDictionaryWithDefault");
+  write_code_hex(ctxcanvas,340, 0xF);
+
+  write_code(ctxcanvas, 0, "ACDBPLACEHOLDER");
+  write_code_hex(ctxcanvas,5, 0xF);
+
+  write_code(ctxcanvas, 0, "DICTIONARY");
+  write_code_hex(ctxcanvas,5, 0x17);
+  write_code(ctxcanvas,100, "AcDbDictionary");
+  write_code_int(ctxcanvas,280, 0);
+  write_code_int(ctxcanvas,281, 1);
+  write_code(ctxcanvas, 3, "Standard");
+  write_code_hex(ctxcanvas,350, 0x18);
+
+  write_code(ctxcanvas, 0, "MLINESTYLE");
+  write_code_hex(ctxcanvas,5, 0x18);
+  write_code(ctxcanvas,100, "AcDbMlineStyle");
+  write_code(ctxcanvas, 2, "STANDARD");
+  write_code_int(ctxcanvas, 70, 0);
+  write_code(ctxcanvas, 3, "");
+  write_code_int(ctxcanvas, 62, 256);
+  write_code_real(ctxcanvas, 51, 90.0);
+  write_code_real(ctxcanvas, 52, 90.0);
+  write_code_int(ctxcanvas, 71, 2);
+  write_code_real(ctxcanvas, 49, 0.5);
+  write_code_int(ctxcanvas, 62, 256);
+  write_code(ctxcanvas, 6, "BYLAYER");
+  write_code_real(ctxcanvas, 49, -0.5);
+  write_code_int(ctxcanvas, 62, 256);
+  write_code(ctxcanvas, 6, "BYLAYER");
+
+  write_code(ctxcanvas, 0, "DICTIONARY");
+  write_code_hex(ctxcanvas,5, 0x19);
+  write_code(ctxcanvas,100, "AcDbDictionary");
+  write_code_int(ctxcanvas,280, 0);
+  write_code_int(ctxcanvas,281, 1);
+
+  write_code(ctxcanvas, 0, "DICTIONARY");
+  write_code_hex(ctxcanvas,5, 0x1A);
+  write_code(ctxcanvas,100, "AcDbDictionary");
+  write_code_int(ctxcanvas,281, 1);
+  write_code(ctxcanvas, 3, "Layout1");
+  write_code_hex(ctxcanvas,350, 0x1E);
+  write_code(ctxcanvas, 3, "Layout2");
+  write_code_hex(ctxcanvas,350, 0x26);
+  write_code(ctxcanvas, 3, "Model");
+  write_code_hex(ctxcanvas,350, 0x22);
+
+  write_code(ctxcanvas, 0, "LAYOUT");
+  write_code_hex(ctxcanvas,5, 0x1E);
+  write_code(ctxcanvas,100, "AcDbPlotSettings");
+  write_code(ctxcanvas, 1, "");
+  write_code(ctxcanvas, 2, "");
+  write_code(ctxcanvas, 4, "");
+  write_code(ctxcanvas, 6, "");
+  write_code_real(ctxcanvas, 40, 0.0);
+  write_code_real(ctxcanvas, 41, 0.0);
+  write_code_real(ctxcanvas, 42, 0.0);
+  write_code_real(ctxcanvas, 43, 0.0);
+  write_code_real(ctxcanvas, 44, 0.0);
+  write_code_real(ctxcanvas, 45, 0.0);
+  write_code_real(ctxcanvas, 46, 0.0);
+  write_code_real(ctxcanvas, 47, 0.0);
+  write_code_real(ctxcanvas, 48, 0.0);
+  write_code_real(ctxcanvas, 49, 0.0);
+  write_code_real(ctxcanvas,140, 0.0);
+  write_code_real(ctxcanvas,141, 0.0);
+  write_code_real(ctxcanvas,142, 1.0);
+  write_code_real(ctxcanvas,143, 1.0);
+  write_code_int(ctxcanvas, 70, 688);
+  write_code_int(ctxcanvas, 72, 0);
+  write_code_int(ctxcanvas, 73, 0);
+  write_code_int(ctxcanvas, 74, 5);
+  write_code(ctxcanvas, 7, "");
+  write_code_int(ctxcanvas, 75, 16);
+  write_code_real(ctxcanvas,147, 1.0);
+  write_code_real(ctxcanvas,148, 0.0);
+  write_code_real(ctxcanvas,149, 0.0);
+  write_code(ctxcanvas,100, "AcDbLayout");
+  write_code(ctxcanvas, 1, "Layout1");
+  write_code_int(ctxcanvas, 70, 1);
+  write_code_int(ctxcanvas, 71, 1);
+  write_code_real(ctxcanvas, 10, 0.0);
+  write_code_real(ctxcanvas, 20, 0.0);
+  write_code_real(ctxcanvas, 11, 420.0);
+  write_code_real(ctxcanvas, 21, 297.0);
+  write_code_real(ctxcanvas, 12, 0.0);
+  write_code_real(ctxcanvas, 22, 0.0);
+  write_code_real(ctxcanvas, 32, 0.0);
+  write_code_real(ctxcanvas, 14, 1.000000000000000E+20);
+  write_code_real(ctxcanvas, 24, 1.000000000000000E+20);
+  write_code_real(ctxcanvas, 34, 1.000000000000000E+20);
+  write_code_real(ctxcanvas, 15, -1.000000000000000E+20);
+  write_code_real(ctxcanvas, 25, -1.000000000000000E+20);
+  write_code_real(ctxcanvas, 35, -1.000000000000000E+20);
+  write_code_real(ctxcanvas,146, 0.0);
+  write_code_real(ctxcanvas, 13, 0.0);
+  write_code_real(ctxcanvas, 23, 0.0);
+  write_code_real(ctxcanvas, 33, 0.0);
+  write_code_real(ctxcanvas, 16, 1.0);
+  write_code_real(ctxcanvas, 26, 0.0);
+  write_code_real(ctxcanvas, 36, 0.0);
+  write_code_real(ctxcanvas, 17, 0.0);
+  write_code_real(ctxcanvas, 27, 1.0);
+  write_code_real(ctxcanvas, 37, 0.0);
+  write_code_int(ctxcanvas, 76, 0);
+  write_code_hex(ctxcanvas,330, 0x1B);
+
+  write_code(ctxcanvas, 0, "LAYOUT");
+  write_code_hex(ctxcanvas,5, 0x22);
+  write_code(ctxcanvas,100, "AcDbPlotSettings");
+  write_code(ctxcanvas, 1, "");
+  write_code(ctxcanvas, 2, "");
+  write_code(ctxcanvas, 4, "");
+  write_code(ctxcanvas, 6, "");
+  write_code_real(ctxcanvas, 40, 0.0);
+  write_code_real(ctxcanvas, 41, 0.0);
+  write_code_real(ctxcanvas, 42, 0.0);
+  write_code_real(ctxcanvas, 43, 0.0);
+  write_code_real(ctxcanvas, 44, 0.0);
+  write_code_real(ctxcanvas, 45, 0.0);
+  write_code_real(ctxcanvas, 46, 0.0);
+  write_code_real(ctxcanvas, 47, 0.0);
+  write_code_real(ctxcanvas, 48, 0.0);
+  write_code_real(ctxcanvas, 49, 0.0);
+  write_code_real(ctxcanvas,140, 0.0);
+  write_code_real(ctxcanvas,141, 0.0);
+  write_code_real(ctxcanvas,142, 1.0);
+  write_code_real(ctxcanvas,143, 1.0);
+  write_code_int(ctxcanvas, 70, 1712);
+  write_code_int(ctxcanvas, 72, 0);
+  write_code_int(ctxcanvas, 73, 0);
+  write_code_int(ctxcanvas, 74, 0);
+  write_code(ctxcanvas, 7, "");
+  write_code_int(ctxcanvas, 75, 0);
+  write_code_real(ctxcanvas,147, 1.0);
+  write_code_real(ctxcanvas,148, 0.0);
+  write_code_real(ctxcanvas,149, 0.0);
+  write_code(ctxcanvas,100, "AcDbLayout");
+  write_code(ctxcanvas, 1, "Model");
+  write_code_int(ctxcanvas, 70, 1);
+  write_code_int(ctxcanvas, 71, 0);
+  write_code_real(ctxcanvas, 10, 0.0);
+  write_code_real(ctxcanvas, 20, 0.0);
+  write_code_real(ctxcanvas, 11, 12.0);
+  write_code_real(ctxcanvas, 21, 9.0);
+  write_code_real(ctxcanvas, 12, 0.0);
+  write_code_real(ctxcanvas, 22, 0.0);
+  write_code_real(ctxcanvas, 32, 0.0);
+  write_code_real(ctxcanvas, 14, 0.0);
+  write_code_real(ctxcanvas, 24, 0.0);
+  write_code_real(ctxcanvas, 34, 0.0);
+  write_code_real(ctxcanvas, 15, 0.0);
+  write_code_real(ctxcanvas, 25, 0.0);
+  write_code_real(ctxcanvas, 35, 0.0);
+  write_code_real(ctxcanvas,146, 0.0);
+  write_code_real(ctxcanvas, 13, 0.0);
+  write_code_real(ctxcanvas, 23, 0.0);
+  write_code_real(ctxcanvas, 33, 0.0);
+  write_code_real(ctxcanvas, 16, 1.0);
+  write_code_real(ctxcanvas, 26, 0.0);
+  write_code_real(ctxcanvas, 36, 0.0);
+  write_code_real(ctxcanvas, 17, 0.0);
+  write_code_real(ctxcanvas, 27, 1.0);
+  write_code_real(ctxcanvas, 37, 0.0);
+  write_code_int(ctxcanvas, 76, 0);
+  write_code_hex(ctxcanvas,330, 0x1F);
+
+  write_code(ctxcanvas, 0, "LAYOUT");
+  write_code_hex(ctxcanvas,5, 0x26);
+  write_code(ctxcanvas,100, "AcDbPlotSettings");
+  write_code(ctxcanvas, 1, "");
+  write_code(ctxcanvas, 2, "");
+  write_code(ctxcanvas, 4, "");
+  write_code(ctxcanvas, 6, "");
+  write_code_real(ctxcanvas, 40, 0.0);
+  write_code_real(ctxcanvas, 41, 0.0);
+  write_code_real(ctxcanvas, 42, 0.0);
+  write_code_real(ctxcanvas, 43, 0.0);
+  write_code_real(ctxcanvas, 44, 0.0);
+  write_code_real(ctxcanvas, 45, 0.0);
+  write_code_real(ctxcanvas, 46, 0.0);
+  write_code_real(ctxcanvas, 47, 0.0);
+  write_code_real(ctxcanvas, 48, 0.0);
+  write_code_real(ctxcanvas, 49, 0.0);
+  write_code_real(ctxcanvas,140, 0.0);
+  write_code_real(ctxcanvas,141, 0.0);
+  write_code_real(ctxcanvas,142, 1.0);
+  write_code_real(ctxcanvas,143, 1.0);
+  write_code_int(ctxcanvas, 70, 688);
+  write_code_int(ctxcanvas, 72, 0);
+  write_code_int(ctxcanvas, 73, 0);
+  write_code_int(ctxcanvas, 74, 5);
+  write_code(ctxcanvas, 7, "");
+  write_code_int(ctxcanvas, 75, 16);
+  write_code_real(ctxcanvas,147, 1.0);
+  write_code_real(ctxcanvas,148, 0.0);
+  write_code_real(ctxcanvas,149, 0.0);
+  write_code(ctxcanvas,100, "AcDbLayout");
+  write_code(ctxcanvas, 1, "Layout2");
+  write_code_int(ctxcanvas, 70, 1);
+  write_code_int(ctxcanvas, 71, 2);
+  write_code_real(ctxcanvas, 10, 0.0);
+  write_code_real(ctxcanvas, 20, 0.0);
+  write_code_real(ctxcanvas, 11, 12.0);
+  write_code_real(ctxcanvas, 21, 9.0);
+  write_code_real(ctxcanvas, 12, 0.0);
+  write_code_real(ctxcanvas, 22, 0.0);
+  write_code_real(ctxcanvas, 32, 0.0);
+  write_code_real(ctxcanvas, 14, 0.0);
+  write_code_real(ctxcanvas, 24, 0.0);
+  write_code_real(ctxcanvas, 34, 0.0);
+  write_code_real(ctxcanvas, 15, 0.0);
+  write_code_real(ctxcanvas, 25, 0.0);
+  write_code_real(ctxcanvas, 35, 0.0);
+  write_code_real(ctxcanvas,146, 0.0);
+  write_code_real(ctxcanvas, 13, 0.0);
+  write_code_real(ctxcanvas, 23, 0.0);
+  write_code_real(ctxcanvas, 33, 0.0);
+  write_code_real(ctxcanvas, 16, 1.0);
+  write_code_real(ctxcanvas, 26, 0.0);
+  write_code_real(ctxcanvas, 36, 0.0);
+  write_code_real(ctxcanvas, 17, 0.0);
+  write_code_real(ctxcanvas, 27, 1.0);
+  write_code_real(ctxcanvas, 37, 0.0);
+  write_code_int(ctxcanvas, 76, 0);
+  write_code_hex(ctxcanvas,330, 0x23);
+
+  write_code(ctxcanvas, 0, "DICTIONARY");
+  write_unique_handle(ctxcanvas); 
+  write_code(ctxcanvas,100, "AcDbDictionary");
+  write_code_int(ctxcanvas,281, 1);
+  write_code(ctxcanvas, 3, "DIMASSOC");
+  write_code_hex(ctxcanvas,350, ctxcanvas->handle+1); 
+  write_code(ctxcanvas, 3, "HIDETEXT");
+  write_code_hex(ctxcanvas,350, ctxcanvas->handle); 
+
+  write_code(ctxcanvas, 0, "DICTIONARYVAR");
+  write_unique_handle(ctxcanvas); 
+  write_code(ctxcanvas,100, "DictionaryVariables");
+  write_code_int(ctxcanvas,280, 0);
+  write_code_int(ctxcanvas, 1, 2);
+
+  write_code(ctxcanvas, 0, "DICTIONARYVAR");
+  write_unique_handle(ctxcanvas); 
+  write_code(ctxcanvas,100, "DictionaryVariables");
+  write_code_int(ctxcanvas,280, 0);
+  write_code_int(ctxcanvas, 1, 1);
+}
+
+static void begin_entity(cdCtxCanvas *ctxcanvas, const char* name, const char* db_name)
+{
+  write_code(ctxcanvas, 0, name);
+
+  if (ctxcanvas->acad2000)
+  {
+    write_unique_handle(ctxcanvas);
+    write_code(ctxcanvas, 100, "AcDbEntity");
+    write_code(ctxcanvas, 100, db_name);
+  }
+
+  write_code_int(ctxcanvas, 8, ctxcanvas->layer);
+}
+
+static void write_polyline (cdCtxCanvas *ctxcanvas, void *vpoly, int nv, int type_int)
+{
+  int i;
+  cdPoint  *ipoly = (cdPoint*)vpoly;
+  cdfPoint *rpoly = (cdfPoint*)vpoly;
+
+  if (ctxcanvas->acad2000)
+    begin_entity(ctxcanvas, "LWPOLYLINE", "AcDbPolyline");
+  else
+    begin_entity(ctxcanvas, "POLYLINE", NULL);
+                               
+  write_code_int(ctxcanvas, 62, ctxcanvas->fgcolor_index);
+
+  write_line_type_name(ctxcanvas, 6, ctxcanvas->line_type_index);
+
+  write_code(ctxcanvas, 70, "0" );  /* both (flag=0) but different meaning for ac2000 */
+
+  if (ctxcanvas->acad2000)
+  {
+    write_code(ctxcanvas, 370, "0");  /* line weight */
+    write_code_real(ctxcanvas, 43, ctxcanvas->line_width);  /* constant width */
+    write_code_int(ctxcanvas, 90, nv);  /* number of vertices */
+  }
+  else
+  {
+    write_code(ctxcanvas, 66, "1");
+
+    write_code_real(ctxcanvas, 40, ctxcanvas->line_width);   /* start width */
+    write_code_real(ctxcanvas, 41, ctxcanvas->line_width);   /* end width */
+
+    /* DXF: always 0 */
+    write_code(ctxcanvas, 10, "0");
+    write_code(ctxcanvas, 20, "0");
+    write_code(ctxcanvas, 30, "0");
+  }
+
+  for ( i=0; i<nv; i++ )
+  {
+    if (!ctxcanvas->acad2000)
+      begin_entity(ctxcanvas, "VERTEX", NULL);   /* there is no specific end */
+
+    if (type_int)
+    {
+      write_code_int(ctxcanvas, 10, ipoly[i].x);
+      write_code_int(ctxcanvas, 20, ipoly[i].y);
+    }
+    else
+    {
+      write_code_real(ctxcanvas, 10, rpoly[i].x);
+      write_code_real(ctxcanvas, 20, rpoly[i].y);
+    }
+    write_code(ctxcanvas, 30, "0");  /* z */
+  }
+
+  if (!ctxcanvas->acad2000)
+    write_code(ctxcanvas, 0, "SEQEND");       /* end of polyline */ 
+}
+
+static void write_hatch (cdCtxCanvas *ctxcanvas, void *vpoly, int nv, int type_int)
+{
+  /* Used here, only for AutoCAD 2000 */
+  int i;
+  cdPoint  *ipoly = (cdPoint*)vpoly;
+  cdfPoint *rpoly = (cdfPoint*)vpoly;
+
+  begin_entity(ctxcanvas, "HATCH", "AcDbHatch");
+
+  write_code_int(ctxcanvas, 62, ctxcanvas->fgcolor_index);
+
+  /* Elevation point (in OCS) */
+  write_code(ctxcanvas, 10, "0");
+  write_code(ctxcanvas, 20, "0");
+  write_code(ctxcanvas, 30, "0");
+
+  /* Extrusion direction */
+  write_code(ctxcanvas, 210, "0");
+  write_code(ctxcanvas, 220, "0");
+  write_code(ctxcanvas, 230, "1");
+
+  if (ctxcanvas->canvas->interior_style == CD_HATCH)
+  {
+    write_code(ctxcanvas, 2, "HATCHED");
+    write_code(ctxcanvas, 70, "0");       /* pattern fill */
+  }
+  else
+  {
+    write_code(ctxcanvas, 2, "SOLID");
+    write_code(ctxcanvas, 70, "1");       /* solid fill */
+  }
+
+  write_code(ctxcanvas, 71, "0" );   /* non-associative */
+  write_code(ctxcanvas, 91, "1" );   /* number of boundary paths */
+
+  /* Begin Boundary Path Data */ 
+  write_code(ctxcanvas, 92, "2" );   /* Boundary path type flag (Polyline) */
+
+  /* Begin Polyline boundary data */
+  write_code(ctxcanvas, 72, "0" );   /* Has bulge flag */
+  write_code(ctxcanvas, 73, "1" );   /* Is closed flag */
+  write_code_int(ctxcanvas, 93, nv);  /* Number of polyline vertices */
+
+  for ( i=0; i<nv; i++ )
+  {
+    /* Vertex location (in OCS) */
+    if (type_int)
+    {
+      write_code_int(ctxcanvas, 10, ipoly[i].x);
+      write_code_int(ctxcanvas, 20, ipoly[i].y);
+    }
+    else
+    {
+      write_code_real(ctxcanvas, 10, rpoly[i].x);
+      write_code_real(ctxcanvas, 20, rpoly[i].y);
+    }
+  }
+  /* End Polyline boundary data */
+
+  write_code(ctxcanvas, 97, "0" );  /* Number of source boundary objects */
+  /* End Boundary Path Data */ 
+
+  write_code(ctxcanvas, 75, "0" );   /* Hatch style (Normal) */
+  write_code(ctxcanvas, 76, "1" );   /* Hatch pattern type (Predefined) */
+
+  if (ctxcanvas->canvas->interior_style == CD_HATCH)
+  {
+    //TODO
+    write_code_real(ctxcanvas, 52, 0);   /* pattern angle */
+    write_code_real(ctxcanvas, 41, 1);   /* pattern scale or spacing */
+    write_code_int(ctxcanvas, 77, 0);
+    write_code_int(ctxcanvas, 78, 1);
+
+    /* Pattern Data */
+    write_code_real(ctxcanvas, 53, 45.0);
+    write_code_real(ctxcanvas, 43, 0.0);
+    write_code_real(ctxcanvas, 44, 0.0);
+    write_code_real(ctxcanvas, 45, -0.0883883476483184);
+    write_code_real(ctxcanvas, 46, 0.0883883476483185);
+    write_code_int(ctxcanvas, 79, 0);
+  }
+
+  /* Number of seed points */
+  write_code(ctxcanvas, 98, "0");
+}
+
+
+/*********************************************************************************************/
+
 
 static void cddeactivate (cdCtxCanvas *ctxcanvas)
 {
-  fflush (ctxcanvas->file);               /* flush file */
+  fflush (ctxcanvas->file);
 }
 
 static void cdkillcanvas(cdCtxCanvas *ctxcanvas)
 {
-  fprintf (ctxcanvas->file, "0\n");
-  fprintf (ctxcanvas->file, "ENDSEC\n");
-  fprintf (ctxcanvas->file, "0\n");
-  fprintf (ctxcanvas->file, "EOF\n");     /* fputs eof */
-  fprintf (ctxcanvas->file, " \n");
+  end_section(ctxcanvas);  /* End ENTITIES section */
 
-  fflush (ctxcanvas->file);               /* flush file */
+  if (ctxcanvas->acad2000)
+  {
+    begin_section(ctxcanvas, "OBJECTS");
+      write_objects(ctxcanvas);
+    end_section(ctxcanvas);
+  }
+
+  write_code(ctxcanvas, 0, "EOF");  /* End the ASCII format */
+
+  fflush (ctxcanvas->file);
   fclose (ctxcanvas->file);
 
   memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
@@ -484,80 +1079,6 @@ static void cdflush (cdCtxCanvas *ctxcanvas)
 /*==========================================================================*/
 /* Primitives                                                               */
 /*==========================================================================*/
-static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
-{
-  if (mode == CD_BEZIER)
-  {
-    cdSimPolyBezier(ctxcanvas->canvas, poly, n);
-    return;
-  }
-  if (mode == CD_PATH)
-  {
-    cdSimPolyPath(ctxcanvas->canvas, poly, n);
-    return;
-  }
-
-  if (mode == CD_CLOSED_LINES || mode == CD_FILL)
-  {
-    poly[n].x = poly[0].x;
-    poly[n].y = poly[0].y;
-    n++;
-  }
-
-  if( mode == CD_FILL && ctxcanvas->fill)
-    writehatch (ctxcanvas, poly, n);               /* write fill area */
-  else
-    writepoly (ctxcanvas, poly, n);                /* write polygon */
-}
-
-static void cdline (cdCtxCanvas *ctxcanvas, int x1, int y1, int x2, int y2)
-{
-  cdPoint line[2];                   /* uses new array of points to avoid      */
-
-  line[0].x = x1;                    /* starting point */
-  line[0].y = y1;
-  line[1].x = x2;                    /* ending point   */
-  line[1].y = y2;
-  writepoly (ctxcanvas, line, 2);    /* draw line as a polygon */
-}
-
-static void cdrect(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
-{
-  cdPoint rect[5];                     /* uses new array of points to avoid      */
-
-  rect[0].x = xmin;
-  rect[0].y = ymin;
-  rect[1].x = xmin;
-  rect[1].y = ymax;
-  rect[2].x = xmax;                  /* box edges */
-  rect[2].y = ymax;
-  rect[3].x = xmax;
-  rect[3].y = ymin;
-  rect[4].x = xmin;
-  rect[4].y = ymin;
-  writepoly (ctxcanvas, rect, 5);              /* draw box as a polygon */
-}
-
-static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax)
-{
-  cdPoint rect[5];                     /* uses new array of points to avoid      */
-
-  rect[0].x = xmin;
-  rect[0].y = ymin;
-  rect[1].x = xmin;
-  rect[1].y = ymax;
-  rect[2].x = xmax;                  /* box edges */
-  rect[2].y = ymax;
-  rect[3].x = xmax;
-  rect[3].y = ymin;
-  rect[4].x = xmin;
-  rect[4].y = ymin;
-  
-  if(ctxcanvas->fill)
-    writehatch (ctxcanvas, rect, 5);               /* write fill area */
-  else
-    writepoly (ctxcanvas, rect, 5);                /* write polygon */
-}
 
 static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
 {
@@ -579,290 +1100,72 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
     n++;
   }
 
-  if( mode == CD_FILL && ctxcanvas->fill)
-    writehatchf (ctxcanvas, poly, n);               /* write fill area */
+  if( mode == CD_FILL && ctxcanvas->acad2000)
+    write_hatch (ctxcanvas, poly, n, 0);               /* write fill area */
   else
-    writepolyf (ctxcanvas, poly, n);                /* write polygon */
+    write_polyline (ctxcanvas, poly, n, 0);                /* write polygon */
 }
 
-static void cdfline (cdCtxCanvas *ctxcanvas, double x1, double y1, double x2, double y2)
+static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
 {
-  cdfPoint line[2];                   /* uses new array of points to avoid      */
-
-  line[0].x = x1;                    /* starting point */
-  line[0].y = y1;
-  line[1].x = x2;                    /* ending point   */
-  line[1].y = y2;
-  writepolyf (ctxcanvas, line, 2);    /* draw line as a polygon */
-}
-
-static void cdfrect(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
-{
-  cdfPoint rect[5];                     /* uses new array of points to avoid      */
-
-  rect[0].x = xmin;
-  rect[0].y = ymin;
-  rect[1].x = xmin;
-  rect[1].y = ymax;
-  rect[2].x = xmax;                  /* box edges */
-  rect[2].y = ymax;
-  rect[3].x = xmax;
-  rect[3].y = ymin;
-  rect[4].x = xmin;
-  rect[4].y = ymin;
-  writepolyf (ctxcanvas, rect, 5);              /* draw box as a polygon */
-}
-
-static void cdfbox(cdCtxCanvas *ctxcanvas, double xmin, double xmax, double ymin, double ymax)
-{
-  cdfPoint rect[5];                     /* uses new array of points to avoid      */
-
-  rect[0].x = xmin;
-  rect[0].y = ymin;
-  rect[1].x = xmin;
-  rect[1].y = ymax;
-  rect[2].x = xmax;                  /* box edges */
-  rect[2].y = ymax;
-  rect[3].x = xmax;
-  rect[3].y = ymin;
-  rect[4].x = xmin;
-  rect[4].y = ymin;
-
-  if(ctxcanvas->fill)
-    writehatchf (ctxcanvas, rect, 5);               /* write fill area */
-  else
-    writepolyf (ctxcanvas, rect, 5);                /* write polygon */
-}
-
-/*--------------------------------------------------------------------------*/
-/* gives radius of the circle most resembling elliptic arc at angle t       */
-/*--------------------------------------------------------------------------*/
-static double calc_radius (double a, double b, double t)
-{
-  return (pow ((a*a*sin(t)*sin(t) + b*b*cos(t)*cos(t)), 1.5))/(a*b);
-}
-
-/*--------------------------------------------------------------------------*/
-/* calculates bulge for a given circular arc segment (between points p1 and */
-/* p2, with radius r). Bulge is the tangent of 1/4 the angle theta of the   */
-/* arc segment(a bulge of 1 is a semicircle, which has an angle of 180 deg) */
-/*--------------------------------------------------------------------------*/
-static double calc_bulge (double a, double b, double t1, double t2)
-{
-  cdfPoint p1, p2;        /* initial and ending arc points                 */
-  double r;               /* radius most resembling arc at angle (t1+t2)/2 */
-  double theta;           /* angle of circular arc segment                 */
-  double sin_theta;       /* sine of theta                                 */
-  double dist_x;          /* distance between two points along the x axis  */
-  double dist_y;          /* distance between two points along the y axis  */
-  double halfdist;        /* half distance between two points              */
-
-  p1.x = a*cos(t1);
-  p1.y = b*sin(t1);
-  p2.x = a*cos(t2);
-  p2.y = b*sin(t2);
-  r    = calc_radius (a, b, (t1+t2)/2);
-
-  dist_x      = p2.x - p1.x;
-  dist_y      = p2.y - p1.y;
-  halfdist    = (sqrt (dist_x*dist_x + dist_y*dist_y))/2;
-  sin_theta   = halfdist/r;
-  if (sin_theta > 1)  sin_theta = 1;
-  theta       = 2*asin(sin_theta);
-
-  return tan(theta/4);
-}
-
-static void writevertex (cdCtxCanvas *ctxcanvas, double xc, double yc, double a, double b, double t, double bulge)
-{
-  double x = xc + a*cos(t);
-  double y = yc + b*sin(t);
-
-  fprintf ( ctxcanvas->file, "0\n" );
-  fprintf ( ctxcanvas->file, "VERTEX\n" );
-  fprintf ( ctxcanvas->file, "8\n" );
-  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer);      /* current layer */
-  fprintf ( ctxcanvas->file, "10\n" );
-  fprintf ( ctxcanvas->file, "%f\n", x );
-  fprintf ( ctxcanvas->file, "20\n" );               /* vertex coordinates     */
-  fprintf ( ctxcanvas->file, "%f\n", y );
-  fprintf ( ctxcanvas->file, "30\n" );               /* vertex coordinates     */
-  fprintf ( ctxcanvas->file, "0.0\n" );
-  fprintf ( ctxcanvas->file, "42\n" );               /* bulge from this vertex */
-  fprintf ( ctxcanvas->file, "%f\n", bulge );         /* to the next one        */
-}
-
-static void cdfarc (cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
-{
-  double bulge;        /* bulge is the tangent of 1/4 the angle for a given */
-                       /* circle arc segment (a bulge of 1 is a semicircle) */
-  double t;            /* current arc angle being calculated    */
-  double t1;           /* a1 in radians                         */
-  double t2;           /* a2 in radians                         */
-  double a;            /* half horizontal axis                  */
-  double b;            /* half vertical axis                    */
-  double seg_angle;    /* angle of every arc segment            */
-  double diff;         /* angle between a1 and a2               */
-  int nseg;            /* number of arc segments                */
-  int i;
-
-  a         = w/2.0;
-  b         = h/2.0;
-  t1        = a1*CD_DEG2RAD;                /* a1 in radians */
-  t2        = a2*CD_DEG2RAD;                /* a2 in radians */
-  diff      = fabs(a2 - a1);
-  nseg      = cdRound(diff)/(360/32); /* 32 segments in closed ellipse */
-  nseg      = max(nseg, 1);
-  seg_angle = (t2-t1)/nseg;
-
-  fprintf ( ctxcanvas->file, "0\n" );
-  fprintf ( ctxcanvas->file, "POLYLINE\n" );
-  fprintf ( ctxcanvas->file, "8\n" );
-  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer);  /* current layer */
-  fprintf ( ctxcanvas->file, "6\n" );
-  wnamline( ctxcanvas, ctxcanvas->lt );                     /* line type */
-  fprintf ( ctxcanvas->file, "62\n" );
-  fprintf ( ctxcanvas->file, "%3d\n", ctxcanvas->fgcolor ); /* color */
-  fprintf ( ctxcanvas->file, "66\n" );
-  fprintf ( ctxcanvas->file, "1\n" );
-  fprintf ( ctxcanvas->file, "70\n" );
-  fprintf ( ctxcanvas->file, "128\n" );
-  fprintf ( ctxcanvas->file, "40\n" );
-  fprintf ( ctxcanvas->file, "%f\n", ctxcanvas->lw );
-  fprintf ( ctxcanvas->file, "41\n" );          /* entire arc line width */
-  fprintf ( ctxcanvas->file, "%f\n", ctxcanvas->lw );
-
-  fprintf ( ctxcanvas->file, "10\n" );
-  fprintf ( ctxcanvas->file, "0.0\n" );
-  fprintf ( ctxcanvas->file, "20\n" );
-  fprintf ( ctxcanvas->file, "0.0\n" );
-  fprintf ( ctxcanvas->file, "30\n" );
-  fprintf ( ctxcanvas->file, "0.0\n" );
-
-  for (i=0, t=t1; i<nseg; i++, t+=seg_angle)
-  {                                            /* calculate bulge between t */
-    bulge = calc_bulge (a, b, t, t+seg_angle); /* and t+seg_angle and write */
-    writevertex (ctxcanvas, xc, yc, a, b, t, bulge);      /* vertex at t               */
+  if (mode == CD_BEZIER)
+  {
+    cdSimPolyBezier(ctxcanvas->canvas, poly, n);
+    return;
+  }
+  if (mode == CD_PATH)
+  {
+    cdSimPolyPath(ctxcanvas->canvas, poly, n);
+    return;
   }
 
-  writevertex (ctxcanvas, xc, yc, a, b, t2, 0);     /* bulge of last vertex is useless */
-
-  fprintf ( ctxcanvas->file, "0\n" );
-  fprintf ( ctxcanvas->file, "SEQEND\n" );
-}
-
-static void cdarc (cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
-{
-  /* Use double precision to export */
-  cdfarc(ctxcanvas, (double)xc, (double)yc, (double)w, (double)h, a1, a2);
-}
-
-static void cdfsector (cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
-{
-  double bulge;        /* bulge is the tangent of 1/4 the angle for a given */
-                       /* circle arc segment (a bulge of 1 is a semicircle) */
-  double t;            /* current arc angle being calculated    */
-  double t1;           /* a1 in radians                         */
-  double t2;           /* a2 in radians                         */
-  double a;            /* half horizontal axis                  */
-  double b;            /* half vertical axis                    */
-  double seg_angle;    /* angle of every arc segment            */
-  double diff;         /* angle between a1 and a2               */
-  int nseg;            /* number of arc segments                */
-  int i;
-
-  a         = w/2;
-  b         = h/2;
-  t1        = a1*CD_DEG2RAD;              /* a1 in radians */
-  t2        = a2*CD_DEG2RAD;              /* a2 in radians */
-  diff      = fabs(a2 - a1);
-  nseg      = cdRound(diff)/(360/32); /* 32 segments in closed ellipse */
-  nseg      = max(nseg, 1);
-  seg_angle = (t2-t1)/nseg;
-
-  fprintf ( ctxcanvas->file, "0\n" );
-  fprintf ( ctxcanvas->file, "POLYLINE\n" );
-  fprintf ( ctxcanvas->file, "8\n" );
-  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer); /* current layer */
-  fprintf ( ctxcanvas->file, "6\n" );
-  wnamline( ctxcanvas, ctxcanvas->lt );                     /* line type */
-  fprintf ( ctxcanvas->file, "62\n" );
-  fprintf ( ctxcanvas->file, "%3d\n", ctxcanvas->fgcolor ); /* color */
-  fprintf ( ctxcanvas->file, "66\n" );
-  fprintf ( ctxcanvas->file, "1\n" );
-  fprintf ( ctxcanvas->file, "70\n" );
-  fprintf ( ctxcanvas->file, "128\n" );
-  fprintf ( ctxcanvas->file, "40\n" );
-  fprintf ( ctxcanvas->file, "%f\n", ctxcanvas->lw );
-  fprintf ( ctxcanvas->file, "41\n" );          /* entire arc line width */
-  fprintf ( ctxcanvas->file, "%f\n", ctxcanvas->lw );
-
-  fprintf ( ctxcanvas->file, "10\n" );
-  fprintf ( ctxcanvas->file, "0.0\n" );
-  fprintf ( ctxcanvas->file, "20\n" );
-  fprintf ( ctxcanvas->file, "0.0\n" );
-  fprintf ( ctxcanvas->file, "30\n" );
-  fprintf ( ctxcanvas->file, "0.0\n" );
-
-  if ((a2-a1) != 360)
-    writevertex (ctxcanvas, xc, yc, 0, 0, 0, 0);    /* center */
-
-  for (i=0, t=t1; i<nseg; i++, t+=seg_angle)
-  {                                            /* calculate bulge between t */
-    bulge = calc_bulge (a, b, t, t+seg_angle); /* and t+seg_angle and write */
-    writevertex (ctxcanvas, xc, yc, a, b, t, bulge);      /* vertex at t               */
+  if (mode == CD_CLOSED_LINES || mode == CD_FILL)
+  {
+    poly[n].x = poly[0].x;
+    poly[n].y = poly[0].y;
+    n++;
   }
 
-  writevertex (ctxcanvas, xc, yc, a, b, t2, 0);     /* bulge of last vertex is useless */
-
-  if ((a2-a1) != 360)
-    writevertex (ctxcanvas, xc, yc, 0, 0, 0, 0);    /* center */
-
-  fprintf ( ctxcanvas->file, "0\n" );
-  fprintf ( ctxcanvas->file, "SEQEND\n" );
-}
-
-static void cdsector (cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
-{
-  /* Use double precision to export */
-  cdfsector(ctxcanvas, (double)xc, (double)yc, (double)w, (double)h, a1, a2);
+  if( mode == CD_FILL && ctxcanvas->acad2000)
+    write_hatch (ctxcanvas, poly, n, 1);               /* write fill area */
+  else
+    write_polyline (ctxcanvas, poly, n, 1);                /* write polygon */
 }
 
 static void cdftext (cdCtxCanvas *ctxcanvas, double x, double y, const char *s, int len)
 {
-  fprintf ( ctxcanvas->file, "0\n" );
-  fprintf ( ctxcanvas->file, "TEXT\n" );
-  fprintf ( ctxcanvas->file, "8\n" );
-  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer);   /* current layer */
-  fprintf ( ctxcanvas->file, "7\n" );
-  wnamfont( ctxcanvas, ctxcanvas->tf );                      /* current font  */
-  fprintf ( ctxcanvas->file, "62\n" );
-  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->fgcolor );   /* color            */
+  begin_entity(ctxcanvas, "TEXT", "AcDbText");
 
-  fprintf ( ctxcanvas->file, "10\n" );
-  fprintf ( ctxcanvas->file, "%f\n", x);    /* current position */
-  fprintf ( ctxcanvas->file, "20\n" );
-  fprintf ( ctxcanvas->file, "%f\n", y);
-  fprintf ( ctxcanvas->file, "11\n" );
-  fprintf ( ctxcanvas->file, "%f\n", x);    /* alignment point  */
-  fprintf ( ctxcanvas->file, "21\n" );
-  fprintf ( ctxcanvas->file, "%f\n", y);
-  
-  fprintf ( ctxcanvas->file, "40\n" );
-  fprintf ( ctxcanvas->file, "%f\n",  ctxcanvas->th );    /* text height */
-  fprintf ( ctxcanvas->file, "50\n" );
-  fprintf ( ctxcanvas->file, "%f\n",  ctxcanvas->canvas->text_orientation );    /* text orientation angle    */
-  fprintf ( ctxcanvas->file, "51\n" );
-  fprintf ( ctxcanvas->file, "%3d\n", ctxcanvas->toa );   /* text oblique angle        */
-  fprintf ( ctxcanvas->file, "72\n" );
-  fprintf ( ctxcanvas->file, "%3d\n", ctxcanvas->tha );   /* text horizontal alignment */
-  fprintf ( ctxcanvas->file, "73\n" );
-  fprintf ( ctxcanvas->file, "%3d\n", ctxcanvas->tva );   /* text vertical alignment   */
-  fprintf ( ctxcanvas->file, "1\n" );
+  /* attributes */
+  write_code_int(ctxcanvas, 62, ctxcanvas->fgcolor_index);
+
+  /* coordinates */
+  write_code_real(ctxcanvas, 10, x);
+  write_code_real(ctxcanvas, 20, y);
+  write_code(ctxcanvas, 30, "0");  /* z */
+
+  write_code_real(ctxcanvas, 40, ctxcanvas->text_height );    /* text height */
 
   s = cdStrDupN(s, len);
-  fprintf ( ctxcanvas->file, "%s\n", s );          /* text */
+  write_code(ctxcanvas, 1, s);          /* text */
   free((char*)s);
+
+  write_code_real(ctxcanvas, 50, ctxcanvas->canvas->text_orientation );    /* text orientation angle    */
+  write_code(ctxcanvas, 41, "1");                   /* Relative X scale factor */
+  write_code_int(ctxcanvas, 51, ctxcanvas->text_oblique_angle );   /* text oblique angle        */
+  write_font_type( ctxcanvas, 7, ctxcanvas->font_index );                      /* current font  */
+  write_code(ctxcanvas, 71, "0");                   /* Text generation flags */
+  write_code_int(ctxcanvas, 72, ctxcanvas->text_horiz_align );   /* horizontal alignment */
+
+  /* alignment point  */
+  write_code_real(ctxcanvas, 11, x);
+  write_code_real(ctxcanvas, 21, y);
+  write_code(ctxcanvas, 31, "0");  /* z */
+  
+  if (ctxcanvas->acad2000)
+    write_code(ctxcanvas, 100, "AcDbText");
+
+  write_code_int(ctxcanvas, 73, ctxcanvas->text_vert_align );   /* vertical alignment   */
 }
 
 static void cdtext (cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
@@ -879,19 +1182,19 @@ static int cdlinestyle (cdCtxCanvas *ctxcanvas, int style)
   switch (style)
   {
   case CD_CONTINUOUS:
-    ctxcanvas->lt = 0;
+    ctxcanvas->line_type_index = 0;
     break;
   case CD_DASHED:
-    ctxcanvas->lt = 1;
+    ctxcanvas->line_type_index = 1;
     break;
   case CD_DOTTED:
-    ctxcanvas->lt = 5;
+    ctxcanvas->line_type_index = 5;
     break;
   case CD_DASH_DOT:
-    ctxcanvas->lt = 6;
+    ctxcanvas->line_type_index = 6;
     break;
   case CD_DASH_DOT_DOT:
-    ctxcanvas->lt = 8;
+    ctxcanvas->line_type_index = 8;
     break;
   }
 
@@ -900,102 +1203,64 @@ static int cdlinestyle (cdCtxCanvas *ctxcanvas, int style)
 
 static int cdlinewidth (cdCtxCanvas *ctxcanvas, int width)
 {
-  ctxcanvas->lw = ( width <= 1 ? 0.0 : width );
+  ctxcanvas->line_width = ( width <= 1 ? 0.0 : width );
   return width;
 }
 
 static int cdfont (cdCtxCanvas *ctxcanvas, const char *type_face, int style, int size)
 {
-  /* obs: DXF's text height (ctxcanvas->th) corresponds to CD ascent */
-
   if (cdStrEqualNoCase(type_face, "System"))
   {
-    ctxcanvas->tf = 0;
-    ctxcanvas->toa = 0;
-    ctxcanvas->th = 0.75;
+    ctxcanvas->font_index = 0;
+
+    ctxcanvas->text_height = 0.75;
   }
   else if (cdStrEqualNoCase(type_face, "Courier"))
   {
     switch (style&3)
     {
-      case CD_PLAIN:
-        ctxcanvas->tf = 1;
-        ctxcanvas->toa = 0;
-        break;
-
-      case CD_BOLD:
-        ctxcanvas->tf = 2;
-        ctxcanvas->toa = 0;
-        break;
-
-      case CD_ITALIC:
-        ctxcanvas->tf = 1;
-        ctxcanvas->toa = 15;
-        break;
-
-      case CD_BOLD_ITALIC:
-        ctxcanvas->tf = 2;
-        ctxcanvas->toa = 15;
-        break;
+      case CD_PLAIN: ctxcanvas->font_index = 1; break;
+      case CD_BOLD: ctxcanvas->font_index = 2; break;
+      case CD_ITALIC: ctxcanvas->font_index = 1; break;
+      case CD_BOLD_ITALIC: ctxcanvas->font_index = 2; break;
     }
-    ctxcanvas->th = 0.75;
+
+    ctxcanvas->text_height = 0.75;
   }
   else if (cdStrEqualNoCase(type_face, "Times"))
   {
     switch (style&3)
     {
-      case CD_PLAIN:
-        ctxcanvas->tf = 3;
-        ctxcanvas->toa = 0;
-        break;
-
-      case CD_BOLD:
-        ctxcanvas->tf = 4;
-        ctxcanvas->toa = 0;
-        break;
-
-      case CD_ITALIC:
-        ctxcanvas->tf = 3;
-        ctxcanvas->toa = 15;
-        break;
-
-      case CD_BOLD_ITALIC:
-        ctxcanvas->tf = 4;
-        ctxcanvas->toa = 15;
-        break;
+      case CD_PLAIN: ctxcanvas->font_index = 3; break;
+      case CD_BOLD: ctxcanvas->font_index = 4; break;
+      case CD_ITALIC: ctxcanvas->font_index = 3; break;
+      case CD_BOLD_ITALIC: ctxcanvas->font_index = 4; break;
     }
-    ctxcanvas->th = 1.125;
+
+    ctxcanvas->text_height = 1.125;
   }
   else if (cdStrEqualNoCase(type_face, "Helvetica"))
   {
     switch (style&3)
     {
-      case CD_PLAIN:
-        ctxcanvas->tf = 5;
-        ctxcanvas->toa = 0;
-        break;
-
-      case CD_BOLD:
-        ctxcanvas->tf = 6;
-        ctxcanvas->toa = 0;
-        break;
-
-      case CD_ITALIC:
-        ctxcanvas->tf = 5;
-        ctxcanvas->toa = 15;
-        break;
-
-      case CD_BOLD_ITALIC:
-        ctxcanvas->tf = 6;
-        ctxcanvas->toa = 15;
-        break;
+      case CD_PLAIN: ctxcanvas->font_index = 5; break;
+      case CD_BOLD: ctxcanvas->font_index = 6; break;
+      case CD_ITALIC: ctxcanvas->font_index = 5; break;
+      case CD_BOLD_ITALIC: ctxcanvas->font_index = 6; break;
     }
-    ctxcanvas->th = 1.;
+
+    ctxcanvas->text_height = 1.;
   }
   else
     return 0;
 
-  ctxcanvas->th = ctxcanvas->th * cdGetFontSizePoints(ctxcanvas->canvas, size);
+  if (style & CD_ITALIC)
+    ctxcanvas->text_oblique_angle = 15;
+  else
+    ctxcanvas->text_oblique_angle = 0;
+
+  /* DXF's text height corresponds to CD ascent */
+  ctxcanvas->text_height = ctxcanvas->text_height * cdGetFontSizePoints(ctxcanvas->canvas, size);
 
   return 1;
 }
@@ -1005,9 +1270,9 @@ static void cdgetfontdim (cdCtxCanvas *ctxcanvas, int *max_width, int *height, i
   double tangent_ta;
   double pixel_th;
 
-  tangent_ta = tan(ctxcanvas->toa*CD_DEG2RAD);
-  pixel_th = (ctxcanvas->th*ctxcanvas->canvas->xres)/CD_MM2PT;  /* points to pixels */
-  switch (ctxcanvas->tf)
+  tangent_ta = tan(ctxcanvas->text_oblique_angle*CD_DEG2RAD);
+  pixel_th = (ctxcanvas->text_height*ctxcanvas->canvas->xres)/CD_MM2PT;  /* points to pixels */
+  switch (ctxcanvas->font_index)
   {
     case 0:                                  /* STANDARD font (CD_SYSTEM) */
       if (height)    *height    =  cdRound(pixel_th*4/3);
@@ -1056,10 +1321,10 @@ static void cdgettextsize (cdCtxCanvas *ctxcanvas, const char *s, int len, int *
   (void)s;
 
   i = len;
-  tangent_ta = tan(ctxcanvas->toa*CD_DEG2RAD);
-  pixel_th = (ctxcanvas->th*ctxcanvas->canvas->xres)/CD_MM2PT;  /* points to pixels */
+  tangent_ta = tan(ctxcanvas->text_oblique_angle*CD_DEG2RAD);
+  pixel_th = (ctxcanvas->text_height*ctxcanvas->canvas->xres)/CD_MM2PT;  /* points to pixels */
 
-  switch (ctxcanvas->tf)  /* width return value based on maximum character width */
+  switch (ctxcanvas->font_index)  /* width return value based on maximum character width */
   {
     case 0:                                  /* STANDARD font (CD_SYSTEM) */
       if (height) *height = cdRound(pixel_th*4/3);
@@ -1095,63 +1360,63 @@ static int cdtextalignment (cdCtxCanvas *ctxcanvas, int alignment)
   switch (alignment)          /* convert alignment to DXF format */
   {
     case CD_BASE_LEFT:
-      ctxcanvas->tva = 0;
-      ctxcanvas->tha = 0;
+      ctxcanvas->text_vert_align = 0;
+      ctxcanvas->text_horiz_align = 0;
       break;
 
     case CD_BASE_CENTER:
-      ctxcanvas->tva = 0;
-      ctxcanvas->tha = 1;
+      ctxcanvas->text_vert_align = 0;
+      ctxcanvas->text_horiz_align = 1;
       break;
 
     case CD_BASE_RIGHT:
-      ctxcanvas->tva = 0;
-      ctxcanvas->tha = 2;
+      ctxcanvas->text_vert_align = 0;
+      ctxcanvas->text_horiz_align = 2;
       break;
 
     case CD_SOUTH_WEST:
-      ctxcanvas->tva = 1;
-      ctxcanvas->tha = 0;
+      ctxcanvas->text_vert_align = 1;
+      ctxcanvas->text_horiz_align = 0;
       break;
 
     case CD_SOUTH:
-      ctxcanvas->tva = 1;
-      ctxcanvas->tha = 1;
+      ctxcanvas->text_vert_align = 1;
+      ctxcanvas->text_horiz_align = 1;
       break;
 
     case CD_SOUTH_EAST:
-      ctxcanvas->tva = 1;
-      ctxcanvas->tha = 2;
+      ctxcanvas->text_vert_align = 1;
+      ctxcanvas->text_horiz_align = 2;
       break;
 
     case CD_WEST:
-      ctxcanvas->tva = 2;
-      ctxcanvas->tha = 0;
+      ctxcanvas->text_vert_align = 2;
+      ctxcanvas->text_horiz_align = 0;
       break;
 
     case CD_CENTER:
-      ctxcanvas->tva = 2;
-      ctxcanvas->tha = 1;
+      ctxcanvas->text_vert_align = 2;
+      ctxcanvas->text_horiz_align = 1;
       break;
 
     case CD_EAST:
-      ctxcanvas->tva = 2;
-      ctxcanvas->tha = 2;
+      ctxcanvas->text_vert_align = 2;
+      ctxcanvas->text_horiz_align = 2;
       break;
 
     case CD_NORTH_WEST:
-      ctxcanvas->tva = 3;
-      ctxcanvas->tha = 0;
+      ctxcanvas->text_vert_align = 3;
+      ctxcanvas->text_horiz_align = 0;
       break;
 
     case CD_NORTH:
-      ctxcanvas->tva = 3;
-      ctxcanvas->tha = 1;
+      ctxcanvas->text_vert_align = 3;
+      ctxcanvas->text_horiz_align = 1;
       break;
 
     case CD_NORTH_EAST:
-      ctxcanvas->tva = 3;
-      ctxcanvas->tha = 2;
+      ctxcanvas->text_vert_align = 3;
+      ctxcanvas->text_horiz_align = 2;
       break;
   }
 
@@ -1234,7 +1499,7 @@ static int get_palette_index (long int color)      /* gives closest palette */
 
 static long int cdforeground (cdCtxCanvas *ctxcanvas, long int color)
 {
-  ctxcanvas->fgcolor = get_palette_index (color);
+  ctxcanvas->fgcolor_index = get_palette_index (color);
   return color;
 }
 
@@ -1245,19 +1510,17 @@ static long int cdforeground (cdCtxCanvas *ctxcanvas, long int color)
 
 static void cdpixel (cdCtxCanvas *ctxcanvas, int x, int y, long int color)
 {
-  int oldcolor = ctxcanvas->fgcolor;                    /* put 'color' as current */
-  cdforeground (ctxcanvas, color);                          /* foreground color */
-  fprintf ( ctxcanvas->file, "0\n" );
-  fprintf ( ctxcanvas->file, "POINT\n" );
-  fprintf ( ctxcanvas->file, "8\n" );
-  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->layer);     /* current layer */
-  fprintf ( ctxcanvas->file, "62\n" );
-  fprintf ( ctxcanvas->file, "%d\n", ctxcanvas->fgcolor );  /* color */
-  fprintf ( ctxcanvas->file, "10\n" );
-  fprintf ( ctxcanvas->file, "%f\n", (float)x);         /* position */
-  fprintf ( ctxcanvas->file, "20\n" );
-  fprintf ( ctxcanvas->file, "%f\n", (float)y);
-  ctxcanvas->fgcolor = oldcolor;                        /* retrieve old fgcolor */
+  int color_index = get_palette_index(color);
+
+  begin_entity(ctxcanvas, "POINT", "AcDbPoint");
+
+  /* attributes */
+  write_code_int(ctxcanvas, 62, color_index);
+
+  /* coordinates */
+  write_code_int(ctxcanvas, 10, x);
+  write_code_int(ctxcanvas, 20, y);
+  write_code(ctxcanvas, 30, "0");  /* z */
 }
 
 /******************************************************/
@@ -1300,8 +1563,8 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   canvas->yres = res;
 
   /* Get Additional parameters */
-  if(strstr(strdata, "-fill") != NULL)
-    ctxcanvas->fill = 1;
+  if(strstr(strdata, "-ac2000") != NULL)
+    ctxcanvas->acad2000 = 1;
 
   strdata = strstr(strdata, "-limits");
   if (strdata)
@@ -1316,136 +1579,64 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   canvas->bpp = 8;
 
   /* internal defaults */
-  ctxcanvas->layer = 0;            /* reset layer    */
-  ctxcanvas->tf  = 0;              /* text font (0 is STANDARD)               */
-  ctxcanvas->th  = 9;              /* text height                             */
-  ctxcanvas->toa = 0;              /* text oblique angle                      */
-  ctxcanvas->tva = 0;              /* text vertical alignment (0 is baseline) */
-  ctxcanvas->tha = 0;              /* text horizontal alignment (0 is left)   */
-  ctxcanvas->fgcolor   = 7;        /* foreground AutoCAD palette color        */
+  ctxcanvas->text_height  = 9;
+  ctxcanvas->fgcolor_index = 7;    /* default AutoCAD index        */
+  ctxcanvas->handle = 0x30;        /* unique handle start value */
 
-  /* Initial HEADER Section */
-  fprintf (ctxcanvas->file, "0\n");
-  fprintf (ctxcanvas->file, "SECTION\n");  /* header maker */
-  fprintf (ctxcanvas->file, "2\n");
-  fprintf (ctxcanvas->file, "HEADER\n");
-  fprintf (ctxcanvas->file, "9\n");
-  fprintf (ctxcanvas->file, "$ACADVER\n"); /* The AutoCAD drawing database version number: */
-  fprintf (ctxcanvas->file, "1\n");        
-  if(ctxcanvas->fill)
-    fprintf (ctxcanvas->file, "AC1021\n"); /* AC1021 = AutoCAD 2007 */
-  else
-    fprintf (ctxcanvas->file, "AC1006\n"); /* AC1006 = R10 */
-                                           /* AC1009 = R11 and R12 */
-                                           /* AC1012 = R13 */
-                                           /* AC1014 = R14 */
-                                           /* AC1015 = AutoCAD 2000 */
-                                           /* AC1018 = AutoCAD 2004 */
-                                           /* AC1024 = AutoCAD 2010 */
-                                           /* AC1027 = AutoCAD 2013 */
+  /* comment */
+  write_code(ctxcanvas, 999, CD_NAME", version "CD_VERSION);
 
-  fprintf (ctxcanvas->file, "9\n");
-  fprintf (ctxcanvas->file, "$LIMCHECK\n");
-  fprintf (ctxcanvas->file, "70\n");
-  fprintf (ctxcanvas->file, "1\n");
+  begin_section(ctxcanvas, "HEADER");
+    write_header(ctxcanvas, xmin, xmax, ymin, ymax);
+  end_section(ctxcanvas);  /* End HEADER section */
 
-  fprintf (ctxcanvas->file, "9\n");
-  fprintf (ctxcanvas->file, "$LIMMIN\n");
-  fprintf (ctxcanvas->file, "10\n");
-  fprintf (ctxcanvas->file, "%f\n", xmin);
-  fprintf (ctxcanvas->file, "20\n");
-  fprintf (ctxcanvas->file, "%f\n", ymin);
-  fprintf (ctxcanvas->file, "9\n");
-  fprintf (ctxcanvas->file, "$LIMMAX\n");
-  fprintf (ctxcanvas->file, "10\n");
-  fprintf (ctxcanvas->file, "%f\n", xmax);
-  fprintf (ctxcanvas->file, "20\n");
-  fprintf (ctxcanvas->file, "%f\n", ymax);
+  begin_section(ctxcanvas, "TABLES");
+    write_line_types (ctxcanvas);   /* must be before layers */
+    write_fonts (ctxcanvas);
+    if (ctxcanvas->acad2000)
+    {
+      write_vport(ctxcanvas);
+      write_layers(ctxcanvas);
+      write_view(ctxcanvas);
+      write_ucs(ctxcanvas);
+      write_appid(ctxcanvas);
+      write_dimstyle(ctxcanvas);
+      write_blockrecord(ctxcanvas);
+    }
+  end_section(ctxcanvas);  /* End TABLES section */
 
-  fprintf (ctxcanvas->file, "9\n");
-  fprintf (ctxcanvas->file, "$EXTMIN\n");
-  fprintf (ctxcanvas->file, "10\n");
-  fprintf (ctxcanvas->file, "%f\n", xmin);
-  fprintf (ctxcanvas->file, "20\n");
-  fprintf (ctxcanvas->file, "%f\n", ymin);
-  fprintf (ctxcanvas->file, "9\n");
-  fprintf (ctxcanvas->file, "$EXTMAX\n");
-  fprintf (ctxcanvas->file, "10\n");
-  fprintf (ctxcanvas->file, "%f\n", xmax);
-  fprintf (ctxcanvas->file, "20\n");
-  fprintf (ctxcanvas->file, "%f\n", ymax);
+  begin_section(ctxcanvas, "BLOCKS");
+    if (ctxcanvas->acad2000)
+    {
+      write_block(ctxcanvas, "*Model_Space",  "20", "21", 0);  /* handle=20  handle=21 */
+      write_block(ctxcanvas, "*Paper_Space",  "1C", "1D", 1);  /* handle=1C  handle=1D */
+      write_block(ctxcanvas, "*Paper_Space0", "24", "25", 0);  /* handle=24  handle=25 */
+    }
+  end_section(ctxcanvas);  /* End BLOCKS section */
 
-  fprintf (ctxcanvas->file, "9\n");
-  fprintf (ctxcanvas->file, "$CLAYER\n");
-  fprintf (ctxcanvas->file, "8\n");
-  fprintf (ctxcanvas->file, "0\n");
-  fprintf (ctxcanvas->file, "9\n");
-  fprintf (ctxcanvas->file, "$LUNITS\n");
-  fprintf (ctxcanvas->file, "70\n");
-  fprintf (ctxcanvas->file, "2\n");
-  fprintf (ctxcanvas->file, "9\n");
-  fprintf (ctxcanvas->file, "$LUPREC\n");
-  fprintf (ctxcanvas->file, "70\n");    /* precision (resolution dependant) */
-  fprintf (ctxcanvas->file, "%d\n", (int)ceil(log10(ctxcanvas->canvas->xres)));
-  fprintf (ctxcanvas->file, "9\n");
-  fprintf (ctxcanvas->file, "$AUNITS\n");
-  fprintf (ctxcanvas->file, "70\n");
-  fprintf (ctxcanvas->file, "0\n");
-  fprintf (ctxcanvas->file, "9\n");
-  fprintf (ctxcanvas->file, "$AUPREC\n");
-  fprintf (ctxcanvas->file, "70\n");
-  fprintf (ctxcanvas->file, "2\n");
-  fprintf (ctxcanvas->file, "9\n");
-  fprintf (ctxcanvas->file, "$TEXTSTYLE\n");
-  fprintf (ctxcanvas->file, "7\n");
-  fprintf (ctxcanvas->file, "STANDARD\n");
-  fprintf (ctxcanvas->file, "0\n");
-  fprintf (ctxcanvas->file, "ENDSEC\n");  /* End HEADER section */
-
-  /* Initial TABLES Section */
-  fprintf (ctxcanvas->file, "0\n");       /* Begin TABLES section */
-  fprintf (ctxcanvas->file, "SECTION\n");
-  fprintf (ctxcanvas->file, "2\n");
-  fprintf (ctxcanvas->file, "TABLES\n");
-
-  deflines (ctxcanvas);      /* define lines */
-  deffonts (ctxcanvas);      /* define fonts */
-
-  fprintf (ctxcanvas->file, "0\n");
-  fprintf (ctxcanvas->file, "ENDSEC\n");  /* End TABLES section */
-
-  /* TODO: verificar se tem na versão antiga */
-  /* Initial BLOCKS Section */
-  fprintf (ctxcanvas->file, "0\n");       /* Begin BLOCKS section */
-  fprintf (ctxcanvas->file, "SECTION\n");
-  fprintf (ctxcanvas->file, "2\n");
-  fprintf (ctxcanvas->file, "BLOCKS\n");
-  fprintf (ctxcanvas->file, "0\n");
-  fprintf (ctxcanvas->file, "ENDSEC\n");  /* End BLOCKS section */
-
-  /* Initial ENTITIES Section */
-  fprintf (ctxcanvas->file, "0\n");
-  fprintf (ctxcanvas->file, "SECTION\n");
-  fprintf (ctxcanvas->file, "2\n");
-  fprintf (ctxcanvas->file, "ENTITIES\n");
+  begin_section(ctxcanvas, "ENTITIES");
 }
 
 static void cdinittable(cdCanvas* canvas)
 {
   canvas->cxFlush = cdflush;
   canvas->cxPixel = cdpixel;
-  canvas->cxLine = cdline;
   canvas->cxPoly = cdpoly;
-  canvas->cxRect = cdrect;
-  canvas->cxBox = cdbox;
-  canvas->cxFLine = cdfline;
   canvas->cxFPoly = cdfpoly;
-  canvas->cxFRect = cdfrect;
-  canvas->cxFBox = cdfbox;
-  canvas->cxArc = cdarc;
-  canvas->cxFArc = cdfarc;
-  canvas->cxSector = cdsector;
-  canvas->cxFSector = cdfsector;
+
+  canvas->cxLine = cdSimLine;
+  canvas->cxRect = cdSimRect;
+  canvas->cxBox = cdSimBox;
+  canvas->cxArc = cdSimArc;
+  canvas->cxSector = cdSimSector;
+  canvas->cxChord = cdSimChord;
+  canvas->cxFLine = cdfSimLine;
+  canvas->cxFRect = cdfSimRect;
+  canvas->cxFBox = cdfSimBox;
+  canvas->cxFArc = cdfSimArc;
+  canvas->cxFSector = cdfSimSector;
+  canvas->cxFChord = cdfSimChord;
+  
   canvas->cxText = cdtext;
   canvas->cxFText = cdftext;
   canvas->cxGetFontDim = cdgetfontdim;
@@ -1483,4 +1674,3 @@ cdContext* cdContextDXF(void)
 {
   return &cdDXFContext;
 }
-

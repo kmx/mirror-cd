@@ -1,12 +1,11 @@
 /*
-
   Simple Draw Application
 
   Shows the same picture on several canvas. Used to quick test the CD library and
   to demonstrate the use of CD library functions.
 
-  This module uses only the CD library, there is another module to initialize the Window and its menus.
-
+  This module uses only the CD library, 
+  there is another module to initialize the Window and its menus.
 */
 
 
@@ -280,7 +279,7 @@ int SimpleDrawCGMBin(void)
 
 int SimpleDrawDXF(void)
 {
-  DrawCanvasDriverSize(CD_DXF, "simple.dxf", 0, "");
+  DrawCanvasDriverSize(CD_DXF, "simple.dxf", 0, "-ac2000");
   return 0;
 }
 
@@ -1467,7 +1466,8 @@ void SimpleDrawPoly(cdCanvas* canvas)
 }
 #endif
 
-void SimpleDrawTest(cdCanvas* canvas1)
+//void SimpleDrawTest(cdCanvas* canvas)
+void SimpleDrawTestImageRGB(cdCanvas* canvas1)
 {
   //cdCanvas* canvas = cdCreateCanvas(CD_IMAGERGB, "570x569");
   cdCanvas* canvas = canvas1;
@@ -1507,4 +1507,195 @@ void SimpleDrawTest(cdCanvas* canvas1)
 
   if (canvas != canvas1)
     cdKillCanvas(canvas);
+}
+
+void SimpleDrawTest(cdCanvas* canvas)
+{
+  int w, h;
+  cdCanvasGetSize(canvas, &w, &h, NULL, NULL);
+  
+  /* Clear the background to be white */
+  cdCanvasBackground(canvas, CD_WHITE);
+//  cdBackground(CD_GREEN);
+  cdCanvasClear(canvas);
+
+  /* Draw a reactangle and a polyline at the bottom-left area,
+     using a thick line with transparency.
+     Observe that transparency is only supported in a few drivers,
+     and line join is not supported in the IMAGERGB driver. */
+  cdCanvasLineWidth(canvas, 3);
+  cdCanvasLineStyle(canvas, CD_CONTINUOUS);
+  cdCanvasForeground(canvas, cdEncodeAlpha(CD_DARK_MAGENTA, 128));
+  cdCanvasRect(canvas, 100, 200, 100, 200);
+
+  cdCanvasBegin(canvas, CD_OPEN_LINES);
+  cdCanvasVertex(canvas, 300, 250);
+  cdCanvasVertex(canvas, 320, 270);
+  cdCanvasVertex(canvas, 350, 260);
+  cdCanvasVertex(canvas, 340, 200);
+  cdCanvasVertex(canvas, 310, 210);
+  cdCanvasEnd(canvas);
+  
+  /* Draw the red diagonal line with a custom line style. 
+     Observe that line styles are not supported in the IMAGERGB driver. */
+  cdCanvasForeground(canvas, CD_RED);
+  cdCanvasLineWidth(canvas, 3);
+  {
+    int dashes[] = {20, 15, 5, 5};
+    cdCanvasLineStyleDashes(canvas, dashes, 4);
+  }
+  cdCanvasLineStyle(canvas, CD_CUSTOM);
+  cdCanvasLine(canvas, 0, 0, w-1, h-1);
+
+  /* Draw the blue diagonal line with a pre-defined line style.
+     Observe that the pre-defined line style is dependent on the driver. */
+  cdCanvasForeground(canvas, CD_BLUE);
+  cdCanvasLineWidth(canvas, 10);
+  cdCanvasLineStyle(canvas, CD_DOTTED);
+  cdCanvasLine(canvas, 0, h-1, w-1, 0);
+
+  /* Reset line style and width */
+  cdCanvasLineStyle(canvas, CD_CONTINUOUS);
+  cdCanvasLineWidth(canvas, 1);
+                   
+  /* Draw an arc at bottom-left, and a sector at bottom-right.
+     Notice that counter-clockwise orientation of both. */
+  cdCanvasInteriorStyle(canvas, CD_SOLID);
+  cdCanvasForeground(canvas, CD_MAGENTA);
+  cdCanvasSector(canvas, w-100, 100, 100, 100, 50, 180);
+  cdCanvasForeground(canvas, CD_RED);
+  cdCanvasArc(canvas, 100, 100, 100, 100, 50, 180);
+
+  /* Draw a solid filled rectangle at center. */
+  cdCanvasForeground(canvas, CD_YELLOW);
+  cdCanvasBox(canvas, w/2 - 100, w/2 + 100, h/2 - 100, h/2 + 100); 
+
+  /* Prepare font for text. */
+  cdCanvasTextAlignment(canvas, CD_CENTER);
+  cdCanvasTextOrientation(canvas, 70);
+  cdCanvasFont(canvas, "Times", CD_BOLD, 24);
+
+
+  /* Draw text at center, with orientation, 
+     and draw its bounding box. 
+     Notice that in some drivers the bounding box is not precise. */
+  {
+    int rect[8];
+    cdCanvasGetTextBounds(canvas, w/2, h/2, "Simple Draw (pзгн)", rect);
+    cdCanvasForeground(canvas, CD_RED);
+    cdCanvasBegin(canvas, CD_CLOSED_LINES);
+    cdCanvasVertex(canvas, rect[0], rect[1]);
+    cdCanvasVertex(canvas, rect[2], rect[3]);
+    cdCanvasVertex(canvas, rect[4], rect[5]);
+    cdCanvasVertex(canvas, rect[6], rect[7]);
+    cdCanvasEnd(canvas);
+  }
+  cdCanvasForeground(canvas, CD_BLUE);
+  cdCanvasText(canvas, w/2, h/2, "Simple Draw (pзгн)");
+  cdCanvasTextOrientation(canvas, 0);
+
+  /* Prepare World Coordinates */
+  wdCanvasViewport(canvas, 0,w-1,0,h-1);
+  if (w>h)
+    wdCanvasWindow(canvas, 0,(double)w/(double)h,0,1);
+  else
+    wdCanvasWindow(canvas, 0,1,0,(double)h/(double)w);
+
+  /* Draw a filled blue rectangle in WC */
+  wdCanvasBox(canvas, 0.20, 0.30, 0.40, 0.50);
+  cdCanvasForeground(canvas, CD_RED);
+  /* Draw the diagonal of that rectangle in WC */
+  wdCanvasLine(canvas, 0.20, 0.40, 0.30, 0.50);
+
+//  wdVectorTextDirection(0, 0, 1, 1);
+  /* Prepare Vector Text in WC. */
+  wdCanvasVectorCharSize(canvas, 0.07);
+
+  /* Draw vector text, and draw its bounding box. 
+     We also use this text to show when we are using a contextplus driver. */
+  {
+    double rect[8];
+    cdCanvasForeground(canvas, CD_RED);
+    if (contextplus)
+      wdCanvasGetVectorTextBounds(canvas, "WDj-Plus", 0.25, 0.35, rect);
+    else
+      wdCanvasGetVectorTextBounds(canvas, "WDj", 0.25, 0.35, rect);
+    cdCanvasBegin(canvas, CD_CLOSED_LINES);
+    wdCanvasVertex(canvas, rect[0], rect[1]);
+    wdCanvasVertex(canvas, rect[2], rect[3]);
+    wdCanvasVertex(canvas, rect[4], rect[5]);
+    wdCanvasVertex(canvas, rect[6], rect[7]);
+    cdCanvasEnd(canvas);
+
+    cdCanvasLineWidth(canvas, 2);
+    cdCanvasLineStyle(canvas, CD_CONTINUOUS);
+    if (contextplus)
+      wdCanvasVectorText(canvas, 0.25, 0.35, "WDj-Plus");
+    else
+      wdCanvasVectorText(canvas, 0.25, 0.35, "WDj");
+    cdCanvasLineWidth(canvas, 1);
+  }
+
+  /* Draw 3 pixels at center left. */
+  cdCanvasPixel(canvas, 10, h/2+0, CD_RED);
+  cdCanvasPixel(canvas, 11, h/2+1, CD_GREEN);
+  cdCanvasPixel(canvas, 12, h/2+2, CD_BLUE);
+
+  /* Draw 4 mark types, distributed near each corner.  */
+  cdCanvasForeground(canvas, CD_RED);
+  cdCanvasMarkSize(canvas, 30);
+  cdCanvasMarkType(canvas, CD_PLUS);
+  cdCanvasMark(canvas, 200, 200);
+  cdCanvasMarkType(canvas, CD_CIRCLE);
+  cdCanvasMark(canvas, w - 200, 200);
+  cdCanvasMarkType(canvas, CD_HOLLOW_CIRCLE);
+  cdCanvasMark(canvas, 200, h - 200);
+  cdCanvasMarkType(canvas, CD_DIAMOND);
+  cdCanvasMark(canvas, w - 200, h - 200);
+
+  /* Draw all the line style possibilities at bottom. 
+     Notice that they have some small differences between drivers. */
+  cdCanvasLineWidth(canvas, 1);
+  cdCanvasLineStyle(canvas, CD_CONTINUOUS);
+  cdCanvasLine(canvas, 0, 10, w, 10);
+  cdCanvasLineStyle(canvas, CD_DASHED);
+  cdCanvasLine(canvas, 0, 20, w, 20);
+  cdCanvasLineStyle(canvas, CD_DOTTED);
+  cdCanvasLine(canvas, 0, 30, w, 30);
+  cdCanvasLineStyle(canvas, CD_DASH_DOT);
+  cdCanvasLine(canvas, 0, 40, w, 40);
+  cdCanvasLineStyle(canvas, CD_DASH_DOT_DOT);
+  cdCanvasLine(canvas, 0, 50, w, 50);
+
+  /* Draw all the hatch style possibilities in the top-left corner.
+     Notice that they have some small differences between drivers. */
+  cdCanvasHatch(canvas, CD_VERTICAL); 
+  cdCanvasBox(canvas, 0, 50, h - 60, h);
+  cdCanvasHatch(canvas, CD_FDIAGONAL); 
+  cdCanvasBox(canvas, 50, 100, h - 60, h);
+  cdCanvasHatch(canvas, CD_BDIAGONAL); 
+  cdCanvasBox(canvas, 100, 150, h - 60, h);
+  cdCanvasHatch(canvas, CD_CROSS); 
+  cdCanvasBox(canvas, 150, 200, h - 60, h);
+  cdCanvasHatch(canvas, CD_HORIZONTAL); 
+  cdCanvasBox(canvas, 200, 250, h - 60, h);
+  cdCanvasHatch(canvas, CD_DIAGCROSS); 
+  cdCanvasBox(canvas, 250, 300, h - 60, h);
+
+  /* At top, not filled polygon, notice that the last line style is used. */
+  cdCanvasBegin(canvas, CD_CLOSED_LINES);
+  cdCanvasVertex(canvas, w/2, h - 100); 
+  cdCanvasVertex(canvas, w/2 + 50, h - 150); 
+  cdCanvasVertex(canvas, w/2, h - 200); 
+  cdCanvasVertex(canvas, w/2 - 50, h - 150); 
+  cdCanvasEnd(canvas);
+
+  /* At left, hatch filled polygon */
+  cdCanvasHatch(canvas, CD_DIAGCROSS); 
+  cdCanvasBegin(canvas, CD_FILL);
+  cdCanvasVertex(canvas, 100, h/2); 
+  cdCanvasVertex(canvas, 150, h/2 + 50); 
+  cdCanvasVertex(canvas, 200, h/2); 
+  cdCanvasVertex(canvas, 150, h/2 - 50); 
+  cdCanvasEnd(canvas);
 }

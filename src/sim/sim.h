@@ -28,7 +28,7 @@ struct _cdSimulation
 
 #define simRotateHatchN(_x,_n) ((_x) = ((_x) << (_n)) | ((_x) >> (8-(_n))))
 
-void simFillDrawAAPixel(cdCanvas *canvas, int x, int y, unsigned short alpha_weigth);
+void simFillDrawAAPixel(cdCanvas *canvas, int x, int y, unsigned short alpha_weight);
 void simFillHorizLine(cdSimulation* simulation, int xmin, int y, int xmax);
 void simFillHorizBox(cdSimulation* simulation, int xmin, int xmax, int ymin, int ymax);
 void simGetPenPos(cdCanvas* canvas, int x, int y, const char* s, int len, FT_Matrix *matrix, FT_Vector *pen);
