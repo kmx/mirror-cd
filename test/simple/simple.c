@@ -279,7 +279,7 @@ int SimpleDrawCGMBin(void)
 
 int SimpleDrawDXF(void)
 {
-  DrawCanvasDriverSize(CD_DXF, "simple.dxf", 0, "-ac2000");
+  DrawCanvasDriverSize(CD_DXF, "simple.dxf", 0, "-ac2000");  //""
   return 0;
 }
 
