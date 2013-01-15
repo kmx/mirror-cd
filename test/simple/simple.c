@@ -871,15 +871,15 @@ void SimpleDrawAll(cdCanvas* canvas)
 
   /* Draw all the hatch style possibilities in the top-left corner.
      Notice that they have some small differences between drivers. */
-  cdCanvasHatch(canvas, CD_VERTICAL); 
-  cdCanvasBox(canvas, 0, 50, h - 60, h);
-  cdCanvasHatch(canvas, CD_FDIAGONAL); 
-  cdCanvasBox(canvas, 50, 100, h - 60, h);
-  cdCanvasHatch(canvas, CD_BDIAGONAL); 
-  cdCanvasBox(canvas, 100, 150, h - 60, h);
-  cdCanvasHatch(canvas, CD_CROSS); 
-  cdCanvasBox(canvas, 150, 200, h - 60, h);
   cdCanvasHatch(canvas, CD_HORIZONTAL); 
+  cdCanvasBox(canvas, 0, 50, h - 60, h);
+  cdCanvasHatch(canvas, CD_VERTICAL); 
+  cdCanvasBox(canvas, 50, 100, h - 60, h);
+  cdCanvasHatch(canvas, CD_FDIAGONAL); 
+  cdCanvasBox(canvas, 100, 150, h - 60, h);
+  cdCanvasHatch(canvas, CD_BDIAGONAL); 
+  cdCanvasBox(canvas, 150, 200, h - 60, h);
+  cdCanvasHatch(canvas, CD_CROSS); 
   cdCanvasBox(canvas, 200, 250, h - 60, h);
   cdCanvasHatch(canvas, CD_DIAGCROSS); 
   cdCanvasBox(canvas, 250, 300, h - 60, h);
@@ -1669,15 +1669,15 @@ void SimpleDrawTest(cdCanvas* canvas)
 
   /* Draw all the hatch style possibilities in the top-left corner.
      Notice that they have some small differences between drivers. */
-  cdCanvasHatch(canvas, CD_VERTICAL); 
-  cdCanvasBox(canvas, 0, 50, h - 60, h);
-  cdCanvasHatch(canvas, CD_FDIAGONAL); 
-  cdCanvasBox(canvas, 50, 100, h - 60, h);
-  cdCanvasHatch(canvas, CD_BDIAGONAL); 
-  cdCanvasBox(canvas, 100, 150, h - 60, h);
-  cdCanvasHatch(canvas, CD_CROSS); 
-  cdCanvasBox(canvas, 150, 200, h - 60, h);
   cdCanvasHatch(canvas, CD_HORIZONTAL); 
+  cdCanvasBox(canvas, 0, 50, h - 60, h);
+  cdCanvasHatch(canvas, CD_VERTICAL); 
+  cdCanvasBox(canvas, 50, 100, h - 60, h);
+  cdCanvasHatch(canvas, CD_FDIAGONAL); 
+  cdCanvasBox(canvas, 100, 150, h - 60, h);
+  cdCanvasHatch(canvas, CD_BDIAGONAL); 
+  cdCanvasBox(canvas, 150, 200, h - 60, h);
+  cdCanvasHatch(canvas, CD_CROSS); 
   cdCanvasBox(canvas, 200, 250, h - 60, h);
   cdCanvasHatch(canvas, CD_DIAGCROSS); 
   cdCanvasBox(canvas, 250, 300, h - 60, h);

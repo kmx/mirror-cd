@@ -13,7 +13,7 @@
 <h2 style="text-align: left">CD_DXF - AutoCAD Image Exchange File Driver (cddxf.h)</h2>
 
   <p>This driver allows generating an AutoCAD image exchange file. The file name usually has an extension .DXF. This 
-  driver supports only AutoCAD Release 10.0 or AutoCAD 2000. The format's copyrights are property of
+  driver supports only AutoCAD Release 10 (AC1006) or AutoCAD 2000 (AC1015). The format's copyrights are property of
   <a href="http://www.autodesk.com" target="_top">Autodesk</a>.</p>
 
 <h3>Use</h3>
@@ -41,7 +41,7 @@
   (color quality is limited to 256 fixed colors).</p>
   <p><strong>Precision of Coordinates -</strong> The primitives use coordinates in real numbers.</p>
 <p><strong>Fill Area</strong> - Only with AutoCAD 2000 version. This adds support for filled 
-primitives and XXX. To use that support specify the &quot;-ac2000&quot; parameter. 
+primitives (solid and hatch style only). To use that support specify the &quot;-ac2000&quot; parameter. 
 (since 5.7)</p>
 <p><strong>Limits</strong> - the default limits are 0, 0, width, height, but a 
 custom limits can be specified using the &quot;-limits&quot; parameter followed by the 
@@ -71,16 +71,13 @@ limits coordinates.&nbsp; (since 5.7)</p>
 </ul>
 <h4>Primitives</h4>
 <ul>
-  <li><a href="../func/filled.html#cdSector"><font face="Courier"><strong>Sector</strong></font></a>: 
-  draws a &quot;hollow&quot; sector, that is, only its borders.</li>
-  <li><a href="../func/lines.html#cdBegin"><font face="Courier"><strong>Begin</strong></font></a>:
+    <li><a href="../func/lines.html#cdBegin"><font face="Courier"><strong>Begin</strong></font></a>:
   if parameter <strong><tt>CD_CLIP</tt></strong> is specified, does nothing. <strong><tt>
   CD_BEZIER</tt></strong> and <strong><tt>CD_PATH</tt></strong> 
 	are simulated with lines.</li>
-  <li><strong><font face="Courier"><a href="../func/filled.html#cdChord">Chord</a></font></strong>: 
-  does nothing.</li>
   <li>Floating point primitives are supported.</li>
-	<li>filled primitives are supported only if parameter &quot;-fill&quot; is used.</li>
+	<li>All primitives are saved as polylines.</li>
+	<li>Filled primitives are supported only if parameter &quot;-ac2000&quot; is used.</li>
 </ul>
 <h4>Attributes</h4>
 <ul>
@@ -90,7 +87,7 @@ limits coordinates.&nbsp; (since 5.7)</p>
   <strong>
   WriteMode</strong></font></a>: does nothing, returns <font face="Courier">CD_REPLACE</font>.</li>
   <li><a href="../func/filled.html#cdHatch"><font face="Courier"><strong>Hatch</strong></font></a>: 
-  does nothing. </li>
+  supported only if parameter &quot;-ac2000&quot; is used</li>
   <li><a href="../func/filled.html#cdFillMode"><font face="Courier"><strong>
   FillMode</strong></font></a>: does nothing.</li>
   <li><a href="../func/filled.html#cdLineCap"><font face="Courier"><strong>

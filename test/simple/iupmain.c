@@ -83,8 +83,10 @@ int main(int argc, char** argv)
   }
 #endif
 
+  IupSetAttribute(IupGetHandle("SimpleDialog"), "SIZE", "HALFxHALF");
   IupSetAttribute(IupGetHandle("SimpleDialog"), "PLACEMENT", "MAXIMIZED");
   IupShow(IupGetHandle("SimpleDialog"));
+  IupSetAttribute(IupGetHandle("SimpleDialog"), "SIZE", NULL);
 
   SimpleCreateCanvas((char*)IupGetHandle("SimpleCanvas"));
 

@@ -897,12 +897,8 @@ static void begin_entity(cdCtxCanvas *ctxcanvas, const char* name, const char* d
   write_code_int(ctxcanvas, 8, ctxcanvas->layer);
 }
 
-static void write_polyline (cdCtxCanvas *ctxcanvas, void *vpoly, int nv, int type_int)
+static void begin_polyline (cdCtxCanvas *ctxcanvas, int nv)
 {
-  int i;
-  cdPoint  *ipoly = (cdPoint*)vpoly;
-  cdfPoint *rpoly = (cdfPoint*)vpoly;
-
   if (ctxcanvas->acad2000)
     begin_entity(ctxcanvas, "LWPOLYLINE", "AcDbPolyline");
   else
@@ -932,36 +928,49 @@ static void write_polyline (cdCtxCanvas *ctxcanvas, void *vpoly, int nv, int typ
     write_code(ctxcanvas, 20, "0");
     write_code(ctxcanvas, 30, "0");
   }
-
-  for ( i=0; i<nv; i++ )
-  {
-    if (!ctxcanvas->acad2000)
-      begin_entity(ctxcanvas, "VERTEX", NULL);   /* there is no specific end */
-
-    if (type_int)
-    {
-      write_code_int(ctxcanvas, 10, ipoly[i].x);
-      write_code_int(ctxcanvas, 20, ipoly[i].y);
-    }
-    else
-    {
-      write_code_real(ctxcanvas, 10, rpoly[i].x);
-      write_code_real(ctxcanvas, 20, rpoly[i].y);
-    }
-    write_code(ctxcanvas, 30, "0");  /* z */
-  }
-
-  if (!ctxcanvas->acad2000)
-    write_code(ctxcanvas, 0, "SEQEND");       /* end of polyline */ 
 }
 
-static void write_hatch (cdCtxCanvas *ctxcanvas, void *vpoly, int nv, int type_int)
+static void end_polyline (cdCtxCanvas *ctxcanvas)
 {
-  /* Used here, only for AutoCAD 2000 */
-  int i;
-  cdPoint  *ipoly = (cdPoint*)vpoly;
-  cdfPoint *rpoly = (cdfPoint*)vpoly;
+  if (!ctxcanvas->acad2000)
+    write_code(ctxcanvas, 0, "SEQEND");
+}
 
+static void write_vertex(cdCtxCanvas *ctxcanvas, double x, double y)
+{
+  if (!ctxcanvas->acad2000)
+    begin_entity(ctxcanvas, "VERTEX", NULL);   /* there is no specific end */
+
+  write_code_real(ctxcanvas, 10, x);
+  write_code_real(ctxcanvas, 20, y);
+}
+
+static void write_polyline_real(cdCtxCanvas *ctxcanvas, cdfPoint *poly, int nv)
+{
+  int i;
+
+  begin_polyline(ctxcanvas, nv);
+
+  for (i=0; i<nv; i++)
+    write_vertex(ctxcanvas, poly[i].x, poly[i].y);
+
+  end_polyline(ctxcanvas);
+}
+
+static void write_polyline_int(cdCtxCanvas *ctxcanvas, cdPoint *poly, int nv)
+{
+  int i;
+
+  begin_polyline(ctxcanvas, nv);
+
+  for (i=0; i<nv; i++)
+    write_vertex(ctxcanvas, (double)poly[i].x, (double)poly[i].y);
+
+  end_polyline(ctxcanvas);
+}
+
+static void begin_hatch (cdCtxCanvas *ctxcanvas, int nv, int has_bulge)
+{
   begin_entity(ctxcanvas, "HATCH", "AcDbHatch");
 
   write_code_int(ctxcanvas, 62, ctxcanvas->fgcolor_index);
@@ -987,60 +996,105 @@ static void write_hatch (cdCtxCanvas *ctxcanvas, void *vpoly, int nv, int type_i
     write_code(ctxcanvas, 70, "1");       /* solid fill */
   }
 
-  write_code(ctxcanvas, 71, "0" );   /* non-associative */
-  write_code(ctxcanvas, 91, "1" );   /* number of boundary paths */
+  write_code(ctxcanvas, 71, "0");   /* non-associative */
+  write_code(ctxcanvas, 91, "1");   /* number of boundary paths */
 
   /* Begin Boundary Path Data */ 
-  write_code(ctxcanvas, 92, "2" );   /* Boundary path type flag (Polyline) */
+  write_code(ctxcanvas, 92, "2");   /* Boundary path type flag (Polyline) */
 
   /* Begin Polyline boundary data */
-  write_code(ctxcanvas, 72, "0" );   /* Has bulge flag */
-  write_code(ctxcanvas, 73, "1" );   /* Is closed flag */
+  write_code_int(ctxcanvas, 72, has_bulge);   /* Has bulge flag */
+  write_code(ctxcanvas, 73, "1");   /* Is closed flag */
   write_code_int(ctxcanvas, 93, nv);  /* Number of polyline vertices */
+}
 
-  for ( i=0; i<nv; i++ )
-  {
-    /* Vertex location (in OCS) */
-    if (type_int)
-    {
-      write_code_int(ctxcanvas, 10, ipoly[i].x);
-      write_code_int(ctxcanvas, 20, ipoly[i].y);
-    }
-    else
-    {
-      write_code_real(ctxcanvas, 10, rpoly[i].x);
-      write_code_real(ctxcanvas, 20, rpoly[i].y);
-    }
-  }
+static void write_hatch_line(cdCtxCanvas *ctxcanvas, double angle, double x, double y)
+{
+  write_code_real(ctxcanvas, 53, angle); /* line angle */
+  write_code_real(ctxcanvas, 43, 0.0);   /* line base point */
+  write_code_real(ctxcanvas, 44, 0.0);
+  write_code_real(ctxcanvas, 45, x);    /* line offset */
+  write_code_real(ctxcanvas, 46, y);
+  write_code_int(ctxcanvas, 79, 0);      /* Number of dash length items */
+}
+
+static void end_hatch (cdCtxCanvas *ctxcanvas)
+{
   /* End Polyline boundary data */
 
-  write_code(ctxcanvas, 97, "0" );  /* Number of source boundary objects */
+  write_code(ctxcanvas, 97, "0");  /* Number of source boundary objects */
   /* End Boundary Path Data */ 
 
-  write_code(ctxcanvas, 75, "0" );   /* Hatch style (Normal) */
-  write_code(ctxcanvas, 76, "1" );   /* Hatch pattern type (Predefined) */
+  write_code(ctxcanvas, 75, "0");   /* Hatch style (Normal) */
+  write_code(ctxcanvas, 76, "1");   /* Hatch pattern type (Predefined) */
 
   if (ctxcanvas->canvas->interior_style == CD_HATCH)
   {
-    //TODO
     write_code_real(ctxcanvas, 52, 0);   /* pattern angle */
-    write_code_real(ctxcanvas, 41, 1);   /* pattern scale or spacing */
-    write_code_int(ctxcanvas, 77, 0);
-    write_code_int(ctxcanvas, 78, 1);
+    write_code_real(ctxcanvas, 41, 0);   /* pattern scale or spacing */
+    write_code_int(ctxcanvas, 77, 0);    /* pattern double flag */
 
     /* Pattern Data */
-    write_code_real(ctxcanvas, 53, 45.0);
-    write_code_real(ctxcanvas, 43, 0.0);
-    write_code_real(ctxcanvas, 44, 0.0);
-    write_code_real(ctxcanvas, 45, -0.0883883476483184);
-    write_code_real(ctxcanvas, 46, 0.0883883476483185);
-    write_code_int(ctxcanvas, 79, 0);
+    switch(ctxcanvas->canvas->hatch_style)
+    {
+    default: /* CD_HORIZONTAL */
+      write_code_int(ctxcanvas, 78, 1);      /* Number of pattern definition lines */
+      write_hatch_line(ctxcanvas, 0, 0, 10);
+      break;
+    case CD_VERTICAL:
+      write_code_int(ctxcanvas, 78, 1);
+      write_hatch_line(ctxcanvas, 90, 10, 0);
+      break;
+    case CD_FDIAGONAL:
+      write_code_int(ctxcanvas, 78, 1);
+      write_hatch_line(ctxcanvas, -45, 10, 0);
+      break;
+    case CD_BDIAGONAL:
+      write_code_int(ctxcanvas, 78, 1);
+      write_hatch_line(ctxcanvas, 45, 10, 0);  
+      break;
+    case CD_CROSS:
+      write_code_int(ctxcanvas, 78, 2);
+      write_hatch_line(ctxcanvas, 0, 0, 10);
+      write_hatch_line(ctxcanvas, 90, 10, 0);
+      break;
+    case CD_DIAGCROSS:
+      write_code_int(ctxcanvas, 78, 2);
+      write_hatch_line(ctxcanvas, 45, 10, 0);
+      write_hatch_line(ctxcanvas, -45, 10, 0);
+      break;
+    }
   }
 
   /* Number of seed points */
   write_code(ctxcanvas, 98, "0");
 }
 
+static void write_hatch_real(cdCtxCanvas *ctxcanvas, cdfPoint *poly, int nv)
+{
+  /* Used here, only for AutoCAD 2000 */
+  int i;
+
+  begin_hatch(ctxcanvas, nv, 0);
+
+  for ( i=0; i<nv; i++ )
+    write_vertex(ctxcanvas, poly[i].x, poly[i].y);
+
+  end_hatch(ctxcanvas);
+}
+
+static void write_hatch_int(cdCtxCanvas *ctxcanvas, cdPoint *poly, int nv)
+{
+  /* Used here, only for AutoCAD 2000 */
+  int i;
+
+  begin_hatch(ctxcanvas, nv, 0);
+
+  for ( i=0; i<nv; i++ )
+    write_vertex(ctxcanvas, (double)poly[i].x, (double)poly[i].y);
+
+  end_hatch(ctxcanvas);
+}
 
 /*********************************************************************************************/
 
@@ -1100,10 +1154,10 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
     n++;
   }
 
-  if( mode == CD_FILL && ctxcanvas->acad2000)
-    write_hatch (ctxcanvas, poly, n, 0);               /* write fill area */
+  if (mode == CD_FILL && ctxcanvas->acad2000 && ctxcanvas->canvas->interior_style != CD_HOLLOW)
+    write_hatch_real(ctxcanvas, poly, n);
   else
-    write_polyline (ctxcanvas, poly, n, 0);                /* write polygon */
+    write_polyline_real(ctxcanvas, poly, n);
 }
 
 static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
@@ -1126,10 +1180,10 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
     n++;
   }
 
-  if( mode == CD_FILL && ctxcanvas->acad2000)
-    write_hatch (ctxcanvas, poly, n, 1);               /* write fill area */
+  if (mode == CD_FILL && ctxcanvas->acad2000 && ctxcanvas->canvas->interior_style != CD_HOLLOW)
+    write_hatch_int (ctxcanvas, poly, n);
   else
-    write_polyline (ctxcanvas, poly, n, 1);                /* write polygon */
+    write_polyline_int(ctxcanvas, poly, n);
 }
 
 static void cdftext (cdCtxCanvas *ctxcanvas, double x, double y, const char *s, int len)
@@ -1171,6 +1225,168 @@ static void cdftext (cdCtxCanvas *ctxcanvas, double x, double y, const char *s, 
 static void cdtext (cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
 {
   cdftext (ctxcanvas, (double)x, (double)y, s, len);
+}
+
+
+/*--------------------------------------------------------------------------*/
+/* gives radius of the circle most resembling elliptic arc at angle t       */
+/*--------------------------------------------------------------------------*/
+static double calc_radius (double a, double b, double dt)
+{
+  double sin_dt = sin(dt);
+  double cos_dt = cos(dt);
+  return (pow ((a*a*sin_dt*sin_dt + b*b*cos_dt*cos_dt), 1.5))/(a*b);
+}
+
+/*--------------------------------------------------------------------------*/
+/* calculates bulge for a given circular arc segment (between points p1 and */
+/* p2, with radius r). Bulge is the tangent of 1/4 the angle theta of the   */
+/* arc segment(a bulge of 1 is a semicircle, which has an angle of 180 deg) */
+/*--------------------------------------------------------------------------*/
+static double calc_bulge (double a, double b, double t1, double sin_t1, double cos_t1, double t2, double sin_t2, double cos_t2)
+{
+  cdfPoint p1, p2;        /* initial and ending arc points                 */
+  double r;               /* radius most resembling arc at angle (t1+t2)/2 */
+  double theta;           /* angle of circular arc segment                 */
+  double sin_theta;       /* sine of theta                                 */
+  double dist_x;          /* distance between two points along the x axis  */
+  double dist_y;          /* distance between two points along the y axis  */
+  double halfdist;        /* half distance between two points              */
+
+  p1.x = a*cos_t1;
+  p1.y = b*sin_t1;
+  p2.x = a*cos_t2;
+  p2.y = b*sin_t2;
+  r    = calc_radius (a, b, (t1+t2)/2);
+
+  dist_x      = p2.x - p1.x;
+  dist_y      = p2.y - p1.y;
+  halfdist    = (sqrt (dist_x*dist_x + dist_y*dist_y))/2;
+  sin_theta   = halfdist/r;
+  if (sin_theta > 1)  sin_theta = 1;
+  theta       = 2*asin(sin_theta);
+
+  return tan(theta/4);
+}
+
+static void write_bulge(cdCtxCanvas *ctxcanvas, double bulge)
+{
+  /* The bulge is the tangent of one fourth the
+    included angle for an arc segment, made negative if the arc goes
+    clockwise from the start point to the endpoint. A bulge of 0 indicates a
+    straight segment, and a bulge of 1 is a semicircle. */
+  write_code_real(ctxcanvas, 42, bulge);
+}
+
+static void write_poly_arc (cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2, int nseg)
+{
+  double bulge;        /* bulge is the tangent of 1/4 the angle for a given */
+                       /* circle arc segment (a bulge of 1 is a semicircle) */
+  double t;            /* current arc angle being calculated    */
+  double t1;           /* a1 in radians                         */
+  double t2;           /* a2 in radians                         */
+  double a;            /* half horizontal axis                  */
+  double b;            /* half vertical axis                    */
+  double seg_angle;    /* angle of every arc segment            */
+  double x, y, sin_t, cos_t, t_seg, sin_tseg, cos_tseg;
+  int i;
+
+  a         = w/2.0;
+  b         = h/2.0;
+  t1        = a1*CD_DEG2RAD;                /* a1 in radians */
+  t2        = a2*CD_DEG2RAD;                /* a2 in radians */
+  seg_angle = (t2-t1)/nseg;
+
+  t = t1;
+  sin_t = sin(t);
+  cos_t = cos(t);
+
+  for (i=0; i<nseg; i++)
+  {                 
+    x = xc + a*cos_t;
+    y = yc + b*sin_t;
+    write_vertex (ctxcanvas, x, y);
+
+    t_seg = t+seg_angle;
+    sin_tseg = sin(t_seg);
+    cos_tseg = cos(t_seg);
+    bulge = calc_bulge (a, b, t, sin_t, cos_t, t+seg_angle, sin_tseg, cos_tseg);
+    write_bulge(ctxcanvas, bulge);
+
+    t = t_seg;
+    sin_t = sin_tseg;
+    cos_t = cos_tseg;
+  }
+
+  x = xc + a*cos(t2);
+  y = yc + b*sin(t2);
+  write_vertex (ctxcanvas, x, y);
+  /* bulge of last vertex is useless */
+  write_bulge(ctxcanvas, 0);
+}
+
+static void cdfarc (cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
+{
+  double diff  = fabs(a2 - a1);   /* angle between a1 and a2 */
+  int nseg = cdRound(diff)/(360/32); /* number of arc segments = diff/angle of 1 segment  (32 segments in closed ellipse) */
+  nseg = max(nseg, 1);
+
+  begin_polyline(ctxcanvas, nseg+1);  /* add room for last vertex */
+
+  write_poly_arc(ctxcanvas, xc, yc, w, h, a1, a2, nseg);
+
+  end_polyline(ctxcanvas);
+}
+
+static void cdarc (cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
+{
+  cdfarc(ctxcanvas, (double)xc, (double)yc, (double)w, (double)h, a1, a2);
+}
+
+static void cdfsector (cdCtxCanvas *ctxcanvas, double xc, double yc, double w, double h, double a1, double a2)
+{
+  double diff  = fabs(a2 - a1);   /* angle between a1 and a2 */
+  int nseg = cdRound(diff)/(360/32); /* number of arc segments = diff/angle of 1 segment  (32 segments in closed ellipse) */
+  nseg = max(nseg, 1);
+
+  if (ctxcanvas->canvas->interior_style != CD_HOLLOW && ctxcanvas->acad2000)
+  {
+    if ((a2-a1) != 360)
+      begin_hatch(ctxcanvas, nseg+1+2, 1);   /* add room for last vertex and center, has bulge */
+    else
+      begin_hatch(ctxcanvas, nseg+1, 1);
+  }
+  else
+  {
+    if ((a2-a1) != 360)
+      begin_polyline(ctxcanvas, nseg+1+2);
+    else
+      begin_polyline(ctxcanvas, nseg+1);
+  }
+
+  if ((a2-a1) != 360)
+  {
+    write_vertex (ctxcanvas, xc, yc);    /* center */
+    write_bulge(ctxcanvas, 0);
+  }
+
+  write_poly_arc(ctxcanvas, xc, yc, w, h, a1, a2, nseg);
+
+  if ((a2-a1) != 360)
+  {
+    write_vertex (ctxcanvas, xc, yc);    /* center */
+    write_bulge(ctxcanvas, 0);
+  }
+
+  if (ctxcanvas->canvas->interior_style != CD_HOLLOW && ctxcanvas->acad2000)
+    end_hatch(ctxcanvas);
+  else
+    end_polyline(ctxcanvas);
+}
+
+static void cdsector (cdCtxCanvas *ctxcanvas, int xc, int yc, int w, int h, double a1, double a2)
+{
+  cdfsector(ctxcanvas, (double)xc, (double)yc, (double)w, (double)h, a1, a2);
 }
 
 /*==========================================================================*/
@@ -1627,15 +1843,23 @@ static void cdinittable(cdCanvas* canvas)
   canvas->cxLine = cdSimLine;
   canvas->cxRect = cdSimRect;
   canvas->cxBox = cdSimBox;
-  canvas->cxArc = cdSimArc;
-  canvas->cxSector = cdSimSector;
   canvas->cxChord = cdSimChord;
   canvas->cxFLine = cdfSimLine;
   canvas->cxFRect = cdfSimRect;
   canvas->cxFBox = cdfSimBox;
-  canvas->cxFArc = cdfSimArc;
-  canvas->cxFSector = cdfSimSector;
   canvas->cxFChord = cdfSimChord;
+
+  canvas->cxArc = cdarc;
+  canvas->cxFArc = cdfarc;
+  canvas->cxSector = cdsector;
+  canvas->cxFSector = cdfsector;
+  /* Results where very similar in the AutoDesk TrueView application.
+     But since the bulge parameter maybe useful, we leave the local implementation.
+  canvas->cxArc = cdSimArc;
+  canvas->cxFArc = cdfSimArc;
+  canvas->cxSector = cdSimSector;
+  canvas->cxFSector = cdfSimSsector;
+  */
   
   canvas->cxText = cdtext;
   canvas->cxFText = cdftext;
