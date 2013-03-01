@@ -18,7 +18,7 @@ extern "C" {
 
 #define CD_NAME "CD - Canvas Draw"
 #define CD_DESCRIPTION "A 2D Graphics Library"
-#define CD_COPYRIGHT    "Copyright (C) 1994-2012 Tecgraf, PUC-Rio."
+#define CD_COPYRIGHT    "Copyright (C) 1994-2013 Tecgraf, PUC-Rio."
 #define CD_VERSION "5.6"              /* bug fixes are reported only by cdVersion functions */
 #define CD_VERSION_NUMBER 506000
 #define CD_VERSION_DATE "2012/11/28"  /* does not include bug fix releases */
@@ -181,6 +181,15 @@ void  cdCanvasGetVectorFontSize(cdCanvas* canvas, double *size_x, double *size_y
 void cdCanvasGetVectorTextSize(cdCanvas* canvas, const char* s, int *x, int *y);
 void cdCanvasGetVectorTextBounds(cdCanvas* canvas, const char* s, int x, int y, int *rect);
 void cdCanvasGetVectorTextBox(cdCanvas* canvas, int x, int y, const char *s, int *xmin, int *xmax, int *ymin, int *ymax);
+
+void cdfCanvasVectorTextDirection(cdCanvas* canvas, double x1, double y1, double x2, double y2);
+void cdfCanvasVectorTextSize(cdCanvas* canvas, double size_x, double size_y, const char* s);
+void cdfCanvasGetVectorTextSize(cdCanvas* canvas, const char* s, double *x, double *y);
+double cdfCanvasVectorCharSize(cdCanvas* canvas, double size);
+void cdfCanvasVectorText(cdCanvas* canvas, double x, double y, const char* s);
+void cdfCanvasMultiLineVectorText(cdCanvas* canvas, double x, double y, const char* s);
+void cdfCanvasGetVectorTextBounds(cdCanvas* canvas, const char* s, double x, double y, double *rect);
+void cdfCanvasGetVectorTextBox(cdCanvas* canvas, double x, double y, const char *s, double *xmin, double *xmax, double *ymin, double *ymax);
 
 /* properties */
 void cdCanvasGetFontDim(cdCanvas* canvas, int *max_width, int *height, int *ascent, int *descent);
@@ -512,7 +521,7 @@ enum {
 
 
 /******************************************************************************
-Copyright (C) 1994-2012 Tecgraf, PUC-Rio.
+Copyright (C) 1994-2013 Tecgraf, PUC-Rio.
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the

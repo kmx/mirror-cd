@@ -385,6 +385,15 @@ EXPORTS
   cdfCanvasSector
   cdfCanvasText
   cdfCanvasVertex
+  cdfCanvasVectorTextDirection
+  cdfCanvasVectorTextSize
+  cdfCanvasGetVectorTextSize
+  cdfCanvasVectorCharSize
+  cdfCanvasVectorText
+  cdfCanvasMultiLineVectorText
+  cdfCanvasGetVectorTextBounds
+  cdfCanvasGetVectorTextBox
+
   cdCanvasGetTransform
   cdCanvasTransformMultiply
   cdCanvasTransformRotate
