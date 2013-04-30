@@ -2143,11 +2143,13 @@ static int cdlua5_play(lua_State *L)
   int ymin = luaL_checkint(L,5);
   int ymax = luaL_checkint(L,6);
   const char *data_s = luaL_checkstring(L,7);
+  int ret;
 
   cdlua_setplaystate(L);
-  cdCanvasPlay(cdlua_checkcanvas(L, 1), cdlua_ctx->ctx(), xmin, xmax, ymin, ymax, (void*)data_s);
+  ret = cdCanvasPlay(cdlua_checkcanvas(L, 1), cdlua_ctx->ctx(), xmin, xmax, ymin, ymax, (void*)data_s);
   cdlua_setplaystate(NULL);
-  return 0;
+  lua_pushinteger(L, ret);
+  return 1;
 }
 
 /***************************************************************************\
