@@ -104,7 +104,7 @@ typedef struct {
     off = abstract (pixels, factor is always 1)
     factor can be changed by the method
   Background Color
-    used only to fill the background
+    can be used to fill the background
   Transparency (transp=on[1]/off[0])
     same as background opacity. The given color should be used when transp=off.
   ClipIndicator (clip=on[1]/off[0])

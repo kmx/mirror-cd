@@ -222,10 +222,7 @@ static void cdcgm_ScaleMode(int metric, double* factor, cdCGM* cd_cgm)
 
 static void cdcgm_BackgroundColor(cgmRGB color, cdCGM* cd_cgm)
 {
-  long old_bgcolor = cdCanvasBackground(cd_cgm->canvas, CD_QUERY);
   cdCanvasSetBackground(cd_cgm->canvas, cdEncodeColor(color.red, color.green, color.blue));
-  cdCanvasClear(cd_cgm->canvas);
-  cdCanvasSetBackground(cd_cgm->canvas, old_bgcolor);
 }
 
 static void cdcgm_Transparency(int transp, cgmRGB color, cdCGM* cd_cgm)

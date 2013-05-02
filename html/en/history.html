@@ -31,7 +31,7 @@
 <body>
 
 <h2>History of Changes</h2>
-<h3>CVS (01/Mar/2013)</h3>
+<h3>CVS (02/May/2013)</h3>
 <ul>
 	<li><span class="hist_changed">Changed:</span> CD_DXF now supports solid filled primitives  
 	if parameter &quot;-ac2000&quot; is specified at <strong>cdCreateCanvas</strong>. Improved 
@@ -42,6 +42,10 @@
 	<li><span class="hist_fixed">Fixed:</span> 
 	missing support for floating point (cdf* functions) in VectorText 
 	primitives.</li>
+	<li><span class="hist_fixed">Fixed:</span> 
+	<strong>cdCanvasPlay</strong> for CD_CGM when the file contains a background 
+	color code, the canvas was cleared with the background color instead to 
+	simply set the background color.</li>
 </ul>
 <h3><a href="http://sourceforge.net/projects/canvasdraw/files/5.6/">Version 5.6</a> (28/Nov/2012)</h3>
 <ul>
