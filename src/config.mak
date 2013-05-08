@@ -99,6 +99,9 @@ else
   ifdef USE_X11
     SRC += $(SRCX11) $(SRCNULL)
     LIBS += freetype
+    ifneq ($(findstring cygw, $(TEC_UNAME)), )
+      LIBS += fontconfig
+    endif
   else
     SRC += $(SRCWIN32)
     ifneq ($(findstring cygw, $(TEC_UNAME)), )
