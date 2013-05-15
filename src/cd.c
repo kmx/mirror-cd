@@ -376,7 +376,7 @@ cdState* cdCanvasSaveState(cdCanvas* canvas)
   if (!_cdCheckCanvas(canvas)) return NULL;
 
   state = (cdState*)malloc(sizeof(cdState));
-  memcpy(state, canvas, sizeof(cdCanvas));
+  memcpy(state, canvas, sizeof(cdCanvas));  /* is actually a cdCanvas */
 
   if (state->pattern) 
   {
@@ -436,7 +436,6 @@ void cdReleaseState(cdState* state)
   if (state->line_dashes) 
     free(state->line_dashes);
 
-  free(state);
   free(state);
 }
 
