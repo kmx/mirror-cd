@@ -52,7 +52,7 @@ cd._VERSION_NUMBER</pre>
 </div>
 <hr>
 <h2 align="center">Metafile Interpretation</h2>
-<div class="function"><pre class="function"><span class="mainFunction">int&nbsp;cdCanvasPlay(cdCanvas* canvas, cdContext* ctx, int xmin, int xmax, int ymin, int ymax, void *data); [in C]</span>
+<div class="function"><pre class="function"><span class="mainFunction">int&nbsp;<a name="cdPlay">cdCanvasPlay</a>(cdCanvas* canvas, cdContext* ctx, int xmin, int xmax, int ymin, int ymax, void *data); [in C]</span>
 
 canvas:Play(ctx, xmin, xmax, ymin, ymax: number, data: string) -&gt; (status: number) [in Lua]</pre>
 
@@ -90,7 +90,7 @@ canvas:Play(ctx, xmin, xmax, ymin, ymax: number, data: string) -&gt; (status: nu
     is a <strong>cdCanvas</strong><b>*</b> of the Picture canvas.</li>
   </ul>
 
-</div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;cdContextRegisterCallback(cdContext *ctx, int cb, int(*func)(cdCanvas* canvas, ...)); [in C]</span>
+</div><div class="function"><pre class="function"><span class="mainFunction">int&nbsp;<a name="cdRegisterCallback">cdContextRegisterCallback</a>(cdContext *ctx, int cb, int(*func)(cdCanvas* canvas, ...)); [in C]</span>
 
 cd.ContextRegisterCallback(ctx, cb: number, func: function) -&gt; (status: number) [in Lua]</pre>
 
