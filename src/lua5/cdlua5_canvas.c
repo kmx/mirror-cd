@@ -2142,8 +2142,13 @@ static int cdlua5_play(lua_State *L)
   int xmax = luaL_checkint(L,4);
   int ymin = luaL_checkint(L,5);
   int ymax = luaL_checkint(L,6);
-  const char *data_s = luaL_checkstring(L,7);
+  const char *data_s;
   int ret;
+
+  if (lua_isstring(L, 7))
+    data_s = luaL_checkstring(L,7);
+  else
+    data_s = (char*)cdlua_checkcanvas(L, 7);  /* CD_PICTURE */
 
   cdlua_setplaystate(L);
   ret = cdCanvasPlay(cdlua_checkcanvas(L, 1), cdlua_ctx->ctx(), xmin, xmax, ymin, ymax, (void*)data_s);

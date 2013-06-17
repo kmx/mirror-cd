@@ -36,6 +36,27 @@
 #include "cdlua5_private.h"
 
 
+static int cdlua5_sizecb(cdCanvas *canvas, int w, int h, double mm_w, double mm_h, int lock)
+{
+  /* little Wrapper */
+  lua_State * L = cdlua_getplaystate();
+  lua_rawgeti(L, LUA_REGISTRYINDEX, lock);
+
+  cdlua_pushcanvas(L, canvas);
+  lua_pushnumber(L, w);
+  lua_pushnumber(L, h);
+  lua_pushnumber(L, mm_w);
+  lua_pushnumber(L, mm_h);
+  if(lua_pcall(L, 5, 1, 0) != 0)
+    luaL_error(L, "error running function: %s", lua_tostring(L, -1));
+
+  if (!lua_isnumber(L,-1))
+    luaL_error(L, "invalid return value");
+
+  return luaL_checkint(L,-1);
+}
+
+
 /***************************************************************************\
 * CD_CGM.                                                                   *
 \***************************************************************************/
@@ -205,23 +226,7 @@ static int cgm_begpictbcb(cdCanvas *canvas)
 \***************************************************************************/
 static int cgm_sizecb(cdCanvas *canvas, int w, int h, double mm_w, double mm_h)
 {
-  /* little Wrapper */
-  lua_State * L = cdlua_getplaystate();
-
-  lua_rawgeti(L, LUA_REGISTRYINDEX, cdluacgmcb[CD_SIZECB].lock);
-  
-  cdlua_pushcanvas(L, canvas);
-  lua_pushnumber(L, w );
-  lua_pushnumber(L, h );
-  lua_pushnumber(L, mm_w );
-  lua_pushnumber(L, mm_h );
-  if(lua_pcall(L, 5, 1, 0) != 0)
-    luaL_error(L, "error running function: %s", lua_tostring(L, -1));
-
-  if (!lua_isnumber(L, -1))
-    luaL_error(L, "invalid return value");
-   
-  return luaL_checkint(L,-1);
+  return cdlua5_sizecb(canvas, w, h, mm_w, mm_h, cdluacgmcb[CD_SIZECB].lock);
 }
 
 /***************************************************************************\
@@ -568,23 +573,7 @@ static cdluaContext cdluawmfctx =
 \***************************************************************************/
 static int wmf_sizecb(cdCanvas *canvas, int w, int h, double mm_w, double mm_h)
 {
-  /* little Wrapper */
-  lua_State * L = cdlua_getplaystate();
-
-  lua_rawgeti(L, LUA_REGISTRYINDEX, cdluawmfcb[CD_SIZECB].lock);
-
-  cdlua_pushcanvas(L, canvas);
-  lua_pushnumber(L, w);
-  lua_pushnumber(L, h);
-  lua_pushnumber(L, mm_w);
-  lua_pushnumber(L, mm_h);
-  if(lua_pcall(L, 5, 1, 0) != 0)
-    luaL_error(L, "error running function: %s", lua_tostring(L, -1));
-
-  if (!lua_isnumber(L, -1))
-    luaL_error(L,"invalid return value");
-    
-  return luaL_checkint(L,-1);
+  return cdlua5_sizecb(canvas, w, h, mm_w, mm_h, cdluawmfcb[CD_SIZECB].lock);
 }
 
 /***************************************************************************\
@@ -619,23 +608,7 @@ static cdluaContext cdluaemfctx =
 \***************************************************************************/
 static int emf_sizecb(cdCanvas *canvas, int w, int h, double mm_w, double mm_h)
 {
-  /* little Wrapper */
-  lua_State * L = cdlua_getplaystate();
-
-  lua_rawgeti(L, LUA_REGISTRYINDEX, cdluaemfcb[CD_SIZECB].lock);
-
-  cdlua_pushcanvas(L, canvas);
-  lua_pushnumber(L, w);
-  lua_pushnumber(L, h);
-  lua_pushnumber(L, mm_w);
-  lua_pushnumber(L, mm_h);
-  if(lua_pcall(L, 5, 1, 0) != 0)
-    luaL_error(L, "error running function: %s", lua_tostring(L, -1));
-
-  if (!lua_isnumber(L,-1))
-    luaL_error(L, "invalid return value");
-
-  return luaL_checkint(L,-1);
+  return cdlua5_sizecb(canvas, w, h, mm_w, mm_h, cdluaemfcb[CD_SIZECB].lock);
 }
 
 /***************************************************************************\
@@ -646,15 +619,29 @@ static void *cdpicture_checkdata(lua_State *L,int param)
   return (void *)luaL_checkstring(L,param);
 }
 
+static int picture_sizecb(cdCanvas *canvas, int w, int h, double mm_w, double mm_h);
+
+static cdluaCallback cdluapicturecb[1] = 
+{{
+  -1,
+  "SIZECB",
+  (cdCallback)picture_sizecb
+}};
+
 static cdluaContext cdluapicturectx = 
 {
   0,
   "PICTURE",
   cdContextPicture,
   cdpicture_checkdata,
-  NULL,
-  0
+  cdluapicturecb,
+  1
 };
+
+static int picture_sizecb(cdCanvas *canvas, int w, int h, double mm_w, double mm_h)
+{
+  return cdlua5_sizecb(canvas, w, h, mm_w, mm_h, cdluapicturecb[CD_SIZECB].lock);
+}
 
 /***************************************************************************\
 * CD_DEBUG.                                                              *
@@ -702,27 +689,11 @@ static cdluaContext cdluamfctx =
 };
 
 /***************************************************************************\
-* METAFILE CD_SIZECB.                                                       *
+* CD_METAFILE SIZECB.                                                       *
 \***************************************************************************/
 static int metafile_sizecb(cdCanvas *canvas, int w, int h, double mm_w, double mm_h)
 {
-  /* little Wrapper */
-  lua_State * L = cdlua_getplaystate();
-
-  lua_rawgeti(L, LUA_REGISTRYINDEX, cdluamfcb[CD_SIZECB].lock);
-
-  cdlua_pushcanvas(L, canvas);
-  lua_pushnumber(L, w);
-  lua_pushnumber(L, h);
-  lua_pushnumber(L, mm_w);
-  lua_pushnumber(L, mm_h);
-  if(lua_pcall(L, 5, 1, 0) != 0)
-    luaL_error(L, "error running function: %s", lua_tostring(L, -1));
-
-  if (!lua_isnumber(L, -1))
-    luaL_error(L, "invalid return value");
-
-  return luaL_checkint(L,-1);
+  return cdlua5_sizecb(canvas, w, h, mm_w, mm_h, cdluamfcb[CD_SIZECB].lock);
 }
 
 /***************************************************************************\
@@ -811,22 +782,7 @@ static cdluaContext cdluaclipboardctx =
 \***************************************************************************/
 static int clipboard_sizecb(cdCanvas *canvas, int w, int h, double mm_w, double mm_h)
 {
-  /* little Wrapper */
-  lua_State * L = cdlua_getplaystate();
-  lua_rawgeti(L, LUA_REGISTRYINDEX, cdluaclipboardcb[CD_SIZECB].lock);
-
-  cdlua_pushcanvas(L, canvas);
-  lua_pushnumber(L, w);
-  lua_pushnumber(L, h);
-  lua_pushnumber(L, mm_w);
-  lua_pushnumber(L, mm_h);
-  if(lua_pcall(L, 5, 1, 0) != 0)
-    luaL_error(L, "error running function: %s", lua_tostring(L, -1));
-
-  if (!lua_isnumber(L,-1))
-    luaL_error(L, "invalid return value");
-
-  return luaL_checkint(L,-1);
+  return cdlua5_sizecb(canvas, w, h, mm_w, mm_h, cdluaclipboardcb[CD_SIZECB].lock);
 }
 
 /***************************************************************************\

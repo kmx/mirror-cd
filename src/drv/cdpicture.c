@@ -988,14 +988,14 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
       pic_ymin = ctxcanvas->ymin;
   double factorX = 1, factorY = 1;
   
-  if ((ctxcanvas->xmax-ctxcanvas->xmin+1)>1 && 
-      (ctxcanvas->ymax-ctxcanvas->ymin+1)>1 && 
+  if (pic_canvas->w>1 && 
+      pic_canvas->h>1 && 
       (xmax-xmin+1)>1 && 
       (ymax-ymin+1)>1)
   {
     scale = 1;
-    factorX = ((double)(xmax-xmin+1)) / ((double)(ctxcanvas->xmax-ctxcanvas->xmin+1));
-    factorY = ((double)(ymax-ymin+1)) / ((double)(ctxcanvas->ymax-ctxcanvas->ymin+1));
+    factorX = ((double)(xmax-xmin+1)) / ((double)pic_canvas->w);
+    factorY = ((double)(ymax-ymin+1)) / ((double)pic_canvas->h);
   }
 
   if (cdsizecb)
@@ -1186,7 +1186,8 @@ static void cdcreatecanvas(cdCanvas *canvas, void *data)
   double res = 3.78;
   cdCtxCanvas* ctxcanvas;
 
-  sscanf(strdata, "%lg", &res);
+  if (strdata)
+    sscanf(strdata, "%lg", &res);
 
   ctxcanvas = (cdCtxCanvas *)malloc(sizeof(cdCtxCanvas));
   memset(ctxcanvas, 0, sizeof(cdCtxCanvas));
