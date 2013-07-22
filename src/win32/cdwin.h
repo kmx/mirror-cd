@@ -123,7 +123,6 @@ void cdwRestoreDC(cdCtxCanvas *ctxcanvas);
 /* Remove valores comuns do driver Windows, deve ser chamado por todos os drivers */
 void cdwKillCanvas(cdCtxCanvas* canvas);
 
-
 /* implemented in the wmfmeta.c module */
 void wmfMakePlaceableMetafile(HMETAFILE hmf, const char* filename, int w, int h);
 void wmfWritePlacebleFile(HANDLE hFile, unsigned char* buffer, DWORD dwSize, LONG mm, LONG xExt, LONG yExt);
@@ -172,7 +171,7 @@ void cdwDIBEncodeRGBARect(cdwDIB* dib, const unsigned char *red, const unsigned 
 void cdwDIBEncodeRGBARectMirror(cdwDIB* dib, const unsigned char *red, const unsigned char *green, const unsigned char *blue, const unsigned char *alpha, int xi, int yi, int wi, int hi);
 void cdwDIBEncodeRGBARectZoom(cdwDIB* dib, const unsigned char *red, const unsigned char *green, const unsigned char *blue, const unsigned char *alpha, int w, int h, int xi, int yi, int wi, int hi);
 void cdwDIBEncodeAlphaRect(cdwDIB* dib, const unsigned char *alpha, int xi, int yi, int wi, int hi);
-  
+
 
 #ifdef __cplusplus
 }

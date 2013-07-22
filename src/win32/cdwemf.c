@@ -9,7 +9,7 @@
 
 #include "cdwin.h"
 #include "cdemf.h"
-
+#include "cdwin_str.h"
 
 
 static void cdkillcanvas (cdCtxCanvas* ctxcanvas)
@@ -65,7 +65,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void* data)
   rect.top = 0;
   rect.right = (int)(100. * w / xres);
   rect.bottom = (int)(100. * h / yres);
-  hDC = CreateEnhMetaFile(ScreenDC,filename,&rect,NULL);
+  hDC = CreateEnhMetaFile(ScreenDC,cdStrToSystem(canvas->utf8mode, filename),&rect,NULL);
   ReleaseDC(NULL, ScreenDC);
   
   if(!hDC)

@@ -13,9 +13,9 @@ SRC = cdcairodbuf.c cdcairopdf.c cdcairosvg.c cdcairo.c cdcairoimg.c cdcairoplus
 # cdcaironative_gdk.c  
 
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )
-  SRC += cdcaironative_win32.c cdcairoprn_win32.c cdcairoemf.c
+  SRC += cdcaironative_win32.c cdcairoprn_win32.c cdcairoemf.c drv/cdwin_str.c
 else
-  SRC += cdcaironative_x11.c   
+  SRC += cdcaironative_x11.c drv/cdgdk_str.c
   DEFINES += CAIRO_X11  
   CHECK_GTK = Yes
   

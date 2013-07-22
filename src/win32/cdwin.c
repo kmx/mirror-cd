@@ -9,6 +9,7 @@
 #include <math.h>
 
 #include "cdwin.h"
+#include "cdwin_str.h"
 
 #ifndef AC_SRC_ALPHA
 #define AC_SRC_ALPHA                0x01
@@ -1277,7 +1278,10 @@ static void sTextOutBlt(cdCtxCanvas* ctxcanvas, int px, int py, const char* s, i
   SetTextAlign(hBitmapDC, TA_CENTER | TA_BASELINE);
   hOldFont = SelectObject(hBitmapDC, ctxcanvas->hFont);
   
-  TextOut(hBitmapDC, x, y, s, len);
+  if(ctxcanvas->canvas->utf8mode)
+    len = lstrlen(cdStrToSystem(ctxcanvas->canvas->utf8mode, s));
+
+  TextOut(hBitmapDC, x, y, cdStrToSystem(ctxcanvas->canvas->utf8mode, s), len);
   
   if (ctxcanvas->canvas->invert_yaxis)
     BitBlt(ctxcanvas->hDC, px, py, w, h, hBitmapDC, 0, 0, ctxcanvas->RopBlt);
@@ -1294,8 +1298,11 @@ static void sTextOutBlt(cdCtxCanvas* ctxcanvas, int px, int py, const char* s, i
 static void cdgettextsize (cdCtxCanvas* ctxcanvas, const char *s, int len, int *width, int *height)
 {
   SIZE size;
+
+  if(ctxcanvas->canvas->utf8mode)
+    len = lstrlen(cdStrToSystem(ctxcanvas->canvas->utf8mode, s));
   
-  GetTextExtentPoint32(ctxcanvas->hDC, s, len, &size);
+  GetTextExtentPoint32(ctxcanvas->hDC, cdStrToSystem(ctxcanvas->canvas->utf8mode, s), len, &size);
   
   if (width)  
     *width  = size.cx;
@@ -1414,7 +1421,10 @@ static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s, int len)
     if (ctxcanvas->canvas->use_matrix)
       cdwTextTransform(ctxcanvas, s, len, &x, &y);
 
-    TextOut(ctxcanvas->hDC, x, y+1, s, len); /* compensa erro de desenho com +1 */
+    if(ctxcanvas->canvas->utf8mode)
+      len = lstrlen(cdStrToSystem(ctxcanvas->canvas->utf8mode, s));
+
+    TextOut(ctxcanvas->hDC, x, y+1, cdStrToSystem(ctxcanvas->canvas->utf8mode, s), len); /* compensa erro de desenho com +1 */
 
     if (ctxcanvas->canvas->use_matrix)
       cdtransform(ctxcanvas, ctxcanvas->canvas->matrix);
@@ -1523,7 +1533,7 @@ static int cdfont(cdCtxCanvas* ctxcanvas, const char *type_face, int style, int 
   size_pixel = cdGetFontSizePixels(ctxcanvas->canvas, size);
   hFont = CreateFont(-size_pixel, 0, angle, angle, bold, italic, underline, strikeout,
                      DEFAULT_CHARSET,OUT_TT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,FF_DONTCARE|DEFAULT_PITCH,
-                     type_face);
+                     cdStrToSystem(ctxcanvas->canvas->utf8mode, type_face));
   if (!hFont) return 0;
 
   if (ctxcanvas->hOldFont) SelectObject(ctxcanvas->hDC, ctxcanvas->hOldFont);
@@ -1534,7 +1544,7 @@ static int cdfont(cdCtxCanvas* ctxcanvas, const char *type_face, int style, int 
   
   GetTextMetrics (ctxcanvas->hDC, &tm);
   ctxcanvas->font.max_width  = tm.tmMaxCharWidth;
-  ctxcanvas->font.height     = tm.tmHeight + tm.tmExternalLeading ;
+  ctxcanvas->font.height     = tm.tmHeight + tm.tmExternalLeading;
   ctxcanvas->font.ascent     = tm.tmAscent;
   ctxcanvas->font.descent    = tm.tmDescent;
 
@@ -1548,7 +1558,7 @@ static int cdnativefont (cdCtxCanvas* ctxcanvas, const char* nativefont)
   int size = 12, bold = FW_NORMAL, italic = 0, 
       style = CD_PLAIN, underline = 0, strikeout = 0,
       size_pixel;
-  char type_face[1024];
+  TCHAR type_face[1024];
   
   if (nativefont[0] == '-' && nativefont[1] == 'd')
   {
@@ -1569,7 +1579,7 @@ static int cdnativefont (cdCtxCanvas* ctxcanvas, const char* nativefont)
 
     size_pixel = cdGetFontSizePixels(ctxcanvas->canvas, ctxcanvas->canvas->font_size);
 
-    strcpy(lf.lfFaceName, type_face);
+    lstrcpyn(lf.lfFaceName, type_face, lstrlen(type_face)+1);
     lf.lfWeight = tm.tmWeight;
     lf.lfHeight = -size_pixel;
     lf.lfItalic = tm.tmItalic;
@@ -1597,7 +1607,7 @@ static int cdnativefont (cdCtxCanvas* ctxcanvas, const char* nativefont)
     bold = lf.lfWeight;
     italic = lf.lfItalic;
     size = lf.lfHeight;
-    strcpy(type_face, lf.lfFaceName);
+    lstrcpyn(type_face, lf.lfFaceName, lstrlen(lf.lfFaceName)+1);
     underline = lf.lfUnderline;
     strikeout = lf.lfStrikeOut;
 
@@ -1608,9 +1618,9 @@ static int cdnativefont (cdCtxCanvas* ctxcanvas, const char* nativefont)
   }                                     
   else
   {
-    if (!cdParseIupWinFont(nativefont, type_face, &style, &size))
+    if (!cdParseIupWinFont(nativefont, cdStrFromSystem(ctxcanvas->canvas->utf8mode, type_face), &style, &size))
     {
-      if (!cdParsePangoFont(nativefont, type_face, &style, &size))
+      if (!cdParsePangoFont(nativefont, cdStrFromSystem(ctxcanvas->canvas->utf8mode, type_face), &style, &size))
         return 0;
     }
       
@@ -1627,7 +1637,8 @@ static int cdnativefont (cdCtxCanvas* ctxcanvas, const char* nativefont)
     
     hFont = CreateFont(-size_pixel, 0, ctxcanvas->font_angle, ctxcanvas->font_angle, 
                        bold, italic, underline, strikeout,
-                       DEFAULT_CHARSET,OUT_TT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,FF_DONTCARE|DEFAULT_PITCH, type_face);
+                       DEFAULT_CHARSET,OUT_TT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,FF_DONTCARE|DEFAULT_PITCH,
+                       type_face);
     if (!hFont) return 0;
   }
   
@@ -1645,7 +1656,7 @@ static int cdnativefont (cdCtxCanvas* ctxcanvas, const char* nativefont)
   /* update cdfont parameters */
   ctxcanvas->canvas->font_style = style;
   ctxcanvas->canvas->font_size = size;
-  strcpy(ctxcanvas->canvas->font_type_face, type_face);
+  strcpy(ctxcanvas->canvas->font_type_face, cdStrFromSystem(ctxcanvas->canvas->utf8mode, type_face));
 
   return 1;
 }
@@ -2422,7 +2433,7 @@ cdCtxCanvas *cdwCreateCanvas(cdCanvas* canvas, HWND hWnd, HDC hDC, int wtype)
 
   if (!cdwAlphaBlend)
   {
-    HINSTANCE lib = LoadLibrary("Msimg32");
+    HINSTANCE lib = LoadLibrary(TEXT("Msimg32"));
     if (lib)
       cdwAlphaBlend = (AlphaBlendFunc)GetProcAddress(lib, "AlphaBlend");
   }

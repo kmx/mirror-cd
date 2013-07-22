@@ -719,13 +719,16 @@ void SimpleDrawAll(cdCanvas* canvas)
 //  cdCanvasFont(canvas, "Purisa", CD_PLAIN, 24); // Native System - Linux
 //  cdCanvasFont(canvas, "../../test/simple/wingxing.ttf", CD_PLAIN, 24); // Full path
 
-
+  cdCanvasSetUTF8Mode(canvas, 1);
   /* Draw text at center, with orientation, 
      and draw its bounding box. 
      Notice that in some drivers the bounding box is not precise. */
   {
     int rect[8];
-    cdCanvasGetTextBounds(canvas, w/2, h/2, "Simple Draw (pηγν)", rect);
+    if(cdCanvasGetUTF8Mode(canvas))
+      cdCanvasGetTextBounds(canvas, w/2, h/2, "Simple Draw (pΓ§Γ£Γ­)­", rect);
+    else
+      cdCanvasGetTextBounds(canvas, w/2, h/2, "Simple Draw (pηγν)", rect);
     cdCanvasForeground(canvas, CD_RED);
     cdCanvasBegin(canvas, CD_CLOSED_LINES);
     cdCanvasVertex(canvas, rect[0], rect[1]);
@@ -735,7 +738,10 @@ void SimpleDrawAll(cdCanvas* canvas)
     cdCanvasEnd(canvas);
   }
   cdCanvasForeground(canvas, CD_BLUE);
-  cdCanvasText(canvas, w/2, h/2, "Simple Draw (pηγν)");
+  if(cdCanvasGetUTF8Mode(canvas))
+    cdCanvasText(canvas, w/2, h/2, "Simple Draw (pΓ§Γ£Γ­)");
+  else
+    cdCanvasText(canvas, w/2, h/2, "Simple Draw (pηγν)");
   cdCanvasTextOrientation(canvas, 0);
 
   /* Prepare World Coordinates */

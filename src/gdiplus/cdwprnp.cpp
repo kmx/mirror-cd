@@ -6,6 +6,7 @@
 
 #include "cdwinp.h"
 #include "cdprint.h"
+#include "cdwin_str.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -96,7 +97,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 
   DEVMODE* devideMode = (DEVMODE*)GlobalLock(pd.hDevMode);
   HANDLE printerHandle;
-  OpenPrinter((char*)devideMode->dmDeviceName, &printerHandle, NULL);
+  OpenPrinter((TCHAR*)devideMode->dmDeviceName, &printerHandle, NULL);
   GlobalUnlock(pd.hDevMode);
 
   {
@@ -104,7 +105,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
     DOCINFO docInfo;
     ZeroMemory(&docInfo, sizeof(docInfo));
     docInfo.cbSize = sizeof(docInfo);
-    docInfo.lpszDocName = docname;
+    docInfo.lpszDocName = cdStrToSystem(canvas->utf8mode, docname);
 
     StartDoc(hDC, &docInfo);
   }

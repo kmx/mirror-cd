@@ -12,6 +12,7 @@
 
 #include "cdcairoctx.h"
 #include "cdprint.h"
+#include "cdwin_str.h"
 
 #include "cairo-win32.h"
 
@@ -133,11 +134,12 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 
   ctxcanvas = cdcairoCreateCanvas(canvas, cairo_create(cairo_win32_printing_surface_create(hDC)));
   
+  /* Starting document */
   di.cbSize = sizeof(DOCINFO);
-  di.lpszDocName = docname;
-  di.lpszOutput = (LPTSTR) NULL;
-  di.lpszDatatype = (LPTSTR) NULL; 
-  di.fwType = 0; 
+  di.lpszDocName = cdStrToSystem(canvas->utf8mode, docname);
+  di.lpszOutput = (LPCTSTR) NULL;
+  di.lpszDatatype = (LPCTSTR) NULL; 
+  di.fwType = 0;
 
   StartDoc(hDC, &di);
   
@@ -147,15 +149,15 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   {
     unsigned char* devnames = (unsigned char*)GlobalLock(pd.hDevNames);
     DEVNAMES* dn = (DEVNAMES*)devnames;
-    char* device = (char*)(devnames + dn->wDeviceOffset);
+    TCHAR* device = (TCHAR*)(devnames + dn->wDeviceOffset);
 
-    ctxcanvas->printername = cdStrDup(device);
+    ctxcanvas->printername = cdStrDup(cdStrFromSystem(canvas->utf8mode, device));
     cdRegisterAttribute(canvas, &printername_attrib);
 
     /* PDF Writer returns bpp=1, so we check if color is supported and overwrite this value */
     if (canvas->bpp==1)
     {
-      char* port = (char*)(devnames + dn->wOutputOffset);
+      TCHAR* port = (TCHAR*)(devnames + dn->wOutputOffset);
       if (DeviceCapabilities(device, port, DC_COLORDEVICE, NULL, NULL))
         canvas->bpp = 24;
     }

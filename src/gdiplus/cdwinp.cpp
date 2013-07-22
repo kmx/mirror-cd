@@ -7,6 +7,7 @@
 #include "cdwinp.h"
 #include "cdgdiplus.h"
 #include "wd.h"
+#include "cdwin_str.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -42,7 +43,7 @@ void cdwpShowStatus(const char* title, Status status)
   }
 
   if (status != Ok)
-    MessageBox(NULL, status_str, title, MB_OK);
+    MessageBoxA(NULL, status_str, title, MB_OK);
 }
 
 /*
@@ -1265,11 +1266,14 @@ static void cdfpoly(cdCtxCanvas* ctxcanvas, int mode, cdfPoint* poly, int n)
   ctxcanvas->dirty = 1;
 }
 
-WCHAR* cdwpString2Unicode(const char* s, int len)
+WCHAR* cdwpString2Unicode(cdCanvas* canvas, const char* s, int len)
 {
   static WCHAR wstr[10240] = L"";
   if (len >= 10240) len = 10239;
-  MultiByteToWideChar(CP_ACP, 0, s, -1, wstr, len+1);
+  if(canvas->utf8mode)
+    MultiByteToWideChar(CP_UTF8, 0, s, -1, wstr, len+1);
+  else
+    MultiByteToWideChar(CP_ACP, 0, s, -1, wstr, len+1);
   return wstr;
 }
 
@@ -1282,7 +1286,10 @@ static void cdgettextsize(cdCtxCanvas* ctxcanvas, const char *s, int len, int *w
 {
   RectF boundingBox;
 
-  ctxcanvas->graphics->MeasureString(cdwpString2Unicode(s, len), len, 
+  if(ctxcanvas->canvas->utf8mode)
+    len = lstrlen(cdStrToSystem(ctxcanvas->canvas->utf8mode, s));
+
+  ctxcanvas->graphics->MeasureString(cdwpString2Unicode(ctxcanvas->canvas, s, len), len, 
                                             ctxcanvas->font, PointF(0,0),
                                             &boundingBox);
   if (width)  
@@ -1375,7 +1382,12 @@ static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s, int len)
 {
   Matrix transformMatrix;
   int use_transform = 0, w, h;
-  WCHAR* ws = cdwpString2Unicode(s, len);
+  WCHAR* ws;
+  
+  if(ctxcanvas->canvas->utf8mode)
+    len = lstrlen(cdStrToSystem(ctxcanvas->canvas->utf8mode, s));
+
+  ws = cdwpString2Unicode(ctxcanvas->canvas, s, len);
 
   if (ctxcanvas->canvas->text_orientation)
   {
@@ -1448,7 +1460,7 @@ static int cdfont(cdCtxCanvas* ctxcanvas, const char *type_face, int style, int 
   else if (cdStrEqualNoCase(type_face, "System"))
     fontFamily = FontFamily::GenericSansSerif()->Clone(); 
   else
-    fontFamily = new FontFamily(cdwpString2Unicode(type_face, strlen(type_face)));
+    fontFamily = new FontFamily(cdwpString2Unicode(ctxcanvas->canvas, type_face, strlen(type_face)));
   
   REAL emSize = (REAL)(cdGetFontSizePixels(ctxcanvas->canvas, size));
 
@@ -1481,8 +1493,13 @@ static int cdnativefont(cdCtxCanvas* ctxcanvas, const char* nativefont)
   {              
     COLORREF rgbColors;
     LOGFONT lf;
+
+#ifdef UNICODE
+    ctxcanvas->font->GetLogFontW(ctxcanvas->graphics, &lf);
+#else
     ctxcanvas->font->GetLogFontA(ctxcanvas->graphics, &lf);
-    
+#endif
+
     CHOOSEFONT cf;
     ZeroMemory(&cf, sizeof(CHOOSEFONT));
 
@@ -1501,7 +1518,7 @@ static int cdnativefont(cdCtxCanvas* ctxcanvas, const char* nativefont)
     bold = lf.lfWeight>FW_NORMAL? 1: 0;
     italic = lf.lfItalic;
     size = lf.lfHeight;
-    strcpy(type_face, lf.lfFaceName);
+    strcpy(type_face, cdStrFromSystem(ctxcanvas->canvas->utf8mode, lf.lfFaceName));
     underline = lf.lfUnderline;
     strikeout = lf.lfStrikeOut;
 
@@ -1556,7 +1573,7 @@ static int cdnativefont(cdCtxCanvas* ctxcanvas, const char* nativefont)
     fontFamily = FontFamily::GenericSansSerif()->Clone();
   }
   else
-    fontFamily = new FontFamily(cdwpString2Unicode(type_face, strlen(type_face)));
+    fontFamily = new FontFamily(cdwpString2Unicode(ctxcanvas->canvas, type_face, strlen(type_face)));
 
   if (!fontFamily->IsAvailable())
   {
@@ -2802,7 +2819,7 @@ static ULONG_PTR cd_gdiplusToken = (ULONG_PTR)0;
 static void __stdcall cd_DebugEvent(int level, char* msg)
 {
   (void)level;
-  MessageBox(NULL, msg, "GDI+ Debug", 0);
+  MessageBoxA(NULL, msg, "GDI+ Debug", 0);
 }
 
 void cdwpGdiPlusStartup(int debug)

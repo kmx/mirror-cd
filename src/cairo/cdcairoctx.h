@@ -35,7 +35,6 @@ struct _cdCtxCanvas
   PangoContext *fontcontext;
   PangoFontDescription *fontdesc;
   PangoLayout *fontlayout;
-  char* strLastConvertUTF8;
 
   /* fill attributes */
   cairo_pattern_t *pattern, *solid;

@@ -13,6 +13,7 @@
 #include "cdwin.h"
 #include "cdwmf.h"
 #include "cdemf.h"
+#include "cdwin_str.h"
 
 /* placeable metafile data definitions */
 #define ALDUSKEY 0x9AC6CDD7
@@ -1827,7 +1828,7 @@ int cdplayWMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
     if (wBytesRead == 0)  
       return CD_ERROR;
     
-    hMF = GetMetaFile(filename);
+    hMF = GetMetaFile(cdStrToSystem(canvas->utf8mode, filename));
   }
   else /* this is a placeable metafile */
   {
@@ -1932,7 +1933,7 @@ int cdplayEMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
   cdDataEMF data_emf;
   int w, h;
   
-  hEMF = GetEnhMetaFile(filename);
+  hEMF = GetEnhMetaFile(cdStrToSystem(canvas->utf8mode, filename));
   if (!hEMF)
     return CD_ERROR;
   

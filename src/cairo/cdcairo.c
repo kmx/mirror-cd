@@ -14,6 +14,7 @@
 #include <pango/pangocairo.h>
 
 #include "cdcairoctx.h"
+#include "cdgdk_str.h"
 
 
 #ifndef PANGO_VERSION_CHECK
@@ -24,65 +25,6 @@
 #define M_PI 3.14159265358979323846
 #endif
 
-static int sStrIsAscii(const char* str)
-{
-  while(*str)
-  {
-    int c = *str;
-    if (c < 0)
-      return 0;
-    str++;
-  }
-  return 1;
-}
-
-static char* sStrToUTF8(const char *str, const char* charset, int length)
-{
-  return g_convert(str, length, "UTF-8", charset, NULL, NULL, NULL);
-}
-
-static char* sStrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, int length)
-{
-  const char *charset = NULL;
-
-  if (!str || *str == 0)
-    return (char*)str;
-
-  if (g_get_charset(&charset))  /* current locale is already UTF-8 */
-  {
-    if (g_utf8_validate(str, -1, NULL))
-    {
-      return (char*)str;
-    }
-    else
-    {
-      ctxcanvas->strLastConvertUTF8 = sStrToUTF8(str, "ISO8859-1", length);   /* if string is not UTF-8, assume ISO8859-1 */
-
-      if (!ctxcanvas->strLastConvertUTF8)
-        return (char*)str;
-
-      return ctxcanvas->strLastConvertUTF8;
-    }
-  }
-  else
-  {
-    if (sStrIsAscii(str) || !charset)
-    {
-      return (char*)str;
-    }
-    else if (charset)
-    {    
-      ctxcanvas->strLastConvertUTF8 = sStrToUTF8(str, charset, length);
-
-      if (!ctxcanvas->strLastConvertUTF8)
-        return (char*)str;
-
-      return ctxcanvas->strLastConvertUTF8;
-    }
-  }
-
-  return (char*)str;
-}
 
 static void sUpdateFill(cdCtxCanvas *ctxcanvas, int fill)
 {
@@ -117,9 +59,6 @@ void cdcairoKillCanvas(cdCtxCanvas *ctxcanvas)
   if (ctxcanvas->fontdesc) pango_font_description_free(ctxcanvas->fontdesc);
   if (ctxcanvas->fontlayout)  g_object_unref(ctxcanvas->fontlayout);
   if (ctxcanvas->fontcontext) g_object_unref(ctxcanvas->fontcontext);
-
-  if (ctxcanvas->strLastConvertUTF8)
-    g_free(ctxcanvas->strLastConvertUTF8);
 
   if (ctxcanvas->cr)
     cairo_destroy(ctxcanvas->cr);
@@ -909,8 +848,9 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, i
 {
   PangoFontMetrics* metrics;
   int w, h, desc, dir = -1, reset_transform = 0;
+  (void)len;
 
-  pango_layout_set_text(ctxcanvas->fontlayout, sStrConvertToUTF8(ctxcanvas, s, len), -1);
+  pango_layout_set_text(ctxcanvas->fontlayout, cdStrToSystem(ctxcanvas->canvas->utf8mode, s), -1);
   
 	pango_layout_get_pixel_size(ctxcanvas->fontlayout, &w, &h);
   metrics = pango_context_get_metrics(ctxcanvas->fontcontext, ctxcanvas->fontdesc, pango_context_get_language(ctxcanvas->fontcontext));
@@ -1021,8 +961,11 @@ static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *s, int len, int *w
   if (!ctxcanvas->fontlayout)
     return;
 
+  if(!ctxcanvas->canvas->utf8mode)
+    len = strlen(cdStrToSystem(ctxcanvas->canvas->utf8mode, s));
+
   pango_cairo_update_layout(ctxcanvas->cr, ctxcanvas->fontlayout);
-  pango_layout_set_text(ctxcanvas->fontlayout, sStrConvertToUTF8(ctxcanvas, s, len), len);
+  pango_layout_set_text(ctxcanvas->fontlayout, cdStrToSystem(ctxcanvas->canvas->utf8mode, s), len);
   pango_layout_get_pixel_size(ctxcanvas->fontlayout, width, height);
 }
 

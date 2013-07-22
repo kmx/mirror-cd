@@ -98,7 +98,7 @@ void cdwpKillCanvas(cdCtxCanvas* ctxcanvas);
 void cdwpInitTable(cdCanvas* canvas);
 void cdwpUpdateCanvas(cdCtxCanvas* canvas);
 
-WCHAR* cdwpString2Unicode(const char* s, int len);
+WCHAR* cdwpString2Unicode(cdCanvas* canvas, const char* s, int len);
 void cdwpShowStatus(const char* title, Status status);
 
 void cdwpGdiPlusStartup(int debug);
@@ -106,4 +106,3 @@ void cdwpGdiPlusShutdown(void);
 }
 
 #endif /* ifndef CDWINP_H */
-

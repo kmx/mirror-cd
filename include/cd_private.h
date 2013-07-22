@@ -226,6 +226,9 @@ struct _cdCanvas
   /* simulation flags */
   int sim_mode;
 
+  /* UTF8 mode */
+  int utf8mode;
+
   /* WC */
   double s, sx, tx, sy, ty;   /* Transform Window -> Viewport (scale+translation)*/
   cdfRect window;             /* Window in WC */

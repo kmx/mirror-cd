@@ -78,11 +78,11 @@ ifdef USE_GDK
   SRC += $(SRCCAIRO) cairo/cdcaironative_gdk.c
   
   ifneq ($(findstring Win, $(TEC_SYSNAME)), )
-    SRC += cairo/cdcairoprn_win32.c cairo/cdcairoemf.c
+    SRC += cairo/cdcairoprn_win32.c cairo/cdcairoemf.c drv/cdwin_str.c
     LIBS += freetype6
   else
 #    ifeq ($(findstring MacOS, $(TEC_UNAME)), )     (TODO: handle GTK using Darwin)
-      SRC += cairo/cdcairoprn_unix.c
+      SRC += cairo/cdcairoprn_unix.c drv/cdgdk_str.c
       ifdef USE_GTK3
         INCLUDES += $(GTK)/include/gtk-3.0/unix-print
         SRC += drv/cd0emf.c

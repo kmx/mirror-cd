@@ -7,7 +7,7 @@ DEFINES = CD_NO_OLD_INTERFACE
 
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )
   SRCDIR = gdiplus
-  SRC = cdwemfp.cpp cdwimgp.cpp cdwinp.cpp cdwnativep.cpp cdwprnp.cpp cdwdbufp.cpp cdwclpp.cpp cdwgdiplus.c
+  SRC = cdwemfp.cpp cdwimgp.cpp cdwinp.cpp cdwnativep.cpp cdwprnp.cpp cdwdbufp.cpp cdwclpp.cpp cdwgdiplus.c drv/cdwin_str.c
 
   INCLUDES = . gdiplus drv
   LIBS = gdiplus
