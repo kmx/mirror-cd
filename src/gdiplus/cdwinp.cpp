@@ -7,13 +7,13 @@
 #include "cdwinp.h"
 #include "cdgdiplus.h"
 #include "wd.h"
-#include "cdwin_str.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 
 static void cdstipple(cdCtxCanvas* ctxcanvas, int w, int h, const unsigned char *index);
 
+// For debuging, NOT exported in the DLL
 void cdwpShowStatus(const char* title, Status status)
 {
   char* status_str = "";
@@ -44,6 +44,40 @@ void cdwpShowStatus(const char* title, Status status)
 
   if (status != Ok)
     MessageBoxA(NULL, status_str, title, MB_OK);
+}
+
+WCHAR* cdwpStringToUnicode(const char* str, int len, int utf8mode)
+{
+  static WCHAR wstr[10240] = L"";
+
+  if (utf8mode)
+    len = MultiByteToWideChar(CP_UTF8, 0, str, len, wstr, 10240);
+  else
+    len = MultiByteToWideChar(CP_ACP, 0, str, len, wstr, 10240);
+
+  if (len>0)
+    wstr[len] = 0;
+  else
+    wstr[0] = 0;
+
+  return wstr;
+}
+
+char* cdwpStringFromUnicode(const WCHAR* wstr, int len, int utf8mode)
+{
+  static char str[10240] = "";
+
+  if (utf8mode)
+    len = WideCharToMultiByte(CP_UTF8, 0, wstr, len, str, 10240, NULL, NULL);  /* str must has a large buffer */
+  else
+    len = WideCharToMultiByte(CP_ACP, 0, wstr, len, str, 10240, NULL, NULL);
+
+  if (len>0)
+    str[len] = 0;
+  else
+    str[0] = 0;
+
+  return str;
 }
 
 /*
@@ -868,7 +902,7 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
 
             if (i+3 > n) break;
 
-            if (!cdCanvasGetArcPath(ctxcanvas->canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+            if (!cdCanvasGetArcPath(poly+i, &xc, &yc, &w, &h, &a1, &a2))
               return;
 
             if (current_set)
@@ -1092,7 +1126,7 @@ static void cdfpoly(cdCtxCanvas* ctxcanvas, int mode, cdfPoint* poly, int n)
 
             if (i+3 > n) break;
 
-            if (!cdfCanvasGetArcPath(ctxcanvas->canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+            if (!cdfCanvasGetArcPath(poly+i, &xc, &yc, &w, &h, &a1, &a2))
               return;
 
             if (current_set)
@@ -1266,17 +1300,6 @@ static void cdfpoly(cdCtxCanvas* ctxcanvas, int mode, cdfPoint* poly, int n)
   ctxcanvas->dirty = 1;
 }
 
-WCHAR* cdwpString2Unicode(cdCanvas* canvas, const char* s, int len)
-{
-  static WCHAR wstr[10240] = L"";
-  if (len >= 10240) len = 10239;
-  if(canvas->utf8mode)
-    MultiByteToWideChar(CP_UTF8, 0, s, -1, wstr, len+1);
-  else
-    MultiByteToWideChar(CP_ACP, 0, s, -1, wstr, len+1);
-  return wstr;
-}
-
 static int cdwpCompensateHeight(int height)
 {
   return (int)floor(height/10. + 0.5);  /* 10% */
@@ -1286,10 +1309,7 @@ static void cdgettextsize(cdCtxCanvas* ctxcanvas, const char *s, int len, int *w
 {
   RectF boundingBox;
 
-  if(ctxcanvas->canvas->utf8mode)
-    len = lstrlen(cdStrToSystem(ctxcanvas->canvas->utf8mode, s));
-
-  ctxcanvas->graphics->MeasureString(cdwpString2Unicode(ctxcanvas->canvas, s, len), len, 
+  ctxcanvas->graphics->MeasureString(cdwpStringToUnicode(s, len, ctxcanvas->utf8mode), len, 
                                             ctxcanvas->font, PointF(0,0),
                                             &boundingBox);
   if (width)  
@@ -1382,12 +1402,7 @@ static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s, int len)
 {
   Matrix transformMatrix;
   int use_transform = 0, w, h;
-  WCHAR* ws;
-  
-  if(ctxcanvas->canvas->utf8mode)
-    len = lstrlen(cdStrToSystem(ctxcanvas->canvas->utf8mode, s));
-
-  ws = cdwpString2Unicode(ctxcanvas->canvas, s, len);
+  WCHAR* ws = cdwpStringToUnicode(s, len, ctxcanvas->utf8mode);
 
   if (ctxcanvas->canvas->text_orientation)
   {
@@ -1460,7 +1475,7 @@ static int cdfont(cdCtxCanvas* ctxcanvas, const char *type_face, int style, int 
   else if (cdStrEqualNoCase(type_face, "System"))
     fontFamily = FontFamily::GenericSansSerif()->Clone(); 
   else
-    fontFamily = new FontFamily(cdwpString2Unicode(ctxcanvas->canvas, type_face, strlen(type_face)));
+    fontFamily = new FontFamily(cdwpStringToUnicode(type_face, strlen(type_face), ctxcanvas->utf8mode));
   
   REAL emSize = (REAL)(cdGetFontSizePixels(ctxcanvas->canvas, size));
 
@@ -1492,24 +1507,20 @@ static int cdnativefont(cdCtxCanvas* ctxcanvas, const char* nativefont)
   if (nativefont[0] == '-' && nativefont[1] == 'd')
   {              
     COLORREF rgbColors;
-    LOGFONT lf;
+    LOGFONTW lf;
 
-#ifdef UNICODE
     ctxcanvas->font->GetLogFontW(ctxcanvas->graphics, &lf);
-#else
-    ctxcanvas->font->GetLogFontA(ctxcanvas->graphics, &lf);
-#endif
 
-    CHOOSEFONT cf;
-    ZeroMemory(&cf, sizeof(CHOOSEFONT));
+    CHOOSEFONTW cf;
+    ZeroMemory(&cf, sizeof(CHOOSEFONTW));
 
-    cf.lStructSize = sizeof(CHOOSEFONT);
+    cf.lStructSize = sizeof(CHOOSEFONTW);
     cf.hwndOwner = GetForegroundWindow();
     cf.lpLogFont = &lf; 
     cf.Flags = CF_SCREENFONTS | CF_EFFECTS | CF_INITTOLOGFONTSTRUCT;
     rgbColors = cf.rgbColors = ctxcanvas->fg.ToCOLORREF();
     
-    if (!ChooseFont(&cf))
+    if (!ChooseFontW(&cf))
       return 0;
                 
     if (rgbColors != cf.rgbColors)
@@ -1518,7 +1529,7 @@ static int cdnativefont(cdCtxCanvas* ctxcanvas, const char* nativefont)
     bold = lf.lfWeight>FW_NORMAL? 1: 0;
     italic = lf.lfItalic;
     size = lf.lfHeight;
-    strcpy(type_face, cdStrFromSystem(ctxcanvas->canvas->utf8mode, lf.lfFaceName));
+    strcpy(type_face, cdwpStringFromUnicode(lf.lfFaceName, lstrlenW(lf.lfFaceName), ctxcanvas->utf8mode));
     underline = lf.lfUnderline;
     strikeout = lf.lfStrikeOut;
 
@@ -1573,7 +1584,7 @@ static int cdnativefont(cdCtxCanvas* ctxcanvas, const char* nativefont)
     fontFamily = FontFamily::GenericSansSerif()->Clone();
   }
   else
-    fontFamily = new FontFamily(cdwpString2Unicode(ctxcanvas->canvas, type_face, strlen(type_face)));
+    fontFamily = new FontFamily(cdwpStringToUnicode(type_face, strlen(type_face), ctxcanvas->utf8mode));
 
   if (!fontFamily->IsAvailable())
   {
@@ -2682,6 +2693,29 @@ static cdAttribute txtaa_attrib =
   get_txtaa_attrib
 }; 
 
+static void set_utf8mode_attrib(cdCtxCanvas* ctxcanvas, char* data)
+{
+  if (!data || data[0] == '0')
+    ctxcanvas->utf8mode = 0;
+  else
+    ctxcanvas->utf8mode = 1;
+}
+
+static char* get_utf8mode_attrib(cdCtxCanvas* ctxcanvas)
+{
+  if (ctxcanvas->utf8mode)
+    return "1";
+  else
+    return "0";
+}
+
+static cdAttribute utf8mode_attrib =
+{
+  "UTF8MODE",
+  set_utf8mode_attrib,
+  get_utf8mode_attrib
+}; 
+
 static void set_window_rgn(cdCtxCanvas* ctxcanvas, char* data)
 {
   if (data)
@@ -2808,6 +2842,7 @@ cdCtxCanvas *cdwpCreateCanvas(cdCanvas* canvas, Graphics* graphics, int wtype)
   cdRegisterAttribute(canvas, &hdc_attrib);
   cdRegisterAttribute(canvas, &window_rgn_attrib);
   cdRegisterAttribute(canvas, &gdiplus_attrib);
+  cdRegisterAttribute(canvas, &utf8mode_attrib);
 
   cdwpUpdateCanvas(ctxcanvas);
 

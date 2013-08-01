@@ -782,7 +782,7 @@ void cdfSimPolyPath(cdCanvas* canvas, const cdfPoint* poly, int n)
 
         if (i+3 > n) break;
 
-        if (!cdfCanvasGetArcPath(canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+        if (!cdfCanvasGetArcPath(poly+i, &xc, &yc, &w, &h, &a1, &a2))
             return;
 
         if (current_set)
@@ -898,7 +898,7 @@ static void sSimPolyFPath(cdCanvas* canvas, const cdPoint* poly, int n)
 
         if (i+3 > n) break;
 
-        if (!cdCanvasGetArcPathF(canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+        if (!cdCanvasGetArcPathF(poly+i, &xc, &yc, &w, &h, &a1, &a2))
           return;
 
         if (current_set)
@@ -1028,7 +1028,7 @@ void cdSimPolyPath(cdCanvas* canvas, const cdPoint* poly, int n)
 
         if (i+3 > n) break;
 
-        if (!cdCanvasGetArcPath(canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2))
+        if (!cdCanvasGetArcPath(poly+i, &xc, &yc, &w, &h, &a1, &a2))
           return;
 
         if (current_set)

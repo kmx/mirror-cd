@@ -9,7 +9,6 @@
 #include <math.h>
 
 #include "cdwin.h"
-#include "cdwin_str.h"
 
 #ifndef AC_SRC_ALPHA
 #define AC_SRC_ALPHA                0x01
@@ -27,6 +26,66 @@ typedef BOOL (CALLBACK* AlphaBlendFunc)( HDC hdcDest,
 static AlphaBlendFunc cdwAlphaBlend = NULL;
 
 static void cdgettextsize (cdCtxCanvas* ctxcanvas, const char *s, int len, int *width, int *height);
+
+WCHAR* cdwStringToUnicode(const char* str, int len, int utf8mode)
+{
+  static WCHAR wstr[10240] = L"";
+
+  if (utf8mode)
+    len = MultiByteToWideChar(CP_UTF8, 0, str, len, wstr, 10240);
+  else
+    len = MultiByteToWideChar(CP_ACP, 0, str, len, wstr, 10240);
+
+  if (len>0)
+    wstr[len] = 0;
+  else
+    wstr[0] = 0;
+
+  return wstr;
+}
+
+char* cdwStringFromUnicode(const WCHAR* wstr, int len, int utf8mode)
+{
+  static char str[10240] = "";
+
+  if (utf8mode)
+    len = WideCharToMultiByte(CP_UTF8, 0, wstr, len, str, 10240, NULL, NULL);  /* str must has a large buffer */
+  else
+    len = WideCharToMultiByte(CP_ACP, 0, wstr, len, str, 10240, NULL, NULL);
+
+  if (len>0)
+    str[len] = 0;
+  else
+    str[0] = 0;
+
+  return str;
+}
+
+TCHAR* cdwStrToSystem(const char* str, int len, int utf8mode)
+{
+#ifdef UNICODE
+  if (str)
+    return cdwStringToUnicode(str, len, utf8mode);
+  return NULL;
+#else
+  (void)len;
+  (void)utf8mode;
+  return (char*)str;
+#endif
+}
+
+char* cdwStrFromSystem(const TCHAR* wstr, int len, int utf8mode)
+{
+#ifdef UNICODE
+  if (wstr)
+    return cdwStringFromUnicode(wstr, len, utf8mode);
+  return NULL;
+#else
+  (void)len;
+  (void)utf8mode;
+  return (char*)wstr;
+#endif
+}
 
 /*
 %F Libera memoria e handles alocados pelo driver Windows.
@@ -884,7 +943,7 @@ static void cdpoly(cdCtxCanvas* ctxcanvas, int mode, cdPoint* poly, int n)
 
           if (i+3 > n) return;
 
-          if (!cdCanvasGetArcPath(ctxcanvas->canvas, poly+i, &xc, &yc, &w, &h, &a1, &a2)) 
+          if (!cdCanvasGetArcPath(poly+i, &xc, &yc, &w, &h, &a1, &a2)) 
             return;
 
           sCalcArc(ctxcanvas->canvas, xc, yc, w, h, a1, a2, &arc, 0);
@@ -1278,10 +1337,7 @@ static void sTextOutBlt(cdCtxCanvas* ctxcanvas, int px, int py, const char* s, i
   SetTextAlign(hBitmapDC, TA_CENTER | TA_BASELINE);
   hOldFont = SelectObject(hBitmapDC, ctxcanvas->hFont);
   
-  if(ctxcanvas->canvas->utf8mode)
-    len = lstrlen(cdStrToSystem(ctxcanvas->canvas->utf8mode, s));
-
-  TextOut(hBitmapDC, x, y, cdStrToSystem(ctxcanvas->canvas->utf8mode, s), len);
+  TextOut(hBitmapDC, x, y, cdwStrToSystem(s, len, ctxcanvas->utf8mode), len);
   
   if (ctxcanvas->canvas->invert_yaxis)
     BitBlt(ctxcanvas->hDC, px, py, w, h, hBitmapDC, 0, 0, ctxcanvas->RopBlt);
@@ -1299,10 +1355,7 @@ static void cdgettextsize (cdCtxCanvas* ctxcanvas, const char *s, int len, int *
 {
   SIZE size;
 
-  if(ctxcanvas->canvas->utf8mode)
-    len = lstrlen(cdStrToSystem(ctxcanvas->canvas->utf8mode, s));
-  
-  GetTextExtentPoint32(ctxcanvas->hDC, cdStrToSystem(ctxcanvas->canvas->utf8mode, s), len, &size);
+  GetTextExtentPoint32(ctxcanvas->hDC, cdwStrToSystem(s, len, ctxcanvas->utf8mode), len, &size);
   
   if (width)  
     *width  = size.cx;
@@ -1421,10 +1474,7 @@ static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s, int len)
     if (ctxcanvas->canvas->use_matrix)
       cdwTextTransform(ctxcanvas, s, len, &x, &y);
 
-    if(ctxcanvas->canvas->utf8mode)
-      len = lstrlen(cdStrToSystem(ctxcanvas->canvas->utf8mode, s));
-
-    TextOut(ctxcanvas->hDC, x, y+1, cdStrToSystem(ctxcanvas->canvas->utf8mode, s), len); /* compensa erro de desenho com +1 */
+    TextOut(ctxcanvas->hDC, x, y+1, cdwStrToSystem(s, len, ctxcanvas->utf8mode), len); /* compensa erro de desenho com +1 */
 
     if (ctxcanvas->canvas->use_matrix)
       cdtransform(ctxcanvas, ctxcanvas->canvas->matrix);
@@ -1533,7 +1583,7 @@ static int cdfont(cdCtxCanvas* ctxcanvas, const char *type_face, int style, int 
   size_pixel = cdGetFontSizePixels(ctxcanvas->canvas, size);
   hFont = CreateFont(-size_pixel, 0, angle, angle, bold, italic, underline, strikeout,
                      DEFAULT_CHARSET,OUT_TT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,FF_DONTCARE|DEFAULT_PITCH,
-                     cdStrToSystem(ctxcanvas->canvas->utf8mode, type_face));
+                     cdwStrToSystem(type_face, strlen(type_face), ctxcanvas->utf8mode));
   if (!hFont) return 0;
 
   if (ctxcanvas->hOldFont) SelectObject(ctxcanvas->hDC, ctxcanvas->hOldFont);
@@ -1558,7 +1608,7 @@ static int cdnativefont (cdCtxCanvas* ctxcanvas, const char* nativefont)
   int size = 12, bold = FW_NORMAL, italic = 0, 
       style = CD_PLAIN, underline = 0, strikeout = 0,
       size_pixel;
-  TCHAR type_face[1024];
+  char type_face[1024];
   
   if (nativefont[0] == '-' && nativefont[1] == 'd')
   {
@@ -1574,12 +1624,11 @@ static int cdnativefont (cdCtxCanvas* ctxcanvas, const char* nativefont)
     cf.Flags = CF_SCREENFONTS | CF_EFFECTS | CF_INITTOLOGFONTSTRUCT;
     rgbColors = cf.rgbColors = ctxcanvas->fg;
 
-    GetTextFace(ctxcanvas->hDC, 50, type_face);
+    GetTextFace(ctxcanvas->hDC, 32, lf.lfFaceName);
     GetTextMetrics(ctxcanvas->hDC, &tm);   /* get the current selected nativefont */
 
     size_pixel = cdGetFontSizePixels(ctxcanvas->canvas, ctxcanvas->canvas->font_size);
 
-    lstrcpyn(lf.lfFaceName, type_face, lstrlen(type_face)+1);
     lf.lfWeight = tm.tmWeight;
     lf.lfHeight = -size_pixel;
     lf.lfItalic = tm.tmItalic;
@@ -1607,7 +1656,7 @@ static int cdnativefont (cdCtxCanvas* ctxcanvas, const char* nativefont)
     bold = lf.lfWeight;
     italic = lf.lfItalic;
     size = lf.lfHeight;
-    lstrcpyn(type_face, lf.lfFaceName, lstrlen(lf.lfFaceName)+1);
+    strcpy(type_face, cdwStrFromSystem(lf.lfFaceName, lstrlen(lf.lfFaceName), ctxcanvas->utf8mode));
     underline = lf.lfUnderline;
     strikeout = lf.lfStrikeOut;
 
@@ -1618,9 +1667,9 @@ static int cdnativefont (cdCtxCanvas* ctxcanvas, const char* nativefont)
   }                                     
   else
   {
-    if (!cdParseIupWinFont(nativefont, cdStrFromSystem(ctxcanvas->canvas->utf8mode, type_face), &style, &size))
+    if (!cdParseIupWinFont(nativefont, type_face, &style, &size))
     {
-      if (!cdParsePangoFont(nativefont, cdStrFromSystem(ctxcanvas->canvas->utf8mode, type_face), &style, &size))
+      if (!cdParsePangoFont(nativefont, type_face, &style, &size))
         return 0;
     }
       
@@ -1638,7 +1687,7 @@ static int cdnativefont (cdCtxCanvas* ctxcanvas, const char* nativefont)
     hFont = CreateFont(-size_pixel, 0, ctxcanvas->font_angle, ctxcanvas->font_angle, 
                        bold, italic, underline, strikeout,
                        DEFAULT_CHARSET,OUT_TT_PRECIS,CLIP_DEFAULT_PRECIS,DEFAULT_QUALITY,FF_DONTCARE|DEFAULT_PITCH,
-                       type_face);
+                       cdwStrToSystem(type_face, strlen(type_face), ctxcanvas->utf8mode));
     if (!hFont) return 0;
   }
   
@@ -1656,7 +1705,7 @@ static int cdnativefont (cdCtxCanvas* ctxcanvas, const char* nativefont)
   /* update cdfont parameters */
   ctxcanvas->canvas->font_style = style;
   ctxcanvas->canvas->font_size = size;
-  strcpy(ctxcanvas->canvas->font_type_face, cdStrFromSystem(ctxcanvas->canvas->utf8mode, type_face));
+  strcpy(ctxcanvas->canvas->font_type_face, type_face);
 
   return 1;
 }
@@ -2365,6 +2414,29 @@ static cdAttribute window_rgn_attrib =
   NULL
 }; 
 
+static void set_utf8mode_attrib(cdCtxCanvas* ctxcanvas, char* data)
+{
+  if (!data || data[0] == '0')
+    ctxcanvas->utf8mode = 0;
+  else
+    ctxcanvas->utf8mode = 1;
+}
+
+static char* get_utf8mode_attrib(cdCtxCanvas* ctxcanvas)
+{
+  if (ctxcanvas->utf8mode)
+    return "1";
+  else
+    return "0";
+}
+
+static cdAttribute utf8mode_attrib =
+{
+  "UTF8MODE",
+  set_utf8mode_attrib,
+  get_utf8mode_attrib
+}; 
+
 static char* get_hdc_attrib(cdCtxCanvas* ctxcanvas)
 {
   return (char*)ctxcanvas->hDC;
@@ -2430,6 +2502,7 @@ cdCtxCanvas *cdwCreateCanvas(cdCanvas* canvas, HWND hWnd, HDC hDC, int wtype)
   cdRegisterAttribute(canvas, &img_alpha_attrib);
   cdRegisterAttribute(canvas, &img_format_attrib);
   cdRegisterAttribute(canvas, &window_rgn_attrib);
+  cdRegisterAttribute(canvas, &utf8mode_attrib);
 
   if (!cdwAlphaBlend)
   {

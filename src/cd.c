@@ -90,9 +90,7 @@ static void cd_setdefaultattrib(cdCanvas* canvas)
   canvas->matrix[0] = 1;  /* identity */
   canvas->matrix[3] = 1;
 
-  canvas->utf8mode = 0;
-
-  /* o resto recebeu zero no memset */
+  /* everything else is 0 because of the memset */
 }
 
 void cdUpdateAttributes(cdCanvas* canvas)

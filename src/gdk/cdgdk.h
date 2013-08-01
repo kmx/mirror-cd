@@ -62,6 +62,9 @@ struct _cdCtxCanvas {
 
   cdImage* image_dbuffer;       /* Used by double buffer driver */
   cdCanvas* canvas_dbuffer;
+
+  char* utf8_buffer;
+  int utf8mode;
 };
 
 #define cdCOLOR8TO16(_x) (_x*257)  /* 65535/255 = 257 */

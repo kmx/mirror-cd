@@ -12,7 +12,6 @@
 
 #include "cdcairoctx.h"
 #include "cdprint.h"
-#include "cdwin_str.h"
 
 #include "cairo-win32.h"
 
@@ -75,7 +74,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   rect.top = 0;
   rect.right = (int)(100. * w / xres);
   rect.bottom = (int)(100. * h / yres);
-  hDC = CreateEnhMetaFile(ScreenDC,cdStrToSystem(canvas->utf8mode, filename),&rect,NULL);
+  hDC = CreateEnhMetaFile(ScreenDC,filename,&rect,NULL);
   ReleaseDC(NULL, ScreenDC);
 
   if(!hDC)

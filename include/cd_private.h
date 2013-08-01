@@ -226,9 +226,6 @@ struct _cdCanvas
   /* simulation flags */
   int sim_mode;
 
-  /* UTF8 mode */
-  int utf8mode;
-
   /* WC */
   double s, sx, tx, sy, ty;   /* Transform Window -> Viewport (scale+translation)*/
   cdfRect window;             /* Window in WC */
@@ -293,9 +290,9 @@ int cdStrTmpFileName(char* filename);
 
 void cdCanvasPoly(cdCanvas* canvas, int mode, cdPoint* points, int n);
 void cdCanvasGetArcBox(int xc, int yc, int w, int h, double a1, double a2, int *xmin, int *xmax, int *ymin, int *ymax);
-int cdCanvasGetArcPathF(cdCanvas* canvas, const cdPoint* poly, double *xc, double *yc, double *w, double *h, double *a1, double *a2);
-int cdfCanvasGetArcPath(cdCanvas* canvas, const cdfPoint* poly, double *xc, double *yc, double *w, double *h, double *a1, double *a2);
-int cdCanvasGetArcPath(cdCanvas* canvas, const cdPoint* poly, int *xc, int *yc, int *w, int *h, double *a1, double *a2);
+int cdCanvasGetArcPathF(const cdPoint* poly, double *xc, double *yc, double *w, double *h, double *a1, double *a2);
+int cdfCanvasGetArcPath(const cdfPoint* poly, double *xc, double *yc, double *w, double *h, double *a1, double *a2);
+int cdCanvasGetArcPath(const cdPoint* poly, int *xc, int *yc, int *w, int *h, double *a1, double *a2);
 void cdCanvasGetArcStartEnd(int xc, int yc, int w, int h, double a1, double a2, int *x1, int *y1, int *x2, int *y2);
 void cdfCanvasGetArcStartEnd(double xc, double yc, double w, double h, double a1, double a2, double *x1, double *y1, double *x2, double *y2);
 

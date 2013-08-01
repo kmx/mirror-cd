@@ -6,7 +6,6 @@
 
 #include "cdwinp.h"
 #include "cdprint.h"
-#include "cdwin_str.h"
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -102,12 +101,12 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 
   {
     /* Inicializa documento */
-    DOCINFO docInfo;
+    DOCINFOW docInfo;
     ZeroMemory(&docInfo, sizeof(docInfo));
     docInfo.cbSize = sizeof(docInfo);
-    docInfo.lpszDocName = cdStrToSystem(canvas->utf8mode, docname);
+    docInfo.lpszDocName = cdwpStringToUnicode(docname, strlen(docname), 0);
 
-    StartDoc(hDC, &docInfo);
+    StartDocW(hDC, &docInfo);
   }
   
   StartPage(hDC);

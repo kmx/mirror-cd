@@ -1014,16 +1014,3 @@ void cdCanvasPalette(cdCanvas* canvas, int n, const long *palette, int mode)
   if (canvas->cxPalette)
     canvas->cxPalette(canvas->ctxcanvas, n, palette, mode);
 }
-
-/*************/
-/* utf8 mode */
-/*************/
-void cdCanvasSetUTF8Mode(cdCanvas* canvas, int utf8mode)
-{
-  canvas->utf8mode = utf8mode;
-}
-
-int cdCanvasGetUTF8Mode(cdCanvas* canvas)
-{
-  return canvas->utf8mode;
-}

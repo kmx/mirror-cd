@@ -13,7 +13,6 @@
 #include "cdwin.h"
 #include "cdwmf.h"
 #include "cdemf.h"
-#include "cdwin_str.h"
 
 /* placeable metafile data definitions */
 #define ALDUSKEY 0x9AC6CDD7
@@ -1315,7 +1314,8 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
     {
       EMREXTCREATEFONTINDIRECTW* data = (EMREXTCREATEFONTINDIRECTW*)lpEMFR;
       int style, size;
-      char type_face[256];
+      char* mode = cdCanvasGetAttribute(canvas, "UTF8MODE");
+      int utf8mode = mode? (mode[0]=='1'? 1: 0): 0;
       
       style = CD_PLAIN;
       if (data->elfw.elfLogFont.lfWeight >= FW_BOLD)
@@ -1329,15 +1329,13 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
       if (data->elfw.elfLogFont.lfStrikeOut)
         style |= CD_STRIKEOUT;
       
-      WideCharToMultiByte(CP_ACP, 0, data->elfw.elfLogFont.lfFaceName, LF_FACESIZE, type_face, 256, NULL, NULL);
-      
       size = sScaleH(abs(data->elfw.elfLogFont.lfHeight));
       if (size < 5) size = 5;
 
       if (data->elfw.elfLogFont.lfOrientation)
         cdCanvasTextOrientation(canvas, data->elfw.elfLogFont.lfOrientation/10);
-      
-      cdCanvasFont(canvas, type_face, style, -size);
+
+      cdCanvasFont(canvas, cdwStringFromUnicode(data->elfw.elfLogFont.lfFaceName, lstrlenW(data->elfw.elfLogFont.lfFaceName), utf8mode), style, -size);
       break;
     }
   case EMR_EXTTEXTOUTA:
@@ -1362,13 +1360,12 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
   case EMR_EXTTEXTOUTW:
     {
       EMREXTTEXTOUTW* data = (EMREXTTEXTOUTW*)lpEMFR;
-      char str[256];
-      
-      WideCharToMultiByte(CP_ACP, 0, (unsigned short*)(((unsigned char*)data) + data->emrtext.offString), data->emrtext.nChars, str, 256, NULL, NULL);
-      
-      str[data->emrtext.nChars] = 0;
-      
-      cdCanvasText(canvas, sScaleX(data->emrtext.ptlReference.x), sScaleY(data->emrtext.ptlReference.y), str);
+      char* mode = cdCanvasGetAttribute(canvas, "UTF8MODE");
+      int utf8mode = mode? (mode[0]=='1'? 1: 0): 0;
+     
+      cdCanvasText(canvas, sScaleX(data->emrtext.ptlReference.x), 
+                           sScaleY(data->emrtext.ptlReference.y), 
+                           cdwStringFromUnicode((WCHAR*)(((unsigned char*)data) + data->emrtext.offString), data->emrtext.nChars, utf8mode));
       
       if (upd_xy == 1)
       {
@@ -1686,13 +1683,14 @@ static int CALLBACK EMFEnumProc(HDC hDC, HANDLETABLE *lpHTable,	const ENHMETAREC
     {
       int t;
       EMRPOLYTEXTOUTW* data = (EMRPOLYTEXTOUTW*)lpEMFR;
-      char str[256];
+      char* mode = cdCanvasGetAttribute(canvas, "UTF8MODE");
+      int utf8mode = mode? (mode[0]=='1'? 1: 0): 0;
       
       for (t = 0; t < data->cStrings; t++)
       {
-        WideCharToMultiByte(CP_ACP, 0, (unsigned short*)(((unsigned char*)data) + data->aemrtext[t].offString), data->aemrtext[t].nChars, str, 256, NULL, NULL);
-        str[data->aemrtext[t].nChars] = 0;
-        cdCanvasText(canvas, sScaleX(data->aemrtext[t].ptlReference.x), sScaleY(data->aemrtext[t].ptlReference.y), str);
+        cdCanvasText(canvas, sScaleX(data->aemrtext[t].ptlReference.x), 
+                             sScaleY(data->aemrtext[t].ptlReference.y), 
+                             cdwStringFromUnicode((WCHAR*)(((unsigned char*)data) + data->aemrtext[t].offString), data->aemrtext[t].nChars, utf8mode));
       }
       break;
     }
@@ -1828,7 +1826,7 @@ int cdplayWMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
     if (wBytesRead == 0)  
       return CD_ERROR;
     
-    hMF = GetMetaFile(cdStrToSystem(canvas->utf8mode, filename));
+    hMF = GetMetaFile(cdwStrToSystem(filename, strlen(filename), 0));
   }
   else /* this is a placeable metafile */
   {
@@ -1933,7 +1931,7 @@ int cdplayEMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
   cdDataEMF data_emf;
   int w, h;
   
-  hEMF = GetEnhMetaFile(cdStrToSystem(canvas->utf8mode, filename));
+  hEMF = GetEnhMetaFile(cdwStrToSystem(filename, strlen(filename), 0));
   if (!hEMF)
     return CD_ERROR;
   

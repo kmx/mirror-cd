@@ -11,7 +11,6 @@
 #include <math.h>
 
 #include "cdgdk.h"
-#include "cdgdk_str.h"
 
 #define NUM_HATCHES  6
 #define HATCH_WIDTH  8
@@ -51,6 +50,56 @@ static GdkColor cdColorToGdk(unsigned long rgb)
 
 /******************************************************/
 
+static int cdStrIsAscii(const char* str)
+{
+  while(*str)
+  {
+    int c = *str;
+    if (c < 0)
+      return 0;
+    str++;
+  }
+  return 1;
+}
+
+static char* cdgStrToSystem(const char* str, int len, cdCtxCanvas *ctxcanvas)
+{
+  if (!str || *str == 0)
+    return (char*)str;
+
+  if (!ctxcanvas->utf8mode)  
+  {
+    const char *charset = NULL;
+    if (g_get_charset(&charset)==TRUE)  /* current locale is already UTF-8 */
+    {
+      if (g_utf8_validate(str, -1, NULL))
+        return (char*)str;
+      else
+      {
+        if (ctxcanvas->utf8_buffer)
+          g_free(ctxcanvas->utf8_buffer);
+        ctxcanvas->utf8_buffer = g_convert(str, len, "UTF-8", "ISO8859-1", NULL, NULL, NULL);   /* if string is not UTF-8, assume ISO8859-1 */
+        if (!ctxcanvas->utf8_buffer) return (char*)str;
+        return ctxcanvas->utf8_buffer;
+      }
+    }
+    else
+    {
+      if (cdStrIsAscii(str) || !charset)
+        return (char*)str;
+      else if (charset)
+      {
+        if (ctxcanvas->utf8_buffer)
+          g_free(ctxcanvas->utf8_buffer);
+        ctxcanvas->utf8_buffer = g_convert(str, len, "UTF-8", charset, NULL, NULL, NULL);
+        if (!ctxcanvas->utf8_buffer) return (char*)str;
+        return ctxcanvas->utf8_buffer;
+      }
+    }
+  }
+  return (char*)str;
+}
+
 void cdgdkKillCanvas(cdCtxCanvas *ctxcanvas)
 {
   if (ctxcanvas->canvas->bpp <= 8)
@@ -79,6 +128,9 @@ void cdgdkKillCanvas(cdCtxCanvas *ctxcanvas)
     g_object_unref(ctxcanvas->last_stipple_gc); 
     g_object_unref(ctxcanvas->last_stipple);
   }
+
+  if (ctxcanvas->utf8_buffer)
+    g_free(ctxcanvas->utf8_buffer);
 
   g_object_unref(ctxcanvas->gc); 
 
@@ -699,7 +751,7 @@ static void cdtext(cdCtxCanvas *ctxcanvas, int x, int y, const char *s, int len)
   int w, h, desc, dir = -1;
   int ox = x, oy = y;
 
-  pango_layout_set_text(ctxcanvas->fontlayout, cdStrToSystem(ctxcanvas->canvas->utf8mode, s), -1);
+  pango_layout_set_text(ctxcanvas->fontlayout, cdgStrToSystem(s, len, ctxcanvas), len);
   
 	pango_layout_get_pixel_size(ctxcanvas->fontlayout, &w, &h);
   metrics = pango_context_get_metrics(ctxcanvas->fontcontext, ctxcanvas->fontdesc, pango_context_get_language(ctxcanvas->fontcontext));
@@ -823,10 +875,7 @@ static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *s, int len, int *w
   if (!ctxcanvas->fontlayout)
     return;
 
-  if(!ctxcanvas->canvas->utf8mode)
-    len = strlen(cdStrToSystem(ctxcanvas->canvas->utf8mode, s));
-
-  pango_layout_set_text(ctxcanvas->fontlayout, cdStrToSystem(ctxcanvas->canvas->utf8mode, s), len);
+  pango_layout_set_text(ctxcanvas->fontlayout, cdgStrToSystem(s, len, ctxcanvas), len);
   pango_layout_get_pixel_size(ctxcanvas->fontlayout, width, height);
 }
 
@@ -1515,6 +1564,29 @@ static cdAttribute interp_attrib =
   get_interp_attrib
 }; 
 
+static void set_utf8mode_attrib(cdCtxCanvas* ctxcanvas, char* data)
+{
+  if (!data || data[0] == '0')
+    ctxcanvas->utf8mode = 0;
+  else
+    ctxcanvas->utf8mode = 1;
+}
+
+static char* get_utf8mode_attrib(cdCtxCanvas* ctxcanvas)
+{
+  if (ctxcanvas->utf8mode)
+    return "1";
+  else
+    return "0";
+}
+
+static cdAttribute utf8mode_attrib =
+{
+  "UTF8MODE",
+  set_utf8mode_attrib,
+  get_utf8mode_attrib
+}; 
+
 static char* get_gc_attrib(cdCtxCanvas *ctxcanvas)
 {
   return (char*)ctxcanvas->gc;
@@ -1595,6 +1667,7 @@ cdCtxCanvas *cdgdkCreateCanvas(cdCanvas* canvas, GdkDrawable* wnd, GdkScreen* sc
   cdRegisterAttribute(canvas, &pangoversion_attrib);
   cdRegisterAttribute(canvas, &imgdither_attrib);
   cdRegisterAttribute(canvas, &interp_attrib);
+  cdRegisterAttribute(canvas, &utf8mode_attrib);
 
   return ctxcanvas;
 }

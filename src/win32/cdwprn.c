@@ -11,7 +11,6 @@
 
 #include "cdwin.h"
 #include "cdprint.h"
-#include "cdwin_str.h"
 
 #ifndef DC_COLORDEVICE
 #define DC_COLORDEVICE          32   /* declared only if WINVER 0x0500 */
@@ -123,7 +122,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 
   /* Inicializa documento */
   di.cbSize = sizeof(DOCINFO);
-  di.lpszDocName = cdStrToSystem(canvas->utf8mode, docname);
+  di.lpszDocName = cdwStrToSystem(docname, strlen(docname), 0);
   di.lpszOutput = (LPCTSTR) NULL;
   di.lpszDatatype = (LPCTSTR) NULL; 
   di.fwType = 0; 
@@ -153,7 +152,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
     DEVNAMES* dn = (DEVNAMES*)devnames;
     TCHAR* device = (TCHAR*)(devnames + dn->wDeviceOffset);
 
-    ctxcanvas->filename = cdStrDup(cdStrFromSystem(ctxcanvas->canvas->utf8mode, device));
+    ctxcanvas->filename = cdStrDup(cdwStrFromSystem(device, lstrlen(device), 0));
     cdRegisterAttribute(canvas, &printername_attrib);
 
     /* PDF Writer returns bpp=1, so we check if color is supported and overwrite this value */

@@ -73,6 +73,9 @@ struct _cdCtxCanvas
 
   GtkPrintJob* job;    /* used in Printer (UNIX) */
   char* printername;   /* used in Printer (Win32) */
+
+  char* utf8_buffer;
+  int utf8mode;
 };
 
 #define cdCairoGetRed(_)   (((double)cdRed(_))/255.)

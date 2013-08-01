@@ -239,10 +239,6 @@ long cdEncodeAlpha(long color, unsigned char alpha);
 /* client image color convertion */
 void cdRGB2Map(int width, int height, const unsigned char* red, const unsigned char* green, const unsigned char* blue, unsigned char* index, int pal_size, long *color);
 
-/* utf8mode */
-void cdCanvasSetUTF8Mode(cdCanvas* canvas, int utf8mode);
-int cdCanvasGetUTF8Mode(cdCanvas* canvas);
-
 
 /* CD Values */
 

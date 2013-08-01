@@ -111,6 +111,8 @@ struct _cdCtxCanvas
 
   int img_format;
   unsigned char* img_alpha;
+
+  int utf8mode;
 };
 
 enum{CDW_WIN, CDW_BMP, CDW_WMF, CDW_EMF};
@@ -122,6 +124,11 @@ void cdwRestoreDC(cdCtxCanvas *ctxcanvas);
 
 /* Remove valores comuns do driver Windows, deve ser chamado por todos os drivers */
 void cdwKillCanvas(cdCtxCanvas* canvas);
+
+TCHAR* cdwStrToSystem(const char* str, int len, int utf8mode);
+char* cdwStrFromSystem(const TCHAR* wstr, int len, int utf8mode);
+char* cdwStringFromUnicode(const WCHAR* wstr, int len, int utf8mode);
+WCHAR* cdwStringToUnicode(const char* str, int len, int utf8mode);
 
 /* implemented in the wmfmeta.c module */
 void wmfMakePlaceableMetafile(HMETAFILE hmf, const char* filename, int w, int h);

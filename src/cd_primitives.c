@@ -782,7 +782,7 @@ void cdCanvasGetArcBox(int xc, int yc, int w, int h, double a1, double a2, int *
   }
 }
 
-int cdCanvasGetArcPath(cdCanvas* canvas, const cdPoint* poly, int *xc, int *yc, int *w, int *h, double *a1, double *a2)
+int cdCanvasGetArcPath(const cdPoint* poly, int *xc, int *yc, int *w, int *h, double *a1, double *a2)
 {
   *xc = poly[0].x; 
   *yc = poly[0].y; 
@@ -802,7 +802,7 @@ int cdCanvasGetArcPath(cdCanvas* canvas, const cdPoint* poly, int *xc, int *yc, 
   return 1;
 }
 
-int cdfCanvasGetArcPath(cdCanvas* canvas, const cdfPoint* poly, double *xc, double *yc, double *w, double *h, double *a1, double *a2)
+int cdfCanvasGetArcPath(const cdfPoint* poly, double *xc, double *yc, double *w, double *h, double *a1, double *a2)
 {
   *xc = poly[0].x; 
   *yc = poly[0].y; 
@@ -818,7 +818,7 @@ int cdfCanvasGetArcPath(cdCanvas* canvas, const cdfPoint* poly, double *xc, doub
   return 1;
 }
 
-int cdCanvasGetArcPathF(cdCanvas* canvas, const cdPoint* poly, double *xc, double *yc, double *w, double *h, double *a1, double *a2)
+int cdCanvasGetArcPathF(const cdPoint* poly, double *xc, double *yc, double *w, double *h, double *a1, double *a2)
 {
   *xc = poly[0].x; 
   *yc = poly[0].y; 

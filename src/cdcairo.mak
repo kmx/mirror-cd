@@ -5,7 +5,7 @@ OPT = YES
 DEFINES = CD_NO_OLD_INTERFACE
 CHECK_GTK = Yes
 
-INCLUDES = . cairo drv
+INCLUDES = . cairo
 SRCDIR = cairo
 SRC = cdcairodbuf.c cdcairopdf.c cdcairosvg.c cdcairo.c cdcairoimg.c cdcairoplus.c cdcairoirgb.c cdcairops.c
 
@@ -13,9 +13,9 @@ SRC = cdcairodbuf.c cdcairopdf.c cdcairosvg.c cdcairo.c cdcairoimg.c cdcairoplus
 # cdcaironative_gdk.c  
 
 ifneq ($(findstring Win, $(TEC_SYSNAME)), )
-  SRC += cdcaironative_win32.c cdcairoprn_win32.c cdcairoemf.c drv/cdwin_str.c
+  SRC += cdcaironative_win32.c cdcairoprn_win32.c cdcairoemf.c
 else
-  SRC += cdcaironative_x11.c drv/cdgdk_str.c
+  SRC += cdcaironative_x11.c
   DEFINES += CAIRO_X11  
   CHECK_GTK = Yes
   

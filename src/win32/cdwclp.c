@@ -14,7 +14,6 @@
 #include "cdemf.h"
 #include "cdwmf.h"
 #include "cdmf_private.h"
-#include "cdwin_str.h"
 
 
 static cdSizeCB cdsizecb = NULL;
@@ -62,7 +61,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
     buffer = (unsigned char*)GlobalLock(Handle);
     dwSize = (DWORD)GlobalSize(Handle); 
     
-    hFile = CreateFile(cdStrToSystem(canvas->utf8mode, filename), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
+    hFile = CreateFile(cdwStrToSystem(filename, strlen(filename), 0), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
     WriteFile(hFile, buffer, dwSize, &nBytesWrite, NULL);
     CloseHandle(hFile);
     
@@ -72,7 +71,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
     
     err = cdCanvasPlay(canvas, CD_METAFILE, xmin, xmax, ymin, ymax, filename);
     
-    DeleteFile(cdStrToSystem(canvas->utf8mode, filename));
+    DeleteFile(cdwStrToSystem(filename, strlen(filename), 0));
     
     if (err == CD_OK)
       return err;
@@ -99,7 +98,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
     
     GetEnhMetaFileBits(Handle, dwSize, buffer);
     
-    hFile = CreateFile(cdStrToSystem(canvas->utf8mode, filename), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
+    hFile = CreateFile(cdwStrToSystem(filename, strlen(filename), 0), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
     WriteFile(hFile, buffer, dwSize, &nBytesWrite, NULL);
     CloseHandle(hFile);
     
@@ -109,7 +108,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
     
     err = cdCanvasPlay(canvas, CD_EMF, xmin, xmax, ymin, ymax, filename);
     
-    DeleteFile(cdStrToSystem(canvas->utf8mode, filename));
+    DeleteFile(cdwStrToSystem(filename, strlen(filename), 0));
     
     return err;
   }
@@ -137,7 +136,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
     
     GetMetaFileBitsEx(lpMFP->hMF, dwSize, buffer);
     
-    hFile = CreateFile(cdStrToSystem(canvas->utf8mode, filename), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
+    hFile = CreateFile(cdwStrToSystem(filename, strlen(filename), 0), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, 0, NULL);
     wmfWritePlacebleFile(hFile, buffer, dwSize, lpMFP->mm, lpMFP->xExt, lpMFP->yExt);
     CloseHandle(hFile);
     
@@ -148,7 +147,7 @@ static int cdplay(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void
     
     err = cdCanvasPlay(canvas, CD_WMF, xmin, xmax, ymin, ymax, filename);
     
-    DeleteFile(cdStrToSystem(canvas->utf8mode, filename));
+    DeleteFile(cdwStrToSystem(filename, strlen(filename), 0));
     
     return err;
   }
@@ -341,7 +340,7 @@ static void cdkillcanvasCLIPBDMF (cdCtxCanvas *ctxcanvas)
   
   cdkillcanvasMF(mfcanvas); /* this will close the file */
   
-  hFile = CreateFile(cdStrToSystem(ctxcanvas->canvas->utf8mode, filename), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_DELETE_ON_CLOSE, NULL);
+  hFile = CreateFile(cdwStrToSystem(filename, strlen(filename), 0), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_DELETE_ON_CLOSE, NULL);
   dwSize = GetFileSize (hFile, NULL) ; 
   
   Handle = GlobalAlloc(GMEM_MOVEABLE, dwSize+1);
