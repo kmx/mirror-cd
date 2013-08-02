@@ -217,6 +217,7 @@ EXPORTS
   cdGetFontSizePixels
   cdGetFontSizePoints
   cdStrEqualNoCase
+  cdStrIsAscii
   cdSetPaperSize
   cdCanvasGetArcPath
   cdfCanvasGetArcPath

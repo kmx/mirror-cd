@@ -47,18 +47,6 @@ static void sUpdateFill(cdCtxCanvas *ctxcanvas, int fill)
 
 /******************************************************/
 
-static int cdStrIsAscii(const char* str)
-{
-  while(*str)
-  {
-    int c = *str;
-    if (c < 0)
-      return 0;
-    str++;
-  }
-  return 1;
-}
-
 static char* cdgStrToSystem(const char* str, int len, cdCtxCanvas *ctxcanvas)
 {
   if (!str || *str == 0)

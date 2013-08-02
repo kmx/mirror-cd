@@ -61,7 +61,6 @@ struct _cdCtxCanvas
   cdCanvas* canvas;
 
   FTGLfont *font;
-  char* glLastConvertUTF8;
   int txt_antialias;
 
   float rotate_angle;
@@ -70,16 +69,25 @@ struct _cdCtxCanvas
 
   int poly_holes[500];
   int holes;
+
+  char* utf8_buffer;
+  int utf8mode;
 };
 
 /******************************************************/
 
 static char* cdglStrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, int len)
 {
-  if (ctxcanvas->glLastConvertUTF8)
+  if (ctxcanvas->utf8mode)
+    return (char*)str;
+
+  if (cdStrIsAscii(str))
+    return (char*)str;
+
+  if (ctxcanvas->utf8_buffer)
   {
-    free(ctxcanvas->glLastConvertUTF8);
-    ctxcanvas->glLastConvertUTF8 = NULL;
+    free(ctxcanvas->utf8_buffer);
+    ctxcanvas->utf8_buffer = NULL;
   }
 
 #ifdef WIN32
@@ -97,9 +105,9 @@ static char* cdglStrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, int l
     if(!len)
       return (char*)str;
 
-    ctxcanvas->glLastConvertUTF8 = (char*)calloc((len+1), sizeof(char));
-    WideCharToMultiByte(CP_UTF8, 0, toUnicode, wlen, ctxcanvas->glLastConvertUTF8, len, NULL, NULL);
-    ctxcanvas->glLastConvertUTF8[len] = 0;
+    ctxcanvas->utf8_buffer = (char*)calloc((len+1), sizeof(char));
+    WideCharToMultiByte(CP_UTF8, 0, toUnicode, wlen, ctxcanvas->utf8_buffer, len, NULL, NULL);
+    ctxcanvas->utf8_buffer[len] = 0;
 
     free(toUnicode);
   }
@@ -116,14 +124,14 @@ static char* cdglStrConvertToUTF8(cdCtxCanvas *ctxcanvas, const char* str, int l
     if(cd == (iconv_t)-1)
       return (char*)str;
 
-    ctxcanvas->glLastConvertUTF8 = utf8;
+    ctxcanvas->utf8_buffer = utf8;
 		iconv(cd, (char**)&str, &ulen, &utf8, &utf8len);
 
 		iconv_close(cd);
   }
 #endif
 
-  return ctxcanvas->glLastConvertUTF8;
+  return ctxcanvas->utf8_buffer;
 }
 
 /******************************************************/
@@ -133,8 +141,8 @@ static void cdkillcanvas(cdCtxCanvas *ctxcanvas)
   if(ctxcanvas->font)
     ftglDestroyFont(ctxcanvas->font);
 
-  if (ctxcanvas->glLastConvertUTF8)
-    free(ctxcanvas->glLastConvertUTF8);
+  if (ctxcanvas->utf8_buffer)
+    free(ctxcanvas->utf8_buffer);
 
   free(ctxcanvas);
 }
@@ -1171,6 +1179,29 @@ static cdAttribute txtaa_attrib =
   get_txtaa_attrib
 }; 
 
+static void set_utf8mode_attrib(cdCtxCanvas* ctxcanvas, char* data)
+{
+  if (!data || data[0] == '0')
+    ctxcanvas->utf8mode = 0;
+  else
+    ctxcanvas->utf8mode = 1;
+}
+
+static char* get_utf8mode_attrib(cdCtxCanvas* ctxcanvas)
+{
+  if (ctxcanvas->utf8mode)
+    return "1";
+  else
+    return "0";
+}
+
+static cdAttribute utf8mode_attrib =
+{
+  "UTF8MODE",
+  set_utf8mode_attrib,
+  get_utf8mode_attrib
+}; 
+
 static void set_poly_attrib(cdCtxCanvas *ctxcanvas, char* data)
 {
   int hole;
@@ -1302,7 +1333,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   ctxcanvas->canvas = canvas;
   canvas->ctxcanvas = ctxcanvas;
 
-  ctxcanvas->glLastConvertUTF8 = NULL;
+  ctxcanvas->utf8_buffer = NULL;
 
   cdRegisterAttribute(canvas, &rotate_attrib);
   cdRegisterAttribute(canvas, &version_attrib);
@@ -1311,6 +1342,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   cdRegisterAttribute(canvas, &alpha_attrib);
   cdRegisterAttribute(canvas, &aa_attrib);
   cdRegisterAttribute(canvas, &txtaa_attrib);
+  cdRegisterAttribute(canvas, &utf8mode_attrib);
 
   cdCanvasSetAttribute(canvas, "ALPHA", "1");
   cdCanvasSetAttribute(canvas, "ANTIALIAS", "1");

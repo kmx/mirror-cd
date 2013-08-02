@@ -282,6 +282,7 @@ int cdStrEqualNoCasePartial(const char* str1, const char* str2);
 int cdStrLineCount(const char* str);
 char* cdStrDup(const char* str);
 char* cdStrDupN(const char* str, int len);
+int cdStrIsAscii(const char* str);
 void cdSetPaperSize(int size, double *w_pt, double *h_pt);
 int cdGetFontFileName(const char* type_face, char* filename);
 int cdGetFontFileNameDefault(const char *type_face, int style, char* filename);

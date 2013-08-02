@@ -389,6 +389,18 @@ char* cdStrDupN(const char *str, int len)
   return NULL;
 }
 
+int cdStrIsAscii(const char* str)
+{
+  while(*str)
+  {
+    int c = *str;
+    if (c < 0)
+      return 0;
+    str++;
+  }
+  return 1;
+}
+
 void cdSetPaperSize(int size, double *w_pt, double *h_pt)
 {
   static struct
