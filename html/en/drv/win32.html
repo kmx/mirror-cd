@@ -104,7 +104,8 @@
   images if  IMAGEFORMAT=32. The attribute format is a pointer to the transparency values in a sequence of chars in 
   the same format of alpha for client images. The attribute is used only in the <font face="Courier"><strong>
   cdCreateImage</strong></font> and for every <font face="Courier"><strong>
-  cdPutImageRect</strong></font>,  the pointer must exists while the image exists. The alpha values are transfered to 
+  cdPutImageRect</strong></font>,  the pointer must exists while the image exists. The alpha values are 
+  transferred to 
   the image only in <font face="Courier"><strong>cdPutImageRect</strong></font>, so they can be freely changed any time. 
   It will use the <strong><font face="Courier">AlphaBlend</font></strong> GDI 
   function. The data is not duplicated, only the pointer is stored. The size of 
@@ -119,7 +120,8 @@
   GDI function.</li>
 </ul>
 <ul>
-  <li>&quot;<b><font face="Courier">IMAGEPOINTS</font></b>&quot;:&nbsp; define 3 coordinates of a paralelogram that will be used 
+  <li>&quot;<b><font face="Courier">IMAGEPOINTS</font></b>&quot;:&nbsp; define 3 coordinates of a 
+  parallelogram that will be used 
   to warp server images. Use 6 integer values inside a string (&quot;%d %d %d %d %d %d&quot; = x1 y1 x2 y2 x3 y3). Use NULL to 
   remove the attribute. The respective specified points are the upper-left corner, the upper-right corner and the lower 
   left corner. The drawing is also affected by the &quot;IMAGEMASK&quot; attribute. It will use the <font face="Courier"><strong>
@@ -131,6 +133,11 @@
   centered in the specified coordinate. Use 1 real and 2 integer values inside a 
   string (&quot;%g %d %d&quot; = angle x y).&nbsp; Can not be set if a 
 	transformation is already set.</li>
+</ul>
+<ul>
+  <li><b><font face="Courier">&quot;UTF8MODE&quot;: </font></b>enables the usage 
+  of the UTF-8 encoding for strings. It can have the following 
+  values: &quot;1&quot; or &quot;0&quot;. Default is &quot;0&quot;.</li>
 </ul>
 
 </body>
