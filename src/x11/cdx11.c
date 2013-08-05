@@ -1853,7 +1853,7 @@ static void cdputimagerectrgba_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, co
 {
   int t_xmin, t_xmax, t_ymin, t_ymax, ew, eh,
       t_x, t_y, dst_offset, size, nc, doff, rect[8];
-  float i_x, i_y, xfactor, yfactor;
+  double i_x, i_y, xfactor, yfactor;
   unsigned char *dst_r, *dst_g, *dst_b, *dst_a = NULL;
   double inv_matrix[6];
 
@@ -1963,7 +1963,7 @@ static void cdputimagerectmap_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, con
 {
   int t_xmin, t_xmax, t_ymin, t_ymax, ew, eh,
       t_x, t_y, dst_offset, size, doff, rect[8];
-  float i_x, i_y, xfactor, yfactor;
+  double i_x, i_y, xfactor, yfactor;
   unsigned char *dst_index;
   double inv_matrix[6];
 
@@ -2265,9 +2265,9 @@ static void set_rotate_attrib(cdCtxCanvas* ctxcanvas, char* data)
   if (data)
   {
     /* use this configuration when there is NO native tranformation support */
-    sscanf(data, "%g %d %d", &ctxcanvas->rotate_angle,
-                             &ctxcanvas->rotate_center_x,
-                             &ctxcanvas->rotate_center_y);
+    sscanf(data, "%lg %d %d", &ctxcanvas->rotate_angle,
+                              &ctxcanvas->rotate_center_x,
+                              &ctxcanvas->rotate_center_y);
 
     cdCanvasTransformTranslate(ctxcanvas->canvas, ctxcanvas->rotate_center_x, ctxcanvas->rotate_center_y);
     cdCanvasTransformRotate(ctxcanvas->canvas, ctxcanvas->rotate_angle);
@@ -2290,7 +2290,7 @@ static char* get_rotate_attrib(cdCtxCanvas* ctxcanvas)
   if (!ctxcanvas->rotate_angle)
     return NULL;
 
-  sprintf(data, "%g %d %d", (double)ctxcanvas->rotate_angle,
+  sprintf(data, "%g %d %d", ctxcanvas->rotate_angle,
                             ctxcanvas->rotate_center_x,
                             ctxcanvas->rotate_center_y);
 

@@ -57,7 +57,7 @@ struct _cdCtxCanvas {
   int gshift;                 /* constante green para calculo truecolor */
   int bshift;                 /* constante blue para calculo truecolor */
   double xmatrix[6];          /* transformation matrix that includes axis inversion */
-  float  rotate_angle;
+  double rotate_angle;
   int    rotate_center_x,
          rotate_center_y;
 

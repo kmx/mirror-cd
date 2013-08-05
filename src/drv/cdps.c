@@ -67,7 +67,7 @@ struct _cdCtxCanvas
   int debug;             /* print debug strings in the file */
   char* old_locale;
 
-  float  rotate_angle;
+  double rotate_angle;
   int    rotate_center_x,
          rotate_center_y;
 
@@ -1688,7 +1688,7 @@ static void cdtransform(cdCtxCanvas *ctxcanvas, const double* matrix)
     {
       /* rotation = translate to point + rotation + translate back */
       fprintf(ctxcanvas->file, "%d %d translate\n", ctxcanvas->rotate_center_x, ctxcanvas->rotate_center_y);
-      fprintf(ctxcanvas->file, "%g rotate\n", (double)ctxcanvas->rotate_angle);
+      fprintf(ctxcanvas->file, "%g rotate\n", ctxcanvas->rotate_angle);
       fprintf(ctxcanvas->file, "%d %d translate\n", -ctxcanvas->rotate_center_x, -ctxcanvas->rotate_center_y);
     }
   }
@@ -1872,9 +1872,9 @@ static void set_rotate_attrib(cdCtxCanvas *ctxcanvas, char* data)
 
   if (data)
   {
-    sscanf(data, "%g %d %d", &ctxcanvas->rotate_angle,
-                             &ctxcanvas->rotate_center_x,
-                             &ctxcanvas->rotate_center_y);
+    sscanf(data, "%lg %d %d", &ctxcanvas->rotate_angle,
+                              &ctxcanvas->rotate_center_x,
+                              &ctxcanvas->rotate_center_y);
   }
   else
   {
@@ -1893,7 +1893,7 @@ static char* get_rotate_attrib(cdCtxCanvas *ctxcanvas)
   if (!ctxcanvas->rotate_angle)
     return NULL;
 
-  sprintf(data, "%g %d %d", (double)ctxcanvas->rotate_angle,
+  sprintf(data, "%g %d %d", ctxcanvas->rotate_angle,
                             ctxcanvas->rotate_center_x,
                             ctxcanvas->rotate_center_y);
 
@@ -2001,7 +2001,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 
     if (*line != '\0')
     {
-      float num;
+      double num;
       line++;
       switch (*line++)
       {
@@ -2013,27 +2013,27 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
           break;
         }
       case 'w':
-        sscanf(line, "%g", &num);
+        sscanf(line, "%lg", &num);
         ctxcanvas->width_pt = mm2pt(num);
         break;
       case 'h':
-        sscanf(line, "%g", &num);
+        sscanf(line, "%lg", &num);
         ctxcanvas->height_pt = mm2pt(num);
         break;
       case 'l':
-        sscanf(line, "%g", &num);
+        sscanf(line, "%lg", &num);
         ctxcanvas->xmin = num;
         break;
       case 'r':
-        sscanf(line, "%g", &num);
+        sscanf(line, "%lg", &num);
         ctxcanvas->xmax = num;   /* right margin, must be converted to xmax */
         break;
       case 'b':
-        sscanf(line, "%g", &num);
+        sscanf(line, "%lg", &num);
         ctxcanvas->ymin = num;  
         break;
       case 't':
-        sscanf(line, "%g", &num);
+        sscanf(line, "%lg", &num);
         ctxcanvas->ymax = num;  /* top margin, must be converted to ymax */
         break;
       case 's':
@@ -2052,7 +2052,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
         ctxcanvas->debug = 1;
         break;
       case 'd':
-        sscanf(line, "%g", &num);
+        sscanf(line, "%lg", &num);
         ctxcanvas->bbmargin = num;
         break;
       }

@@ -65,7 +65,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void* data)
   cdCtxCanvas* ctxcanvas;
   cairo_surface_t *surface;
   int w = 0, h = 0, use_alpha = 0;
-  float res = (float)3.78;
+  double res = 3.78;
   unsigned char *rgb = NULL;
   char* str_data = (char*)data;
   char* res_ptr = NULL;
@@ -80,7 +80,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void* data)
 
   res_ptr = strstr(str_data, "-r");
   if (res_ptr)
-    sscanf(res_ptr+2, "%g", &res);
+    sscanf(res_ptr+2, "%lg", &res);
 
   /* size and rgb */
 #ifdef SunOS_OLD

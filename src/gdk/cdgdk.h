@@ -47,7 +47,7 @@ struct _cdCtxCanvas {
   GdkColormap* colormap;     /* Color map */
   int num_colors;            /* Size of the color table  */
   double xmatrix[6];         /* Transformation matrix that includes axis inversion */
-  float rotate_angle;
+  double rotate_angle;
   int rotate_center_x;
   int rotate_center_y;
   int img_dither, img_interp;

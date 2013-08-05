@@ -63,7 +63,7 @@ struct _cdCtxCanvas
   FTGLfont *font;
   int txt_antialias;
 
-  float rotate_angle;
+  double rotate_angle;
   int rotate_center_x;
   int rotate_center_y;
 
@@ -619,16 +619,16 @@ static void cdpoly(cdCtxCanvas *ctxcanvas, int mode, cdPoint* poly, int n)
   if (mode == CD_BEZIER)
   {
     int i, prec = 100;
-    float (*points)[3] = malloc(n * sizeof(*points));
+    double* points = (double*)malloc(n * 3 * sizeof(double));
 
     for(i = 0; i < n; i++)
     {
-      points[i][0] = (float)poly[i].x;
-      points[i][1] = (float)poly[i].y;
-      points[i][2] = 0;
+      points[i*3+0] = (double)poly[i].x;
+      points[i*3+1] = (double)poly[i].y;
+      points[i*3+2] = 0;
     }
 
-    glMap1f(GL_MAP1_VERTEX_3, 0.0, 1.0, 3, n, &points[0][0]);
+    glMap1d(GL_MAP1_VERTEX_3, 0.0, 1.0, 3, n, points);
     glEnable(GL_MAP1_VERTEX_3);
     glMapGrid1f(prec, 0.0, 1.0);
     glEvalMesh1(GL_LINE, 0, prec);
@@ -696,16 +696,16 @@ static void cdfpoly(cdCtxCanvas *ctxcanvas, int mode, cdfPoint* poly, int n)
   if (mode == CD_BEZIER)
   {
     int i, prec = 100;
-    double (*points)[3] = malloc(n * sizeof(*points));
+    double* points = (double*)malloc(n * 3 * sizeof(double));
 
     for(i = 0; i < n; i++)
     {
-      points[i][0] = poly[i].x;
-      points[i][1] = poly[i].y;
-      points[i][2] = 0;
+      points[i*3+0] = poly[i].x;
+      points[i*3+1] = poly[i].y;
+      points[i*3+2] = 0;
     }
 
-    glMap1d(GL_MAP1_VERTEX_3, 0.0, 1.0, 3, n, &points[0][0]);
+    glMap1d(GL_MAP1_VERTEX_3, 0.0, 1.0, 3, n, points);
     glEnable(GL_MAP1_VERTEX_3);
     glMapGrid1d(prec, 0.0, 1.0);
     glEvalMesh1(GL_LINE, 0, prec);
@@ -1235,9 +1235,9 @@ static void set_rotate_attrib(cdCtxCanvas* ctxcanvas, char* data)
 {
   if (data)
   {
-    sscanf(data, "%g %d %d", &ctxcanvas->rotate_angle,
-                             &ctxcanvas->rotate_center_x,
-                             &ctxcanvas->rotate_center_y);
+    sscanf(data, "%lg %d %d", &ctxcanvas->rotate_angle,
+                              &ctxcanvas->rotate_center_x,
+                              &ctxcanvas->rotate_center_y);
 
     cdCanvasTransformTranslate(ctxcanvas->canvas, ctxcanvas->rotate_center_x, ctxcanvas->rotate_center_y);
     cdCanvasTransformRotate(ctxcanvas->canvas, ctxcanvas->rotate_angle);
@@ -1260,7 +1260,7 @@ static char* get_rotate_attrib(cdCtxCanvas* ctxcanvas)
   if (!ctxcanvas->rotate_angle)
     return NULL;
 
-  sprintf(data, "%g %d %d", (double)ctxcanvas->rotate_angle,
+  sprintf(data, "%g %d %d", ctxcanvas->rotate_angle,
                             ctxcanvas->rotate_center_x,
                             ctxcanvas->rotate_center_y);
 
@@ -1279,9 +1279,8 @@ static void set_size_attrib(cdCtxCanvas* ctxcanvas, char* data)
   if (data)
   {
     cdCanvas* canvas = ctxcanvas->canvas;
-    float res = (float)canvas->xres;
-    sscanf(data, "%dx%d %g", &canvas->w, &canvas->h, &res);
-    canvas->yres = canvas->xres = res;
+    sscanf(data, "%dx%d %lg", &canvas->w, &canvas->h, &(canvas->xres));
+    canvas->yres = canvas->xres;
     canvas->w_mm = ((double)canvas->w) / canvas->xres;
     canvas->h_mm = ((double)canvas->h) / canvas->yres;
   }
@@ -1311,10 +1310,10 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 {
   cdCtxCanvas* ctxcanvas;
   int w = 0, h = 0;
-  float res = (float)3.78;
+  double res = 3.78;
   char* str_data = (char*)data;
 
-  sscanf(str_data, "%dx%d %g", &w, &h, &res);
+  sscanf(str_data, "%dx%d %lg", &w, &h, &res);
 
   if (w == 0 || h == 0)
     return;

@@ -612,7 +612,7 @@ static void sSetTransform(cdCtxCanvas *ctxcanvas, const double* matrix)
     /* rotation = translate to point + rotation + translate back */
     /* the rotation must be corrected because of the Y axis orientation */
     cairo_translate(ctxcanvas->cr, ctxcanvas->rotate_center_x, _cdInvertYAxis(ctxcanvas->canvas, ctxcanvas->rotate_center_y));
-    cairo_rotate(ctxcanvas->cr, (double)-ctxcanvas->rotate_angle * CD_DEG2RAD);
+    cairo_rotate(ctxcanvas->cr, -ctxcanvas->rotate_angle * CD_DEG2RAD);
     cairo_translate(ctxcanvas->cr, -ctxcanvas->rotate_center_x, -_cdInvertYAxis(ctxcanvas->canvas, ctxcanvas->rotate_center_y));
   }
 }
@@ -1814,9 +1814,9 @@ static void set_rotate_attrib(cdCtxCanvas* ctxcanvas, char* data)
 
   if (data)
   {
-    sscanf(data, "%g %d %d", &ctxcanvas->rotate_angle,
-                             &ctxcanvas->rotate_center_x,
-                             &ctxcanvas->rotate_center_y);
+    sscanf(data, "%lg %d %d", &ctxcanvas->rotate_angle,
+                              &ctxcanvas->rotate_center_x,
+                              &ctxcanvas->rotate_center_y);
   }
   else
   {
@@ -1835,9 +1835,9 @@ static char* get_rotate_attrib(cdCtxCanvas* ctxcanvas)
   if (!ctxcanvas->rotate_angle)
     return NULL;
 
-  sprintf(data, "%g %d %d", (double)ctxcanvas->rotate_angle,
-    ctxcanvas->rotate_center_x,
-    ctxcanvas->rotate_center_y);
+  sprintf(data, "%g %d %d", ctxcanvas->rotate_angle,
+                            ctxcanvas->rotate_center_x,
+                            ctxcanvas->rotate_center_y);
 
   return data;
 }
@@ -2025,11 +2025,11 @@ static void set_radialgradient_attrib(cdCtxCanvas* ctxcanvas, char* data)
   if (data)
   {
     int cx1, cy1, cx2, cy2;
-    float rad1, rad2;
+    double rad1, rad2;
     double offset;
     int count = 1;
 
-    sscanf(data, "%d %d %g %d %d %g", &cx1, &cy1, &rad1, &cx2, &cy2, &rad2);
+    sscanf(data, "%d %d %lg %d %d %lg", &cx1, &cy1, &rad1, &cx2, &cy2, &rad2);
 
     if (ctxcanvas->canvas->invert_yaxis)
     {
@@ -2040,7 +2040,7 @@ static void set_radialgradient_attrib(cdCtxCanvas* ctxcanvas, char* data)
     if (ctxcanvas->pattern)
       cairo_pattern_destroy(ctxcanvas->pattern);
 
-    ctxcanvas->pattern = cairo_pattern_create_radial((double)cx1, (double)cx1, (double)rad1, (double)cx2, (double)cx2, (double)rad2);
+    ctxcanvas->pattern = cairo_pattern_create_radial((double)cx1, (double)cx1, rad1, (double)cx2, (double)cx2, rad2);
     cairo_pattern_reference(ctxcanvas->pattern);
 
     for(offset = 0.1; offset < 1.0; offset += 0.1)
@@ -2077,7 +2077,7 @@ static char* get_radialgradient_attrib(cdCtxCanvas* ctxcanvas)
   if (cairo_pattern_get_radial_circles(ctxcanvas->pattern, &cx1, &cy1, &rad1, &cx2, &cy2, &rad2) == CAIRO_STATUS_SUCCESS)
   {
     static char data[100];
-    sprintf(data, "%d %d %g %d %d %g", (int)cx1, (int)cy1, (float)rad1, (int)cx2, (int)cy2, (float)rad2);
+    sprintf(data, "%d %d %g %d %d %g", (int)cx1, (int)cy1, rad1, (int)cx2, (int)cy2, rad2);
     return data;
   }
   else

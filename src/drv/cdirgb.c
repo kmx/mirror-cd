@@ -42,7 +42,7 @@ struct _cdCtxCanvas
 
   unsigned char* clip_region;  /* clipping region used during NewRegion */
 
-  float  rotate_angle;
+  double rotate_angle;
   int    rotate_center_x,
          rotate_center_y;
 
@@ -973,7 +973,7 @@ static void cdputimagerectrgba_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, co
 {
   int t_xmin, t_xmax, t_ymin, t_ymax, 
       t_x, t_y, topdown, dst_offset;
-  float i_x, i_y, xfactor, yfactor;
+  double i_x, i_y, xfactor, yfactor;
   unsigned char sr, sg, sb, sa = 255;
   double inv_matrix[6];
 
@@ -1020,7 +1020,7 @@ static void cdputimagerectmap_matrix(cdCtxCanvas* ctxcanvas, int iw, int ih, con
 {
   int t_xmin, t_xmax, t_ymin, t_ymax, 
       t_x, t_y, topdown, dst_offset;
-  float i_x, i_y, xfactor, yfactor;
+  double i_x, i_y, xfactor, yfactor;
   unsigned char si;
   double inv_matrix[6];
 
@@ -1696,9 +1696,9 @@ static void set_rotate_attrib(cdCtxCanvas* ctxcanvas, char* data)
   if (data)
   {
     /* use this configuration when there is NO native tranformation support */
-    sscanf(data, "%g %d %d", &ctxcanvas->rotate_angle,
-                             &ctxcanvas->rotate_center_x,
-                             &ctxcanvas->rotate_center_y);
+    sscanf(data, "%lg %d %d", &ctxcanvas->rotate_angle,
+                              &ctxcanvas->rotate_center_x,
+                              &ctxcanvas->rotate_center_y);
 
     cdCanvasTransformTranslate(ctxcanvas->canvas, ctxcanvas->rotate_center_x, ctxcanvas->rotate_center_y);
     cdCanvasTransformRotate(ctxcanvas->canvas, ctxcanvas->rotate_angle);
@@ -1721,7 +1721,7 @@ static char* get_rotate_attrib(cdCtxCanvas* ctxcanvas)
   if (!ctxcanvas->rotate_angle)
     return NULL;
 
-  sprintf(data, "%g %d %d", (double)ctxcanvas->rotate_angle,
+  sprintf(data, "%g %d %d", ctxcanvas->rotate_angle,
                             ctxcanvas->rotate_center_x,
                             ctxcanvas->rotate_center_y);
 
@@ -1739,7 +1739,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 {
   cdCtxCanvas* ctxcanvas;
   int w = 0, h = 0, use_alpha = 0;
-  float res = (float)3.78;
+  double res = 3.78;
   unsigned char *r = NULL, *g = NULL, *b = NULL, *a = NULL;
   char* str_data = (char*)data;
   char* res_ptr = NULL;
@@ -1749,7 +1749,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 
   res_ptr = strstr(str_data, "-r");
   if (res_ptr)
-    sscanf(res_ptr+2, "%g", &res);
+    sscanf(res_ptr+2, "%lg", &res);
 
   /* size and rgb */
 #ifdef SunOS_OLD

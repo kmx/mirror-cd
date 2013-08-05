@@ -34,7 +34,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void* data)
   cdCtxCanvas* ctxcanvas;
   char* strdata = (char*)data;
   int w = 0, h = 0;
-  float res;
+  double res;
   HDC ScreenDC;
   FILE* fh;
   char filename[10240] = "";
@@ -44,14 +44,14 @@ static void cdcreatecanvas(cdCanvas* canvas, void* data)
     return;
 
   ScreenDC = GetDC(NULL);
-  res = (float)(((double)GetDeviceCaps(ScreenDC, LOGPIXELSX)) / 25.4);
+  res = ((double)GetDeviceCaps(ScreenDC, LOGPIXELSX)) / 25.4;
   ReleaseDC(NULL, ScreenDC);
 
   strdata += cdGetFileName(strdata, filename);
   if (filename[0] == 0)
     return;
   
-  sscanf(strdata,"%dx%d %g", &w, &h, &res); 
+  sscanf(strdata,"%dx%d %lg", &w, &h, &res); 
   if (w == 0 || h == 0)
     return;
   

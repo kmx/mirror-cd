@@ -63,7 +63,7 @@ struct _cdCtxCanvas
   int img_format;
   unsigned char* img_alpha;
 
-  float  rotate_angle;
+  double rotate_angle;
   int    rotate_center_x,
          rotate_center_y;
 

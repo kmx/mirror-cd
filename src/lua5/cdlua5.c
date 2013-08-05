@@ -1053,8 +1053,7 @@ static int cdlua5_decodecolor(lua_State *L)
 \***************************************************************************/
 static int cdlua5_encodealpha(lua_State *L)
 {
-  float alpha_f;
-  unsigned char alpha_i;
+  int alpha;
   long int color;
   
   color = cdlua_checkcolor(L, 1);
@@ -1062,14 +1061,12 @@ static int cdlua5_encodealpha(lua_State *L)
   if (!lua_isnumber(L, 2))
     luaL_argerror(L, 2, "invalid alpha parameter");
 
-  alpha_f = (float) lua_tonumber(L, 2);
+  alpha = (int) lua_tointeger(L, 2);
 
-  if (alpha_f < 0 || alpha_f > 255)
+  if (alpha < 0 || alpha > 255)
     luaL_argerror(L, 2, "alpha components values should be in range [0, 255]");
   
-  alpha_i = (unsigned char) (alpha_f);
-
-  color = cdEncodeAlpha(color, alpha_i);
+  color = cdEncodeAlpha(color, (unsigned char)alpha);
   lua_pushlightuserdata(L, (void *) color);
   return 1;
 }

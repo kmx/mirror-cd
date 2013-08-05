@@ -66,7 +66,7 @@ struct _cdCtxCanvas
   
   int font_angle;
 
-  float  rotate_angle;
+  double rotate_angle;
   int    rotate_center_x,
          rotate_center_y;
   

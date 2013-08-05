@@ -326,7 +326,6 @@ static void put_long (cdCtxCanvas* ctxcanvas, unsigned long i)
 static void put_as_double(cdCtxCanvas* ctxcanvas, long i)
 { 
   float dfloat=(float) 4*i;
- 
   put_long(ctxcanvas, *((long *) &dfloat)); 
   put_long(ctxcanvas, 0);
 }

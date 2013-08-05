@@ -18,7 +18,7 @@ typedef int(*_cdcgmbegmtfcb)(cdCanvas* canvas, int *xmin, int *ymin, int *xmax, 
 typedef int(*_cdcgmcountercb)(cdCanvas* canvas, double size);
 typedef int(*_cdcgmsclmdecb)(cdCanvas* canvas, short scl_mde, short *drw_mode, double *factor);
 typedef int(*_cdcgmvdcextcb)(cdCanvas* canvas, short type, double *xmn, double *ymn, double *xmx, double *ymx);
-typedef int(*_cdcgmbegpictcb)(cdCanvas* canvas , const char *pict );
+typedef int(*_cdcgmbegpictcb)(cdCanvas* canvas, const char *name);
 typedef int(*_cdcgmbegpictbcb)(cdCanvas* canvas, double scale_x, double scale_y, 
                                double vdc_x2pix, double vdc_y2pix,
                                double vdc_x2mm, double vdc_y2mm, int drw_mode, 

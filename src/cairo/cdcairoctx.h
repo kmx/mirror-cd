@@ -45,7 +45,7 @@ struct _cdCtxCanvas
 
   int img_format;
 
-  float rotate_angle;
+  double rotate_angle;
   int rotate_center_x;
   int rotate_center_y;
 

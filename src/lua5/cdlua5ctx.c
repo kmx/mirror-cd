@@ -288,22 +288,22 @@ static int cgm_vdcextcb(cdCanvas *canvas, short type, void *xmn, void *ymn, void
 
   if (!lua_isnumber(L, -4))
     luaL_error(L, "invalid xmn return value");
-  if (type == 1) *((float *) xmn) = (float) lua_tonumber(L, -4);
+  if (type == 1) *((double *) xmn) = lua_tonumber(L, -4);
   else *((int *) xmn) = luaL_checkint(L, -4);
 
   if (!lua_isnumber(L, -3))
     luaL_error(L, "invalid ymn return value");
-  if (type == 1) *((float *) ymn) = (float) lua_tonumber(L, -3);
+  if (type == 1) *((double *) ymn) = lua_tonumber(L, -3);
   else *((int *) ymn) = luaL_checkint(L, -3);
 
   if (!lua_isnumber(L, -2))
     luaL_error(L,"invalid xmx return value");
-  if (type == 1) *((float *) xmx) = (float) lua_tonumber(L, -2);
+  if (type == 1) *((double *) xmx) = lua_tonumber(L, -2);
   else *((int *) xmx) = luaL_checkint(L, -2);
 
   if (!lua_isnumber(L, -1))
     luaL_error(L,"invalid ymx return value");
-  if (type == 1) *((float *) ymx) = (float) lua_tonumber(L, -1);
+  if (type == 1) *((double *) ymx) = lua_tonumber(L, -1);
   else *((int *) ymx) = (int) luaL_checkint(L, -1);
 
   return result_i;

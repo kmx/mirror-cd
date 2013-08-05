@@ -42,7 +42,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void* data)
 
     if (*strdata != '\0')
     {
-      float num;
+      double num;
       strdata++;
       switch (*strdata++)
       {
@@ -54,11 +54,11 @@ static void cdcreatecanvas(cdCanvas* canvas, void* data)
           break;
         }
       case 'w':
-        sscanf(strdata, "%g", &num);
+        sscanf(strdata, "%lg", &num);
         w_pt = CD_MM2PT*num;
         break;
       case 'h':
-        sscanf(strdata, "%g", &num);
+        sscanf(strdata, "%lg", &num);
         h_pt = CD_MM2PT*num;
         break;
       case 'o':

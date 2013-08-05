@@ -66,7 +66,7 @@ int cdCalcZoom(int canvas_size,
                int is_horizontal)
 {
   int offset;
-  float zoom_factor = (float)img_rect_size / (float)cnv_rect_size;
+  double zoom_factor = (double)img_rect_size / (double)cnv_rect_size;
 
   /* valores default sem otimizacao */
   *new_cnv_rect_size = cnv_rect_size, *new_cnv_rect_pos = cnv_rect_pos;    

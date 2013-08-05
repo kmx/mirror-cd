@@ -336,10 +336,10 @@ void cdgettextsizeEX(cdCtxCanvas* ctxcanvas, const char *s, int len, int *width,
 /****************/
 /*  For Images  */
 /****************/
-unsigned char cdZeroOrderInterpolation(int width, int height, const unsigned char *map, float xl, float yl);
-unsigned char cdBilinearInterpolation(int width, int height, const unsigned char *map, float xl, float yl);
-void cdImageRGBInitInverseTransform(int w, int h, int xmin, int xmax, int ymin, int ymax, float *xfactor, float *yfactor, const double* matrix, double* inv_matrix);
-void cdImageRGBInverseTransform(int t_x, int t_y, float *i_x, float *i_y, float xfactor, float yfactor, int xmin, int ymin, int x, int y, double *inv_matrix);
+unsigned char cdZeroOrderInterpolation(int width, int height, const unsigned char *map, double xl, double yl);
+unsigned char cdBilinearInterpolation(int width, int height, const unsigned char *map, double xl, double yl);
+void cdImageRGBInitInverseTransform(int w, int h, int xmin, int xmax, int ymin, int ymax, double *xfactor, double *yfactor, const double* matrix, double* inv_matrix);
+void cdImageRGBInverseTransform(int t_x, int t_y, double *i_x, double *i_y, double xfactor, double yfactor, int xmin, int ymin, int x, int y, double *inv_matrix);
 void cdImageRGBCalcDstLimits(cdCanvas* canvas, int x, int y, int w, int h, int *xmin, int *xmax, int *ymin, int *ymax, int* rect);
 void cdRGB2Gray(int width, int height, const unsigned char* red, const unsigned char* green, const unsigned char* blue, unsigned char* index, long *color);
 

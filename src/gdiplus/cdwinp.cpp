@@ -2529,9 +2529,9 @@ static void set_rotate_attrib(cdCtxCanvas* ctxcanvas, char* data)
 
   if (data)
   {
-    sscanf(data, "%g %d %d", &ctxcanvas->rotate_angle,
-                             &ctxcanvas->rotate_center_x,
-                             &ctxcanvas->rotate_center_y);
+    sscanf(data, "%lg %d %d", &ctxcanvas->rotate_angle,
+                              &ctxcanvas->rotate_center_x,
+                              &ctxcanvas->rotate_center_y);
   }
   else
   {
@@ -2547,7 +2547,7 @@ static char* get_rotate_attrib(cdCtxCanvas* ctxcanvas)
 {
   static char data[100];
 
-  sprintf(data, "%g %d %d", (double)ctxcanvas->rotate_angle,
+  sprintf(data, "%g %d %d", ctxcanvas->rotate_angle,
                             ctxcanvas->rotate_center_x,
                             ctxcanvas->rotate_center_y);
 

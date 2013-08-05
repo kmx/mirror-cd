@@ -302,20 +302,20 @@ void cdCanvasScrollArea(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax
   canvas->cxScrollArea(canvas->ctxcanvas, xmin, xmax, ymin, ymax, dx, dy);
 }
 
-unsigned char cdZeroOrderInterpolation(int width, int height, const unsigned char *map, float xl, float yl)
+unsigned char cdZeroOrderInterpolation(int width, int height, const unsigned char *map, double xl, double yl)
 {
-  int x0 = (int)(xl-0.5f);
-  int y0 = (int)(yl-0.5f);
+  int x0 = (int)(xl-0.5);
+  int y0 = (int)(yl-0.5);
   x0 = x0<0? 0: x0>width-1? width-1: x0;
   y0 = y0<0? 0: y0>height-1? height-1: y0;
   return map[y0*width + x0];
 }
 
-unsigned char cdBilinearInterpolation(int width, int height, const unsigned char *map, float xl, float yl)
+unsigned char cdBilinearInterpolation(int width, int height, const unsigned char *map, double xl, double yl)
 {
   unsigned char fll, fhl, flh, fhh;
   int x0, y0, x1, y1;
-  float t, u;
+  double t, u;
 
   if (xl < 0.5)
   {
@@ -329,9 +329,9 @@ unsigned char cdBilinearInterpolation(int width, int height, const unsigned char
   }
   else
   {
-    x0 = (int)(xl-0.5f);
+    x0 = (int)(xl-0.5);
     x1 = x0+1;
-    t = xl - (x0+0.5f);
+    t = xl - (x0+0.5);
   }
 
   if (yl < 0.5)
@@ -346,9 +346,9 @@ unsigned char cdBilinearInterpolation(int width, int height, const unsigned char
   }
   else
   {
-    y0 = (int)(yl-0.5f);
+    y0 = (int)(yl-0.5);
     y1 = y0+1;
-    u = yl - (y0+0.5f);
+    u = yl - (y0+0.5);
   }
 
   fll = map[y0*width + x0];
@@ -362,19 +362,19 @@ unsigned char cdBilinearInterpolation(int width, int height, const unsigned char
                                 fll);
 }
 
-void cdImageRGBInitInverseTransform(int w, int h, int xmin, int xmax, int ymin, int ymax, float *xfactor, float *yfactor, const double* matrix, double* inv_matrix)
+void cdImageRGBInitInverseTransform(int w, int h, int xmin, int xmax, int ymin, int ymax, double *xfactor, double *yfactor, const double* matrix, double* inv_matrix)
 {
-  *xfactor = (float)(xmax-xmin)/(float)(w-1);
-  *yfactor = (float)(ymax-ymin)/(float)(h-1);
+  *xfactor = (double)(xmax-xmin)/(double)(w-1);
+  *yfactor = (double)(ymax-ymin)/(double)(h-1);
   cdMatrixInverse(matrix, inv_matrix);
 }
 
-void cdImageRGBInverseTransform(int t_x, int t_y, float *i_x, float *i_y, float xfactor, float yfactor, int xmin, int ymin, int x, int y, double *inv_matrix)
+void cdImageRGBInverseTransform(int t_x, int t_y, double *i_x, double *i_y, double xfactor, double yfactor, int xmin, int ymin, int x, int y, double *inv_matrix)
 {
   double rx, ry;
   cdfMatrixTransformPoint(inv_matrix, t_x, t_y, &rx, &ry);
-  *i_x = xfactor*((float)rx - x) + xmin;
-  *i_y = yfactor*((float)ry - y) + ymin;
+  *i_x = xfactor*((double)rx - x) + xmin;
+  *i_y = yfactor*((double)ry - y) + ymin;
 }
 
 void cdImageRGBCalcDstLimits(cdCanvas* canvas, int x, int y, int w, int h, int *xmin, int *xmax, int *ymin, int *ymax, int* rect)

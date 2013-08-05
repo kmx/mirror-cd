@@ -82,7 +82,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 {
   char* strsize = (char*)data;
   int w = 0, h = 0, wtype = CDW_EMF; /* default clipboard type */
-  float res = 0; /* used only for BMP */
+  double res = 0; /* used only for BMP */
   Metafile* metafile = NULL;
   Bitmap* bitmap = NULL;
   Graphics* graphics;
@@ -98,7 +98,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
   
   if (wtype != -1)
   {
-    sscanf(strsize,"%dx%d %g",&w, &h, &res); 
+    sscanf(strsize,"%dx%d %lg",&w, &h, &res); 
     if (w == 0 || h == 0)
       return;
   }
@@ -131,8 +131,8 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
     }
     else
     {
-      canvas->xres = (double)res;
-      canvas->yres = (double)res;
+      canvas->xres = res;
+      canvas->yres = res;
     }
     
     bitmap = new Bitmap(w, h, PixelFormat24bppRGB);

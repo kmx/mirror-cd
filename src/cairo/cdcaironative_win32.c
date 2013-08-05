@@ -83,8 +83,8 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 
   ScreenDC = GetDC(NULL);
   canvas->bpp = GetDeviceCaps(ScreenDC, BITSPIXEL);
-  canvas->xres = (float)(((double)GetDeviceCaps(ScreenDC, LOGPIXELSX)) / 25.4);
-  canvas->yres = (float)(((double)GetDeviceCaps(ScreenDC, LOGPIXELSY)) / 25.4);
+  canvas->xres = (((double)GetDeviceCaps(ScreenDC, LOGPIXELSX)) / 25.4);
+  canvas->yres = (((double)GetDeviceCaps(ScreenDC, LOGPIXELSY)) / 25.4);
   ReleaseDC(NULL, ScreenDC);
 
   if (!data)
