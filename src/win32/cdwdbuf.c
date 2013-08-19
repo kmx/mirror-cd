@@ -78,6 +78,13 @@ static void cdcreatecanvas(cdCanvas* canvas, cdCanvas* canvas_dbuffer)
 
   ctxcanvas->clip_pnt[2].x = ctxcanvas->clip_pnt[1].x = ctximage->w - 1;
   ctxcanvas->clip_pnt[3].y = ctxcanvas->clip_pnt[2].y = ctximage->h - 1;
+
+  {
+    char* mode = cdCanvasGetAttribute(canvas, "UTF8MODE");
+    int utf8mode = mode? (mode[0]=='1'? 1: 0): 0;
+    if (utf8mode)
+      cdCanvasSetAttribute(canvas, "UTF8MODE", "1");
+  }
 }
 
 static int cdactivate(cdCtxCanvas *ctxcanvas)

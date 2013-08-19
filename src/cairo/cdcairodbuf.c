@@ -76,6 +76,13 @@ static void cdcreatecanvas(cdCanvas* canvas, cdCanvas* canvas_dbuffer)
   canvas->bpp = ctximage->bpp;
   canvas->xres = ctximage->xres;
   canvas->yres = ctximage->yres;
+
+  {
+    char* mode = cdCanvasGetAttribute(canvas, "UTF8MODE");
+    int utf8mode = mode? (mode[0]=='1'? 1: 0): 0;
+    if (utf8mode)
+      cdCanvasSetAttribute(canvas, "UTF8MODE", "1");
+  }
 }
 
 static int cdactivate(cdCtxCanvas* ctxcanvas)

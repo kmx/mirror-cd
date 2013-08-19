@@ -99,10 +99,6 @@ static int cdactivate(cdCtxCanvas* ctxcanvas)
   return CD_OK;
 }
 
-/*
-%F cdCreateCanvas para DBuffer.
-O DC é um BITMAP em memoria.
-*/
 static void cdcreatecanvas(cdCanvas* canvas, void *data)
 {
   int w, h;
@@ -133,6 +129,13 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 
   ctxcanvas->bitmap = bitmap;
   ctxcanvas->canvas_dbuffer = canvas_dbuffer;
+
+  {
+    char* mode = cdCanvasGetAttribute(canvas, "UTF8MODE");
+    int utf8mode = mode? (mode[0]=='1'? 1: 0): 0;
+    if (utf8mode)
+      cdCanvasSetAttribute(canvas, "UTF8MODE", "1");
+  }
 }
 
 static void cdinittable(cdCanvas* canvas)
