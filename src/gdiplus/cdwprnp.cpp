@@ -104,7 +104,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
     DOCINFOW docInfo;
     ZeroMemory(&docInfo, sizeof(docInfo));
     docInfo.cbSize = sizeof(docInfo);
-    docInfo.lpszDocName = cdwpStringToUnicode(docname, strlen(docname), 0);
+    docInfo.lpszDocName = cdwpStringToUnicode(docname, 0);
 
     StartDocW(hDC, &docInfo);
   }

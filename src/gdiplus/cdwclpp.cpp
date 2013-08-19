@@ -32,7 +32,7 @@ static void cdkillcanvasCLIPBDMF (cdCtxCanvas* ctxcanvas)
   
   cdkillcanvasMF(mfcanvas); /* this will close the file */
   
-  hFile = CreateFileW(cdwpStringToUnicode(filename, strlen(filename), 0), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_DELETE_ON_CLOSE, NULL);
+  hFile = CreateFileW(cdwpStringToUnicode(filename, 0), GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_DELETE_ON_CLOSE, NULL);
   dwSize = GetFileSize (hFile, NULL) ; 
   
   Handle = GlobalAlloc(GMEM_MOVEABLE, dwSize+1);

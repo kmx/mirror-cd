@@ -100,8 +100,9 @@ void cdwpKillCanvas(cdCtxCanvas* ctxcanvas);
 void cdwpInitTable(cdCanvas* canvas);
 void cdwpUpdateCanvas(cdCtxCanvas* canvas);
 
-WCHAR* cdwpStringToUnicode(const char* s, int len, int utf8mode);
-char* cdwpStringFromUnicode(const WCHAR* wstr, int len, int utf8mode);
+WCHAR* cdwpStringToUnicodeLen(const char* s, int *len, int utf8mode);
+WCHAR* cdwpStringToUnicode(const char* s, int utf8mode);
+char* cdwpStringFromUnicode(const WCHAR* wstr, int utf8mode);
 
 void cdwpShowStatus(const char* title, Status status);
 

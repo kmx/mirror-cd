@@ -122,7 +122,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
 
   /* Inicializa documento */
   di.cbSize = sizeof(DOCINFO);
-  di.lpszDocName = cdwStrToSystem(docname, strlen(docname), 0);
+  di.lpszDocName = cdwStrToSystem(docname, 0);
   di.lpszOutput = (LPCTSTR) NULL;
   di.lpszDatatype = (LPCTSTR) NULL; 
   di.fwType = 0; 
@@ -152,7 +152,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void *data)
     DEVNAMES* dn = (DEVNAMES*)devnames;
     TCHAR* device = (TCHAR*)(devnames + dn->wDeviceOffset);
 
-    ctxcanvas->filename = cdStrDup(cdwStrFromSystem(device, lstrlen(device), 0));
+    ctxcanvas->filename = cdStrDup(cdwStrFromSystem(device, 0));
     cdRegisterAttribute(canvas, &printername_attrib);
 
     /* PDF Writer returns bpp=1, so we check if color is supported and overwrite this value */

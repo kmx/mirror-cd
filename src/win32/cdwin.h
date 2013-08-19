@@ -125,10 +125,11 @@ void cdwRestoreDC(cdCtxCanvas *ctxcanvas);
 /* Remove valores comuns do driver Windows, deve ser chamado por todos os drivers */
 void cdwKillCanvas(cdCtxCanvas* canvas);
 
-TCHAR* cdwStrToSystem(const char* str, int len, int utf8mode);
-char* cdwStrFromSystem(const TCHAR* wstr, int len, int utf8mode);
+TCHAR* cdwStrToSystemLen(const char* str, int *len, int utf8mode);
+TCHAR* cdwStrToSystem(const char* str, int utf8mode);
+WCHAR* cdwStringToUnicodeLen(const char* str, int *len, int utf8mode);
+char* cdwStrFromSystem(const TCHAR* wstr, int utf8mode);
 char* cdwStringFromUnicode(const WCHAR* wstr, int len, int utf8mode);
-WCHAR* cdwStringToUnicode(const char* str, int len, int utf8mode);
 
 /* implemented in the wmfmeta.c module */
 void wmfMakePlaceableMetafile(HMETAFILE hmf, const char* filename, int w, int h);

@@ -46,36 +46,55 @@ void cdwpShowStatus(const char* title, Status status)
     MessageBoxA(NULL, status_str, title, MB_OK);
 }
 
-WCHAR* cdwpStringToUnicode(const char* str, int len, int utf8mode)
+WCHAR* cdwpStringToUnicode(const char* str, int utf8mode)
 {
   static WCHAR wstr[10240] = L"";
+  int len;
 
   if (utf8mode)
-    len = MultiByteToWideChar(CP_UTF8, 0, str, len, wstr, 10240);
+    len = MultiByteToWideChar(CP_UTF8, 0, str, -1, wstr, 10240);
   else
-    len = MultiByteToWideChar(CP_ACP, 0, str, len, wstr, 10240);
+    len = MultiByteToWideChar(CP_ACP, 0, str, -1, wstr, 10240);
 
-  if (len>0)
-    wstr[len] = 0;
-  else
-    wstr[0] = 0;
+  if (len<0)
+    len = 0;
+
+  wstr[len] = 0;
 
   return wstr;
 }
 
-char* cdwpStringFromUnicode(const WCHAR* wstr, int len, int utf8mode)
+WCHAR* cdwpStringToUnicodeLen(const char* str, int *len, int utf8mode)
 {
-  static char str[10240] = "";
+  static WCHAR wstr[10240] = L"";
 
   if (utf8mode)
-    len = WideCharToMultiByte(CP_UTF8, 0, wstr, len, str, 10240, NULL, NULL);  /* str must has a large buffer */
+    *len = MultiByteToWideChar(CP_UTF8, 0, str, *len, wstr, 10240);
   else
-    len = WideCharToMultiByte(CP_ACP, 0, wstr, len, str, 10240, NULL, NULL);
+    *len = MultiByteToWideChar(CP_ACP, 0, str, *len, wstr, 10240);
 
-  if (len>0)
-    str[len] = 0;
+  if (*len<0)
+    *len = 0;
+
+  wstr[*len] = 0;
+
+  return wstr;
+}
+
+char* cdwpStringFromUnicode(const WCHAR* wstr, int utf8mode)
+{
+  static char str[10240] = "";
+  int len;
+
+  if (utf8mode)
+    len = WideCharToMultiByte(CP_UTF8, 0, wstr, -1, str, 10240, NULL, NULL);  /* str must has a large buffer */
   else
-    str[0] = 0;
+    len = WideCharToMultiByte(CP_ACP, 0, wstr, -1, str, 10240, NULL, NULL);
+
+  if (len<0)
+    len = 0;
+
+  str[len] = 0;
 
   return str;
 }
@@ -1309,9 +1328,8 @@ static void cdgettextsize(cdCtxCanvas* ctxcanvas, const char *s, int len, int *w
 {
   RectF boundingBox;
 
-  ctxcanvas->graphics->MeasureString(cdwpStringToUnicode(s, len, ctxcanvas->utf8mode), len, 
-                                            ctxcanvas->font, PointF(0,0),
-                                            &boundingBox);
+  WCHAR* wstr = cdwpStringToUnicodeLen(s, &len, ctxcanvas->utf8mode);
+  ctxcanvas->graphics->MeasureString(wstr, len, ctxcanvas->font, PointF(0,0), &boundingBox);
   if (width)  
     *width  = (int)boundingBox.Width;
   
@@ -1402,7 +1420,7 @@ static void cdtext(cdCtxCanvas* ctxcanvas, int x, int y, const char *s, int len)
 {
   Matrix transformMatrix;
   int use_transform = 0, w, h;
-  WCHAR* ws = cdwpStringToUnicode(s, len, ctxcanvas->utf8mode);
+  WCHAR* ws = cdwpStringToUnicodeLen(s, &len, ctxcanvas->utf8mode);
 
   if (ctxcanvas->canvas->text_orientation)
   {
@@ -1475,7 +1493,7 @@ static int cdfont(cdCtxCanvas* ctxcanvas, const char *type_face, int style, int 
   else if (cdStrEqualNoCase(type_face, "System"))
     fontFamily = FontFamily::GenericSansSerif()->Clone(); 
   else
-    fontFamily = new FontFamily(cdwpStringToUnicode(type_face, strlen(type_face), ctxcanvas->utf8mode));
+    fontFamily = new FontFamily(cdwpStringToUnicode(type_face, ctxcanvas->utf8mode));
   
   REAL emSize = (REAL)(cdGetFontSizePixels(ctxcanvas->canvas, size));
 
@@ -1529,7 +1547,7 @@ static int cdnativefont(cdCtxCanvas* ctxcanvas, const char* nativefont)
     bold = lf.lfWeight>FW_NORMAL? 1: 0;
     italic = lf.lfItalic;
     size = lf.lfHeight;
-    strcpy(type_face, cdwpStringFromUnicode(lf.lfFaceName, lstrlenW(lf.lfFaceName), ctxcanvas->utf8mode));
+    strcpy(type_face, cdwpStringFromUnicode(lf.lfFaceName, ctxcanvas->utf8mode));
     underline = lf.lfUnderline;
     strikeout = lf.lfStrikeOut;
 
@@ -1584,7 +1602,7 @@ static int cdnativefont(cdCtxCanvas* ctxcanvas, const char* nativefont)
     fontFamily = FontFamily::GenericSansSerif()->Clone();
   }
   else
-    fontFamily = new FontFamily(cdwpStringToUnicode(type_face, strlen(type_face), ctxcanvas->utf8mode));
+    fontFamily = new FontFamily(cdwpStringToUnicode(type_face, ctxcanvas->utf8mode));
 
   if (!fontFamily->IsAvailable())
   {

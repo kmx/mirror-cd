@@ -57,7 +57,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void* data)
 
     Rect frameRect(0, 0, (int)(100 * w / canvas->xres), (int)(100 * h / canvas->yres));
 
-    metafile = new Metafile(cdwpStringToUnicode(filename, strlen(filename), 0), 
+    metafile = new Metafile(cdwpStringToUnicode(filename, 0), 
                             ScreenDC, frameRect, MetafileFrameUnitGdi, EmfTypeEmfPlusDual, NULL);
 
     ReleaseDC(NULL, ScreenDC);

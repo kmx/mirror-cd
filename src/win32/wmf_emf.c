@@ -1826,7 +1826,7 @@ int cdplayWMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
     if (wBytesRead == 0)  
       return CD_ERROR;
     
-    hMF = GetMetaFile(cdwStrToSystem(filename, strlen(filename), 0));
+    hMF = GetMetaFile(cdwStrToSystem(filename, 0));
   }
   else /* this is a placeable metafile */
   {
@@ -1931,7 +1931,7 @@ int cdplayEMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
   cdDataEMF data_emf;
   int w, h;
   
-  hEMF = GetEnhMetaFile(cdwStrToSystem(filename, strlen(filename), 0));
+  hEMF = GetEnhMetaFile(cdwStrToSystem(filename, 0));
   if (!hEMF)
     return CD_ERROR;
   

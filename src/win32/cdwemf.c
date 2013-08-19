@@ -64,7 +64,7 @@ static void cdcreatecanvas(cdCanvas* canvas, void* data)
   rect.top = 0;
   rect.right = (int)(100. * w / xres);
   rect.bottom = (int)(100. * h / yres);
-  hDC = CreateEnhMetaFile(ScreenDC,cdwStrToSystem(filename, strlen(filename), 0),&rect,NULL);
+  hDC = CreateEnhMetaFile(ScreenDC,cdwStrToSystem(filename, 0),&rect,NULL);
   ReleaseDC(NULL, ScreenDC);
   
   if(!hDC)
