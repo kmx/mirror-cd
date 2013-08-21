@@ -47,7 +47,13 @@ static void sUpdateFill(cdCtxCanvas *ctxcanvas, int fill)
 
 /******************************************************/
 
-static char* cdgStrToSystem(const char* str, int len, cdCtxCanvas *ctxcanvas)
+static char* gtkStrToUTF8(const char *str, int len, const char* charset)
+{
+  return g_convert(str, len, "UTF-8", charset, NULL, NULL, NULL);
+}
+
+/* This is a copy of the cdgdk.c function */
+static char* cdgStrToSystem(const char* str, int *len, cdCtxCanvas *ctxcanvas)
 {
   if (!str || *str == 0)
     return (char*)str;
@@ -57,14 +63,15 @@ static char* cdgStrToSystem(const char* str, int len, cdCtxCanvas *ctxcanvas)
     const char *charset = NULL;
     if (g_get_charset(&charset)==TRUE)  /* current locale is already UTF-8 */
     {
-      if (g_utf8_validate(str, -1, NULL))
+      if (g_utf8_validate(str, *len, NULL))
         return (char*)str;
       else
       {
         if (ctxcanvas->utf8_buffer)
           g_free(ctxcanvas->utf8_buffer);
-        ctxcanvas->utf8_buffer = g_convert(str, len, "UTF-8", "ISO8859-1", NULL, NULL, NULL);   /* if string is not UTF-8, assume ISO8859-1 */
+        ctxcanvas->utf8_buffer = gtkStrToUTF8(str, *len, "ISO8859-1");   /* if string is not UTF-8, assume ISO8859-1 */
         if (!ctxcanvas->utf8_buffer) return (char*)str;
+        *len = strlen(ctxcanvas->utf8_buffer);
         return ctxcanvas->utf8_buffer;
       }
     }
@@ -76,8 +83,9 @@ static char* cdgStrToSystem(const char* str, int len, cdCtxCanvas *ctxcanvas)
       {
         if (ctxcanvas->utf8_buffer)
           g_free(ctxcanvas->utf8_buffer);
-        ctxcanvas->utf8_buffer = g_convert(str, len, "UTF-8", charset, NULL, NULL, NULL);
+        ctxcanvas->utf8_buffer = gtkStrToUTF8(str, *len, charset);
         if (!ctxcanvas->utf8_buffer) return (char*)str;
+        *len = strlen(ctxcanvas->utf8_buffer);
         return ctxcanvas->utf8_buffer;
       }
     }
@@ -889,7 +897,8 @@ static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, i
   PangoFontMetrics* metrics;
   int w, h, desc, dir = -1, reset_transform = 0;
 
-  pango_layout_set_text(ctxcanvas->fontlayout, cdgStrToSystem(s, len, ctxcanvas), len);
+  s = cdgStrToSystem(s, &len, ctxcanvas);
+  pango_layout_set_text(ctxcanvas->fontlayout, s, len);
   
 	pango_layout_get_pixel_size(ctxcanvas->fontlayout, &w, &h);
   metrics = pango_context_get_metrics(ctxcanvas->fontcontext, ctxcanvas->fontdesc, pango_context_get_language(ctxcanvas->fontcontext));
@@ -1001,7 +1010,9 @@ static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *s, int len, int *w
     return;
 
   pango_cairo_update_layout(ctxcanvas->cr, ctxcanvas->fontlayout);
-  pango_layout_set_text(ctxcanvas->fontlayout, cdgStrToSystem(s, len, ctxcanvas), len);
+
+  s = cdgStrToSystem(s, &len, ctxcanvas);
+  pango_layout_set_text(ctxcanvas->fontlayout, s, len);
   pango_layout_get_pixel_size(ctxcanvas->fontlayout, width, height);
 }
 

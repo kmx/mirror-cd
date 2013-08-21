@@ -63,7 +63,7 @@ struct _cdCtxCanvas {
   cdImage* image_dbuffer;       /* Used by double buffer driver */
   cdCanvas* canvas_dbuffer;
 
-  char* utf8_buffer;
+  gchar* utf8_buffer;
   int utf8mode;
 };
 
