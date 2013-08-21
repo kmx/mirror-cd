@@ -150,11 +150,11 @@ static int cdclip(cdCtxCanvas *ctxcanvas, int mode)
     cairo_rectangle(ctxcanvas->cr, 0, 0, ctxcanvas->canvas->w, ctxcanvas->canvas->h);
     break;
   case CD_CLIPAREA:
-      cairo_rectangle(ctxcanvas->cr, ctxcanvas->canvas->clip_frect.xmin, 
-                                     ctxcanvas->canvas->clip_frect.ymin, 
-                                     ctxcanvas->canvas->clip_frect.xmax, 
-                                     ctxcanvas->canvas->clip_frect.ymax);
-      break;
+    cairo_rectangle(ctxcanvas->cr, ctxcanvas->canvas->clip_frect.xmin, 
+                                   ctxcanvas->canvas->clip_frect.ymin, 
+                                   ctxcanvas->canvas->clip_frect.xmax-ctxcanvas->canvas->clip_frect.xmin+1, 
+                                   ctxcanvas->canvas->clip_frect.ymax-ctxcanvas->canvas->clip_frect.ymin+1);
+    break;
   case CD_CLIPPOLYGON:
     {
       int hole_index = 0;

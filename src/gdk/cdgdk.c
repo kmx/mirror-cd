@@ -156,8 +156,8 @@ static int cdclip(cdCtxCanvas *ctxcanvas, int clip_mode)
       GdkRectangle rect;
       rect.x      = ctxcanvas->canvas->clip_rect.xmin;
       rect.y      = ctxcanvas->canvas->clip_rect.ymin;
-      rect.width  = ctxcanvas->canvas->clip_rect.xmax - ctxcanvas->canvas->clip_rect.xmin;
-      rect.height = ctxcanvas->canvas->clip_rect.ymax - ctxcanvas->canvas->clip_rect.ymin;
+      rect.width  = ctxcanvas->canvas->clip_rect.xmax - ctxcanvas->canvas->clip_rect.xmin+1;
+      rect.height = ctxcanvas->canvas->clip_rect.ymax - ctxcanvas->canvas->clip_rect.ymin+1;
       gdk_gc_set_clip_rectangle(ctxcanvas->gc, &rect);
       break;
     }
@@ -223,9 +223,9 @@ static void cdgetregionbox(cdCtxCanvas *ctxcanvas, int *xmin, int *xmax, int *ym
   gdk_region_get_clipbox(ctxcanvas->new_rgn, &rect);
 
   *xmin = rect.x;
-  *xmax = rect.x + rect.width;
+  *xmax = rect.x + rect.width-1;
   *ymin = rect.y;
-  *ymax = rect.y + rect.height;
+  *ymax = rect.y + rect.height-1;
 }
 
 static void sCombineRegion(cdCtxCanvas *ctxcanvas, GdkRegion* rgn)
@@ -730,8 +730,8 @@ static void cdbox(cdCtxCanvas *ctxcanvas, int xmin, int xmax, int ymin, int ymax
     GdkRegion *rgn;
     GdkRectangle rect;
 
-    rect.x = xmin;  rect.width  = xmax-xmin;
-    rect.y = ymin;  rect.height = ymax-ymin;
+    rect.x = xmin;  rect.width  = xmax-xmin+1;
+    rect.y = ymin;  rect.height = ymax-ymin+1;
     rgn = gdk_region_rectangle(&rect);
 
     sCombineRegion(ctxcanvas, rgn);
