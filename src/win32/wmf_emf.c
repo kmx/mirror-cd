@@ -1861,16 +1861,25 @@ int cdplayWMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
   if (xres<=0) xres=1;
   if (yres<=0) yres=1;
   
-  /* when converted from WMF, only rclBounds is available */
-  data_emf.bottom = emh.rclBounds.bottom;
-  data_emf.left   = emh.rclBounds.left;
-  data_emf.top    = emh.rclBounds.top;
-  data_emf.right  = emh.rclBounds.right;
-
   data_emf.canvas = canvas;
   
   if ((xmax-xmin+1)>1 && (ymax-ymin+1)>1) /* always update data_emf.rect when scaling */
+  {
+    data_emf.bottom = -0xFFFFFF;
+    data_emf.left   = 0xFFFFFF;
+    data_emf.top    = 0xFFFFFF;
+    data_emf.right  = -0xFFFFFF;
+
     EnumEnhMetaFile(NULL, hEMF, CalcSizeEMFEnumProc, &data_emf, NULL);
+  }
+  else
+  {
+    /* when converted from WMF, only rclBounds is available */
+    data_emf.bottom = emh.rclBounds.bottom;
+    data_emf.left   = emh.rclBounds.left;
+    data_emf.top    = emh.rclBounds.top;
+    data_emf.right  = emh.rclBounds.right;
+  }
 
   w = data_emf.right-data_emf.left;
   h = data_emf.bottom-data_emf.top;
