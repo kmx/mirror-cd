@@ -1871,6 +1871,17 @@ int cdplayWMF(cdCanvas* canvas, int xmin, int xmax, int ymin, int ymax, void *da
     data_emf.right  = -0xFFFFFF;
 
     EnumEnhMetaFile(NULL, hEMF, CalcSizeEMFEnumProc, &data_emf, NULL);
+
+    if (data_emf.bottom == -0xFFFFFF || data_emf.top == 0xFFFFFF)
+    {
+      data_emf.bottom = 0;
+      data_emf.top = 0;
+    }
+    if (data_emf.right == -0xFFFFFF || data_emf.left == 0xFFFFFF)
+    {
+      data_emf.right = 0;
+      data_emf.left = 0;
+    }
   }
   else
   {
