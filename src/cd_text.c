@@ -580,12 +580,10 @@ Style can be a free combination of some names separated by spaces.
 Font name can be a list of font family names separated by comma.
 */
 
-#define isspace(_x) (_x == ' ')
-
 static int cd_find_style_name(const char *name, int len, int *style)
 {
 #define CD_STYLE_NUM_NAMES 21
-  static struct { const char* name; int style; } cd_style_names[CD_STYLE_NUM_NAMES] = {
+  static struct { const char* name; int style; } style_names[CD_STYLE_NUM_NAMES] = {
     {"Normal",         0},
     {"Oblique",        CD_ITALIC},
     {"Italic",         CD_ITALIC},
@@ -612,9 +610,9 @@ static int cd_find_style_name(const char *name, int len, int *style)
   int i;
   for (i = 0; i < CD_STYLE_NUM_NAMES; i++)
   {
-    if (strncmp(cd_style_names[i].name, name, len)==0)
+    if (strncmp(style_names[i].name, name, len)==0)
     {
-      *style = cd_style_names[i].style;
+      *style = style_names[i].style;
       return 1;
     }
   }
@@ -622,15 +620,18 @@ static int cd_find_style_name(const char *name, int len, int *style)
   return 0;
 }
 
+#define is_style_sep(_x) (_x == ' ' || _x == ',')
+
+/* this code is shared between CD and IUP, must be updated on both libraries */
 static const char * cd_getword(const char *str, const char *last, int *wordlen)
 {
   const char *result;
   
-  while (last > str && isspace(*(last - 1)))
+  while (last > str && is_style_sep(*(last - 1)))
     last--;
 
   result = last;
-  while (result > str && !isspace (*(result - 1)))
+  while (result > str && !is_style_sep (*(result - 1)))
     result--;
 
   *wordlen = last - result;
@@ -638,10 +639,14 @@ static const char * cd_getword(const char *str, const char *last, int *wordlen)
   return result;
 }
 
+/* this code is partially shared between CD and IUP, must be updated on both libraries */
 int cdParsePangoFont(const char *nativefont, char *type_face, int *style, int *size)
 {
   const char *p, *last;
   int len, wordlen;
+
+  if (nativefont[0] == '-')  /* X font, abort */
+    return 0;
 
   len = (int)strlen(nativefont);
   last = nativefont + len;
@@ -677,20 +682,12 @@ int cdParsePangoFont(const char *nativefont, char *type_face, int *style, int *s
 
   /* Remainder is font family list. */
 
-  /* Trim off trailing white space */
-  while (last > nativefont && isspace(*(last - 1)))
+  /* Trim off trailing separators */
+  while (last > nativefont && is_style_sep(*(last - 1)))
     last--;
 
-  /* Trim off trailing commas */
-  if (last > nativefont && *(last - 1) == ',')
-    last--;
-
-  /* Again, trim off trailing white space */
-  while (last > nativefont && isspace(*(last - 1)))
-    last--;
-
-  /* Trim off leading white space */
-  while (last > nativefont && isspace(*nativefont))
+  /* Trim off leading separators */
+  while (last > nativefont && is_style_sep(*nativefont))
     nativefont++;
 
   if (nativefont != last)
