@@ -1772,6 +1772,9 @@ static void cdclear(cdCtxCanvas* ctxcanvas)
 {
   RECT rect;
   
+  if (ctxcanvas->canvas->use_matrix)
+    cdtransform(ctxcanvas, NULL);
+
   if (ctxcanvas->canvas->clip_mode != CD_CLIPOFF) 
     SelectClipRgn( ctxcanvas->hDC, NULL );   /* toda 'area do canvas */
   
@@ -1780,6 +1783,9 @@ static void cdclear(cdCtxCanvas* ctxcanvas)
   
   if (ctxcanvas->canvas->clip_mode != CD_CLIPOFF) 
     cdclip(ctxcanvas, ctxcanvas->canvas->clip_mode);
+
+  if (ctxcanvas->canvas->use_matrix)
+    cdtransform(ctxcanvas, ctxcanvas->canvas->matrix);
 }
 
 
