@@ -445,6 +445,7 @@ static void cdgettextsize(cdCtxCanvas *ctxcanvas, const char *s, int len, int *w
     return;
   if (height) cdgetfontdim(ctxcanvas, NULL, height, NULL, NULL);
   if (width) *width = (int)(PDF_info_textline(ctxcanvas->pdf, s, len, "width", "")/ctxcanvas->scale);
+  //TODO why not? PDF_stringwidth2(ctxcanvas->pdf, s, len, ctxcanvas->font, double fontsize);
 }
 
 static void cdftext(cdCtxCanvas *ctxcanvas, double x, double y, const char *s, int len)
@@ -1124,10 +1125,8 @@ static int cdfont(cdCtxCanvas *ctxcanvas, const char *type_face, int style, int 
 
   newfont = PDF_load_font(ctxcanvas->pdf, nativefontname, 0, "auto", options);
   if (newfont<0) 
-  {
-    /* must reload the previous one */
     return 0;
-  }
+
   ctxcanvas->font = newfont;
 
   sizepixel = cdGetFontSizePixels(ctxcanvas->canvas, size);
