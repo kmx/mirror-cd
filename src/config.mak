@@ -2,6 +2,9 @@ PROJNAME = cd
 LIBNAME = cd
 OPT = YES   
 
+ifeq "$(TEC_SYSNAME)" "Haiku"
+  USE_HAIKU = Yes
+else
 ifdef GTK_DEFAULT
   ifdef USE_X11
     # Build X11 version in Linux and BSD
@@ -23,6 +26,7 @@ else
     endif
   endif
 endif
+endif
 
 DEFINES = CD_NO_OLD_INTERFACE
 
@@ -35,6 +39,9 @@ SRCINTCGM  := $(addprefix intcgm/, $(SRCINTCGM))
 
 SRCSIM := cdfontex.c sim.c cd_truetype.c sim_primitives.c sim_text.c sim_linepolyfill.c
 SRCSIM  := $(addprefix sim/, $(SRCSIM))
+
+SRCHAIKU = cdhaiku.cpp cdhaikunative.cpp cdhaikudbuf.cpp
+SRCHAIKU  := $(addprefix haiku/, $(SRCHAIKU))
 
 SRCWIN32 = cdwclp.c cdwemf.c cdwimg.c cdwin.c cdwnative.c cdwprn.c \
            cdwwmf.c wmf_emf.c cdwdbuf.c cdwdib.c
@@ -95,13 +102,16 @@ ifdef USE_GDK
       LIBS += fontconfig
     endif
   endif
-else 
+else
   ifdef USE_X11
     SRC += $(SRCX11) $(SRCNULL)
     LIBS += freetype
     ifneq ($(findstring cygw, $(TEC_UNAME)), )
       LIBS += fontconfig
     endif
+  else ifdef USE_HAIKU
+    SRC += $(SRCHAIKU) $(SRCNULL)
+    LIBS += freetype fontconfig
   else
     SRC += $(SRCWIN32)
     DEFINES += UNICODE

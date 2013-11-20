@@ -240,7 +240,7 @@ struct _cdCanvas
   cdContext* context;
 };
 
-enum{CD_BASE_WIN, CD_BASE_X, CD_BASE_GDK};
+enum{CD_BASE_WIN, CD_BASE_X, CD_BASE_GDK, CD_BASE_HAIKU};
 int cdBaseDriver(void);
 
 /***************/
