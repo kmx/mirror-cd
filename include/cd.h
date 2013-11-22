@@ -21,7 +21,7 @@ extern "C" {
 #define CD_COPYRIGHT    "Copyright (C) 1994-2013 Tecgraf, PUC-Rio."
 #define CD_VERSION "5.7"              /* bug fixes are reported only by cdVersion functions */
 #define CD_VERSION_NUMBER 507000
-#define CD_VERSION_DATE "2013/11/21"  /* does not include bug fix releases */
+#define CD_VERSION_DATE "2013/11/22"  /* does not include bug fix releases */
 
 typedef struct _cdContext cdContext;
 typedef struct _cdCanvas cdCanvas;
