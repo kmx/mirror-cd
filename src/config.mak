@@ -147,6 +147,7 @@ ifneq ($(findstring MacOS, $(TEC_UNAME)), )
   ifneq ($(TEC_SYSMINOR), 4)
     BUILD_DYLIB=Yes
   endif
+  INCLUDES += /sw/include
 endif
 
 LDIR = ../lib/$(TEC_UNAME)
